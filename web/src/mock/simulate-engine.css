@@ -304,3 +304,14 @@
 .ap-bar span.neg { background: #c0453a; }
 .ap-bar small { color: #5b6b82; }
 .ap-bar b { font-variant-numeric: tabular-nums; font-size: 12px; }
+
+/* 옷가게: 가게 평면이 화면 전체 (고깃집의 3D 자리) */
+.sx-canvas.ap-stage { display: grid; place-items: center; background: #f1ece3; }
+.sx-canvas.ap-stage .ap-plan { width: min(70vw, 900px); max-height: 80%; }
+.ap-person { fill: #e0735a; opacity: .85; }
+
+/* 버튼 묶음 간격을 12px로 통일 (팝업 아래 버튼, 재생 막대, 랭킹 저장) */
+.sx-foot, .sx-bar, .sc-save { gap: 12px; }
+.sx-bar button { min-width: 72px; }
+/* 평면이 왼쪽 패널(360px)·오른쪽 영수증(300px) 사이에 들어가게 */
+.sx-canvas.ap-stage .ap-plan { width: clamp(320px, calc(100vw - 760px), 820px); max-height: 70%; }

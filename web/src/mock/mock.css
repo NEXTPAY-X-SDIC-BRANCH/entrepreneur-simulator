@@ -524,3 +524,7 @@ html:has(.m-app) { background: #fff; }
 
 /* 출처 없는 가정 표시 (Assume.tsx) */
 .m-assume { display: inline-block; margin-inline-start: 4px; padding: 0 6px; border: 1px dashed #b07a1a; border-radius: 6px; background: #fff6e2; color: #8a5a12; font-size: 11px; font-weight: 700; line-height: 18px; vertical-align: 1px; cursor: help; white-space: nowrap; }
+
+/* 버튼 묶음 간격을 12px로 통일 (가게 꾸미기 아래 버튼, 가진 돈 바로 고르기, 머리글의 질문·계정 버튼) */
+.m-tray-go, .m-presets { gap: 12px; }
+.m-top .m-chatbtn + .m-acct, .m-top .m-chatbtn + .m-acct-wrap { margin-inline-start: -12px; }
