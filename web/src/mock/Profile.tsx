@@ -28,7 +28,7 @@ export default function ProfileStep({ profile, setProfile, gus, onDone }: {
   const invest = krei()?.micro.invest_total as { n: number; p25: number; p50: number; p75: number } | undefined;
 
   const answered: { label: string; at: number }[] = [
-    { label: profile.industry === "bbq" ? "고깃집" : "카페", at: 0 },
+    { label: profile.industry === "bbq" ? "고깃집" : profile.industry === "cafe" ? "카페" : "옷가게", at: 0 },
     { label: profile.gu, at: 1 },
     { label: profile.reasons.length ? profile.reasons[0] : "이유 없음", at: 2 },
     { label: man(profile.capital), at: 3 },
@@ -58,6 +58,7 @@ export default function ProfileStep({ profile, setProfile, gus, onDone }: {
             <div className="m-choices m-choices-big">
               <label className="m-choice"><input type="radio" name="ind" checked={profile.industry === "bbq"} onChange={() => set({ industry: "bbq" })} /><span>고깃집<small>삼겹살, 목살 같은 돼지고기 구이 (자료는 한식 육류 요리 전문점 기준)</small></span></label>
               <label className="m-choice"><input type="radio" name="ind" checked={profile.industry === "cafe"} onChange={() => set({ industry: "cafe" })} /><span>카페<small>커피, 음료, 디저트 (자료는 독립 카페 기준, 동네 분석부터 열려 있어요)</small></span></label>
+              <label className="m-choice"><input type="radio" name="ind" checked={profile.industry === "apparel"} onChange={() => set({ industry: "apparel" })} /><span>옷가게<small>동네 의류 가게 (서울 소매업 중 가게 수와 매출이 가장 많은 일반의류 기준, 구 단위 분석)</small></span></label>
             </div>
           </fieldset>
         )}

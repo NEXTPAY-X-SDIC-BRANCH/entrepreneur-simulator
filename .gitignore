@@ -10,3 +10,4 @@ dist/
 .pytest_cache/
 .DS_Store
 *.log
+data/scores.json

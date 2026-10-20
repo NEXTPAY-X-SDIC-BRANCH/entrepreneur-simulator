@@ -39,6 +39,7 @@ FAMILIES: dict[str, tuple[str, ...]] = {
     "flow": ("flow_", "live_flow", "live_type"),
     "loan": ("ecos_", "live_loan"),       # 은행 대출 금리 (pipelines/fetch_ecos.py)
     "support": ("kstartup_",),            # 창업 지원사업 공고 (pipelines/fetch_kstartup.py)
+    "apparel": ("apparel_",),             # 옷가게(일반의류): 서울 상권분석 구 값, 도소매업조사 비용 구조, 도소매업 생존율
     "delivery": ("delivery_",),           # 배달 시장·수수료 (pipelines/fetch_kosis_delivery.py, season_params.yaml delivery)
 }
 TOPIC_RE: list[tuple[str, re.Pattern]] = [
@@ -60,6 +61,7 @@ TOPIC_RE: list[tuple[str, re.Pattern]] = [
     ("loan", re.compile(r"금리|이자|기준금리|대출|정책 ?자금|융자")),
     ("support", re.compile(r"지원 ?사업|공고|창업 ?교육|컨설팅|멘토링|보육|입주|지원금|[Kk]-?스타트업|케이스타트업")),
     ("delivery", re.compile(r"배달|배민|쿠팡 ?이츠|요기요|중개 ?수수료")),
+    ("apparel", re.compile(r"옷가게|옷 ?가게|의류|옷 ?장사|패션|보세|옷을 ?팔")),
     ("neighborhood", re.compile(r"동네|행정동|유형")),
     ("cost", re.compile(r"영업이익률|원가율|마진|비용 ?구조|비율|퍼센트|몇 ?%|몇 ?프로")),
     ("myshop", re.compile(r"이 ?(동네|구|지역)|내 ?(가게|점포|조건)|제 ?가게|우리 ?가게|입력한|내가|제가|본전|회수|되찾|흑자|적자|몇 ?달|개월|영업이익(?!률)|"
@@ -320,6 +322,34 @@ def money_facts() -> tuple[list[dict], dict]:
                                     "api": "외식업체 경영실태조사 2025 판매 채널 표 정리", "url": "", "period": "2024~2025년"}
     except (OSError, KeyError):
         pass
+
+    gs = _load("gu_stats.json").get("apparel")  # pipelines/build_gu_stats.py (일반의류 CS300011)
+    ak = _load("apparel_kosis.json")             # pipelines/build_apparel_data.py
+    if gs:
+        se = gs["seoul"]
+        facts.append({"id": "apparel_seoul", "tags": ["옷가게", "의류", "서울", "매출", "가게 수", "폐업"],
+                      "text": f"서울 상권 안 옷가게(일반의류)는 약 {se['stores']:,}곳이고, 한 곳당 한 달 매출은 약 {se['sales_per_store_month']:,}만원이에요 (카드 추정, 2025년). "
+                              f"한 번에 평균 {se['ticket']:,}원을 결제하고, 1년에 {round(se['closure_rate'] * 100, 1)}%가 문을 닫아요.", "sources": ["seoul_apparel"]})
+        for gu, v in gs["gu"].items():
+            facts.append({"id": f"apparel_gu_{gu}", "gu": None, "tags": ["옷가게", "의류", gu, "매출", "가게 수", "폐업"],
+                          "text": f"{gu} 옷가게(일반의류)는 상권 안에 약 {v['stores']:,}곳, 한 곳당 한 달 매출 약 {v['sales_per_store_month']:,}만원(서울 평균의 {v['demand_index']}배), "
+                                  f"1년 폐업률 {round(v['closure_rate'] * 100, 1)}%예요 (2025년).", "sources": ["seoul_apparel"]})
+        src["seoul_apparel"] = {"publisher": "서울특별시", "title": "서울시 상권분석서비스 추정매출·점포 (일반의류 CS300011)", "api": "OA-15572, OA-15577",
+                                "url": "https://data.seoul.go.kr/", "period": "2025년"}
+    if ak.get("bands"):
+        b = next((x for x in ak["bands"] if x["band"].startswith("100~500")), None)
+        if b:
+            facts.append({"id": "apparel_cost", "tags": ["옷가게", "의류", "원가", "원가율", "비용", "이익률", "마진"],
+                          "text": f"서울 의복 소매업 중 연매출 1억~5억 가게는 매출의 {round(b['cogs_ratio'] * 100, 1)}%가 옷을 사 온 원가, {round(b['labor_ratio'] * 100, 1)}%가 인건비, "
+                                  f"{round(b['rent_ratio'] * 100, 1)}%가 임차료, {round(b['other_ratio'] * 100, 1)}%가 기타경비이고 영업이익은 {round(b['op_ratio'] * 100, 1)}%예요 (2024년).",
+                          "sources": ["kosis_apparel"]})
+        sv = ak.get("survival_seoul_retail_2023") or {}
+        if sv:
+            facts.append({"id": "apparel_survival", "tags": ["옷가게", "의류", "도소매", "생존율", "폐업", "생존"],
+                          "text": f"서울에서 새로 연 도소매업 가게는 1년 뒤 {sv.get('1년 생존율')}%, 3년 뒤 {sv.get('3년 생존율')}%, 5년 뒤 {sv.get('5년 생존율')}%가 살아남아요 (2023년 기준). 음식점보다 낮아요.",
+                          "sources": ["kosis_apparel"]})
+        src["kosis_apparel"] = {"publisher": "통계청", "title": "도소매업조사 (서울 의복 소매업 4741), 기업생멸행정통계 (서울 도소매업)", "api": "KOSIS DT_3KB9003, DT_6BD1109",
+                                "url": "https://kosis.kr", "period": "2024년 / 2023년"}
 
     ks = _load("kstartup.json")  # pipelines/fetch_kstartup.py
     if ks.get("items"):
@@ -602,6 +632,10 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
     if "support" in tps:
         pool = [f for f in pool if not f["id"].startswith("kstartup_") or f.get("gu") in (None, want_gu)]
         k = max(k, 5)
+    if "apparel" in tps:
+        # 옷가게를 물으면 옷가게 근거만. 구를 말했으면(또는 화면에서 고른 구가 있으면) 그 구 값, 아니면 서울 값과 비용·생존율만
+        g = GU.search(q).group() if GU.search(q) else (ctx or {}).get("gu") if (ctx or {}).get("industry") == "apparel" else None
+        pool = [f for f in pool if f["id"].startswith("apparel_") and (not f["id"].startswith("apparel_gu_") or (g and f["id"] == f"apparel_gu_{g}"))]
     # '30대 생존율', '20대 대출'처럼 나이대가 나와도 생존율·대출·지원사업·배달을 묻는 질문은 인구 질문이 아니다
     if "flow" in tps and not re.search(r"생존|폐업", q) and not tps & {"loan", "support", "delivery"}:
         # 사람 수 질문은 사람 근거만 쓴다. 이름이 나온 동이 없고 화면의 동네도 모르면 다른 주제의 문장으로 대신하지 않는다.

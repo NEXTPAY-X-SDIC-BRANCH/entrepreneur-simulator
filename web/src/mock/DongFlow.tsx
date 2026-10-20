@@ -9,6 +9,8 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 const HI = {
   bbq: { band: [4, 5], dow: [4, 5], bandText: "저녁(17~24시)", dowText: "금·토요일" },
   cafe: { band: [1, 2, 3], dow: [5, 6], bandText: "낮(06~17시)", dowText: "토·일요일" },
+  // 옷가게: 서울 일반의류 매출의 68%가 14~21시, 38%가 토·일 (상권분석서비스 행정동 추정매출 2026년 2분기)
+  apparel: { band: [3, 4], dow: [5, 6], bandText: "오후·저녁(14~21시)", dowText: "토·일요일" },
 } as const;
 
 function Bars({ labels, v, hi, title }: { labels: string[]; v: number[]; hi: readonly number[]; title: string }) {
@@ -48,7 +50,7 @@ export default function DongFlow({ code, gu, dong }: { code: string | undefined;
         {r.band && <div><h3>시간대 <small>{iga(meta.band[top(r.band)] + "시")} 가장 붐벼요</small></h3><Bars title="시간대" labels={meta.band} v={r.band} hi={hi.band} /></div>}
         {r.dow && <div><h3>요일 <small>{iga(meta.dow[top(r.dow)] + "요일")} 가장 붐벼요</small></h3><Bars title="요일" labels={meta.dow} v={r.dow} hi={hi.dow} /></div>}
       </div>
-      {r.band && r.dow && <p className="fl-src">진하게 칠한 칸은 {ind === "cafe" ? "카페" : "고깃집"}이 주로 장사하는 시간대·요일이에요(연령대는 가장 많은 연령대).</p>}
+      {r.band && r.dow && <p className="fl-src">진하게 칠한 칸은 {ind === "cafe" ? "카페" : ind === "apparel" ? "옷가게" : "고깃집"}이 주로 장사하는 시간대·요일이에요(연령대는 가장 많은 연령대).</p>}
       {(f.resi || f.work) && (
         <p className="fl-pop">
           {f.resi && <span>거주민 <b>{people(f.resi.tot)}</b></span>}
