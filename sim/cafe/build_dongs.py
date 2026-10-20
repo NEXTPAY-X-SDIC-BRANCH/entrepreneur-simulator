@@ -1,0 +1,88 @@
+"""서울 행정동 425곳을 카페 엔진의 상권(district)으로 더한다.
+
+    python -m sim.cafe.build_dongs
+
+입력: web/public/mock/cafe_dong.json (서울 행정동 카페 지표 엑셀의 행정동 raw. 서울시 상권분석서비스 추정매출·점포, 소상공인 상가정보),
+      web/public/mock/rent_gu.json (한국부동산원 상권 임대료, 구·동 단위).
+출력: research/cafe/district_meta_dong.yaml, research/cafe/districts_dong.yaml (sim/cafe/params.py가 원래 3곳과 합쳐 읽는다).
+코드는 행정동 코드 8자리(예 11440660). 원래 상권 코드는 7자리라 겹치지 않는다.
+
+엔진의 '수요 지수'(model.demand_index)는 상권 점포당 매출 ÷ 서울 점포당 매출인데, 서울 값(districts.yaml seoul)은 상권 단위
+집계(1,100여 상권, 월 1,164만원)이고 동 자료의 서울 평균은 949만원으로 집계 단위가 달라 바로 못 나눈다. 그래서 동의 점포당 매출은
+(동 값 ÷ 동 자료의 서울 평균) × 엔진의 서울 값으로 옮겨, 서울 안의 상대 위치는 그대로 두고 엔진 기준에 맞춘다.
+읽기 전에
+  - 값의 등급: 매출·점포·시간대·요일은 서울시 공개 자료 계산이라 H, 월세는 구·동 R-ONE 근사라 M, 보증금과 권리금은 L(가정).
+  - 점포(커피-음료) 20곳 미만인 동은 점포당 값이 흔들린다. context_ko에 적어 둔다.
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import yaml
+
+from .params import ROOT, load_seoul
+
+MOCK = ROOT / "web" / "public" / "mock"
+META_OUT = ROOT / "research" / "cafe" / "district_meta_dong.yaml"
+DIST_OUT = ROOT / "research" / "cafe" / "districts_dong.yaml"
+SRC = "서울시 상권분석서비스 추정매출·점포 행정동 2026Q2 (서울 행정동 카페 지표 엑셀 raw, cafe_dong.json)"
+KEY_MONEY = 25_000_000  # 권리금 낸 독립 카페 중앙값 2,500만원 (지표 엑셀 cst_key_money, 전국)
+DEPOSIT_MONTHS = 12
+BANDS = ["00~06", "06~11", "11~14", "14~17", "17~21", "21~24"]
+HOURS = {"00~06": 6, "06~11": 5, "11~14": 3, "14~17": 3, "17~21": 4, "21~24": 3}
+
+
+def main() -> None:
+    dongs = json.loads((MOCK / "cafe_dong.json").read_text(encoding="utf-8"))["dong"]
+    rent = json.loads((MOCK / "rent_gu.json").read_text(encoding="utf-8"))
+    conv = 1 + (rent.get("conv_seoul_pct") or 7) / 100  # 환산 임대료 -> 현금 월세 (보증금 12개월분 환산 제거)
+    ok = [d for d in dongs if d["sales_q"] and d["tx_q"] and d["cf_stores"]]
+    seoul_raw = sum(d["sales_q"] for d in ok) / 3 / sum(d["cf_stores"] for d in ok)  # 동 자료의 서울 점포당 월매출 (원)
+    engine_seoul = load_seoul()["sales_per_store_month_krw"]["value"]
+    scale = engine_seoul / seoul_raw
+    meta, dist = {}, {}
+    for d in ok:
+        code, stores = str(d["code"]), d["cf_stores"]
+        sales = d["sales_q"] / 3 / stores
+        rm = (rent.get("dong") or {}).get(f"{d['gu']}|{d['name']}", {}).get("rent_man_per_pyeong") or rent["gu"].get(d["gu"], {}).get("rent_man_per_pyeong")
+        if not rm:
+            continue
+        cash = round(rm / conv * 10_000)  # 원/평·월
+        shares = {"06~11": d["share_0611"], "11~14": d["share_1114"], "14~17": d["share_1417"], "17~21": d["share_1721"], "21~24": d["share_2124"]}
+        shares = {k: (x or 0.0) for k, x in shares.items()}
+        shares["00~06"] = max(0.0, 1 - sum(shares.values()))
+        band = {b: round(shares[b], 4) for b in BANDS}
+        per_hour = {b: band[b] / HOURS[b] for b in BANDS}
+        peak = max(per_hour, key=per_hour.get)
+        wk = d["weekend"] if d["weekend"] is not None else 0.26
+        thin = stores < 20
+        meta[code] = {
+            "name_ko": f"{d['gu']} {d['name']}",
+            "context_ko": f"{d['type']} 성격 동네, {peak}시 피크" + (" (커피-음료 점포 20곳 미만이라 점포당 값이 흔들려요)" if thin else ""),
+            "rent_per_pyeong_krw": {"value": cash, "grade": "M", "source": "R-ONE 소규모상가 1층 임대료 2026Q2 (동 값, 없으면 구 값), 보증금 환산분 제거"},
+            "deposit_per_pyeong_krw": {"value": cash * DEPOSIT_MONTHS, "grade": "L", "source": f"월세 {DEPOSIT_MONTHS}개월분 (서울시 상가임대차 실태조사 11~15개월)"},
+            "key_money_krw": {"value": KEY_MONEY, "grade": "M", "source": "권리금을 낸 독립 카페 중앙값 (경영실태조사 2025 원자료, 지표 엑셀 cst_key_money, 전국)"},
+            "opens_per_year": {"value": max(1, round((d["open_y"] or 0) * d["cafes"])), "grade": "M", "source": "연 개업률 × 카페 수 (상가정보 최근 4분기)"},
+            "stores": {"value": stores, "grade": "H", "source": "서울시 상권분석서비스 점포-행정동 2026Q2 (커피-음료, 프랜차이즈 포함)"},
+        }
+        dist[code] = {
+            "trdar_name": f"{d['gu']} {d['name']}",
+            "sales_per_store_month_krw": {"value": round(sales * scale), "grade": "H", "source": SRC,
+                                          "note": f"동 점포당 월매출 ÷ 동 자료 서울 평균 × 엔진 서울 값 (배율 {scale:.3f}). 서울 안의 상대 위치만 쓴다"},
+            "tx_per_store_day": {"value": round(d["tx_q"] / stores / 91, 2), "grade": "H", "source": SRC, "note": "분기 거래건수 ÷ 점포 수 ÷ 91일"},
+            "ticket_krw": {"value": round(d["sales_q"] / d["tx_q"]), "grade": "H", "source": SRC},
+            "peak_hour_tx_share": {"value": round(per_hour[peak], 4), "grade": "H", "source": SRC, "note": f"피크 시간대 {peak}시 매출 비중 ÷ 시간 수"},
+            "peak_band": peak,
+            "band_tx_share": {"value": band, "grade": "H", "source": SRC, "note": "시간대별 매출 비중 (거래 건수 비중이 아니라 매출 비중으로 근사)"},
+            "weekend_day_factor": {"value": round(wk * 91 / 26, 3), "grade": "H", "source": SRC, "note": "주말 매출 비중 × 91일 ÷ 26일"},
+            "weekday_day_factor": {"value": round((1 - wk) * 91 / 65, 3), "grade": "H", "source": SRC, "note": "주중 매출 비중 × 91일 ÷ 65일"},
+        }
+    dump = lambda o: yaml.safe_dump(o, allow_unicode=True, sort_keys=False, width=140)
+    META_OUT.write_text("# GENERATED by `python -m sim.cafe.build_dongs`. Do not hand-edit.\n" + dump(meta), encoding="utf-8")
+    DIST_OUT.write_text("# GENERATED by `python -m sim.cafe.build_dongs`. Do not hand-edit.\n" + dump({"districts": dist}), encoding="utf-8")
+    print(len(meta), "동", "scale", round(scale, 3), "seoul raw", round(seoul_raw), "engine", engine_seoul)
+
+
+if __name__ == "__main__":
+    main()

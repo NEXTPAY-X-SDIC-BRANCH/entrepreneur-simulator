@@ -1,0 +1,12 @@
+/* 챗봇 출처 목록. 색은 상속해서 라이트·다크 모두 본문과 같게 둔다. */
+.m-cites { margin: 4px 0 12px; padding-left: 20px; font-size: 13px; line-height: 1.5; max-width: 100%; }
+.m-cites li { margin-bottom: 8px; overflow-wrap: anywhere; }
+.m-cites a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.m-cite-meta { opacity: 0.75; }
+.m-cite-note { display: block; opacity: 0.75; margin-top: 4px; }
+.m-chatlog p { white-space: pre-line; margin: 0 0 8px; }
+.m-cite-box { margin: 4px 0 12px; font-size: 13px; }
+.m-cite-box > summary { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.m-cite-box .m-cites { margin-top: 8px; }
+.m-cite-memo { margin-top: 4px; }
+.m-cite-memo > summary { cursor: pointer; font-size: 12px; opacity: 0.8; }

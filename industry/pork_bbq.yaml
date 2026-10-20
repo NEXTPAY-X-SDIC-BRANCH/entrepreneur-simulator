@@ -1,0 +1,74 @@
+# The ONLY 업종-specific config. A new 업종 (e.g. cafe) copies this file and changes the codes;
+# the pipelines stay unchanged. Run: python -m pipelines.run_all --industry industry/pork_bbq.yaml
+
+industry: pork_bbq
+label_ko: 돼지고기 구이집
+
+# 상권 (TRDAR_CD). Verified 2026-09-30 against the 영역-상권 shapefile (OA-15560) and TbgisTrdarRelm:
+# all four exist, all in 종로구 (SIGNGU_CD 11110).
+trdar:
+  primary: ["3120012"]                        # 대학로(혜화역), 발달상권, 혜화동
+  fringe: ["3110021", "3110024", "3110027"]   # 성균관대학교, 혜회동주민센터 (sic, in the source), 혜화역 1번 (이화동)
+
+# 서울시 상권분석서비스 (data.seoul.go.kr OpenAPI)
+seoul:
+  service_codes: ["CS100001"]   # 한식음식점. No finer 고기 code exists (checked all 62 codes).
+  # The API serves 20211..20262 as of 2026-09-30 (20204 returns INFO-200 "no data").
+  quarters: {start: "20211", end: "20262"}
+
+# 소상공인시장진흥공단 상가(상권)정보 (data.go.kr 15083033, file download, no key)
+sbiz:
+  dataset_id: "15083033"
+  sido_token: 서울               # picks the 시도 CSV inside the national zip
+  primary_codes: ["I20107"]      # 돼지고기 구이/찜
+  comparison_codes: ["I20108", "I20109"]   # 소고기 구이/찜, 곱창 전골/구이
+  context_prefix: "I201"         # all 한식 (for cross-checking against the Seoul 점포 count)
+
+# 서울시 일반음식점 인허가 (OA-16094). LOCALDATA_072404 is Seoul-wide (538k rows, no 구 filter);
+# the per-구 service LOCALDATA_072404_JN serves 종로구 only (~20.5k rows).
+license:
+  services: ["LOCALDATA_072404_JN"]
+  opnsfteam_codes: ["3000000"]   # 종로구; rows from any other 구 are dropped with a warning
+  hansik_uptae: ["한식"]
+  source_crs: "EPSG:5174"
+  # Name keywords that mark a license as pork-grill-like when it has no sbiz I20107 match.
+  # Heuristic, not a classification: 갈비/고기/숯불 also catch 소고기 places.
+  name_keywords: ["삼겹", "돼지", "목살", "항정", "고깃", "고기", "숯불", "연탄", "갈비"]
+
+match:
+  max_dist_m: 20
+  name_min: 60        # rapidfuzz partial/token score, 0-100
+
+survival:
+  cohort_start: "2015-01-01"   # licenses approved on/after this date enter the KM tables
+  horizon_months: 24           # closed_within_24m flag
+  km_times_months: [6, 12, 24, 36, 48, 60, 84, 120]
+
+# Survival label sample (decision 2.4 default, 2026-10-01). narrow = the study 상권 above only
+# (district_profile.survival); wide = also survival_wide below (district_profile.survival_wide), because
+# 대학로 alone has too few pork-grill closures for a stable Kaplan-Meier curve.
+survival_scope: wide
+survival_wide:
+  areas:
+    - label: 종로구 전체
+      kind: sigungu
+      sigungu_name: 종로구
+      opnsfteam_code: "3000000"
+      license_services: ["LOCALDATA_072404_JN"]
+    - label: 신촌역 3120094
+      kind: trdar
+      trdar_code: "3120094"            # 신촌역(신촌역, 신촌로터리), 발달상권; polygon spans 서대문구 and 마포구
+      license_services: ["LOCALDATA_072404_SM", "LOCALDATA_072404_MP"]   # SM = 서대문구, MP = 마포구
+
+# Game and simulation switches from Keonhee's decision page (2026-10-01). Builders run on the recommended
+# option; a different tick is a one-line change here, then `python -m sim.precompute` (and `--season`).
+game:
+  l_mechanism_badge: true    # 2.1  show "인터뷰로 확인 필요" on choices/events resting on a confidence-L mechanism
+  peak_reshape: true         # 2.2  reshape arrivals inside 17-21 to an assumed 19-21 삼겹살 peak (band total unchanged)
+  rain_mode: average_october # 2.3  SH10 = average rainy October nights (기상청 평년); SH10b keeps the every-night worst case
+  season_months: 6           # 3.2  months per season
+  carry_state: true          # 3.2  the owner's price / staff / menu choices persist into the next month
+  # Ruling 2026-10-01: a choice whose effect rests on a confidence-L assumption with no modelled downside wins by
+  # construction, so it stays out of the game until sourced (staff cut, shorter shifts, upselling; SH07 is the
+  # staff-cut event). sim/tests guard: no active action may be the best under every event.
+  exclude: [cut_staff, cut_staff_hours, change_mix, SH07]

@@ -1,0 +1,894 @@
+_meta:
+  generated_by: research/build_workbook.py
+  store: composite 미도입 independent 삼겹살집, 대학로(혜화역) 3120012
+  illustrative: true
+  note: Seed guesstimates, not facts, until reviewed_by is filled in research/guesstimate.xlsx.
+drv_dwell_time:
+  base: 105
+  low: 75
+  high: 140
+  unit: 분
+  method: guesstimate
+  confidence: L
+  source_id: S71;S72;S73
+  reviewed_by: null
+drv_balk_rate:
+  base: 0.01
+  low: 0.003
+  high: 0.05
+  unit: 비율
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+drv_open_hours:
+  base: 7
+  low: 6
+  high: 9
+  unit: 시간/일
+  method: guesstimate
+  confidence: M
+  source_id: S12;S35
+  reviewed_by: null
+drv_rent:
+  base: 4700000
+  low: 3000000
+  high: 5800000
+  unit: ₩/월
+  method: public
+  confidence: M
+  source_id: S52;S53;S55
+  reviewed_by: null
+prd_meat_origin:
+  base: 국내산
+  low: 수입
+  high: 국내산
+  unit: 범주
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+prd_cut_style:
+  base: 일반 생삼겹
+  low: 냉삼/대패
+  high: 숙성/통삼
+  unit: 범주
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+prd_chobeol:
+  base: N
+  low: N
+  high: Y
+  unit: Y/N
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+prd_signature_side:
+  base: 없음
+  low: 없음
+  high: 미나리
+  unit: 범주
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+prd_food_quality:
+  base: null
+  low: null
+  high: null
+  unit: 점수(1-5)
+  method: interview_later
+  confidence: L
+  source_id: S03
+  reviewed_by: null
+prd_meat_price:
+  base: 19000
+  low: 17000
+  high: 21321
+  unit: ₩/인분
+  method: guesstimate
+  confidence: M
+  source_id: S23;S25
+  reviewed_by: null
+prd_portion_grams:
+  base: 200
+  low: 150
+  high: 200
+  unit: g
+  method: guesstimate
+  confidence: M
+  source_id: S23
+  reviewed_by: null
+prd_portions_per_cover:
+  base: 1.0
+  low: 0.8
+  high: 1.5
+  unit: 인분/인
+  method: guesstimate
+  confidence: L
+  source_id: S28;S74
+  reviewed_by: null
+prd_alcohol_price:
+  base: 5000
+  low: 4000
+  high: 6000
+  unit: ₩/병
+  method: guesstimate
+  confidence: M
+  source_id: S25;S26
+  reviewed_by: null
+prd_alcohol_per_cover:
+  base: 0.9
+  low: 0.6
+  high: 1.2
+  unit: 병/인
+  method: guesstimate
+  confidence: L
+  source_id: S62
+  reviewed_by: null
+prd_side_spend_per_cover:
+  base: 3500
+  low: 2000
+  high: 5000
+  unit: ₩/인
+  method: guesstimate
+  confidence: L
+  source_id: S30
+  reviewed_by: null
+prd_menu_count:
+  base: 8
+  low: 6
+  high: 12
+  unit: 개
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+svc_staff_grilling:
+  base: N
+  low: N
+  high: Y
+  unit: Y/N
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+svc_banchan_count:
+  base: 5
+  low: 3
+  high: 8
+  unit: 가지
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+cst_banchan_cost_per_cover:
+  base: 1200
+  low: 800
+  high: 1800
+  unit: ₩/인
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+svc_qr_kiosk:
+  base: N
+  low: N
+  high: N
+  unit: Y/N
+  method: guesstimate
+  confidence: H
+  source_id: D0930
+  reviewed_by: null
+svc_corkage:
+  base: N
+  low: N
+  high: Y
+  unit: Y/N
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+svc_cleanliness:
+  base: null
+  low: null
+  high: null
+  unit: 점수(1-5)
+  method: interview_later
+  confidence: L
+  source_id: null
+  reviewed_by: null
+mkt_review_count:
+  base: null
+  low: null
+  high: null
+  unit: 건
+  method: interview_later
+  confidence: L
+  source_id: S03;S06
+  reviewed_by: null
+mkt_review_rating:
+  base: null
+  low: null
+  high: null
+  unit: 점(1-5)
+  method: interview_later
+  confidence: L
+  source_id: S03
+  reviewed_by: null
+mkt_review_event:
+  base: N
+  low: N
+  high: Y
+  unit: Y/N
+  method: interview_later
+  confidence: L
+  source_id: null
+  reviewed_by: null
+mkt_sponsorship:
+  base: N
+  low: N
+  high: Y
+  unit: Y/N
+  method: interview_later
+  confidence: L
+  source_id: null
+  reviewed_by: null
+mkt_celebrity_visits:
+  base: 0
+  low: 0
+  high: 0.01
+  unit: 비율
+  method: interview_later
+  confidence: L
+  source_id: null
+  reviewed_by: null
+mkt_waitlist_app:
+  base: N
+  low: N
+  high: N
+  unit: Y/N
+  method: guesstimate
+  confidence: H
+  source_id: D0930
+  reviewed_by: null
+mkt_delivery:
+  base: N
+  low: N
+  high: N
+  unit: Y/N
+  method: guesstimate
+  confidence: H
+  source_id: D0930
+  reviewed_by: null
+mkt_price_elasticity:
+  base: -0.81
+  low: -0.3
+  high: -2.5
+  unit: 탄력성
+  method: guesstimate
+  confidence: L
+  source_id: S58;S59
+  reviewed_by: null
+mkt_party_size:
+  base: 2.8
+  low: 2.2
+  high: 3.5
+  unit: 명/팀
+  method: guesstimate
+  confidence: L
+  source_id: S72;S12
+  reviewed_by: null
+mkt_patience:
+  base: 25
+  low: 10
+  high: 35
+  unit: 분
+  method: guesstimate
+  confidence: L
+  source_id: S60;S61
+  reviewed_by: null
+seg_twenties_party_factor:
+  base: 0.9
+  low: 0.8
+  high: 1.0
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_twenties_dwell_factor:
+  base: 1.05
+  low: 0.9
+  high: 1.2
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_twenties_alcohol_factor:
+  base: 1.1
+  low: 0.9
+  high: 1.3
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_twenties_patience_factor:
+  base: 1.3
+  low: 1.0
+  high: 1.6
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_twenties_early_mult:
+  base: 0.6
+  low: 0.4
+  high: 0.9
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_twenties_late_mult:
+  base: 1.6
+  low: 1.2
+  high: 2.0
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_office_party_factor:
+  base: 1.25
+  low: 1.1
+  high: 1.4
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_office_dwell_factor:
+  base: 1.15
+  low: 1.0
+  high: 1.35
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_office_alcohol_factor:
+  base: 1.3
+  low: 1.1
+  high: 1.6
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_office_patience_factor:
+  base: 0.7
+  low: 0.5
+  high: 0.9
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_office_early_mult:
+  base: 0.9
+  low: 0.7
+  high: 1.1
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_office_late_mult:
+  base: 1.0
+  low: 0.8
+  high: 1.2
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_family_party_factor:
+  base: 1.05
+  low: 0.95
+  high: 1.2
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_family_dwell_factor:
+  base: 0.8
+  low: 0.7
+  high: 0.95
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_family_alcohol_factor:
+  base: 0.4
+  low: 0.2
+  high: 0.7
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_family_patience_factor:
+  base: 0.9
+  low: 0.7
+  high: 1.1
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_family_early_mult:
+  base: 1.8
+  low: 1.3
+  high: 2.3
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+seg_family_late_mult:
+  base: 0.3
+  low: 0.1
+  high: 0.5
+  unit: 배수
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+reg_age_mix:
+  base: 0.28
+  low: null
+  high: null
+  unit: 비율
+  method: public
+  confidence: H
+  source_id: S12
+  reviewed_by: null
+reg_evening_share:
+  base: 0.63
+  low: 0.62
+  high: 0.64
+  unit: 비율
+  method: public
+  confidence: H
+  source_id: S12
+  reviewed_by: null
+reg_foot_traffic:
+  base: null
+  low: null
+  high: null
+  unit: 명/분기
+  method: public
+  confidence: L
+  source_id: S14
+  reviewed_by: null
+reg_trade_area_facilities:
+  base: null
+  low: null
+  high: null
+  unit: 개
+  method: public
+  confidence: L
+  source_id: S17
+  reviewed_by: null
+reg_worker_pop:
+  base: null
+  low: null
+  high: null
+  unit: 명
+  method: public
+  confidence: L
+  source_id: S16
+  reviewed_by: null
+reg_competitors:
+  base: 27
+  low: null
+  high: null
+  unit: 개
+  method: public
+  confidence: H
+  source_id: S20;S18
+  reviewed_by: null
+cst_meat_cost_per_portion:
+  base: 4500
+  low: 3700
+  high: 5200
+  unit: ₩/인분
+  method: guesstimate
+  confidence: M
+  source_id: S68;S69
+  reviewed_by: null
+cst_alcohol_cost_per_bottle:
+  base: 1600
+  low: 1400
+  high: 1800
+  unit: ₩/병
+  method: guesstimate
+  confidence: M
+  source_id: S27
+  reviewed_by: null
+cst_side_cost_ratio:
+  base: 0.35
+  low: 0.3
+  high: 0.45
+  unit: 비율
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+cst_employee_wage:
+  base: 2400000
+  low: 2156880
+  high: 3000000
+  unit: ₩/월
+  method: guesstimate
+  confidence: L
+  source_id: S36
+  reviewed_by: null
+cst_owner_imputed_wage:
+  base: 3000000
+  low: 2156880
+  high: 3700000
+  unit: ₩/월
+  method: guesstimate
+  confidence: L
+  source_id: S32;S36
+  reviewed_by: null
+cst_holiday_pay_factor:
+  base: 1.33
+  low: 1.2
+  high: 1.43
+  unit: 배수
+  method: guesstimate
+  confidence: M
+  source_id: S36;S66;S67
+  reviewed_by: null
+cst_utilities:
+  base: 1700000
+  low: 1200000
+  high: 2300000
+  unit: ₩/월
+  method: guesstimate
+  confidence: L
+  source_id: S31
+  reviewed_by: null
+cst_other_opex:
+  base: 1500000
+  low: 1000000
+  high: 2200000
+  unit: ₩/월
+  method: guesstimate
+  confidence: L
+  source_id: S31
+  reviewed_by: null
+cst_card_share:
+  base: 0.88
+  low: 0.8
+  high: 0.95
+  unit: 비율
+  method: guesstimate
+  confidence: M
+  source_id: S65
+  reviewed_by: null
+cst_card_fee_rate:
+  base: 0.0095
+  low: 0.004
+  high: 0.0115
+  unit: 비율
+  method: guesstimate
+  confidence: H
+  source_id: S63;S65
+  reviewed_by: null
+sto_area_pyeong:
+  base: 25
+  low: 18
+  high: 35
+  unit: 평
+  method: guesstimate
+  confidence: L
+  source_id: S34;S21
+  reviewed_by: null
+sto_tables:
+  base: 10
+  low: 8
+  high: 14
+  unit: 개
+  method: guesstimate
+  confidence: L
+  source_id: S34
+  reviewed_by: null
+sto_seats_per_table:
+  base: 4
+  low: 4
+  high: 4
+  unit: 석/테이블
+  method: guesstimate
+  confidence: M
+  source_id: S34
+  reviewed_by: null
+sto_terrace:
+  base: 8
+  low: 0
+  high: 12
+  unit: 석
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+sto_terrace_availability:
+  base: 0.4
+  low: 0
+  high: 0.6
+  unit: 비율
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+wx_rain_nights_share:
+  base: 0
+  low: 0
+  high: 0.35
+  unit: 비율
+  method: public
+  confidence: H
+  source_id: S75
+  reviewed_by: null
+wx_rain_arrival_effect:
+  base: -0.1
+  low: -0.15
+  high: -0.05
+  unit: 비율
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+sto_occupancy:
+  base: 0.7
+  low: 0.6
+  high: 0.8
+  unit: 비율
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+sto_table_turns:
+  base: 1.25
+  low: 0.9
+  high: 2.0
+  unit: 회/일
+  method: guesstimate
+  confidence: L
+  source_id: S30
+  reviewed_by: null
+sto_open_days:
+  base: 26
+  low: 24
+  high: 30
+  unit: 일/월
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+sto_parttimers:
+  base: 2
+  low: 1
+  high: 3
+  unit: 명
+  method: guesstimate
+  confidence: L
+  source_id: S31
+  reviewed_by: null
+sto_parttime_wage:
+  base: 10320
+  low: null
+  high: null
+  unit: ₩/시간
+  method: public
+  confidence: H
+  source_id: S36
+  reviewed_by: null
+sto_parttime_shift_hours:
+  base: 5
+  low: 4
+  high: 7
+  unit: 시간/일
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+sto_employees:
+  base: 1
+  low: 0
+  high: 2
+  unit: 명
+  method: guesstimate
+  confidence: L
+  source_id: S31
+  reviewed_by: null
+sto_wifi:
+  base: Y
+  low: N
+  high: Y
+  unit: Y/N
+  method: guesstimate
+  confidence: L
+  source_id: null
+  reviewed_by: null
+sto_franchise:
+  base: 개인
+  low: 개인
+  high: 개인
+  unit: 범주
+  method: public
+  confidence: H
+  source_id: D0930;S20
+  reviewed_by: null
+drv_revenue:
+  base: 26535600.0
+  low: null
+  high: null
+  unit: ₩/월
+  method: derived
+  confidence: null
+  source_id: null
+drv_total_cost:
+  base: 25311615.616
+  low: null
+  high: null
+  unit: ₩/월
+  method: derived
+  confidence: null
+  source_id: null
+drv_operating_profit:
+  base: 1223984.384
+  low: null
+  high: null
+  unit: ₩/월
+  method: derived
+  confidence: null
+  source_id: null
+drv_covers:
+  base: 37.8
+  low: null
+  high: null
+  unit: 명/일
+  method: derived
+  confidence: null
+  source_id: null
+drv_ticket:
+  base: 27000.0
+  low: null
+  high: null
+  unit: ₩/인
+  method: derived
+  confidence: null
+  source_id: null
+drv_arrival_rate:
+  base: 13.6364
+  low: null
+  high: null
+  unit: 팀/일
+  method: derived
+  confidence: null
+  source_id: null
+drv_seats:
+  base: 43.2
+  low: null
+  high: null
+  unit: 석
+  method: derived
+  confidence: null
+  source_id: null
+drv_food_cost:
+  base: 8221122.0
+  low: null
+  high: null
+  unit: ₩/월
+  method: derived
+  confidence: null
+  source_id: null
+drv_labor_cost:
+  base: 8968656.0
+  low: null
+  high: null
+  unit: ₩/월
+  method: derived
+  confidence: null
+  source_id: null
+drv_mgmt_cost:
+  base: 3200000
+  low: null
+  high: null
+  unit: ₩/월
+  method: derived
+  confidence: null
+  source_id: null
+drv_fees:
+  base: 221837.616
+  low: null
+  high: null
+  unit: ₩/월
+  method: derived
+  confidence: null
+  source_id: null
+cst_alcohol_meat_ratio:
+  base: 0.2368
+  low: null
+  high: null
+  unit: 비율
+  method: derived
+  confidence: null
+  source_id: null
+cst_order_volume:
+  base: 196.56
+  low: null
+  high: null
+  unit: kg/월
+  method: derived
+  confidence: null
+  source_id: null
+lbl_revpash:
+  base: 3375.0
+  low: null
+  high: null
+  unit: ₩/석·시간
+  method: derived
+  confidence: null
+  source_id: null
+_pnl_base:
+  seats: 43.2
+  occ: 0.7
+  turns: 1.25
+  covers_day: 37.8
+  days: 26
+  covers_month: 982.8
+  arrivals_day: 13.6364
+  t_meat: 19000.0
+  t_alc: 4500.0
+  t_side: 3500
+  ticket: 27000.0
+  rev: 26535600.0
+  rev_meat: 18673200.0
+  rev_alc: 4422600.0
+  rev_side: 3439800.0
+  alc_meat_ratio: 0.2368
+  c_meat: 4422600.0
+  c_alc: 1415232.0
+  c_side: 1203930.0
+  c_banchan: 1179360.0
+  food: 8221122.0
+  l_pt: 3568656.0
+  l_emp: 2400000
+  l_owner: 3000000
+  labor: 8968656.0
+  rent: 4700000
+  m_util: 1700000
+  m_other: 1500000
+  mgmt: 3200000
+  fees: 221837.616
+  other: 3421837.616
+  cost: 25311615.616
+  op: 1223984.384
+  owner_take: 4223984.384
+  revpash: 3375.0
+  rel_rev: 1.0293
+  order_kg: 196.56
+  be_covers: 916.3126

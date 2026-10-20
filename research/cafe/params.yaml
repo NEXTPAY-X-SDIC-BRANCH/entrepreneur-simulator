@@ -1,0 +1,385 @@
+# Cafe 창업 시뮬레이터 parameters. Every value: {value, grade, source, note}.
+# grade: H (official / primary), M (trade press, industry report, agreeing vendors), L (one anecdote or our own
+# derivation), 가정 (no source at all: research GAP row turned into an explicit assumption; treated as L when a block
+# grade is rolled up). Research: research/2026-10-13-seoul-independent-cafe-unit-economics.md (§ refs below).
+# District demand numbers (sales, tx, peak share) are generated into districts.yaml by sim/cafe/build_districts.py.
+
+district_meta:
+  "3120012":
+    name_ko: 대학로
+    context_ko: 공연 관객 중심 오후 저녁 상권, 14~17시 피크, 커피 3년 생존율 64.6%
+    stores: {value: 122, grade: H, source: "VwsmTrdarStorQq 20262 (83 개인 + 39 프랜차이즈), research §0"}
+    rent_per_pyeong_krw: {value: 198348, grade: H, source: "R-ONE 소규모상가 1층 환산임대료 2026Q2 혜화동 60.0천원/㎡ x 3.3058, research §4"}
+    deposit_per_pyeong_krw: {value: 2660000, grade: M, source: "배라 rent model 혜화역 1층 66㎡ 보증금 중앙값 5,320만 ÷ 20평, research §3.3"}
+    key_money_krw: {value: 45200000, grade: M, source: "배라 rent model 혜화역 권리금 prior 중앙값, research §3.3"}
+    opens_per_year: {value: 11, grade: H, source: "VwsmTrdarStorQq 25Q3~26Q2 개업 11곳 (평균 점포의 8.8%), research §5"}
+  "3120094":
+    name_ko: 신촌
+    context_ko: 학생 상권, 늦은 시간까지 수요, 유동인구 많지만 점포당 매출 낮음, 공실률 19.5%
+    stores: {value: 144, grade: H, source: "VwsmTrdarStorQq 20262 (110 개인 + 34 프랜차이즈), research §0"}
+    rent_per_pyeong_krw: {value: 134877, grade: H, source: "R-ONE 소규모상가 1층 환산임대료 2026Q2 신촌/이대 40.8천원/㎡ x 3.3058, research §4"}
+    deposit_per_pyeong_krw: {value: 1810000, grade: 가정, source: "GAP (research §7-6)", note: "대학로 평당 보증금 x 임대료 비율(135/198)로 환산한 가정"}
+    key_money_krw: {value: 39900000, grade: M, source: "한국부동산원 상업용부동산 임대동향 권리금 조사 2025, 서울 숙박·음식점업 중앙값 3,990만원 (R-ONE). 교차 확인: 농식품부·농경연 「2025 외식업체 경영실태 조사 통계보고서」 (2025.8~10 방문 면접, 2024년 실적, 커피 전문점 n=261) 표22 사업장 임차권리금, 커피 전문점 평균 3,828.6만원 (권리금을 낸 102곳)", note: "두 공식 자료가 4% 안에서 맞음. 업종은 숙박·음식점 전체(R-ONE)이거나 지역이 전국(농경연)이라 M, 입지별 값 없음"}
+    opens_per_year: {value: 15, grade: H, source: "VwsmTrdarStorQq 25Q3~26Q2 개업 15곳 (평균 점포의 10.6%), research §5"}
+  "3110131":
+    name_ko: 성수동카페거리
+    context_ko: 카페 밀집 골목 상권, 11~14시 점심 피크, 점포당 매출은 성수 일대에서 가장 낮음
+    stores: {value: 51, grade: H, source: "VwsmTrdarStorQq 20262 (43 개인 + 8 프랜차이즈), research §1.2"}
+    rent_per_pyeong_krw: {value: 214877, grade: H, source: "R-ONE 소규모상가 1층 환산임대료 2026Q2 뚝섬 65.0천원/㎡ x 3.3058, research §4"}
+    deposit_per_pyeong_krw: {value: 2890000, grade: 가정, source: "GAP (research §7-6)", note: "대학로 평당 보증금 x 임대료 비율(215/198)로 환산한 가정"}
+    key_money_krw: {value: 39900000, grade: M, source: "한국부동산원 상업용부동산 임대동향 권리금 조사 2025, 서울 숙박·음식점업 중앙값 3,990만원 (R-ONE). 교차 확인: 농식품부·농경연 「2025 외식업체 경영실태 조사 통계보고서」 (2025.8~10 방문 면접, 2024년 실적, 커피 전문점 n=261) 표22 사업장 임차권리금, 커피 전문점 평균 3,828.6만원 (권리금을 낸 102곳)", note: "두 공식 자료가 4% 안에서 맞음. 업종은 숙박·음식점 전체(R-ONE)이거나 지역이 전국(농경연)이라 M, 입지별 값 없음"}
+    opens_per_year: {value: 7, grade: H, source: "VwsmTrdarStorQq 25Q3~26Q2 개업 7곳 (평균 점포의 14.1%), research §5"}
+
+demand:
+  cups_per_tx: {value: 1.6, grade: M, source: "서울 카페 결제 1건 금액 7,987원 (서울시 상권분석서비스 2025, H) × 음료 몫 (1 − 18.5%) ÷ 농식품부·농경연 「2025 외식업체 경영실태 조사 통계보고서」 (2025.8~10 방문 면접, 2024년 실적, 커피 전문점 n=261) 표85 커피 전문점 대표메뉴 '커피' 평균 4,118원 (n=530) = 1.58잔", note: "결제 1건을 커피 한 잔 값으로 나눈 대리 계산. 커피 전문점 평균 객단가 5,703.6원 (표67, 1인당)으로 나누면 결제 1건 1.4명이라 1.4~1.6잔. 전국 가격으로 서울 결제를 나눠서 서울에서는 조금 높게 나올 수 있음"}
+  peak_surge: {value: 1.3, grade: 가정, source: "none", note: "피크 시간 안에서도 15~30분 몰림, 시간 평균 대비 배수"}
+  dine_in_share: {value: 0.494, grade: M, source: "오픈서베이 카페 트렌드 2023 p.11 매장 49.4% / 테이크아웃 50.6% (지출 기준), research §1.5"}
+  dwell_h: {value: 1.1, grade: M, source: "프랜차이즈 카페 이용자 500명 조사 (식품외식경제 2012-06-11, thinkfood.co.kr 48662): 1회 이용시간 30분~1시간 44.6%, 1~2시간 35.8%; 한국소비문화학회 2013 학술대회 (n=1,030): 사회적·개인적 목적 100여 분, 구매 목적 34분", note: "구간 가운데값으로 (0.75 × 44.6 + 1.5 × 35.8) ÷ 80.4 = 1.08시간. 오래된 자기응답 조사라 M, 실측 체류시간은 없음"}
+  persons_per_cup: {value: 1.0, grade: 가정, source: "none", note: "매장 이용 1인당 음료 1잔"}
+
+capacity:
+  machine_cph_by_groups:   # drinks per hour the machine(s) can pull; 4 groups = two 2-group machines
+    value: {1: 30, 2: 60, 3: 95, 4: 120}
+    grade: L
+    source: "research §2.1 sim suggestion (1G 30, 2G 60, 3G 95; vendors and forum)"
+  baristas_by_groups: {value: {1: 1, 2: 2, 3: 2, 4: 3}, grade: 가정, source: "none", note: "그룹 수별 피크 바리스타 수"}
+  barista_cph: {value: 45, grade: M, source: "Scott Rao 매장 2명이 라테 시간당 100잔 (Decent Espresso 블로그, 바리스타 1명 10분 8잔 = 48잔); World Barista Championship 15분에 12잔 = 48잔; Starbucks 음료 한 잔 30초~1분 (Seattle Met 2010)", note: "세 출처가 시간당 45~50잔 근처에서 맞음. 모두 해외 자료라 M"}
+  kiosk_order_s: {value: 48.9, grade: M, source: "Torres 2019 UNT thesis, kiosk 평균 주문시간, research §2.2"}
+  cashier_order_s: {value: 58.7, grade: M, source: "Torres 2019 UNT thesis, cashier 평균 주문시간, research §2.2"}
+  floor_staff_seat_threshold: {value: 40, grade: 가정, source: "none", note: "홀 직원 한 명이 치울 수 있는 좌석 수 (홀 자리 = 좌석 ÷ 이 값, 올림)"}
+  staff_peak_range: {value: [1, 8], grade: 가정, source: "none", note: "피크 인원 입력 범위, 사장님 포함"}
+  barista_on_pos_order_factor: {value: 0.5, grade: 가정, source: "none", note: "계산 담당이 없어 바리스타가 주문을 받을 때 POS 처리 속도 배수"}
+  barista_on_pos_drink_share: {value: 0.6, grade: 가정, source: "none", note: "그 바리스타가 음료에 쓰는 시간 비율"}
+  dirty_table_block_share: {value: 0.15, grade: 가정, source: "none", note: "치우지 않은 테이블 때문에 못 쓰는 좌석 회전 비율 (홀 인원이 맡지 못한 좌석 몫만큼)"}
+
+layout:   # geometry rules; all metres
+  aspect: {value: 1.6, grade: 가정, source: "none", note: "가로 ÷ 세로, 출입문은 앞쪽 긴 벽"}
+  wall_margin: {value: 0.05, grade: 가정, source: "none"}
+  door_w: {value: 0.9, grade: 가정, source: "none"}
+  entry_w: {value: 1.5, grade: 가정, source: "none", note: "출입문에서 카운터까지 비워 두는 통로 폭"}
+  table_w: {value: 0.7, grade: 가정, source: "none"}
+  chair_zone: {value: 0.45, grade: 가정, source: "none", note: "테이블 가장자리에서 의자 뒤까지, 줄 폭 = 0.45 + 0.7 + 0.45"}
+  row_gap: {value: 0.6, grade: 가정, source: "none", note: "테이블 줄 사이 의자 등과 등 간격, 테이블 끝끼리는 1.5m라 AJD 가이드 90~120cm(research §2.3) 이상"}
+  table_gap: {value: 0.5, grade: 가정, source: "none", note: "같은 줄 안 테이블 사이"}
+  wall_table_gap: {value: 0.3, grade: 가정, source: "none", note: "벽붙이 2인 테이블 사이 의자 등과 등 간격"}
+  aisle: {value: 0.9, grade: L, source: "AJD 인테리어 가이드 테이블 간격 90~120cm, research §2.3", note: "주 통로 (창가 바 뒤, 앞벽에서 시작하는 세로 줄 앞)"}
+  max_chairs_per_table: {value: 4, grade: 가정, source: "none"}
+  bar_pitch: {value: 0.6, grade: 가정, source: "none", note: "바 좌석 간격"}
+  bar_counter_d: {value: 0.45, grade: 가정, source: "none"}
+  bar_band_d: {value: 1.05, grade: 가정, source: "none", note: "창가 바 테이블 + 스툴 깊이"}
+  kiosk_w: {value: 0.7, grade: 가정, source: "none"}
+  counter_d: {value: 2.2, grade: 가정, source: "none", note: "뒤쪽 설비 0.65 + 작업 통로 0.9 + 앞 카운터 0.65"}
+  counter_line_d: {value: 0.65, grade: 가정, source: "none"}
+  counter_side_access: {value: 0.6, grade: 가정, source: "none", note: "카운터 안쪽 출입 공간"}
+  queue_d: {value: 1.2, grade: 가정, source: "none", note: "주문 대기 줄과 픽업 공간"}
+  item_w:   # width along the counter line
+    value: {espresso_1: 0.55, espresso_2: 0.8, espresso_3: 1.05, grinder: 0.3, showcase: 1.0, pos: 0.5, pickup: 0.5,
+            oven: 0.7, fridge: 0.7, ice_maker: 0.55, sink: 0.6}
+    grade: 가정
+    source: "none"
+  staff_floor_gap: {value: 1.0, grade: 가정, source: "none", note: "홀 직원이 카운터 앞 대기 줄 구역에 서는 간격, 직원 위치 표시용"}
+  ghost_cell: {value: 1.8, grade: 가정, source: "none", note: "공간 부족 항목을 방 밖에 늘어놓는 칸 크기"}
+
+capex:   # unit prices KRW; equipment = 다나와 retail listings 2026-10-13 (research §3.1, grade M)
+  espresso_1g: {value: 3500000, grade: M, source: "다나와 1그룹 중간대 ₩3.1~4.3M, research §3.1"}
+  espresso_2g: {value: 6000000, grade: M, source: "다나와 2그룹 중간대 ₩5.1~7.9M, research §3.1"}
+  espresso_3g: {value: 11000000, grade: M, source: "다나와 3그룹 중간대 ₩9.1~13.2M, research §3.1"}
+  grinder: {value: 2500000, grade: M, source: "다나와 Mahlkönig E65S ₩2.48~2.65M, research §3.1"}
+  showcase: {value: 1400000, grade: M, source: "다나와 케이크 쇼케이스 900~1200mm ₩1.2~1.74M, research §3.1"}
+  oven: {value: 2000000, grade: M, source: "다나와 Unox 3~4단 ₩1.82~2.28M, research §3.1"}
+  kiosk: {value: 1700000, grade: M, source: "다나와 카드 전용 21인치 ₩1.6~1.76M, research §3.1", note: "스마트상점 보조금(50%) 미반영"}
+  pos: {value: 390000, grade: M, source: "다나와 검색 (2026-10-14 조회) '포스기': 오케이포스 ZED-2 48만, 이지체크 TS-194N 29.2만, 이지체크 EK-192 25만, 이지체크 EK192 63.8만", note: "POS 본체 4개 목록의 중앙값 38.6만원. VAN 계약 시 무상인 경우가 많아 높게 잡힌 값일 수 있음. 이전 값 30만원 (가정)"}
+  ice_maker: {value: 1200000, grade: M, source: "다나와 50~110kg ₩0.86~1.5M, research §3.1"}
+  fridge: {value: 1150000, grade: M, source: "다나와 검색 (2026-10-14 조회) '업소용 냉장고 25박스' 냉장전용 6개: 키스템 KIS-PD25R 75만, 그랜드우성 CWSM-630R 80.1만, 스타리온 SR-E25BAR 87.5만, 라셀르 LS-515R 143만, 스타리온 SRS-B25ESI 159만, 삼성 CRF-0620 169만", note: "중앙값 115만원. 카운터 줄에 0.7m 폭으로 놓이는 25박스 기준 (45박스 중앙값은 약 174만원, 테이블냉장고 14개 중앙값은 약 89만원). 이전 값 150만원 (가정)"}
+  sink: {value: 190000, grade: M, source: "다나와 검색 (2026-10-14 조회) '업소용 싱크대 2조' 상위 12개 목록: 8.4만~27.4만원", note: "12개 중앙값 18.8만원. 배관 설치비는 빠짐. 이전 값 40만원 (가정)"}
+  table: {value: 60000, grade: M, source: "다나와 검색 (2026-10-14 조회) '카페 테이블 2인' 2인 테이블 8개: 2.99만~16.9만원 (위드퍼니처 700×600 4.8만, 더조아 마블 6.49만 등); 4인 1200×700 6.9만~7.8만원", note: "2인 중앙값 5.6만원, 4인 약 7만원이라 둘을 합쳐 6만원. 가정용과 겸하는 상품이 많아 업소용 제작 테이블보다 쌈. 이전 값 15만원 (가정)"}
+  chair: {value: 50000, grade: M, source: "다나와 검색 (2026-10-14 조회) '업소용 의자', '업소용 카페의자': 3.58만, 4.08만(체어센스 기원), 4.19만(체어센스 비앙카), 5.15만(베노띠), 8.8만, 9.77만(인터데코 HW136)", note: "중앙값 약 4.7만원을 5만원으로 둠. 광고 목록이 섞여 있음. 이전 값 6만원 (가정)"}
+  bar_seat: {value: 50000, grade: M, source: "다나와 검색 (2026-10-14 조회) '바스툴' 바 의자 10개: 1.78만(이케아 STIG)~19.8만(이케아 JANINGE)", note: "중앙값 4.95만원. 가정용 등급이 많음. 이전 값 8만원 (가정)"}
+  bar_counter_per_m: {value: 300000, grade: 가정, source: "none"}
+  interior_per_pyeong: {value: 2090000, grade: M, source: "공정위 가맹사업 정보공개서 (franchise.ftc.go.kr) 커피 16개 브랜드의 3.3㎡당 인테리어 비용 중앙값 209만원 (2026-10-14 조회)", note: "브랜드별 3.3㎡당 만원: 감성커피 143.8, 메가엠지씨 165, 빽다방 167.2, 더벤티 176, 투썸 192.2, 엔제리너스 198, 할리스 200, 이디야 209, 커피베이 209, 탐앤탐스 220, 요거프레소 220, 텐퍼센트 242, 파스쿠찌 247.5, 컴포즈 291.5, 매머드 295.6, 하삼동 297. 프랜차이즈 값을 개인카페에 쓴 대리 지표이고 철거·전기·설비는 빠진 경우가 많음. 교차 확인: 농경연 2025 표32 커피 전문점 인테리어 평균 4,295.2만원 ÷ 표12 평균 면적 78.9㎡(23.9평) = 180만원/평. 이전 값 250만원 (업체 블로그) 슬라이더로 바꿀 가정"}
+  electrical: {value: 2000000, grade: L, source: "research §3.2 전기 증설 ₩1.5~3M"}
+  vat_rate: {value: 0.10, grade: H, source: "부가가치세법 10%, 인테리어와 설비에 선지급 후 환급, research §3.2"}
+
+opex:
+  min_wage: {value: 10320, grade: H, source: "고용노동부 고시 제2025-47호 2026 최저임금, research §4"}
+  employer_insurance: {value: 0.108274, grade: H, source: "2026 사업주 요율: 국민연금 4.75% (nps.or.kr), 건강 3.595%와 장기요양 0.4724% (edi.nhis.or.kr), 고용 0.9% + 0.25% (고용보험법 시행령 제12조), 산재 0.8% + 출퇴근 0.06% (고용노동부고시 제2025-91호)", note: "합 10.8274%, ChangeUp params.json hourly_cost와 같은 값. 모든 유급 시간에 붙인 것은 가정 (월 60시간 미만은 국민연금·건강보험 제외, 두루누리 지원 미반영). 이전 값 0.112 (블로그 값)"}
+  weekly_holiday_factor: {value: 1.2, grade: H, source: "근로기준법 제55조, 시행령 제30조: 주 40시간 기준 48 ÷ 40", note: "주 15시간 이상 근무자 기준. 모든 유급 시간에 붙인 것은 가정 (주 15시간 미만은 주휴 없음)"}
+  open_hour: {value: 10, grade: 가정, source: "research §2.3 손익분기 계산의 12h/일 가정", note: "10시 오픈"}
+  close_hour: {value: 22, grade: 가정, source: "research §2.3 손익분기 계산의 12h/일 가정", note: "22시 마감, 영업시간 밖 수요는 영업시간 비중대로 재배분"}
+  days_per_month: {value: 28, grade: 가정, source: "research §2.3 손익분기 계산의 28일 가정", note: "주말 8일 + 주중 20일"}
+  owner_hours_per_day: {value: 9.3, grade: M, source: "농식품부·농경연 「2025 외식업체 경영실태 조사 통계보고서」 (2025.8~10 방문 면접, 2024년 실적, 커피 전문점 n=261) 표120 근로형태별 근로시간, 상용근로자(대표자 포함) 커피 전문점 하루 9.3시간, https://www.mafra.go.kr/bbs/home/798/595247/download.do", note: "사장만의 시간은 조사에 없어 대표자를 포함한 상용근로자 평균으로 대신함 (대리 지표). 같은 조사 표124 근로일수 26.3일. 가장 바쁜 시간부터 맡음. 이전 값 10시간 (가정)"}
+  owner_pay_krw: {value: 2110000, grade: M, source: "농식품부·농경연 「2025 외식업체 경영실태 조사 통계보고서」 (2025.8~10 방문 면접, 2024년 실적, 커피 전문점 n=261) 표102 대표자 인건비, 커피 전문점 평균 연 2,533.1만원, https://www.mafra.go.kr/bbs/home/798/595247/download.do", note: "2,533.1 ÷ 12 = 211만원, 사장이 스스로에게 준다고 답한 값 (전국, 프랜차이즈 포함). 같은 조사에서 영업이익 1,748.8만원은 이 인건비를 뺀 뒤의 값이라 두 번 세지 않음. 서울권(전 업종)은 4,241.2만원이라 서울 카페에는 낮게 잡힌 값일 수 있음. 이전 값 289만원은 하루 10시간 × 28일 × 최저임금 사장님 인건비 (참고) 줄에 쓰고 합계와 영업이익에는 넣지 않음"}
+  staff_utilization: {value: 0.7, grade: 가정, source: "none", note: "한 사람이 음료와 응대에 쓸 수 있는 시간 비율, 나머지는 설거지 정리 휴식"}
+  support_s_per_order: {value: 30, grade: 가정, source: "none", note: "주문 1건당 픽업 안내, 테이블 정리, 디저트 담기"}
+  electricity_anchor_20py_krw: {value: 300000, grade: L, source: "세계일보 2024-08-10 20평 카페 월 약 30만원 (폭염 달 57만원), research §4", note: "아래 kW 가정의 검산용, 계산에는 직접 쓰지 않음"}
+  electricity_krw_per_kwh: {value: 150, grade: 가정, source: "none", note: "일반용 요금 + 기본료를 kWh당으로 뭉뚱그린 값"}
+  base_kw_per_pyeong: {value: 0.1, grade: 가정, source: "none", note: "조명 냉난방, 영업시간 동안"}
+  espresso_kw_per_group: {value: 0.6, grade: 가정, source: "none", note: "보일러 유지 평균, 영업시간 동안"}
+  oven_kw: {value: 1.0, grade: 가정, source: "none", note: "하루 4시간 가동"}
+  oven_hours: {value: 4, grade: 가정, source: "none"}
+  showcase_kw: {value: 0.4, grade: 가정, source: "none", note: "24시간"}
+  fridge_kw: {value: 0.3, grade: 가정, source: "none", note: "24시간"}
+  ice_maker_kw: {value: 0.4, grade: 가정, source: "none", note: "24시간"}
+  maintenance_per_m2: {value: 1409, grade: M, source: "배라 rent workstream 서울 1층 관리비 중앙값 ₩1,409/㎡, research §4"}
+  misc_krw: {value: 400000, grade: 가정, source: "none", note: "통신, 보험, 세무, 소모품"}
+  water_gas_krw: {value: 100000, grade: 가정, source: "GAP (research §7-7)"}
+  food_cost_share: {value: 0.389, grade: M, source: "농경연 2024 비알코올 음료점 식재료비 38.9%, research §4"}
+  card_fee_bands:   # [annual sales upper bound KRW, credit-card rate]; last band open-ended
+    value: [[300000000, 0.0040], [500000000, 0.0100], [1000000000, 0.0115], [3000000000, 0.0145]]
+    grade: H
+    source: "금융위원회 우대수수료율 2025-02-14 시행 (H2 2026 유지), 신용카드 연매출 3억 이하 0.40%, 3~5억 1.00%, 5~10억 1.15%, 10~30억 1.45%, research §4"
+  card_share: {value: 1.0, grade: 가정, source: "none", note: "전 매출에 신용카드 요율 적용, 체크카드(0.15~1.15%)와 현금은 더 낮아 보수적"}
+  takeout_share: {value: 0.506, grade: M, source: "오픈서베이 카페 트렌드 2023 테이크아웃 50.6% (지출 기준), research §1.5"}
+  packaging_per_takeout_cup: {value: 100, grade: M, source: "다나와 검색 (2026-10-14 조회) 1,000개 단위 최저가: 16온스 92파이 아이스컵+돔리드 52.1원/세트, 13온스 종이컵 29.7~33.1원, 92파이 돔리드 17~23.6원, 컵홀더 14.5~15.5원, 개별포장 빨대 5~10원, 2구 캐리어 43.7~99.3원", note: "아이스 한 잔 = 컵과 뚜껑 52 + 빨대 8 + 홀더 14 + 캐리어 절반 22 = 96원, 뜨거운 한 잔 = 컵 31 + 뚜껑 20 + 홀더 15 + 캐리어 절반 22 = 88원, 컵과 뚜껑을 따로 사면 약 113원이라 100원. 로고 인쇄 컵은 더 비쌈. 이전 값 200원 (가정)"}
+  repairs_share: {value: 0.01, grade: 가정, source: "none", note: "수선유지비, 매출 대비"}
+  supplies_share: {value: 0.015, grade: 가정, source: "none", note: "냅킨 세제 등 소모품, 매출 대비"}
+  marketing_share: {value: 0.02, grade: 가정, source: "none", note: "광고 판촉, 매출 대비"}
+  depreciation_years_equipment: {value: 5, grade: M, source: "법인세법 시행규칙 별표5 기구 및 비품 기준내용연수 5년, research §3.3"}
+  depreciation_years_interior: {value: 5, grade: M, source: "research §3.3: 비품 시설장치로 보면 5년, 세무서가 건물 부속설비로 보면 더 길어짐 (다툼 있음)"}
+  depreciation_years_furniture: {value: 5, grade: M, source: "법인세법 시행규칙 별표5 기구 및 비품 기준내용연수 5년, research §3.3"}
+  industry_avg_sales_krw: {value: 190330000, grade: M, source: "농경연 외식업체 경영실태조사 2024 비알코올 음료점 점포당 연매출 ₩190.33M via 이투데이 2026-08-11, research §1.4", note: "수요 기준점 (2026-10-14 Keonhee 결정, 개인카페 비율 0.55를 대신함): 이 값 ÷ 12 x 상권 매출 지수(상권 점포당 매출 ÷ 서울 점포당 매출, districts.yaml seoul, H) = 기본 월매출, 등급 M. 전국 평균이고 프랜차이즈 포함. 벤치마크 마진이 나온 매출 규모이기도 함"}
+  industry_op_margin:
+    value: 0.098
+    grade: M
+    source: "농경연 외식업체 경영실태조사 2024 비알코올 음료점 비프랜차이즈 영업이익률 9.8% (전체 9.1%) via 이투데이 2026-08-11, research §1.4"
+    note: "사장님 인건비 포함 여부는 기사에 없음. 서울시 2024 프랜차이즈 실태조사 커피 9.5%는 사장님 인건비 제외"
+
+season:   # step 3 월별 운영 (sim/cafe/season.py). Every effect size here is 가정 unless a source is named.
+  months: {value: 6, grade: 가정, source: "none", note: "한 시즌 = 6개월 (고깃집 시즌과 맞춤, 2026-10-20 결정). 원안은 12개월"}
+  start_month: {value: 3, grade: 가정, source: "none", note: "기본 오픈 달 3월 (대학가 개강), 요청에서 바꿀 수 있음"}
+  seasonality_by_quarter:
+    value: {1: 0.92, 2: 1.02, 3: 1.07, 4: 1.00}
+    grade: H
+    source: "서울 상권 커피-음료 분기 매출 2025 Q1 6,325억 Q2 7,046 Q3 7,347 Q4 6,864 ÷ 2025 평균 6,896억, research §1.3"
+    note: "분기 지수를 그 분기의 세 달에 똑같이 적용, 분기 안의 달별 차이는 GAP"
+  launch_share: {value: 0.7, grade: 가정, source: "none", note: "새 매장은 성숙 매장 손님의 70%에서 시작, 단골이 쌓이며 100%로 다가감"}
+  regulars_speed: {value: 0.15, grade: 가정, source: "none", note: "단골 지수가 목표값에 다가가는 한 달 비율"}
+  regulars_speed_marketing: {value: 0.15, grade: 가정, source: "none", note: "마케팅 효과가 최대일 때 더해지는 속도"}
+  regulars_target_per_satisfaction: {value: 1.0, grade: 가정, source: "none", note: "단골 목표 = 1 + 만족도 x 이 값"}
+  regulars_target_range: {value: [0.3, 1.3], grade: 가정, source: "none"}
+  regular_share: {value: 0.3, grade: 가정, source: "none", note: "성숙 매장 주문 중 단골 몫"}
+  regular_visits_per_month: {value: 6, grade: 가정, source: "none", note: "단골 한 명이 한 달에 오는 횟수, 단골 수 표시용"}
+  rating_start: {value: 4.0, grade: 가정, source: "none", note: "오픈 때 별점"}
+  rating_range: {value: [3.0, 4.9], grade: 가정, source: "none"}
+  rating_speed: {value: 0.35, grade: 가정, source: "none", note: "별점이 목표값에 다가가는 한 달 비율"}
+  rating_per_satisfaction: {value: 0.8, grade: 가정, source: "none", note: "별점 목표 = 시작 별점 + 만족도 x 이 값"}
+  rating_demand_per_star: {value: 0.15, grade: 가정, source: "none", note: "별점 1점 차이 = 손님 15% 차이"}
+  satisfaction_walkaway: {value: -3.0, grade: 가정, source: "none", note: "돌아간 손님 비율 x 이 값"}
+  satisfaction_price: {value: -1.0, grade: 가정, source: "none", note: "가격 수준이 처음보다 높은 만큼 x 이 값 (10% 인상 = -0.1)"}
+  satisfaction_staff: {value: {lean: -0.05, standard: 0.0, generous: 0.1}, grade: 가정, source: "none"}
+  satisfaction_dessert: {value: 0.05, grade: 가정, source: "none"}
+  satisfaction_breakdown: {value: -0.1, grade: 가정, source: "none"}
+  price_elasticity:
+    value: 1.5
+    grade: 가정
+    source: "GAP (개인카페 가격 탄력성 자료 없음)"
+    note: "가격 1% 인상 = 주문 1.5% 감소, 대학로 1km²당 카페 475곳처럼 대체재가 많아 1보다 크게 둠 (밀도는 research §5, H)"
+  price_change_pct_range: {value: [-20, 30], grade: 가정, source: "none", note: "한 달에 바꿀 수 있는 가격 폭 (%)"}
+  price_level_range: {value: [0.7, 1.5], grade: 가정, source: "none", note: "처음 가격 대비 누적 범위"}
+  hours:
+    value: {short: [11, 20], standard: [10, 22], long: [8, 23]}
+    grade: 가정
+    source: "none"
+    note: "영업시간 선택지 (시작, 끝), standard = opex open_hour close_hour"
+  hours_shift_share: {value: 0.5, grade: 가정, source: "none", note: "문을 닫은 시간의 손님 중 영업시간으로 옮겨 오는 비율"}
+  staff_utilization:
+    value: {lean: 0.85, standard: 0.7, generous: 0.55}
+    grade: 가정
+    source: "none"
+    note: "직원 운영 방식별 여유율, standard = opex staff_utilization"
+  staff_cover: {value: {lean: false, standard: true, generous: true}, grade: 가정, source: "none", note: "그 시간 손님을 놓치지 않을 만큼 사람을 더 넣는지, 빠듯하게는 일의 양만큼만"}
+  staff_balk_mult: {value: {lean: 1.5, standard: 1.0, generous: 0.5}, grade: 가정, source: "none", note: "줄 보고 돌아가는 비율 배수"}
+  balk_max:
+    value: 0.10
+    grade: L
+    source: "Lu, Musalem, Olivares & Schilkrut 2013 Management Science 59(8): 줄 15명 이상이면 구매 30%에서 27% (10% 감소), research §6"
+    note: "델리 매장 자료를 카페에 옮긴 값, 카페 실측은 GAP"
+  balk_mid_util: {value: 0.95, grade: 가정, source: "none", note: "피크 수요 ÷ 처리량이 이 값일 때 돌아가는 비율이 절반 (로지스틱, research §6 형태)"}
+  balk_width: {value: 0.05, grade: 가정, source: "none"}
+  marketing_max_lift: {value: 0.15, grade: 가정, source: "none", note: "마케팅으로 늘릴 수 있는 손님 최대 15%"}
+  marketing_half_krw: {value: 2000000, grade: 가정, source: "none", note: "효과 = 최대 x (1 - exp(-예산 ÷ 이 값))"}
+  marketing_max_krw: {value: 5000000, grade: 가정, source: "none", note: "한 달 추가 마케팅 예산 상한"}
+  dessert_share:
+    value: 0.185
+    grade: M
+    source: "엠브레인 구매딥데이터 2025 주요 카페 사이드 메뉴 매출 비중 18.5% via 세계일보 2026-03-22, research §1.6"
+    note: "디저트를 팔면 상권 객단가 그대로, 안 팔면 객단가에서 이 몫이 빠짐"
+  dessert_food_cost_share: {value: 0.40, grade: M, source: "농식품부·농경연 「2025 외식업체 경영실태 조사 통계보고서」 (2025.8~10 방문 면접, 2024년 실적, 커피 전문점 n=261) 제과 (n=166): 표97 식재료비 10,254.1만원 ÷ 표95 매출액 25,843.4만원 = 39.7%, https://www.mafra.go.kr/bbs/home/798/595247/download.do", note: "직접 굽는 제과점 값을 카페 디저트에 쓴 대리 지표 (완제품을 사 오면 원가율이 더 높을 수 있음). 업체 블로그 35~45%와도 맞음"}
+  dessert_waste_share: {value: 0.10, grade: 가정, source: "none", note: "디저트 매출 대비 폐기"}
+  dessert_min_spoilage_krw: {value: 300000, grade: 가정, source: "none", note: "쇼케이스를 채워 두는 최소 재고의 월 폐기"}
+  dessert_prep_hours_per_day: {value: 2, grade: 가정, source: "none", note: "디저트 준비 유급 시간"}
+  dessert_no_showcase_factor: {value: 0.5, grade: 가정, source: "none", note: "쇼케이스가 없으면 포장 디저트만, 디저트 매출 절반"}
+  loan_rate:
+    value: 0.045
+    grade: M
+    source: "한국은행 「2026년 8월 금융기관 가중평균금리」 예금은행 신규취급액 중소기업 대출 4.38% (2026-09-30 공보); 소상공인시장진흥공단 2026년 4/4분기 정책자금 금리 일반경영안정자금 연 4.72% (기준 4.12% + 0.6%P, ols.semas.or.kr)"
+    note: "연 4.5%, 원리금 균등 상환. 4.5%는 은행 중소기업 대출 4.38%와 정책자금 4.72% 사이, 개인사업자 신규 창업 대출만의 금리는 따로 없어 M"
+  loan_term_months: {value: 60, grade: 가정, source: "none", note: "5년 원리금 균등, 거치 기간 없음 (보수적)"}
+  working_capital_months:
+    value: 3
+    grade: 가정
+    source: "none"
+    note: "운전자금 기본값: 문을 열 때 통장에 월 고정비 3개월치가 있도록 모자란 만큼 빌림, extra_loan_krw로 바꿀 수 있음"
+  vat_refund_month:
+    value: 2
+    grade: L
+    source: "부가가치세법 조기환급 (사업 설비 신설 취득), research §3.2 부가세 선지급 후 환급"
+    note: "환급이 들어오는 달은 가정"
+  closure_negative_months: {value: 2, grade: 가정, source: "none", note: "현금이 두 달 연속 마이너스면 폐업"}
+  rival_nearby_share:
+    value: 0.1
+    grade: 가정
+    source: "none"
+    note: "상권 연간 개업 수 (district_meta opens_per_year, H) 중 우리 가게 바로 옆에 생기는 비율, 월 확률 = 1 - exp(-개업 x 이 값 ÷ 12)"
+  rival_demand_mult: {value: 0.92, grade: 가정, source: "none", note: "근처 경쟁 카페가 생기면 손님 8% 감소, 시즌 끝까지"}
+  rival_elasticity_add: {value: 0.3, grade: 가정, source: "none", note: "경쟁 카페가 생기면 가격에 더 민감해짐"}
+  rent_hike_p: {value: 0.03, grade: 가정, source: "none", note: "갱신 때 임대료를 올리는 달의 확률, 시즌에 한 번까지"}
+  rent_hike_pct:
+    value: 0.05
+    grade: H
+    source: "상가건물 임대차보호법 시행령 제4조 차임 증액 상한 5%"
+    note: "상한까지 올린다고 가정"
+  breakdown_p: {value: 0.03, grade: 가정, source: "none", note: "한 달에 설비가 고장 날 확률"}
+  breakdown_repair_krw: {value: 800000, grade: 가정, source: "none", note: "수리비"}
+  breakdown_down_days: {value: 2, grade: 가정, source: "none", note: "수리 동안 문을 닫는 날"}
+  viral_p: {value: 0.03, grade: 가정, source: "none", note: "SNS 게시물이 화제가 될 한 달 확률"}
+  viral_marketing_boost: {value: 2.0, grade: 가정, source: "none", note: "마케팅 효과가 최대일 때 확률 배수 (1 + 이 값 x 효과 비율)"}
+  viral_demand_mult: {value: 1.3, grade: 가정, source: "none", note: "화제가 된 달 손님 30% 증가"}
+  viral_carry_mult: {value: 1.1, grade: 가정, source: "none", note: "다음 달에 남는 효과"}
+  scenario_points:
+    grade: 가정
+    source: "none"
+    note: "달별 사건 (2026-10-20): 한 달에 하나, 그 달의 달력에 맞춘 사건에서 사장님이 대응을 고름. 시즌이 6개월이어도 시작 달을 고를 수 있어 12개월 모두 있음. 효과 크기는 모두 가정. demand_mult = 그달 손님 배수, walk_recover = 돌아가는 손님 중 붙잡는 비율, ticket_mult = 객단가 배수, cost_krw = 그달 비용(음수는 절감), satisfaction = 그달 만족도 가감"
+    value:
+      - id: cold_heat
+        month: 1
+        clock: "한 달"
+        title: "한파와 난방비"
+        prompt: "한파가 이어져 외출하는 사람이 줄고 난방비가 올랐습니다."
+        note: "한파가 이어지는 달로 가정"
+        default: hold
+        options:
+          - {id: hold, label: "그대로 둔다", hint: "추가 노력이 없다", downside: "손님이 4% 줄고 난방비 25만원이 더 든다", demand_mult: 0.96, cost_krw: 250000}
+          - {id: short, label: "단축 영업한다", hint: "난방과 인건비를 아낀다", downside: "영업시간이 줄어 손님이 7% 줄어든다", demand_mult: 0.93, cost_krw: 120000}
+          - {id: warm, label: "따뜻한 음료 이벤트를 연다", hint: "손님 감소가 1%로 줄어든다", downside: "난방비와 이벤트 비용 35만원이 든다", demand_mult: 0.99, cost_krw: 350000}
+      - id: valentine
+        month: 2
+        clock: "한 달"
+        title: "방학·졸업 철, 발렌타인"
+        prompt: "방학과 졸업으로 학생 손님이 줄었고, 발렌타인 주간이 다가옵니다."
+        note: "학생 손님이 줄어드는 달로 가정"
+        default: hold
+        options:
+          - {id: hold, label: "그대로 둔다", hint: "추가 비용이 없다", downside: "학생 손님이 줄어 손님이 6% 감소한다", demand_mult: 0.94}
+          - {id: event, label: "발렌타인 디저트 이벤트를 연다", hint: "손님 감소가 2%로 줄고 객단가가 오른다", downside: "재료와 홍보로 20만원이 든다", demand_mult: 0.98, ticket_mult: 1.01, cost_krw: 200000}
+      - id: semester
+        month: 3
+        clock: "한 달"
+        title: "개강, 공부 손님 증가"
+        prompt: "개강으로 노트북을 펴고 오래 앉는 손님이 늘었습니다."
+        note: "개강 달로 가정"
+        default: hold
+        options:
+          - {id: hold, label: "그대로 둔다", hint: "손님이 3% 늘어난다", downside: "오래 앉는 손님이 많아 객단가는 그대로다", demand_mult: 1.03}
+          - {id: study, label: "콘센트 좌석을 안내한다", hint: "공부 손님이 더 와 손님이 7% 늘어난다", downside: "한 잔으로 오래 앉아 객단가가 2% 줄고, 멀티탭에 6만원이 든다", demand_mult: 1.07, ticket_mult: 0.98, cost_krw: 60000}
+          - {id: turnover, label: "회전율을 우선한다", hint: "손님 증가는 3%지만 객단가가 오른다", downside: "오래 앉는 손님이 아쉬워한다 (만족 −0.03)", demand_mult: 1.03, ticket_mult: 1.01, satisfaction: -0.03}
+      - id: midterm
+        month: 4
+        clock: "한 달"
+        title: "중간고사, 장시간 자리 점유"
+        prompt: "중간고사 기간이라 오래 앉는 손님이 자리를 채웁니다."
+        note: "중간고사가 있는 달로 가정"
+        default: allow
+        options:
+          - {id: allow, label: "마음껏 앉게 둔다", hint: "손님이 4% 늘어난다", downside: "객단가가 3% 줄고 돌아가는 손님이 생긴다", demand_mult: 1.04, ticket_mult: 0.97}
+          - {id: limit, label: "시간 제한을 안내한다", hint: "자리가 돌아 돌아가는 손님의 10%를 붙잡는다", downside: "오래 앉던 손님이 불편해한다 (만족 −0.03)", demand_mult: 1.0, walk_recover: 0.1, satisfaction: -0.03}
+      - id: family_takeout
+        month: 5
+        clock: "한 달"
+        title: "가정의 달, 나들이 테이크아웃 폭주"
+        prompt: "가정의 달 나들이로 테이크아웃 주문이 한꺼번에 몰립니다."
+        note: "가정의 달로 가정"
+        default: hold
+        options:
+          - {id: hold, label: "그대로 받는다", hint: "손님이 4% 늘어난다", downside: "줄이 길어 돌아가는 손님이 생긴다", demand_mult: 1.04}
+          - {id: extra_hand, label: "임시 알바를 쓴다", hint: "돌아가는 손님의 35%를 붙잡는다", downside: "임시 알바비 45만원이 든다", demand_mult: 1.04, walk_recover: 0.35, cost_krw: 450000}
+          - {id: limit, label: "주문을 제한한다", hint: "돌아가는 손님의 15%를 붙잡는다", downside: "받는 주문을 줄여 손님 증가가 사라진다", demand_mult: 1.0, walk_recover: 0.15}
+      - id: jangma
+        month: 6
+        clock: "한 달"
+        title: "장마로 손님 감소"
+        prompt: "장마가 시작돼 비 오는 날 손님이 줄었습니다."
+        note: "장마철로 가정"
+        default: hold
+        options:
+          - {id: hold, label: "그대로 둔다", hint: "추가 비용이 없다", downside: "손님이 7% 줄어든다", demand_mult: 0.93}
+          - {id: coupon, label: "비 오는 날 쿠폰을 낸다", hint: "손님 감소가 3%로 줄어든다", downside: "쿠폰으로 객단가가 2% 줄고 12만원이 든다", demand_mult: 0.97, ticket_mult: 0.98, cost_krw: 120000}
+          - {id: delivery, label: "배달을 시작한다", hint: "손님 감소가 2%로 줄어든다", downside: "배달 대행과 포장재로 25만원이 들고 객단가가 3% 줄어든다", demand_mult: 0.98, ticket_mult: 0.97, cost_krw: 250000}
+      - id: ice_rush
+        month: 7
+        clock: "한 달"
+        title: "폭염, 아이스 주문 폭주"
+        prompt: "폭염으로 아이스 음료 주문이 몰려 제빙과 추출이 따라가지 못합니다."
+        note: "폭염이 이어지는 달로 가정"
+        default: limit
+        options:
+          - {id: limit, label: "주문을 제한한다", hint: "비용이 없고 돌아가는 손님의 10%를 붙잡는다", downside: "손님 증가가 2%에 그친다", demand_mult: 1.02, walk_recover: 0.1}
+          - {id: ice, label: "제빙기를 증설한다", hint: "손님이 5% 늘고 돌아가는 손님의 30%를 붙잡는다", downside: "임대와 전기료로 30만원이 든다", demand_mult: 1.05, walk_recover: 0.3, cost_krw: 300000}
+          - {id: hand, label: "임시 알바를 쓴다", hint: "손님이 5% 늘고 돌아가는 손님의 20%를 붙잡는다", downside: "임시 알바비 20만원이 든다", demand_mult: 1.05, walk_recover: 0.2, cost_krw: 200000}
+      - id: vacation
+        month: 8
+        clock: "한 달"
+        title: "휴가철, 직원 휴가"
+        prompt: "직원 한 명이 휴가를 쓰고 싶다고 합니다."
+        note: "휴가철로 가정"
+        default: refuse
+        options:
+          - {id: allow, label: "휴가를 준다", hint: "직원이 쉬고 관계가 좋아진다", downside: "일손이 모자라 손님이 3% 줄어든다", demand_mult: 0.97, satisfaction: 0.02}
+          - {id: sub, label: "대타를 불러 휴가를 준다", hint: "일손이 그대로다", downside: "대타 비용 20만원이 든다", demand_mult: 1.0, cost_krw: 200000}
+          - {id: refuse, label: "휴가를 미룬다", hint: "비용이 없다", downside: "직원이 지쳐 서비스가 거칠어진다 (만족 −0.05)", demand_mult: 1.0, satisfaction: -0.05}
+      - id: chuseok
+        month: 9
+        clock: "한 달"
+        title: "추석 연휴 영업 여부"
+        prompt: "추석 연휴가 다가옵니다. 연휴에 문을 열지 정해야 합니다."
+        note: "추석 연휴가 이 달에 있다고 가정"
+        default: open
+        options:
+          - {id: open, label: "연다", hint: "연휴 손님을 받는다", downside: "연휴라 손님이 7% 줄지만 인건비는 그대로다", demand_mult: 0.93}
+          - {id: short, label: "단축해서 연다", hint: "인건비를 아낀다", downside: "손님이 10% 줄어든다", demand_mult: 0.9, cost_krw: -100000}
+          - {id: close, label: "쉰다", hint: "인건비를 아끼고 직원이 쉰다 (만족 +0.05)", downside: "연휴 매출이 없어 손님이 14% 줄어든다", demand_mult: 0.86, cost_krw: -200000, satisfaction: 0.05}
+      - id: autumn_menu
+        month: 10
+        clock: "한 달"
+        title: "가을 시즌 신메뉴"
+        prompt: "가을 시즌 신메뉴를 낼 수 있는 시기입니다."
+        note: "가을 시즌으로 가정"
+        default: keep
+        options:
+          - {id: keep, label: "기존 메뉴를 유지한다", hint: "추가 비용이 없다", downside: "새 손님을 끌 기회를 놓친다", demand_mult: 1.0}
+          - {id: launch, label: "신메뉴를 출시한다", hint: "손님이 5% 늘고 객단가가 2% 오른다", downside: "재료와 홍보로 20만원이 든다", demand_mult: 1.05, ticket_mult: 1.02, cost_krw: 200000}
+      - id: bean_price
+        month: 11
+        clock: "한 달"
+        title: "원두 가격 인상"
+        prompt: "원두 가격이 올라 원가가 부담됩니다."
+        note: "원두 가격이 오른 달로 가정"
+        default: absorb
+        options:
+          - {id: absorb, label: "참는다", hint: "가격을 그대로 둔다", downside: "원가 상승분 35만원을 떠안는다", cost_krw: 350000}
+          - {id: raise, label: "가격을 올린다", hint: "객단가가 5% 오른다", downside: "손님이 3% 줄고 원가 상승분 35만원도 든다", demand_mult: 0.97, ticket_mult: 1.05, cost_krw: 350000}
+          - {id: switch, label: "원두를 바꾼다", hint: "원가 상승분이 15만원으로 줄어든다", downside: "맛이 달라져 단골이 아쉬워한다 (만족 −0.05)", cost_krw: 150000, satisfaction: -0.05}
+      - id: year_end
+        month: 12
+        clock: "한 달"
+        title: "연말 모임과 케이크 예약"
+        prompt: "연말이라 단체 모임 문의와 케이크 예약이 들어옵니다."
+        note: "연말 달로 가정"
+        default: general
+        options:
+          - {id: general, label: "일반 손님을 우선한다", hint: "손님이 2% 늘어난다", downside: "단체와 예약 매출을 놓친다", demand_mult: 1.02}
+          - {id: seat, label: "자리를 붙여 단체를 받는다", hint: "손님이 6% 늘고 객단가가 2% 오른다", downside: "시끄러워 일반 손님이 불편해한다 (만족 −0.03)", demand_mult: 1.06, ticket_mult: 1.02, satisfaction: -0.03}
+          - {id: cake, label: "케이크 예약을 받는다", hint: "손님이 4% 늘고 객단가가 5% 오른다", downside: "재료와 폐기로 15만원이 든다", demand_mult: 1.04, ticket_mult: 1.05, cost_krw: 150000}
+
+defaults:
+  own_capital_krw: 80000000

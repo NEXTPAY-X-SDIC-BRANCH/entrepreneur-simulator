@@ -1,0 +1,236 @@
+{
+ "_meta": {
+  "generated": "2026-10-15",
+  "source": "축산물품질평가원 축산물경락가격정보 (제주 돼지도체 등급별)",
+  "method": "pipelines/fetch_jeju_pork.py",
+  "unit": "원/kg, 지육, 두수 가중평균",
+  "caveat": "제주 한 곳의 지육 경락가. 서울 삼겹 도매가와 단계가 다르다"
+ },
+ "series": [
+  {
+   "month": "2023-01",
+   "won_per_kg": 6386,
+   "heads": 66194
+  },
+  {
+   "month": "2023-02",
+   "won_per_kg": 5639,
+   "heads": 59933
+  },
+  {
+   "month": "2023-03",
+   "won_per_kg": 6172,
+   "heads": 60455
+  },
+  {
+   "month": "2023-04",
+   "won_per_kg": 6037,
+   "heads": 52733
+  },
+  {
+   "month": "2023-05",
+   "won_per_kg": 5953,
+   "heads": 63291
+  },
+  {
+   "month": "2023-06",
+   "won_per_kg": 6355,
+   "heads": 56797
+  },
+  {
+   "month": "2023-07",
+   "won_per_kg": 6816,
+   "heads": 52805
+  },
+  {
+   "month": "2023-08",
+   "won_per_kg": 6912,
+   "heads": 60094
+  },
+  {
+   "month": "2023-09",
+   "won_per_kg": 7528,
+   "heads": 60969
+  },
+  {
+   "month": "2023-10",
+   "won_per_kg": 6522,
+   "heads": 65485
+  },
+  {
+   "month": "2023-11",
+   "won_per_kg": 5869,
+   "heads": 66227
+  },
+  {
+   "month": "2023-12",
+   "won_per_kg": 5485,
+   "heads": 65300
+  },
+  {
+   "month": "2024-01",
+   "won_per_kg": 5760,
+   "heads": 75830
+  },
+  {
+   "month": "2024-02",
+   "won_per_kg": 4783,
+   "heads": 71155
+  },
+  {
+   "month": "2024-03",
+   "won_per_kg": 5132,
+   "heads": 65239
+  },
+  {
+   "month": "2024-04",
+   "won_per_kg": 5645,
+   "heads": 72154
+  },
+  {
+   "month": "2024-05",
+   "won_per_kg": 5388,
+   "heads": 68715
+  },
+  {
+   "month": "2024-06",
+   "won_per_kg": 6030,
+   "heads": 61622
+  },
+  {
+   "month": "2024-07",
+   "won_per_kg": 6053,
+   "heads": 63849
+  },
+  {
+   "month": "2024-08",
+   "won_per_kg": 7226,
+   "heads": 59685
+  },
+  {
+   "month": "2024-09",
+   "won_per_kg": 8462,
+   "heads": 60286
+  },
+  {
+   "month": "2024-10",
+   "won_per_kg": 6464,
+   "heads": 62528
+  },
+  {
+   "month": "2024-11",
+   "won_per_kg": 6349,
+   "heads": 60412
+  },
+  {
+   "month": "2024-12",
+   "won_per_kg": 5968,
+   "heads": 71615
+  },
+  {
+   "month": "2025-01",
+   "won_per_kg": 5921,
+   "heads": 78316
+  },
+  {
+   "month": "2025-02",
+   "won_per_kg": 5484,
+   "heads": 66503
+  },
+  {
+   "month": "2025-03",
+   "won_per_kg": 5392,
+   "heads": 64083
+  },
+  {
+   "month": "2025-04",
+   "won_per_kg": 6007,
+   "heads": 66900
+  },
+  {
+   "month": "2025-05",
+   "won_per_kg": 6091,
+   "heads": 60872
+  },
+  {
+   "month": "2025-06",
+   "won_per_kg": 7047,
+   "heads": 56492
+  },
+  {
+   "month": "2025-07",
+   "won_per_kg": 7463,
+   "heads": 53503
+  },
+  {
+   "month": "2025-08",
+   "won_per_kg": 7791,
+   "heads": 53282
+  },
+  {
+   "month": "2025-09",
+   "won_per_kg": 8707,
+   "heads": 70449
+  },
+  {
+   "month": "2025-10",
+   "won_per_kg": 7553,
+   "heads": 58117
+  },
+  {
+   "month": "2025-11",
+   "won_per_kg": 6590,
+   "heads": 59404
+  },
+  {
+   "month": "2025-12",
+   "won_per_kg": 6555,
+   "heads": 72226
+  },
+  {
+   "month": "2026-01",
+   "won_per_kg": 6769,
+   "heads": 60787
+  },
+  {
+   "month": "2026-02",
+   "won_per_kg": 6670,
+   "heads": 65959
+  },
+  {
+   "month": "2026-03",
+   "won_per_kg": 6279,
+   "heads": 66875
+  },
+  {
+   "month": "2026-04",
+   "won_per_kg": 6730,
+   "heads": 66404
+  },
+  {
+   "month": "2026-05",
+   "won_per_kg": 6613,
+   "heads": 57963
+  },
+  {
+   "month": "2026-06",
+   "won_per_kg": 7456,
+   "heads": 61594
+  },
+  {
+   "month": "2026-07",
+   "won_per_kg": 7241,
+   "heads": 59679
+  },
+  {
+   "month": "2026-08",
+   "won_per_kg": 7893,
+   "heads": 56264
+  },
+  {
+   "month": "2026-09",
+   "won_per_kg": 8598,
+   "heads": 64562
+  }
+ ]
+}

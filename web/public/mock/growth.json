@@ -1,0 +1,251 @@
+{
+ "_meta": {
+  "generated": "2026-10-16",
+  "year": 2025,
+  "prev": 2024,
+  "method": "pipelines/build_growth.py",
+  "source": "서울시 상권분석서비스(추정매출-상권 OA-15572, 점포-상권 OA-15577, 영역-상권 OA-15560) 한식음식점 CS100001",
+  "trdar_in_both_years": 1407,
+  "caveats": [
+   "한식음식점 전체 기준이다. 고깃집만의 코드는 없다",
+   "카드사 추정 매출이라 물가 상승분이 섞인 명목 증감률이다",
+   "두 해 모두 점포가 있는 상권만 센다"
+  ]
+ },
+ "seoul": {
+  "sales_growth": 0.4,
+  "store_growth": 0.4,
+  "closure_prev": 14.9,
+  "closure_now": 14.8,
+  "opening_prev": 18.5,
+  "opening_now": 14.4,
+  "net_open": -0.5
+ },
+ "gu": {
+  "강남구": {
+   "sales_growth": -1.0,
+   "store_growth": -0.4,
+   "closure_prev": 17.4,
+   "closure_now": 14.4,
+   "opening_prev": 18.3,
+   "opening_now": 14.3,
+   "net_open": -0.1
+  },
+  "강동구": {
+   "sales_growth": 4.6,
+   "store_growth": -1.6,
+   "closure_prev": 15.6,
+   "closure_now": 16.1,
+   "opening_prev": 16.5,
+   "opening_now": 13.8,
+   "net_open": -2.3
+  },
+  "강북구": {
+   "sales_growth": -3.0,
+   "store_growth": -0.9,
+   "closure_prev": 17.5,
+   "closure_now": 17.1,
+   "opening_prev": 19.0,
+   "opening_now": 16.7,
+   "net_open": -0.4
+  },
+  "강서구": {
+   "sales_growth": -0.1,
+   "store_growth": -1.2,
+   "closure_prev": 20.4,
+   "closure_now": 20.8,
+   "opening_prev": 24.8,
+   "opening_now": 18.6,
+   "net_open": -2.2
+  },
+  "관악구": {
+   "sales_growth": -0.4,
+   "store_growth": -0.7,
+   "closure_prev": 20.1,
+   "closure_now": 18.9,
+   "opening_prev": 23.4,
+   "opening_now": 18.2,
+   "net_open": -0.6
+  },
+  "광진구": {
+   "sales_growth": -2.0,
+   "store_growth": 0.2,
+   "closure_prev": 14.7,
+   "closure_now": 16.7,
+   "opening_prev": 18.9,
+   "opening_now": 16.1,
+   "net_open": -0.6
+  },
+  "구로구": {
+   "sales_growth": 0.5,
+   "store_growth": -0.3,
+   "closure_prev": 16.9,
+   "closure_now": 16.0,
+   "opening_prev": 19.5,
+   "opening_now": 14.1,
+   "net_open": -1.9
+  },
+  "금천구": {
+   "sales_growth": 4.0,
+   "store_growth": -0.6,
+   "closure_prev": 17.0,
+   "closure_now": 16.5,
+   "opening_prev": 20.9,
+   "opening_now": 15.3,
+   "net_open": -1.2
+  },
+  "노원구": {
+   "sales_growth": -0.5,
+   "store_growth": -1.0,
+   "closure_prev": 15.1,
+   "closure_now": 13.9,
+   "opening_prev": 16.8,
+   "opening_now": 13.2,
+   "net_open": -0.8
+  },
+  "도봉구": {
+   "sales_growth": 2.7,
+   "store_growth": -2.5,
+   "closure_prev": 14.5,
+   "closure_now": 15.5,
+   "opening_prev": 15.6,
+   "opening_now": 14.2,
+   "net_open": -1.3
+  },
+  "동대문구": {
+   "sales_growth": 0.9,
+   "store_growth": 0.5,
+   "closure_prev": 13.3,
+   "closure_now": 14.7,
+   "opening_prev": 16.6,
+   "opening_now": 15.1,
+   "net_open": 0.4
+  },
+  "동작구": {
+   "sales_growth": 3.6,
+   "store_growth": 0.4,
+   "closure_prev": 12.8,
+   "closure_now": 13.5,
+   "opening_prev": 16.4,
+   "opening_now": 14.0,
+   "net_open": 0.5
+  },
+  "마포구": {
+   "sales_growth": -4.1,
+   "store_growth": 1.9,
+   "closure_prev": 15.1,
+   "closure_now": 16.8,
+   "opening_prev": 21.2,
+   "opening_now": 16.6,
+   "net_open": -0.2
+  },
+  "서대문구": {
+   "sales_growth": -0.7,
+   "store_growth": -0.4,
+   "closure_prev": 14.1,
+   "closure_now": 13.8,
+   "opening_prev": 18.8,
+   "opening_now": 11.4,
+   "net_open": -2.3
+  },
+  "서초구": {
+   "sales_growth": -0.9,
+   "store_growth": 1.1,
+   "closure_prev": 13.0,
+   "closure_now": 12.0,
+   "opening_prev": 16.0,
+   "opening_now": 13.0,
+   "net_open": 1.0
+  },
+  "성동구": {
+   "sales_growth": -2.1,
+   "store_growth": 2.0,
+   "closure_prev": 12.7,
+   "closure_now": 12.6,
+   "opening_prev": 18.0,
+   "opening_now": 12.4,
+   "net_open": -0.3
+  },
+  "성북구": {
+   "sales_growth": -2.6,
+   "store_growth": 0.3,
+   "closure_prev": 14.8,
+   "closure_now": 13.8,
+   "opening_prev": 18.2,
+   "opening_now": 13.6,
+   "net_open": -0.3
+  },
+  "송파구": {
+   "sales_growth": 0.5,
+   "store_growth": 1.1,
+   "closure_prev": 16.8,
+   "closure_now": 16.0,
+   "opening_prev": 20.1,
+   "opening_now": 15.9,
+   "net_open": -0.2
+  },
+  "양천구": {
+   "sales_growth": -1.9,
+   "store_growth": -1.0,
+   "closure_prev": 15.8,
+   "closure_now": 13.1,
+   "opening_prev": 17.7,
+   "opening_now": 12.4,
+   "net_open": -0.7
+  },
+  "영등포구": {
+   "sales_growth": -3.6,
+   "store_growth": 2.2,
+   "closure_prev": 12.9,
+   "closure_now": 12.9,
+   "opening_prev": 17.9,
+   "opening_now": 13.7,
+   "net_open": 0.7
+  },
+  "용산구": {
+   "sales_growth": 4.4,
+   "store_growth": 2.7,
+   "closure_prev": 12.1,
+   "closure_now": 13.9,
+   "opening_prev": 18.5,
+   "opening_now": 15.6,
+   "net_open": 1.7
+  },
+  "은평구": {
+   "sales_growth": 2.6,
+   "store_growth": -1.6,
+   "closure_prev": 17.1,
+   "closure_now": 16.4,
+   "opening_prev": 18.9,
+   "opening_now": 13.6,
+   "net_open": -2.8
+  },
+  "종로구": {
+   "sales_growth": 0.2,
+   "store_growth": 1.6,
+   "closure_prev": 10.6,
+   "closure_now": 12.8,
+   "opening_prev": 16.1,
+   "opening_now": 12.2,
+   "net_open": -0.6
+  },
+  "중구": {
+   "sales_growth": 4.2,
+   "store_growth": 2.1,
+   "closure_prev": 10.0,
+   "closure_now": 10.8,
+   "opening_prev": 15.6,
+   "opening_now": 11.8,
+   "net_open": 1.1
+  },
+  "중랑구": {
+   "sales_growth": -1.0,
+   "store_growth": -1.1,
+   "closure_prev": 14.7,
+   "closure_now": 15.6,
+   "opening_prev": 17.9,
+   "opening_now": 12.7,
+   "net_open": -2.9
+  }
+ }
+}

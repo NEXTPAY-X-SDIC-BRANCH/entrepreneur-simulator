@@ -1,0 +1,186 @@
+# Season-mode parameters (docs/GAME-V2-SPEC.md §3-4). Every value carries `tag`: a source id from
+# ontology/sources.csv, or 가정 (assumption) with the downside it models. Round-4 sourcing will replace 가정 values.
+# The hero store's base month (research/hero_base.yaml) is the calibration anchor: the base plan in October with the
+# starting state reproduces it.
+
+start:
+  cash: {value: 20000000, tag: "S89;S90;가정", note: "운영자금 ₩2,000만 (low 1,000만, high 3,000만) = 월 총비용 약 0.8개월. 현금 보유 조사는 없다 (round 4 §9)"}
+  rating: {value: 4.2, tag: 가정}
+  review_count: {value: 180, tag: 가정}
+  awareness: {value: 1.0, tag: 가정, note: "기준 1.0"}
+  regular_share: {value: 0.25, tag: 가정}
+  fatigue: {value: 30, tag: 가정, note: "0-100, 기준 계획에서의 균형값"}
+
+start_new:   # 신규 오픈 점포의 시작 상태 (new_season(opening=True)). start.* 는 수요 배율의 기준이라 그대로 둔다.
+  review_count: {value: 0, tag: 가정, note: "문을 연 날은 리뷰가 없다. 첫 리뷰가 평점을 정한다"}
+  awareness: {value: 0.6, tag: 가정, note: "인지도 0.6 = 기준 가게의 약 60% (손님 약 -14%). 매달 기준 쪽으로 15% 되돌아가고 리뷰와 마케팅이 올린다. 민감도 변수 (0.5~0.8)"}
+  regular_share: {value: 0.05, tag: 가정, note: "단골 비율 5% (엔진 하한). 단골 -20%p = 손님 -20%. 민감도 변수 (0.05~0.15)"}
+
+base_plan:   # the hero store as it is today (hero_base.yaml); 평소 = this plan, October, starting state
+  meat_price: 19000
+  soju_price: 5000
+  meat_grade: domestic
+  menu_extras: []
+  banchan: 5
+  staff_grilling: false
+  staff_per_shift: 2
+  close_hour: 24
+  lunch: false
+  terrace: true
+  marketing_budget: 0
+  review_event: false
+  group_reservations: false
+  hygiene: normal
+
+demand:
+  rating_per_star: {value: 0.07, tag: S03, note: "평점 1점 = 독립점 매출 +5~9% (Luca)"}
+  awareness_exponent: {value: 0.3, tag: 가정, note: "인지도 2배 = 손님 +23%"}
+  regular_effect: {value: 1.0, tag: 가정, note: "단골 비율 −10%p = 손님 −10%: 떠난 단골은 한 시즌 안에 새 손님으로 채워지지 않는다"}
+  competitor_effect: {value: 0.91, tag: "S20;가정", note: "경쟁점 개점 후 손님 −9%"}
+
+meat_grade:   # cost per 200g portion, quality score (0-1), price tolerance (raises the price customers accept)
+  imported: {cost: 2000, quality: 0.30, tolerance: -0.20, tag: "S85;가정", note: "수입 냉동 삼겹 도매 ₩7,000~9,250/kg (S85), 200g 약 ₩2,000. 만족 −0.3과 수용 가격 약 ₩15,000은 가정"}
+  domestic: {cost: 4500, quality: 0.60, tolerance: 0.0, tag: "S68;S69"}
+  aged: {cost: 6000, quality: 0.90, tolerance: 0.15, price_ceiling: 22000, tag: "S23;가정", note: "숙성 손실과 인건비 미확인 (round 4 §4: ₩5,500~6,500). 손님이 받아들이는 가격은 약 ₩22,000에서 멈춘다: 서울 평균 ₩21,321/200g (S23), 관찰된 숙성 메뉴 ₩16,000/150g ≈ ₩21,300/200g (round 4 §4, 검색 요약)"}
+  pork_event_strength_imported: {value: 0.3, tag: 가정, note: "국내 도매가 변화가 수입육 원가에 미치는 비율"}
+  pork_event_strength_aged: {value: 1.25, tag: 가정, note: "숙성은 손실만큼 원육이 더 들어가서 도매가 변동이 원가에 더 크게 실린다"}
+  door_weight: {value: 0.3, tag: 가정, note: "음식점은 돼지고기 원산지를 메뉴판에 표시해야 한다 (원산지 표시제). 그래서 원육 등급이 가게 앞에서 가격처럼 작용한다: 체감 가격 = 가격 ÷ (1 + 가격 수용도 × 이 값)"}
+
+menu_extras:   # each extra: 인지도와 20대 호감 up / 원가, 서비스 시간, 폐기 up
+  naengsam: {label: 냉삼, cost_per_cover: 250, awareness: 0.03, appeal_twenties: 0.04, service_min: 0.3, waste: 0.015, tag: 가정}
+  tongsam: {label: 통삼겹, cost_per_cover: 300, awareness: 0.03, appeal_twenties: 0.03, service_min: 0.5, waste: 0.02, tag: 가정}
+  minari: {label: 미나리 곁들임, cost_per_cover: 400, awareness: 0.06, appeal_twenties: 0.05, service_min: 0.3, waste: 0.02, tag: 가정}
+
+banchan:
+  cost_per_item: {value: 240, tag: 가정, note: "5가지 = ₩1,200/인 (hero_base)"}
+  satisfaction_per_item: {value: 0.02, tag: 가정}
+
+staff_grilling:
+  dwell_factor: {value: 0.90, tag: 가정, note: "직원이 구우면 굽는 속도가 일정해 체류가 짧아진다 (low 0.85, high 1.0; 인터뷰 Q18로 확인). 직원 시간 +10분/테이블은 SIM_ASSUMPTIONS"}
+  satisfaction: {value: 0.08, tag: 가정}
+  satisfaction_office_family: {value: 0.10, tag: 가정}
+  group_appeal: {value: 1.2, tag: 가정, note: "단체 예약 수 ×1.2"}
+
+staff:
+  min_per_shift: 0
+  max_per_shift: 4
+  table_tasks_min: {value: 8.0, tag: 가정, note: "주문·계산·정리 (SIM_ASSUMPTIONS 11.5분) 외의 테이블당 일: 세팅과 불 1.5분, 불판 교체 2회 3분, 반찬 리필 1분, 찌개·식사 내기 1.5분, 불판 설거지 1분. 인터뷰 Q18이나 현장 측정으로 확인"}
+  overload_from: {value: 0.8, tag: 계산, note: "미리보기 서빙 부하가 이 이상이면 과부하 경고 (DES 대비 미리보기 오차가 이 구간에서 커진다)"}
+  reorder_patience_min: {value: 5.0, tag: 가정, note: "중간에 직원이 오기까지 이만큼 기다리면 추가 주문 (고기, 나중 술 절반)의 63%를 포기한다 (확률 exp(−대기/5))"}
+  attentive_tables_per_server: {value: 3.5, tag: 가정, note: "직원 한 명이 이보다 많은 테이블을 맡으면 손님이 직원을 부르기 어렵다"}
+  attentive_penalty_per_table: {value: -0.03, tag: 가정}
+  attentive_penalty_cap: {value: -0.20, tag: 가정}
+  tired_from: {value: 50, tag: 가정, note: "피로가 이보다 높으면 응대가 퉁명스러워진다"}
+  tired_penalty_at_100: {value: -0.10, tag: 가정}
+
+hours:   # close_hour 23 / 24 / 25 (= 01시)
+  demand: {23: 0.94, 24: 1.0, 25: 1.04, tag: "S12;가정", note: "상권 한식 매출 중 00~06시 4.1%, 21~24시 17.8% (S12). 01시 마감은 그 60%를 잡아 +4%, 23시 마감은 21~24시의 1/3을 잃어 −6% (가정)"}
+  utilities_per_hour_share: {value: 0.12, tag: 가정, note: "영업 1시간당 공과금 12% 증감"}
+  fatigue_per_late_hour: {value: 8, tag: 가정}
+
+lunch:
+  covers_per_day: {value: 7.4, tag: "S12;가정", note: "저녁 매출 +8% (low 4%, high 12%) = ₩26.5M × 0.08 ÷ 26일 ÷ ₩11,000. 상권 한식 11~14시 매출 23.0% (S12) 중 고깃집 점심 특선이 가져오는 몫은 가정"}
+  ticket: {value: 11000, tag: 가정, note: "점심 특선 1인"}
+  food_ratio: {value: 0.57, tag: 가정, note: "점심 공헌이익 = 저녁의 60% (round 4 §6), 그래서 변동비율 약 0.57"}
+  parttime_hours_per_day: {value: 3, tag: 가정, note: "점심 3시간, 사장님 + 알바 1명"}
+  utilities_share: {value: 0.15, tag: 가정}
+  fatigue: {value: 20, tag: 가정, note: "사장님과 직원이 하루 두 번 영업한다"}
+
+terrace:
+  noise_complaint_prob: {value: 0.08, tag: 가정, note: "야장을 펴는 달의 소음 민원 확률"}
+
+marketing:   # 리뷰이벤트와 SNS 협찬
+  awareness_per_million: {value: 0.15, tag: 가정}
+  expectation_per_million: {value: 0.04, tag: 가정, note: "홍보가 클수록 기대가 높아져 만족이 떨어질 수 있다"}
+  review_event_cost_per_review: {value: 1600, tag: 가정, note: "음료 1병 원가 (round 4 §2)"}
+  review_event_fixed: {value: 50000, tag: 가정}
+  review_event_prob_mult: {value: 1.5, tag: "S84;S82", note: "Airbnb 보상 리뷰 실험 리뷰율 +53% (S84); low 1.2, high 2.5"}
+  review_event_star_bias: {value: 0.3, tag: "S83;S82", note: "보상 리뷰 별점 +0.48 (S83), 참여자 79.6%가 별점을 올렸다 (S82); low 0.1"}
+  review_event_share: {value: 0.652, tag: S82, note: "리뷰를 쓴 사람 중 리뷰 이벤트 때문이라는 응답 65.2%"}
+  review_event_skeptic_prob: {value: 0.3, tag: 가정, note: "이벤트 중 만족이 평소보다 낮은 일반 리뷰어 열에 셋은 '별점이 부풀려졌다'고 쓴다"}
+  review_event_star_noise: {value: 0.5, tag: 가정, note: "보상 리뷰는 별점이 들쭉날쭉해 평점이 덜 믿을 만하다"}
+
+groups:   # 단체·회식 예약
+  people: {value: 8, tag: 가정}
+  spend_factor: {value: 1.15, tag: 가정}
+  noshow: {value: 0.20, tag: "S87;S88", note: "음식점 예약부도율 20% (S87, 2017); low 0.10, high 0.30"}
+  blocked_tables: {value: 1, tag: 가정, note: "예약석을 비워 두느라 평균 한 테이블이 워크인에 막힌다"}
+  incremental: {value: 0.3, tag: 가정, note: "12월 회식 수요는 이미 달력 지수에 들어 있다. 예약으로 새로 생기는 손님은 30%뿐이다 (round 4 §7: 예약 자체의 OP 효과는 노쇼 때문에 −0.1~−0.4M)"}
+  discount: {value: 0.05, tag: 가정, note: "단체 서비스 (음료, 추가 반찬)"}
+
+hygiene:   # 청결 관리 수준
+  basic: {labor_hours: -15, cleanliness: 0.45, inspection_fail: 0.05, tag: "S91;가정"}
+  normal: {labor_hours: 0, cleanliness: 0.65, inspection_fail: 0.03, tag: "S91;가정"}
+  high: {labor_hours: 30, cleanliness: 0.85, inspection_fail: 0.01, tag: "S91;가정", note: "점검 시 지적률 0.01~0.05 (round 4 §10)"}
+  fail_closed_days: {value: 2, tag: 가정}
+  fail_rating: {value: -0.10, tag: 가정}
+
+satisfaction:   # per party, 0-1. Weights are 가정 until round-4 sourcing
+  base: {value: 0.55, tag: 가정, note: "가중치는 모두 가정. 순서는 미확인 설문 (맛 > 가격 > 청결)을 따른다 (round 4 §3). 사장님 인터뷰 Q2, Q25로 재정렬"}
+  wait_per_10min: {value: -0.06, tag: 가정}
+  wait_cap: {value: -0.30, tag: 가정}
+  service_wait_per_5min: {value: -0.05, tag: 가정}
+  quality_weight: {value: 0.35, tag: 가정}
+  price_over_weight: {value: -0.50, tag: 가정, note: "기대 가격보다 10% 비싸면 −0.05"}
+  price_under_weight: {value: 0.25, tag: 가정}
+  price_over_ceiling_weight: {value: -1.0, tag: 가정, note: "원육 등급의 가격 저항선(price_ceiling)을 10% 넘기면 만족 −0.10 추가"}
+  soju_over_weight: {value: -0.30, tag: 가정}
+  clean_weight: {value: 0.10, tag: 가정, note: "round 4 순서대로 맛 0.35 > 가격 0.25 > 대기·서비스 0.15 > 청결 0.10"}
+  crowd_penalty: {value: -0.05, tag: 가정}
+  star_noise: {value: 0.45, tag: 가정}
+  flag_terms: {value: {meat_swapped: -0.08, moved_inside: -0.04, rain_tarp: -0.12, comp: 0.20, noisy_group: -0.05}, tag: 가정, note: "밤 결정이 손님에게 남긴 일: 바뀐 고기, 비 때문에 옮긴 자리, 비 맞은 야장, 협찬 대접"}
+  mood_noise: {value: 0.06, tag: 가정, note: "말풍선용 손님별 기분 차이 (같은 계획이라도 칭찬과 불만이 섞인다)"}
+  star_slope: {value: 5.0, tag: 가정, note: "만족 0.1 차이 = 별 0.5개; 기준 만족이면 평균 별점 = 시작 평점"}
+  expected_price: {twenties: 17000, office: 21321, family: 19500, tag: "S25;S23;가정", note: "골목 ₩17,000 (S25), 서울 평균 ₩21,321 (S23)"}
+  expected_soju: {value: 5000, tag: S25}
+
+reviews:
+  base_prob: {value: 0.03, tag: 가정, note: "방문 팀 중 리뷰를 남기는 비율 (low 0.01, high 0.06). 배달앱 연간 작성 경험 77.3% (S82)는 방문당 비율이 아니다"}
+  window: {value: 30, tag: 가정, note: "손님은 최근 리뷰를 본다. 평점은 최근 30건 가중 평균처럼 움직인다"}
+  segment_mult: {twenties: 1.4, office: 0.6, family: 0.9, tag: 가정}
+  walkaway_prob_mult: {value: 0.4, tag: 가정}
+  max_listed: {value: 12, tag: 화면용}
+
+regulars:
+  satisfaction_gain: {value: 0.4, tag: 가정, note: "평소보다 만족이 0.1 높으면 단골 비율 +4%p"}
+  satisfaction_loss: {value: 0.5, tag: 가정, note: "평소보다 만족이 0.1 낮으면 단골 비율 −5%p (잃는 쪽이 조금 빠르다)"}
+  price_weight: {value: 0.5, tag: 가정, note: "단골 이탈에 가격 대비 가치가 반만큼 반영된다 (나머지는 가격 탄력성에 이미 있음)"}
+  max_monthly_change: {value: 0.06, tag: 가정, note: "단골은 한 달에 6%p 넘게 빠지거나 돌아오지 않는다. 좋은 달 2~3번이면 다시 쌓인다"}
+  deadband: {value: 0.01, tag: 가정, note: "평소와 만족 차이가 이보다 작으면 단골 변화 없음 (달마다 생기는 우연한 차이)"}
+  change_penalty: {value: 0.02, tag: 가정, note: "가격이나 원육을 바꾼 달은 단골이 조금 빠진다"}
+  min: 0.05
+  max: 0.35   # KOSIS 한식산업실태조사 2025 고객 재방문율 34.75%와 일치
+  opening_accrual: {value: 0.03, tag: 가정, note: "신규 점포는 단골이 매달 최대 3%p씩 쌓인다 (기준 가게 수준 25%까지). 만족이 평소보다 낮으면 절반. 민감도 변수 (0.01~0.05)"}
+
+awareness:
+  decay: {value: 0.85, tag: 가정, note: "매달 기준 1.0 쪽으로 15% 되돌아간다"}
+  reviews_per_100: {value: 0.02, tag: 가정}
+
+fatigue:   # 직원 피로 0-100
+  load_zero: {value: 0.04, tag: 가정}
+  load_full: {value: derived, tag: 계산, note: "코드에서 계산: 평소 (10월, 기준 계획, 시작 상태)의 서빙 부하가 시작 피로 30이 되도록. 평소는 지속 가능해야 한다"}
+  quit_shock: {value: 15, tag: 가정, note: "알바가 갑자기 그만두면 남은 사람의 이번 달 목표 피로 +15"}
+  carry: {value: 0.5, tag: 가정}
+  slow_from: {value: 30, tag: 가정}
+  slow_at_100: {value: 0.5, tag: 가정, note: "피로 100이면 모든 서비스가 50% 느려진다"}
+  quit_per_parttimer: {value: 0.07, tag: 가정, note: "알바 1명당 월 퇴사 확률 (low 0.05, high 0.10). 전 산업 월 이직률 4.9%, 미국 외식 4.3%보다 대학로 학생 알바는 높다고 가정 (round 4 §10)"}
+  quit_at_100: {value: 0.30, tag: 가정, note: "피로 100이면 1명당 +0.30 (지친 알바는 다음 달을 버티지 않는다)"}
+  sick_mult_at_100: {value: 3.0, tag: 가정}
+
+closure:
+  negative_months_to_close: {value: 2, tag: "S21;S09", note: "현금이 두 달 연속 0 아래면 폐업 (인허가 폐업 = 생존 라벨)"}
+  low_revenue_share: {value: 0.6, tag: S89, note: "매출이 평소의 60% 이하로 두 달 연속이면 폐업 결심 (폐업 소상공인 64.4%가 매출 40% 이상 감소 후 결정)"}
+  low_revenue_months: {value: 2, tag: S89}
+
+season_value:
+  closure_cost: {value: 12860000, tag: S89, note: "폐업 소상공인 평균 폐업 비용 ₩1,286만. 문을 닫은 가게의 가치 = 현금 − 폐업 비용"}
+  horizon_months: {value: 6, tag: 가정, note: "가게 가치 (6개월 전망) = 시즌 끝 현금 + 끝난 시점의 평점·단골·인지도로 평소 계획을 평소 달처럼 6개월 더 운영할 때 예상 영업이익 (같은 엔진, 할인 없음, 모든 가게에 같은 잣대)"}
+
+band:
+  runs: {value: 30, tag: 계산, note: "p10~p90 범위를 위한 반복 횟수"}
+  preview_bias_per_lever: {value: 0.0, tag: 계산, note: "측정: 빠른 추정은 바꾼 레버 하나마다 매출의 약 0.065%씩 낙관적 (평균 +12~15만원). 보정을 시험했더니 비관적인 계획 하나가 허용 오차 1.5배를 넘어 적용하지 않음 (2026-10-01). 대신 op_range가 이 오차를 포함한다"}
+  preview_error: {value: 248000, tag: 계산, note: "빠른 추정의 DES 평균 대비 오차 RMSE (보정 없음, 무작위 계획 검증용 절반)"}
+  preview_error_overload: {value: 950000, tag: 계산, note: "알바 0명이거나 과부하 (부하 > 0.8)일 때 측정된 오차 RMSE (4개 사례)"}
+  month_runs: {value: 800, tag: 계산, note: "11~3월 기준 계획의 DES 평균 (달마다 미리보기 보정). data/cache에 저장"}
+  baseline_runs: {value: 2000, tag: 계산, note: "평소와 미리보기 보정에 쓰는 반복 횟수 (평균 오차 약 ±2만원). 결과는 data/cache에 저장"}
+  preview_spread: {low: 0.044, high: 0.043, tag: 계산, note: "미리보기 범위: DES 80회 × 12개 계획·달에서 p10은 평균보다 매출의 4.4% 아래, p90은 4.3% 위"}

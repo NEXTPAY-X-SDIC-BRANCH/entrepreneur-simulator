@@ -1,0 +1,71 @@
+# Season calendar (docs/GAME-V2-SPEC.md §6). A season runs October to March, one month per turn.
+# demand_index is relative to October (= the calibrated base month).
+# Round 4 (research/sourcing_round4_v2.md §8): monthly index vs the annual mean = Oct 1.068, Nov 1.068, Dec 1.183,
+# Jan 0.955, Feb 0.955, Mar 1.016. Anchors: quarter level from 3120012 한식 card sales (S12, 2023-25: Q1 0.975,
+# Q4 1.106), Dec = 1.108 × Nov (S86, national 외식 card sales), break months = 0.94 × term months (round 2 §8).
+# The within-quarter split is 가정. Divided by October's 1.068 so the base month stays the calibration anchor.
+# 설 is inside the Q1 index (not separated), so February keeps the normal open days.
+# segment_mult scales the card-sales age share that feeds each customer segment (가정).
+# terrace_availability and rain_nights_share: October keeps the base month's values (weather is already folded
+# into the base 야장 가용률); other months are 가정 except where a source is given.
+_meta:
+  source_quarter_index: S12
+  month_split: 가정
+  start_month: 10
+  months: [10, 11, 12, 1, 2, 3]
+
+10:
+  label: 10월
+  note: 대학로 공연·축제와 중간고사가 겹치는 달
+  demand_index: 1.000
+  segment_mult: {twenties: 1.0, office: 1.0, family: 1.0}
+  terrace_availability: 0.4
+  rain_nights_share: 0.0
+  group_bookings: 4
+  tags: {demand_index: "S12 (분기) + 가정 (월 분할; round 4 §8)", weather: "기준 달과 같음"}
+11:
+  label: 11월
+  note: 특별한 일이 없는 평범한 달, 쌀쌀해지며 야장 손님이 준다
+  demand_index: 1.000
+  segment_mult: {twenties: 1.0, office: 1.05, family: 1.0}
+  terrace_availability: 0.25
+  rain_nights_share: 0.0
+  group_bookings: 8
+  tags: {demand_index: "S12 (분기) + 가정 (월 분할; round 4 §8)", weather: 가정}
+12:
+  label: 12월
+  note: 연말 회식 시즌, 기말고사
+  demand_index: 1.108
+  segment_mult: {twenties: 0.9, office: 1.35, family: 1.05}
+  terrace_availability: 0.0
+  rain_nights_share: 0.0
+  group_bookings: 30         # 12월 손님의 약 25%가 단체 예약 (round 4 §7 base 0.25, low 0.10 high 0.40) ÷ 8명
+  tags: {demand_index: "S12 (분기) + S86 (12월 = 11월 × 1.108) + 가정 (월 분할)", weather: 가정, group_bookings: 가정}
+1:
+  label: 1월
+  note: 겨울방학, 한파
+  demand_index: 0.894
+  segment_mult: {twenties: 0.7, office: 1.0, family: 1.05}
+  terrace_availability: 0.0
+  rain_nights_share: 0.0
+  group_bookings: 4
+  min_wage_change: 0.03      # 다음 해 최저임금 인상 반영 (가정; 2026년 인상률 2.9%, S36)
+  tags: {demand_index: "S12 (분기) + 가정 (월 분할; round 4 §8)", weather: 가정, min_wage_change: "가정 (S36 참고)"}
+2:
+  label: 2월
+  note: 방학과 설 연휴
+  demand_index: 0.894
+  segment_mult: {twenties: 0.7, office: 0.95, family: 1.15}
+  terrace_availability: 0.0
+  rain_nights_share: 0.0
+  group_bookings: 2
+  tags: {demand_index: "S12 (분기) + 가정 (월 분할, 설 포함)", weather: 가정}
+3:
+  label: 3월
+  note: 개강, 새 학기 모임
+  demand_index: 0.951
+  segment_mult: {twenties: 1.15, office: 1.0, family: 0.95}
+  terrace_availability: 0.15
+  rain_nights_share: 0.0
+  group_bookings: 6
+  tags: {demand_index: "S12 (분기) + 가정 (월 분할; round 4 §8)", weather: 가정}

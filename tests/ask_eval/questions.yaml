@@ -1,0 +1,120 @@
+# 챗봇(/ask) 평가 질문 세트. 근거나 규칙을 바꿀 때마다 `python -m tests.chat_eval.run`으로 돌려 통과 수를 본다.
+#   expect  : 답에 모두 들어 있어야 하는 정규식
+#   forbid  : 답에 들어 있으면 안 되는 정규식
+#   none    : true면 답을 만들지 않아야 한다 (범위 밖이거나 자료에 없는 질문)
+#   ok_none : true면 답이 없어도 통과 (자료에 없을 수 있는 질문. 대신 엉뚱한 답은 forbid로 막는다)
+#   cite    : 출처에 들어 있어야 하는 id
+#   ctx     : fixtures 의 이름 (화면이 질문과 함께 보내는 점포·시뮬레이션 값)
+fixtures:
+  shop:
+    gu: 마포구
+    dong: 서교동
+    dong_code: "11440660"
+    area_type: 대학·청년
+    pyeong: 15
+    tables: 5
+    seats: 20
+    staff: 1
+    rent: 19.6
+    rent_src: R-ONE 동네
+    opening_total: 7383
+    deposit: 3078
+    capital: 12000
+    loan: 0
+    cash_left: 4617
+    pork_area: 124
+    stores_area: 732
+    pork_gu: 457
+    pork_rank: 3
+    lines:
+      - {label: 보증금, amount: 3078}
+      - {label: 인테리어 공사, amount: 2250}
+      - {label: 주방과 설비, amount: 1080}
+  engine:
+    gu: 마포구
+    dong: 서교동
+    area_type: 대학·청년
+    pyeong: 15
+    tables: 5
+    seats: 20
+    staff: 1
+    rent: 19.6
+    rent_src: R-ONE 동네
+    opening_total: 7383
+    deposit: 3078
+    capital: 12000
+    loan: 0
+    cash_left: 4617
+    pork_area: 124
+    stores_area: 732
+    pork_gu: 457
+    pork_rank: 3
+    lines: []
+    engine:
+      start_month: 11
+      closed: false
+      months:
+        - {month: 11, revenue: 14550000, cogs: 4760000, labor: 3000000, rent: 2940000, mgmt: 2200000, fees: 120000, covers: 558, op: 1540000, open_days: 26, cash_end: 47230000}
+        - {month: 12, revenue: 16000000, cogs: 5100000, labor: 3100000, rent: 2940000, mgmt: 2200000, fees: 130000, covers: 610, op: 2530000, open_days: 26, cash_end: 49000000}
+      finished: true
+      payback: {month: 12, estimated: true, reason: ""}
+      end_cash: 49000000
+      lowest_cash: 46170000
+      spent: 73830000
+
+questions:
+  # --- 이미 있던 근거 (회귀 확인)
+  - {id: q01_pork_count, q: "마포구 돼지고기 구이 가게 몇 곳이에요?", expect: ["457곳"], cite: [sbiz]}
+  - {id: q02_wholesale, q: "돼지고기 도매가 요즘 어때요?", expect: ["도매"], forbid: ["한우", "거세우"], cite: [kape_pork]}
+  - {id: q03_retail, q: "돼지고기 소비자가격 올랐어요?", expect: ["소비자가격"], cite: [kape_pork]}
+  - {id: q04_gu_sales, q: "강남구 한식음식점 평균 매출은?", expect: ["3,329만원"], cite: [seoul_sales]}
+  - {id: q05_holiday, q: "2026년 공휴일은 며칠이에요?", expect: ["공휴일"], cite: [kasi]}
+  - {id: q06_closure, q: "마포구 한식 폐업률은 얼마예요?", expect: ["폐업률"], cite: [seoul_sales]}
+  # --- 엉뚱한 답을 막는지 (주제 필터)
+  - {id: q07_rain_customers, q: "비 오는 날 손님 줄어요?", forbid: ["한우", "지육", "마릿수", "농장", "자돈"], ok_none: true}
+  - {id: q08_lotto, q: "내일 로또 번호 알려줘", none: true}
+  - {id: q09_bitcoin, q: "비트코인 가격 알려줘", none: true}
+  - {id: q10_stock, q: "삼성전자 주식 사도 돼요?", none: true}
+  - {id: q11_tax, q: "세금 신고는 어떻게 해요?", none: true}
+  # --- 우리 사실 (월세, 동네, 경영 지표)
+  - {id: q12_rent_dong, q: "서교동 월세 얼마예요?", expect: ["서교동", "만원"], cite: [rone]}
+  - {id: q13_rent_gu, q: "마포구 평당 월세는 얼마예요?", expect: ["마포구", "만원"], cite: [rone]}
+  - {id: q14_rent_rank, q: "서울에서 월세가 가장 비싼 구는 어디예요?", expect: ["구", "비싼|가장"], cite: [rone]}
+  - {id: q15_premium, q: "권리금은 보통 얼마나 해요?", expect: ["권리금", "만원|%"]}
+  - {id: q16_dong_type, q: "서교동은 어떤 동네예요?", expect: ["서교동", "대학·청년"], cite: [seoul_sales]}
+  - {id: q17_dong_pork, q: "연남동에 고깃집이 몇 곳 있어요?", expect: ["연남동", "곳"], cite: [sbiz]}
+  - {id: q18_dong_rule, q: "동네 유형은 어떻게 나눠요?", expect: ["20대|연령|시간대|비중"]}
+  - {id: q19_food_cost, q: "음식점 식재료비 비율은 매출의 몇 %예요?", expect: ["식재료비", "%"], cite: [kosis_krei]}
+  - {id: q20_labor_cost, q: "인건비는 매출의 몇 퍼센트예요?", expect: ["인건비", "%"], cite: [kosis_krei]}
+  - {id: q21_rent_ratio, q: "임차료가 매출에서 차지하는 비율은?", expect: ["임차료", "%"], cite: [kosis_krei]}
+  - {id: q22_margin, q: "외식업 영업이익률은 얼마예요?", expect: ["영업이익률", "%"], cite: [kosis_krei]}
+  # --- 내 가게 (화면이 보내는 값)
+  - {id: q23_my_rent, q: "내 가게 월세는 얼마예요?", ctx: shop, expect: ["평당", "19.6만원", "15평"], cite: [app]}
+  - {id: q24_my_cost, q: "여는 데 얼마나 들어요?", ctx: shop, expect: ["7,383만원"], cite: [app]}
+  - {id: q25_my_deposit, q: "보증금은 얼마예요?", ctx: shop, expect: ["보증금", "3,078만원"], cite: [app]}
+  - {id: q26_my_staff, q: "직원은 몇 명이에요?", ctx: shop, expect: ["직원", "1명"], cite: [app]}
+  - {id: q27_my_cash, q: "지금 내 현금이 얼마나 남아요?", ctx: shop, expect: ["4,617만원"], cite: [app]}
+  - {id: q28_my_loan, q: "대출은 얼마 받았어요?", ctx: shop, expect: ["대출"], cite: [app]}
+  - {id: q29_no_sim, q: "내 가게는 몇 달째부터 남기 시작해요?", ctx: shop, expect: ["시뮬레이션"], forbid: ["개월째부터"], cite: [app]}
+  - {id: q30_payback, q: "내 가게는 몇 달째부터 남기 시작해요?", ctx: engine, expect: ["12개월째|회수|되찾"], cite: [app]}
+  - {id: q31_breakeven, q: "하루에 몇 명 받아야 본전이에요?", ctx: engine, expect: ["하루", "명"], cite: [app]}
+  - {id: q32_month_op, q: "11월 영업이익은 얼마였어요?", ctx: engine, expect: ["11월", "154만원"], cite: [app]}
+  - {id: q33_end_cash, q: "6개월 뒤 현금은 얼마예요?", ctx: engine, expect: ["4,900만원"], cite: [app]}
+  # --- 처음 보는 표현 (과적합 확인용: 위 질문을 만든 뒤에 따로 적은 것)
+  - {id: q34_dong_stem, q: "망원동 월세", expect: ["망원", "월세"], cite: [rone]}
+  - {id: q35_dong_pork, q: "성수동 고깃집 많아요?", expect: ["성수", "곳"], cite: [sbiz]}
+  - {id: q36_snow, q: "눈 오는 날 장사 어때요", none: true}
+  - {id: q37_cafe_seoul, q: "카페 매출은 어때요", expect: ["서울 전체"]}
+  - {id: q38_hansik_seoul, q: "한식 매출은 평균 얼마예요", expect: ["서울 전체", "2,501만원"]}
+  - {id: q39_price_now, q: "삼겹살 도매가는 요즘 얼마예요", expect: ["도매"], forbid: ["재고"], cite: [kape_pork]}
+  - {id: q40_my_area, q: "이 동네 경쟁은 어때요?", ctx: shop, expect: ["서교동", "곳"], cite: [app]}
+  # --- 동네 사람 (길단위인구·상주·직장인구). 자료에 없는 말은 '이 동네'만 겹쳐도 답하지 않는다
+  - {id: q41_work_pop, q: "이 동네 직장인구는 얼마야", ctx: shop, expect: ["서교동", "직장인", "명"], cite: [seoul_flow]}
+  - {id: q42_flow_here, q: "이 동네 지나가는 사람은 몇 명이야", ctx: shop, expect: ["서교동", "유동인구", "하루 약", "추정"], cite: [seoul_flow]}
+  - {id: q43_resi_named, q: "망원동 상주인구", expect: ["망원", "거주민"], cite: [seoul_flow]}
+  - {id: q44_gu_flow, q: "강남구 유동인구는?", expect: ["강남구", "하루 약"], cite: [seoul_flow]}
+  - {id: q45_type_here, q: "이 동네 유형은?", ctx: shop, expect: ["대학·청년", "유형"], cite: [app]}
+  - {id: q46_unknown_here, q: "이 동네 반려견 수는?", ctx: shop, none: true}
+  - {id: q47_flow_noplace, q: "직장인구는?", none: true}
+  - {id: q48_flow_word, q: "이 동네 유동인구는 몇 명이야", ctx: shop, expect: ["서교동", "유동인구", "하루 약"], cite: [seoul_flow]}
+  - {id: q49_resident, q: "이 동네 거주민은 몇 명이야", ctx: shop, expect: ["서교동", "거주민"], cite: [seoul_flow]}

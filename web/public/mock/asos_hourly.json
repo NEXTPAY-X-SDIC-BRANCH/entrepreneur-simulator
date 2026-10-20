@@ -1,0 +1,70 @@
+{
+ "_meta": {
+  "source": "기상청 지상(종관, ASOS) 시간자료 조회서비스, 서울 108",
+  "years": "2016~2025",
+  "method": "비 온 시간 = 시간 강수량 0mm 초과. 강수량 칸이 빈 시간은 비 없음(0)으로 셈. 저녁 = 17~23시 구간의 비율.",
+  "fetched_at": "2026-10-14T19:52:31"
+ },
+ "months": [
+  {
+   "month": 1,
+   "all_hour_rain_share": 0.019,
+   "evening_hour_rain_share": 0.017
+  },
+  {
+   "month": 2,
+   "all_hour_rain_share": 0.022,
+   "evening_hour_rain_share": 0.018
+  },
+  {
+   "month": 3,
+   "all_hour_rain_share": 0.021,
+   "evening_hour_rain_share": 0.017
+  },
+  {
+   "month": 4,
+   "all_hour_rain_share": 0.063,
+   "evening_hour_rain_share": 0.055
+  },
+  {
+   "month": 5,
+   "all_hour_rain_share": 0.087,
+   "evening_hour_rain_share": 0.087
+  },
+  {
+   "month": 6,
+   "all_hour_rain_share": 0.079,
+   "evening_hour_rain_share": 0.07
+  },
+  {
+   "month": 7,
+   "all_hour_rain_share": 0.126,
+   "evening_hour_rain_share": 0.125
+  },
+  {
+   "month": 8,
+   "all_hour_rain_share": 0.118,
+   "evening_hour_rain_share": 0.111
+  },
+  {
+   "month": 9,
+   "all_hour_rain_share": 0.084,
+   "evening_hour_rain_share": 0.079
+  },
+  {
+   "month": 10,
+   "all_hour_rain_share": 0.057,
+   "evening_hour_rain_share": 0.051
+  },
+  {
+   "month": 11,
+   "all_hour_rain_share": 0.025,
+   "evening_hour_rain_share": 0.021
+  },
+  {
+   "month": 12,
+   "all_hour_rain_share": 0.025,
+   "evening_hour_rain_share": 0.02
+  }
+ ]
+}

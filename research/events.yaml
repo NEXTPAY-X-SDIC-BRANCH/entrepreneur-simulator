@@ -1,0 +1,561 @@
+# External events (docs/GAME-V2-SPEC.md §5). No owner decisions here; the owner answers through the plan.
+# prob: chance per month (keys = calendar month). At most `_meta.max_per_month` random events are kept per month.
+# effects:
+#   params: engine parameter changes for that month  [{param, op: mul|add|set, value}]
+#   demand: multiplier on arrivals for that month
+#   state:  immediate changes to SeasonState            {rating: add, awareness: add, review_count: add}
+#   persist: competitor_on | competitor_off              (a competitor keeps cutting demand until it closes)
+#   resolve: hygiene | quit | owner_sick                 (outcome depends on the plan or the state; see sim/season.py)
+# tag: source id(s) or 가정. Every 가정 has its downside written in `mechanism`.
+_meta:
+  max_per_month: 2
+  guided_script: research/guided.yaml
+
+pork_up:
+  label: 돼지고기 도매가 상승
+  group: 원가
+  prob: {10: 0.10, 11: 0.20, 12: 0.15, 1: 0.10, 2: 0.10, 3: 0.15}
+  effects: {params: [{param: cst_meat_cost_per_portion, op: mul, value: 1.08}]}
+  mechanism: 국내산 삼겹 1인분 원가 +8% (수입육은 영향 작음)
+  tag: S68;S48
+pork_down:
+  label: 돼지고기 도매가 하락
+  group: 원가
+  prob: {10: 0.05, 11: 0.05, 12: 0.05, 1: 0.15, 2: 0.12, 3: 0.05}
+  effects: {params: [{param: cst_meat_cost_per_portion, op: mul, value: 0.90}]}
+  mechanism: 1월 비수기 도매가 하락으로 1인분 원가 −10%
+  tag: S68
+import_up:
+  label: 수입 냉동육 단가 상승
+  group: 원가
+  prob: {10: 0.06, 11: 0.06, 12: 0.06, 1: 0.06, 2: 0.06, 3: 0.06}
+  effects: {params: [{param: import_meat_cost_mult, op: mul, value: 1.12}]}
+  mechanism: 수입 냉동육을 쓰는 경우에만 1인분 원가 +12% (환율 가정)
+  tag: 가정
+veg_up:
+  label: 쌈채소값 급등
+  group: 원가
+  prob: {10: 0.08, 11: 0.05, 12: 0.08, 1: 0.15, 2: 0.12, 3: 0.05}
+  effects: {params: [{param: cst_banchan_cost_per_cover, op: mul, value: 1.30}]}
+  mechanism: 반찬·쌈채소 원가 +30%. 반찬 가짓수가 많을수록 타격이 크다
+  tag: 가정
+rent_renewal:
+  label: 재계약 임대료 인상
+  group: 고정비
+  prob: {10: 0.04, 11: 0.04, 12: 0.04, 1: 0.04, 2: 0.04, 3: 0.04}
+  effects: {params: [{param: drv_rent, op: mul, value: 1.05}], persist: rent_up}
+  mechanism: 재계약 때 법정 상한 5% 인상, 이후 계속 유지
+  tag: S57;S52
+festival_week:
+  label: 대학로 공연·축제 주간
+  group: 수요
+  prob: {10: 0.45, 11: 0.10, 12: 0.15, 1: 0.05, 2: 0.05, 3: 0.20}
+  effects: {demand: 1.08}
+  mechanism: 공연 관객과 방문객으로 저녁 손님 +8%
+  tag: 가정
+exam_week:
+  label: 시험 기간
+  group: 수요
+  prob: {10: 0.40, 11: 0.05, 12: 0.40, 1: 0.0, 2: 0.0, 3: 0.0}
+  effects: {demand: 0.95, params: [{param: seg_twenties_late_mult, op: mul, value: 0.7}]}
+  mechanism: 학생 손님이 줄고 늦은 밤 모임이 준다 (손님 −5%)
+  tag: 가정
+rain_week:
+  label: 비 오는 주간
+  group: 날씨
+  prob: {10: 0.30, 11: 0.30, 12: 0.15, 1: 0.10, 2: 0.10, 3: 0.25}
+  effects: {params: [{param: wx_rain_nights_share, op: set, value: 0.30}]}
+  mechanism: 한 달 밤의 30%가 비 (야장 못 펴고 비 오는 밤 손님 −10%)
+  tag: S75;가정
+cold_wave:
+  label: 한파
+  group: 날씨
+  prob: {10: 0.0, 11: 0.10, 12: 0.30, 1: 0.45, 2: 0.30, 3: 0.05}
+  effects: {demand: 0.94, params: [{param: sto_terrace_availability, op: set, value: 0.0}]}
+  mechanism: 외출이 줄어 손님 −6%, 야장 사용 불가
+  tag: 가정
+competitor_open:
+  label: 근처 고깃집 개점
+  group: 경쟁
+  prob: {10: 0.10, 11: 0.10, 12: 0.10, 1: 0.10, 2: 0.10, 3: 0.10}
+  effects: {persist: competitor_on}
+  mechanism: 경쟁점이 문을 닫을 때까지 손님 −9% (거리 기준 수요 분할). 확률 = 상권 안 고깃집 개점 월 0.33 (S13, 2023Q1~2026Q2) × 우리 가게 바로 근처일 비율 0.3 (가정)
+  tag: S13;S20;가정
+competitor_close:
+  label: 근처 고깃집 폐업
+  group: 경쟁
+  prob: {10: 0.08, 11: 0.08, 12: 0.08, 1: 0.08, 2: 0.08, 3: 0.08}
+  effects: {persist: competitor_off, demand: 1.04}
+  mechanism: 경쟁점이 있었다면 그 효과가 사라지고, 손님 +4%. 확률 = 상권 고깃집 폐업 월 0.27 (S13) × 근처 비율 0.3 (가정)
+  tag: S13;가정
+viral_blog:
+  label: 맛집 블로거 방문
+  group: 평판
+  prob: {10: 0.06, 11: 0.06, 12: 0.06, 1: 0.06, 2: 0.06, 3: 0.06}
+  effects: {state: {awareness: 0.25, review_count: 20}, demand: 1.06}
+  mechanism: 인지도 +0.25, 리뷰 +20건, 이번 달 손님 +6%. 고기와 서비스가 별로면 뒤따르는 리뷰가 나빠진다
+  tag: 가정
+bad_review:
+  label: 악성 리뷰
+  group: 평판
+  prob: {10: 0.07, 11: 0.07, 12: 0.07, 1: 0.07, 2: 0.07, 3: 0.07}
+  effects: {state: {rating: -0.12}}
+  mechanism: 평점 −0.12 (이후 좋은 리뷰가 쌓이면 회복)
+  tag: 가정
+hygiene_inspection:
+  label: 위생점검
+  group: 평판
+  prob: {10: 0.08, 11: 0.08, 12: 0.08, 1: 0.08, 2: 0.08, 3: 0.08}
+  effects: {resolve: hygiene}
+  mechanism: 서울 통합위생점검 연 1회 (월 0.08). 청결 관리 수준에 따라 통과 또는 지적 (지적률 0.01~0.05, S91 집중점검 적발 1.2% 참고). 지적이면 영업정지 2일과 평점 −0.1
+  tag: S91;가정
+noise_complaint:
+  label: 야장 소음 민원
+  group: 평판
+  prob: {10: 0.0, 11: 0.0, 12: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}   # only drawn when the 야장 is on (season_params)
+  effects: {params: [{param: sto_terrace_availability, op: mul, value: 0.5}], state: {rating: -0.03}}
+  mechanism: 야장을 펴는 날이 절반으로 줄고 평점 −0.03
+  tag: 가정
+staff_quit:
+  label: 알바 갑작스런 퇴사
+  group: 인력
+  prob: {}       # driven by staff count and fatigue (season_params.fatigue.quit_*), not by the calendar
+  effects: {resolve: quit}
+  mechanism: 이번 달 교대당 알바 한 명이 빠지고 남은 사람의 피로가 오른다. 확률 = 알바 한 명당 월 0.07 (전 산업 월 이직률 4.9%, 외식 4.3%보다 높게 가정), 피로가 높으면 더 오른다
+  tag: 가정
+owner_sick:
+  label: 사장님 몸살
+  group: 인력
+  prob: {10: 0.03, 11: 0.04, 12: 0.06, 1: 0.05, 2: 0.04, 3: 0.03}
+  effects: {resolve: owner_sick}
+  mechanism: 사흘 문을 닫는다 (피로가 높을수록 잘 걸린다)
+  tag: 가정
+aged_spoilage:
+  label: 숙성육 품질 편차
+  group: 원가
+  requires: {meat_grade: aged}     # drawn only when last month's stock was aged
+  prob: {10: 0.15, 11: 0.15, 12: 0.15, 1: 0.15, 2: 0.15, 3: 0.15}
+  effects: {meat_writeoff: 0.20, quality: -0.30}
+  mechanism: 숙성 중 일부가 상하거나 맛이 고르지 않다. 이번 달 원육비의 20%를 버리고, 남은 고기 품질도 떨어진다
+  tag: 가정
+
+# In-night decisions (docs/GAME-V2-SPEC.md §12.1). The replayed Saturday pauses at clock_min (minutes after 17:00);
+# each option changes the rest of that night (effect) and the month through monthly_count such situations.
+# Every option states its downside. Values are 가정 unless a source id is given.
+_night_decisions:
+  walkin_group:
+    title_ko: "예약 없는 회식"
+    clock_min: 170
+    clock_window: [90, 240]     # the fullest moment between 18:30 and 21:00
+    prompt_ko: "예약 없이 11명 회식 손님이 들어왔습니다. 테이블은 거의 찼고 줄 선 손님도 있습니다."
+    monthly_count: {value: 2, tag: 가정, note: "꽉 찬 저녁에 예약 없는 단체가 오는 일 월 2회 가정"}
+    condition: full     # only on a night with a full house and a queue in the window
+    default: turn_away
+    options:
+      seat:
+        label_ko: "테이블 두 개 붙여 받는다"
+        effect_hint_ko: "큰 계산서 한 장"
+        downside_ko: "먼저 비는 테이블 두 개를 이 손님에게 주니, 줄 서 있던 손님이 더 기다리다 돌아가고, 이미 앉은 손님은 시끄러운 회식에 불편해한다 (만족 −0.05)"
+        tag: 가정
+        effect: {special_party: {size: 11, segment: office, tables: 2, dwell: 150}, flag_present: noisy_group}
+      turn_away:
+        label_ko: "죄송하다고 돌려보낸다"
+        effect_hint_ko: "지금 손님들의 자리를 지킨다"
+        downside_ko: "11명 매출을 놓치고, 돌아간 회사 손님이 동네에 소문낼 수 있다 (인지도 −0.005)"
+        tag: 가정
+        effect: {state: {awareness: -0.005}}
+  staff_late:
+    title_ko: "알바 지각"
+    clock_min: 60
+    prompt_ko: "18시, 알바 한 명이 두 시간 늦는다고 연락했습니다."
+    monthly_count: {value: 1.5, tag: 가정, note: "알바 지각·결근 월 1~2회 가정 (근거 없음)"}
+    condition: staff
+    default: wait
+    options:
+      wait:
+        label_ko: "사장님이 더 뛰며 버틴다"
+        effect_hint_ko: "돈은 안 든다"
+        downside_ko: "저녁 피크 두 시간 동안 일손이 모자라 주문과 추가 주문이 늦고 사장님이 지친다 (피로 +3)"
+        tag: 가정
+        effect: {hold_staff: 120, state: {fatigue: 3}}
+      call_sub:
+        label_ko: "대타를 부른다"
+        effect_hint_ko: "30분이면 온다"
+        downside_ko: "대타 일당 (5시간 × 시급 × 1.5)"
+        tag: 가정
+        effect: {hold_staff: 30, cost_hours: 5, cost_hour_mult: 1.5}
+  meat_low:
+    title_ko: "고기 부족"
+    clock_min: 240
+    prompt_ko: "21시, 삼겹살이 떨어져 갑니다. 남은 손님에게 다 못 낼 수도 있습니다."
+    monthly_count: {value: 2, tag: 가정, note: "주말 저녁 원육 부족 월 2회 가정"}
+    condition: always
+    default: swap
+    options:
+      swap:
+        label_ko: "목살·항정살로 바꿔 낸다"
+        effect_hint_ko: "손님은 그대로 받는다"
+        downside_ko: "삼겹살 없다는 말에 새로 온 손님 열에 셋은 돌아가고, 남은 손님은 실망하며 (만족 −0.08) 추가 주문이 30% 줄어든다"
+        tag: 가정
+        effect: {flag_present: meat_swapped, seat_flag: meat_swapped, reorder_keep: 0.7, door_leave: 0.3}
+      rush_buy:
+        label_ko: "근처 정육점에서 급히 사 온다"
+        effect_hint_ko: "메뉴는 그대로"
+        downside_ko: "소매가로 15인분 (원가의 1.35배)과 택시비, 사장님이 45분 자리를 비운다"
+        tag: 가정
+        effect: {hold_staff: 45, cost_portions: 15, cost_portion_premium: 0.35, cost_won: 15000}
+      stop_seating:
+        label_ko: "새 손님은 더 받지 않는다"
+        effect_hint_ko: "있는 손님에게만 집중한다"
+        downside_ko: "21시 이후 오는 손님을 모두 돌려보낸다"
+        tag: 가정
+        effect: {stop_seating: true}
+  rain_burst:
+    title_ko: "소나기"
+    clock_min: 180
+    clock_window: [90, 270]     # when the most 야장 tables are taken; only if someone is out there
+    prompt_ko: "갑자기 소나기가 쏟아집니다. 야장에 손님이 앉아 있습니다."
+    monthly_count: {value: 1, tag: 가정, note: "야장을 여는 달의 저녁 소나기 월 1회 가정"}
+    condition: terrace
+    default: move_inside
+    options:
+      move_inside:
+        label_ko: "안으로 모신다"
+        effect_hint_ko: "손님은 젖지 않는다"
+        downside_ko: "안쪽 테이블 2개를 40분 쓰게 되어 기다리는 손님이 늘고, 옮긴 손님은 조금 불편하다 (만족 −0.04)"
+        tag: 가정
+        effect: {hold_tables: 2, hold_minutes: 40, flag_present_terrace: moved_inside}
+      tarp:
+        label_ko: "천막과 우산으로 버틴다"
+        effect_hint_ko: "안쪽 자리는 그대로"
+        downside_ko: "천막·우산 3만원, 비 맞으며 먹는 야장 손님 불만 (만족 −0.12)"
+        tag: 가정
+        effect: {cost_won: 30000, flag_present_terrace: rain_tarp, seat_flag_terrace: rain_tarp}
+  blogger:
+    title_ko: "블로거"
+    clock_min: 120
+    prompt_ko: "19시, 맛집 블로거가 무료로 먹고 후기를 써 주겠다고 합니다."
+    monthly_count: {value: 1, tag: 가정, note: "블로거·인플루언서 협찬 제안 월 1회 가정"}
+    condition: always
+    default: decline
+    options:
+      comp:
+        label_ko: "서비스로 대접한다"
+        effect_hint_ko: "후기가 올라온다 (인지도 +0.04)"
+        downside_ko: "일행 포함 4인 상차림 원가, 원고료·교통비 5만원, 저녁 피크에 테이블 하나 2시간. 협찬 후기는 덜 믿는 손님도 있다"
+        tag: 가정
+        effect: {special_party: {size: 4, segment: twenties, tables: 1, dwell: 120, comp: true}, cost_won: 50000, state: {awareness: 0.04}}
+      decline:
+        label_ko: "정중히 거절한다"
+        effect_hint_ko: "비용이 없다"
+        downside_ko: "노출 기회를 놓치고, 서운한 글이 올라올 수도 있다 (평점 −0.01)"
+        tag: 가정
+        effect: {state: {rating: -0.01}}
+
+  # ---- 달별 사건 (2026-10-20): 한 달에 하나, 그 달의 달력에 맞춘 사건. months에 든 달에만 나온다. 값은 모두 가정.
+  cold_cancel:
+    title_ko: "한파로 예약 취소"
+    months: [1]
+    clock_min: 0
+    prompt_ko: "한파 주의보가 내려 주말 저녁 예약이 줄줄이 취소되고 있습니다."
+    monthly_count: {value: 8, tag: 가정, note: "한파로 영향받는 저녁이 한 달에 8번 있다고 가정"}
+    condition: always
+    default: nothing
+    options:
+      nothing:
+        label_ko: "그대로 둔다"
+        effect_hint_ko: "비용은 들지 않는다"
+        downside_ko: "손님이 10% 줄어든다"
+        tag: 가정
+        effect: {lam_mult: 0.9}
+      soup:
+        label_ko: "따뜻한 국물을 서비스로 낸다"
+        effect_hint_ko: "손님 감소가 5%로 줄어든다"
+        downside_ko: "밤마다 국물 재료 2만원이 든다"
+        tag: 가정
+        effect: {lam_mult: 0.95, cost_won: 20000, state: {rating: 0.005}}
+      deposit:
+        label_ko: "예약금을 받는다"
+        effect_hint_ko: "당일 취소가 줄어 손님 감소가 7%로 줄어든다"
+        downside_ko: "예약금이 부담스러운 손님은 예약을 미룬다 (인지도 −0.003)"
+        tag: 가정
+        effect: {lam_mult: 0.93, state: {awareness: -0.003}}
+  seol:
+    title_ko: "설 연휴 영업 여부"
+    months: [2]
+    clock_min: 0
+    prompt_ko: "설 연휴가 다가옵니다. 연휴에 문을 열지 정해야 합니다."
+    monthly_count: {value: 4, tag: 가정, note: "연휴 영업일이 한 달에 4번 있다고 가정"}
+    condition: always
+    default: normal
+    options:
+      normal:
+        label_ko: "평소대로 연다"
+        effect_hint_ko: "단골과 연휴 손님을 받는다"
+        downside_ko: "연휴라 손님이 15% 줄지만 일손은 그대로 쓴다"
+        tag: 가정
+        effect: {lam_mult: 0.85}
+      short:
+        label_ko: "단축해서 연다"
+        effect_hint_ko: "일찍 닫아 인건비를 아낀다"
+        downside_ko: "영업시간이 줄어 손님이 25% 줄어든다"
+        tag: 가정
+        effect: {lam_mult: 0.75, cost_hours: -3}
+      close:
+        label_ko: "쉰다"
+        effect_hint_ko: "직원이 쉬고 피로가 풀린다 (피로 −4)"
+        downside_ko: "연휴 매출이 0원이다. 월세는 그대로 나간다"
+        tag: 가정
+        effect: {lam_mult: 0.0, cost_hours: -24, state: {fatigue: -4}}
+  semester_party:
+    title_ko: "개강 총회 단체 문의"
+    months: [3]
+    clock_min: 120
+    prompt_ko: "대학생 단체가 개강 총회 자리를 문의해 왔습니다."
+    monthly_count: {value: 2, tag: 가정, note: "개강 달에 단체 문의가 2번 온다고 가정"}
+    condition: always
+    default: decline
+    options:
+      course:
+        label_ko: "단체 코스로 받는다"
+        effect_hint_ko: "12명 큰 계산서"
+        downside_ko: "테이블 3개를 2시간 넘게 써서 일반 손님을 놓칠 수 있다"
+        tag: 가정
+        effect: {special_party: {size: 12, segment: "twenties", tables: 3, dwell: 150}, flag_present: "noisy_group"}
+      normal:
+        label_ko: "일반 테이블로 받는다"
+        effect_hint_ko: "8명 한 팀, 부담이 적다"
+        downside_ko: "단체 규모가 작아 매출 기대가 작다"
+        tag: 가정
+        effect: {special_party: {size: 8, segment: "twenties", tables: 2, dwell: 130}}
+      decline:
+        label_ko: "정중히 거절한다"
+        effect_hint_ko: "일반 손님 자리를 지킨다"
+        downside_ko: "단체 매출을 놓치고 동네 학생들에게 아쉬운 기억이 남는다 (인지도 −0.003)"
+        tag: 가정
+        effect: {state: {awareness: -0.003}}
+  exam:
+    title_ko: "시험기간 학생 손님 감소"
+    months: [4]
+    clock_min: 0
+    prompt_ko: "중간고사 기간이라 학생 손님이 부쩍 줄었습니다."
+    monthly_count: {value: 8, tag: 가정, note: "시험기간 저녁이 한 달에 8번 있다고 가정"}
+    condition: always
+    default: hold
+    options:
+      hold:
+        label_ko: "그대로 둔다"
+        effect_hint_ko: "비용은 들지 않는다"
+        downside_ko: "학생 손님이 6% 줄어든다"
+        tag: 가정
+        effect: {lam_mult: 0.94}
+      discount:
+        label_ko: "학생 할인을 건다"
+        effect_hint_ko: "손님 감소가 1%로 줄어든다"
+        downside_ko: "할인으로 밤마다 1.5만원이 덜 남는다"
+        tag: 가정
+        effect: {lam_mult: 0.99, cost_won: 15000}
+  family_month:
+    title_ko: "가정의 달 가족 손님"
+    months: [5]
+    clock_min: 0
+    prompt_ko: "어린이날과 어버이날로 가족 손님이 늘어나는 주말입니다."
+    monthly_count: {value: 6, tag: 가정, note: "가정의 달 주말·공휴일 저녁이 한 달에 6번 있다고 가정"}
+    condition: always
+    default: as_is
+    options:
+      as_is:
+        label_ko: "평소대로 받는다"
+        effect_hint_ko: "준비 비용이 없다"
+        downside_ko: "가족 손님이 5%만 늘어난다"
+        tag: 가정
+        effect: {lam_mult: 1.05}
+      family:
+        label_ko: "가족 좌석과 메뉴를 준비한다"
+        effect_hint_ko: "손님이 10% 늘어난다"
+        downside_ko: "아기 의자와 어린이 메뉴 준비에 밤마다 2만원이 든다"
+        tag: 가정
+        effect: {lam_mult: 1.1, cost_won: 20000}
+  jangma:
+    title_ko: "장마로 손님 감소"
+    months: [6]
+    clock_min: 0
+    prompt_ko: "장마가 시작돼 비 오는 저녁에 길에 사람이 없습니다."
+    monthly_count: {value: 10, tag: 가정, note: "장마철 비 오는 저녁이 한 달에 10번 있다고 가정"}
+    condition: always
+    default: hold
+    options:
+      hold:
+        label_ko: "그대로 둔다"
+        effect_hint_ko: "비용은 들지 않는다"
+        downside_ko: "손님이 10% 줄어든다"
+        tag: 가정
+        effect: {lam_mult: 0.9}
+      coupon:
+        label_ko: "비 오는 날 쿠폰을 낸다"
+        effect_hint_ko: "손님 감소가 5%로 줄어든다"
+        downside_ko: "쿠폰 비용으로 밤마다 2만원이 든다"
+        tag: 가정
+        effect: {lam_mult: 0.95, cost_won: 20000}
+      delivery:
+        label_ko: "포장·배달을 시작한다"
+        effect_hint_ko: "손님 감소가 3%로 줄어든다"
+        downside_ko: "배달 대행과 포장재로 밤마다 3만원이 들고, 직원이 지친다 (피로 +2)"
+        tag: 가정
+        effect: {lam_mult: 0.97, cost_won: 30000, state: {fatigue: 2}}
+  heat:
+    title_ko: "무더위로 저녁 손님 감소"
+    months: [7]
+    clock_min: 0
+    prompt_ko: "열대야가 이어져 불 앞에서 고기를 굽는 손님이 줄었습니다."
+    monthly_count: {value: 12, tag: 가정, note: "열대야 저녁이 한 달에 12번 있다고 가정"}
+    condition: always
+    default: hold
+    options:
+      hold:
+        label_ko: "그대로 둔다"
+        effect_hint_ko: "비용은 들지 않는다"
+        downside_ko: "손님이 7% 줄어든다"
+        tag: 가정
+        effect: {lam_mult: 0.93}
+      cold_menu:
+        label_ko: "냉면·시원한 메뉴를 추가한다"
+        effect_hint_ko: "손님 감소가 3%로 줄어든다"
+        downside_ko: "재료와 준비로 밤마다 1.5만원이 든다"
+        tag: 가정
+        effect: {lam_mult: 0.97, cost_won: 15000}
+      short_hours:
+        label_ko: "일찍 닫는다"
+        effect_hint_ko: "인건비를 아낀다"
+        downside_ko: "늦은 시간 손님을 놓쳐 손님이 15% 줄어든다"
+        tag: 가정
+        effect: {lam_mult: 0.85, cost_hours: -3}
+  vacation:
+    title_ko: "알바 휴가 요청"
+    months: [8]
+    clock_min: 60
+    prompt_ko: "알바 한 명이 휴가를 쓰고 싶다고 합니다."
+    monthly_count: {value: 2, tag: 가정, note: "휴가철에 알바 휴가 요청이 2번 있다고 가정"}
+    condition: staff
+    default: refuse
+    options:
+      allow:
+        label_ko: "휴가를 준다"
+        effect_hint_ko: "직원이 쉬고 관계가 좋아진다"
+        downside_ko: "저녁 피크 두 시간 동안 일손이 모자라고 사장님이 지친다 (피로 +3)"
+        tag: 가정
+        effect: {hold_staff: 120, state: {fatigue: 3}}
+      sub:
+        label_ko: "대타를 불러 휴가를 준다"
+        effect_hint_ko: "일손이 거의 그대로다"
+        downside_ko: "대타 일당이 든다 (5시간 × 시급 × 1.5)"
+        tag: 가정
+        effect: {hold_staff: 30, cost_hours: 5, cost_hour_mult: 1.5}
+      refuse:
+        label_ko: "휴가를 미룬다"
+        effect_hint_ko: "비용이 없다"
+        downside_ko: "알바가 지쳐 퇴사할 수 있다 (피로 +2)"
+        tag: 가정
+        effect: {state: {fatigue: 2}}
+  chuseok:
+    title_ko: "추석 앞 단체 예약"
+    months: [9]
+    clock_min: 120
+    prompt_ko: "추석 전에 직장 단체가 회식 예약을 문의해 왔습니다."
+    monthly_count: {value: 2, tag: 가정, note: "추석 전 주에 단체 문의가 2번 온다고 가정"}
+    condition: always
+    default: decline
+    options:
+      course:
+        label_ko: "단체 코스로 받는다"
+        effect_hint_ko: "10명 큰 계산서"
+        downside_ko: "테이블 2개를 오래 써서 일반 손님을 놓칠 수 있다"
+        tag: 가정
+        effect: {special_party: {size: 10, segment: "office", tables: 2, dwell: 140}, flag_present: "noisy_group"}
+      normal:
+        label_ko: "일반 테이블로 받는다"
+        effect_hint_ko: "6명 한 팀, 부담이 적다"
+        downside_ko: "단체 규모가 작아 매출 기대가 작다"
+        tag: 가정
+        effect: {special_party: {size: 6, segment: "office", tables: 1, dwell: 120}}
+      decline:
+        label_ko: "정중히 거절한다"
+        effect_hint_ko: "일반 손님 자리를 지킨다"
+        downside_ko: "단체 매출을 놓친다 (인지도 −0.003)"
+        tag: 가정
+        effect: {state: {awareness: -0.003}}
+  festival:
+    title_ko: "축제 주간 밤 손님 폭증"
+    months: [10]
+    clock_min: 120
+    prompt_ko: "대학 축제 주간이라 저녁마다 손님이 몰립니다."
+    monthly_count: {value: 6, tag: 가정, note: "축제 주간 저녁이 한 달에 6번 있다고 가정"}
+    condition: always
+    default: hold
+    options:
+      hold:
+        label_ko: "그대로 받는다"
+        effect_hint_ko: "손님이 7% 늘어난다"
+        downside_ko: "고기가 모자라 늦게 온 손님 일부를 돌려보낸다"
+        tag: 가정
+        effect: {lam_mult: 1.07}
+      stock:
+        label_ko: "고기를 넉넉히 준비한다"
+        effect_hint_ko: "손님이 12% 늘어난다"
+        downside_ko: "미리 사 둔 고기와 폐기로 밤마다 2만원이 든다"
+        tag: 가정
+        effect: {lam_mult: 1.12, cost_won: 20000}
+      extra_staff:
+        label_ko: "임시 알바를 쓴다"
+        effect_hint_ko: "손님이 10% 늘고 사장님이 덜 지친다 (피로 −2)"
+        downside_ko: "피크 두 시간 임시 알바 일당이 든다"
+        tag: 가정
+        effect: {lam_mult: 1.1, cost_hours: 2, state: {fatigue: -2}}
+  pork_price:
+    title_ko: "돼지고기 도매가 급등"
+    months: [11]
+    clock_min: 0
+    prompt_ko: "돼지고기 도매가가 갑자기 올랐습니다."
+    monthly_count: {value: 12, tag: 가정, note: "가격이 오른 상태로 영업하는 저녁이 한 달에 12번 있다고 가정"}
+    condition: always
+    default: absorb
+    options:
+      absorb:
+        label_ko: "참는다"
+        effect_hint_ko: "가격을 그대로 둬 손님이 그대로다"
+        downside_ko: "원가가 15% 올라 마진이 줄어든다"
+        tag: 가정
+        effect: {cost_portions: 60, cost_portion_premium: 0.15}
+      raise:
+        label_ko: "가격을 올린다"
+        effect_hint_ko: "원가 상승을 손님에게 넘긴다"
+        downside_ko: "올린 값에 손님이 4% 줄어든다"
+        tag: 가정
+        effect: {cost_portions: 60, cost_portion_premium: 0.15, lam_mult: 0.96, price_mult: 1.06}
+      shrink:
+        label_ko: "1인분을 줄인다"
+        effect_hint_ko: "원가가 줄어든다"
+        downside_ko: "양이 줄어 손님 만족이 떨어진다 (평점 −0.02)"
+        tag: 가정
+        effect: {cost_portions: 60, cost_portion_premium: 0.05, state: {rating: -0.02}}
+  year_end:
+    title_ko: "연말 단체 회식"
+    months: [12]
+    clock_min: 150
+    prompt_ko: "연말이라 예약 없는 회식 단체가 줄지어 들어옵니다."
+    monthly_count: {value: 6, tag: 가정, note: "연말 저녁에 예약 없는 단체가 한 달에 6번 온다고 가정"}
+    condition: always
+    default: turn_away
+    options:
+      seat:
+        label_ko: "테이블을 붙여 받는다"
+        effect_hint_ko: "큰 계산서 한 장"
+        downside_ko: "먼저 비는 테이블 두 개를 단체에 주니 줄 선 손님이 더 기다리다 돌아가고, 앉은 손님은 시끄러운 회식에 불편해한다"
+        tag: 가정
+        effect: {special_party: {size: 11, segment: "office", tables: 2, dwell: 150}, flag_present: "noisy_group"}
+      turn_away:
+        label_ko: "죄송하다고 돌려보낸다"
+        effect_hint_ko: "지금 손님들의 자리를 지킨다"
+        downside_ko: "단체 매출을 놓치고 소문이 날 수 있다 (인지도 −0.005)"
+        tag: 가정
+        effect: {state: {awareness: -0.005}}

@@ -1,0 +1,7520 @@
+{
+ "meta": {
+  "industry": "pork_bbq",
+  "label_ko": "돼지고기 구이집",
+  "run_date": "2026-10-01",
+  "seoul_service_code": "CS100001",
+  "sbiz_primary_codes": [
+   "I20107"
+  ],
+  "units": {
+   "hansik_sales_krw": "KRW per quarter (source column says 당월 but it is the quarter total)",
+   "sales_per_store_month_krw": "quarter sales / stores_total / 3",
+   "shares": "fractions of their own column group; age/sex exclude corporate cards",
+   "flpop_total": "as served (sum of the 7 weekday columns); compare within dataset only"
+  },
+  "caveat": "추정매출 has no category finer than 한식 (CS100001); pork-level demand is an allocation."
+ },
+ "trdar": {
+  "3120012": {
+   "trdar_name": "대학로(혜화역)",
+   "trdar_type": "발달상권",
+   "role": "primary",
+   "adstrd_name": "혜화동",
+   "signgu_name": "종로구",
+   "area_m2": 256888,
+   "sbiz_stores": {
+    "snapshot": "20260630",
+    "I20107": {
+     "stores": 27,
+     "franchise_flag": 6
+    },
+    "I20108": {
+     "stores": 4,
+     "franchise_flag": 0
+    },
+    "I20109": {
+     "stores": 4,
+     "franchise_flag": 0
+    },
+    "I201_all": 160
+   },
+   "licenses": {
+    "all_uptae": 1782,
+    "hansik": 446,
+    "hansik_open": 174,
+    "hansik_closed": 272
+   },
+   "store_license_match": {
+    "high": 28,
+    "address_only": 6,
+    "none": 1
+   },
+   "annual": {
+    "2021": {
+     "quarters": 4,
+     "hansik_sales_krw": 32837311455,
+     "stores_q4_total": 157,
+     "stores_q4_independent": 120,
+     "stores_q4_franchise": 37,
+     "sales_per_store_month_krw_q4_stores": 17429571
+    },
+    "2022": {
+     "quarters": 4,
+     "hansik_sales_krw": 47075985042,
+     "stores_q4_total": 161,
+     "stores_q4_independent": 128,
+     "stores_q4_franchise": 33,
+     "sales_per_store_month_krw_q4_stores": 24366452
+    },
+    "2023": {
+     "quarters": 4,
+     "hansik_sales_krw": 54946845886,
+     "stores_q4_total": 163,
+     "stores_q4_independent": 132,
+     "stores_q4_franchise": 31,
+     "sales_per_store_month_krw_q4_stores": 28091435
+    },
+    "2024": {
+     "quarters": 4,
+     "hansik_sales_krw": 58172088178,
+     "stores_q4_total": 177,
+     "stores_q4_independent": 145,
+     "stores_q4_franchise": 32,
+     "sales_per_store_month_krw_q4_stores": 27387989
+    },
+    "2025": {
+     "quarters": 4,
+     "hansik_sales_krw": 59087346627,
+     "stores_q4_total": 191,
+     "stores_q4_independent": 160,
+     "stores_q4_franchise": 31,
+     "sales_per_store_month_krw_q4_stores": 25779820
+    },
+    "2026": {
+     "quarters": 2,
+     "hansik_sales_krw": 29036160929,
+     "stores_q4_total": null,
+     "stores_q4_independent": null,
+     "stores_q4_franchise": null
+    }
+   },
+   "quarters": {
+    "20211": {
+     "hansik_sales_krw": 6798754426,
+     "hansik_sales_count": 222422,
+     "avg_ticket_krw": 30567,
+     "weekend_share": 0.2911,
+     "dow_share": {
+      "mon": 0.1296,
+      "tue": 0.1417,
+      "wed": 0.1484,
+      "thu": 0.1335,
+      "fri": 0.1556,
+      "sat": 0.1619,
+      "sun": 0.1292
+     },
+     "timeband_share": {
+      "t00_06": 0.0006,
+      "t06_11": 0.0114,
+      "t11_14": 0.2575,
+      "t14_17": 0.1133,
+      "t17_21": 0.5183,
+      "t21_24": 0.0989
+     },
+     "evening_share_17_24": 0.6172,
+     "lunch_share_11_14": 0.2575,
+     "age_share": {
+      "age10": 0.0192,
+      "age20": 0.3453,
+      "age30": 0.2345,
+      "age40": 0.16,
+      "age50": 0.1648,
+      "age60plus": 0.0762
+     },
+     "sex_share": {
+      "male": 0.527,
+      "female": 0.473
+     },
+     "age_split_coverage": 0.8678,
+     "stores_total": 158,
+     "stores_independent": 123,
+     "stores_franchise": 35,
+     "stores_opened": 5,
+     "stores_closed": 3,
+     "sales_per_store_month_krw": 14343364,
+     "flpop_total": 2814550,
+     "flpop_age_share": {
+      "age10": 0.1262,
+      "age20": 0.3073,
+      "age30": 0.155,
+      "age40": 0.1334,
+      "age50": 0.1173,
+      "age60plus": 0.1609
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1633,
+      "t06_11": 0.17,
+      "t11_14": 0.1478,
+      "t14_17": 0.169,
+      "t17_21": 0.2403,
+      "t21_24": 0.1095
+     },
+     "workers_total": 3584,
+     "residents_total": 2009,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20212": {
+     "hansik_sales_krw": 8469566558,
+     "hansik_sales_count": 280737,
+     "avg_ticket_krw": 30169,
+     "weekend_share": 0.2904,
+     "dow_share": {
+      "mon": 0.1273,
+      "tue": 0.1384,
+      "wed": 0.1462,
+      "thu": 0.1376,
+      "fri": 0.16,
+      "sat": 0.1599,
+      "sun": 0.1305
+     },
+     "timeband_share": {
+      "t00_06": 0.0004,
+      "t06_11": 0.0113,
+      "t11_14": 0.2421,
+      "t14_17": 0.1065,
+      "t17_21": 0.4954,
+      "t21_24": 0.1441
+     },
+     "evening_share_17_24": 0.6395,
+     "lunch_share_11_14": 0.2421,
+     "age_share": {
+      "age10": 0.0213,
+      "age20": 0.3421,
+      "age30": 0.237,
+      "age40": 0.1662,
+      "age50": 0.1594,
+      "age60plus": 0.0739
+     },
+     "sex_share": {
+      "male": 0.5088,
+      "female": 0.4912
+     },
+     "age_split_coverage": 0.8813,
+     "stores_total": 160,
+     "stores_independent": 126,
+     "stores_franchise": 34,
+     "stores_opened": 6,
+     "stores_closed": 4,
+     "sales_per_store_month_krw": 17644930,
+     "flpop_total": 3021496,
+     "flpop_age_share": {
+      "age10": 0.1282,
+      "age20": 0.324,
+      "age30": 0.1568,
+      "age40": 0.1283,
+      "age50": 0.1137,
+      "age60plus": 0.149
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1561,
+      "t06_11": 0.163,
+      "t11_14": 0.1467,
+      "t14_17": 0.1699,
+      "t17_21": 0.2509,
+      "t21_24": 0.1133
+     },
+     "workers_total": 3584,
+     "residents_total": 2009,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20213": {
+     "hansik_sales_krw": 7143222752,
+     "hansik_sales_count": 247833,
+     "avg_ticket_krw": 28823,
+     "weekend_share": 0.2791,
+     "dow_share": {
+      "mon": 0.1234,
+      "tue": 0.1296,
+      "wed": 0.1478,
+      "thu": 0.1644,
+      "fri": 0.1556,
+      "sat": 0.1544,
+      "sun": 0.1247
+     },
+     "timeband_share": {
+      "t00_06": 0.0012,
+      "t06_11": 0.015,
+      "t11_14": 0.2873,
+      "t14_17": 0.1318,
+      "t17_21": 0.4745,
+      "t21_24": 0.0901
+     },
+     "evening_share_17_24": 0.5646,
+     "lunch_share_11_14": 0.2873,
+     "age_share": {
+      "age10": 0.0182,
+      "age20": 0.3511,
+      "age30": 0.2325,
+      "age40": 0.1642,
+      "age50": 0.1525,
+      "age60plus": 0.0816
+     },
+     "sex_share": {
+      "male": 0.5084,
+      "female": 0.4916
+     },
+     "age_split_coverage": 0.8659,
+     "stores_total": 157,
+     "stores_independent": 122,
+     "stores_franchise": 35,
+     "stores_opened": 4,
+     "stores_closed": 7,
+     "sales_per_store_month_krw": 15166078,
+     "flpop_total": 2732619,
+     "flpop_age_share": {
+      "age10": 0.1083,
+      "age20": 0.3253,
+      "age30": 0.1598,
+      "age40": 0.1321,
+      "age50": 0.1165,
+      "age60plus": 0.158
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1702,
+      "t06_11": 0.1669,
+      "t11_14": 0.145,
+      "t14_17": 0.1711,
+      "t17_21": 0.2371,
+      "t21_24": 0.1097
+     },
+     "workers_total": 3584,
+     "residents_total": 2009,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20214": {
+     "hansik_sales_krw": 10425767719,
+     "hansik_sales_count": 315235,
+     "avg_ticket_krw": 33073,
+     "weekend_share": 0.3118,
+     "dow_share": {
+      "mon": 0.114,
+      "tue": 0.1311,
+      "wed": 0.1388,
+      "thu": 0.1406,
+      "fri": 0.1636,
+      "sat": 0.178,
+      "sun": 0.1338
+     },
+     "timeband_share": {
+      "t00_06": 0.0162,
+      "t06_11": 0.0114,
+      "t11_14": 0.2404,
+      "t14_17": 0.1176,
+      "t17_21": 0.48,
+      "t21_24": 0.1344
+     },
+     "evening_share_17_24": 0.6144,
+     "lunch_share_11_14": 0.2404,
+     "age_share": {
+      "age10": 0.0256,
+      "age20": 0.3556,
+      "age30": 0.2224,
+      "age40": 0.1642,
+      "age50": 0.1561,
+      "age60plus": 0.0761
+     },
+     "sex_share": {
+      "male": 0.5034,
+      "female": 0.4966
+     },
+     "age_split_coverage": 0.8671,
+     "stores_total": 157,
+     "stores_independent": 120,
+     "stores_franchise": 37,
+     "stores_opened": 5,
+     "stores_closed": 5,
+     "sales_per_store_month_krw": 22135388,
+     "flpop_total": 3329853,
+     "flpop_age_share": {
+      "age10": 0.1151,
+      "age20": 0.3374,
+      "age30": 0.1595,
+      "age40": 0.129,
+      "age50": 0.1128,
+      "age60plus": 0.1463
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1601,
+      "t06_11": 0.1605,
+      "t11_14": 0.146,
+      "t14_17": 0.1716,
+      "t17_21": 0.2469,
+      "t21_24": 0.1149
+     },
+     "workers_total": 3737,
+     "residents_total": 2009,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20221": {
+     "hansik_sales_krw": 8359624853,
+     "hansik_sales_count": 247642,
+     "avg_ticket_krw": 33757,
+     "weekend_share": 0.3062,
+     "dow_share": {
+      "mon": 0.1257,
+      "tue": 0.1331,
+      "wed": 0.1408,
+      "thu": 0.1488,
+      "fri": 0.1453,
+      "sat": 0.1704,
+      "sun": 0.1358
+     },
+     "timeband_share": {
+      "t00_06": 0.0006,
+      "t06_11": 0.0128,
+      "t11_14": 0.2419,
+      "t14_17": 0.1183,
+      "t17_21": 0.5366,
+      "t21_24": 0.0898
+     },
+     "evening_share_17_24": 0.6264,
+     "lunch_share_11_14": 0.2419,
+     "age_share": {
+      "age10": 0.0176,
+      "age20": 0.3363,
+      "age30": 0.239,
+      "age40": 0.1591,
+      "age50": 0.1633,
+      "age60plus": 0.0846
+     },
+     "sex_share": {
+      "male": 0.5107,
+      "female": 0.4893
+     },
+     "age_split_coverage": 0.8751,
+     "stores_total": 156,
+     "stores_independent": 121,
+     "stores_franchise": 35,
+     "stores_opened": 3,
+     "stores_closed": 4,
+     "sales_per_store_month_krw": 17862446,
+     "flpop_total": 3127482,
+     "flpop_age_share": {
+      "age10": 0.1176,
+      "age20": 0.3306,
+      "age30": 0.1581,
+      "age40": 0.1254,
+      "age50": 0.1157,
+      "age60plus": 0.1527
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1617,
+      "t06_11": 0.163,
+      "t11_14": 0.1457,
+      "t14_17": 0.1732,
+      "t17_21": 0.2473,
+      "t21_24": 0.1092
+     },
+     "workers_total": 3737,
+     "residents_total": 2009,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20222": {
+     "hansik_sales_krw": 11810859390,
+     "hansik_sales_count": 320561,
+     "avg_ticket_krw": 36844,
+     "weekend_share": 0.3135,
+     "dow_share": {
+      "mon": 0.1219,
+      "tue": 0.1243,
+      "wed": 0.1378,
+      "thu": 0.141,
+      "fri": 0.1615,
+      "sat": 0.185,
+      "sun": 0.1285
+     },
+     "timeband_share": {
+      "t00_06": 0.03,
+      "t06_11": 0.0098,
+      "t11_14": 0.2257,
+      "t14_17": 0.1027,
+      "t17_21": 0.4542,
+      "t21_24": 0.1777
+     },
+     "evening_share_17_24": 0.6319,
+     "lunch_share_11_14": 0.2257,
+     "age_share": {
+      "age10": 0.0161,
+      "age20": 0.3219,
+      "age30": 0.2477,
+      "age40": 0.1706,
+      "age50": 0.1666,
+      "age60plus": 0.077
+     },
+     "sex_share": {
+      "male": 0.5085,
+      "female": 0.4915
+     },
+     "age_split_coverage": 0.8645,
+     "stores_total": 164,
+     "stores_independent": 128,
+     "stores_franchise": 36,
+     "stores_opened": 10,
+     "stores_closed": 2,
+     "sales_per_store_month_krw": 24005812,
+     "flpop_total": 3615418,
+     "flpop_age_share": {
+      "age10": 0.1302,
+      "age20": 0.3435,
+      "age30": 0.1593,
+      "age40": 0.1231,
+      "age50": 0.1097,
+      "age60plus": 0.1342
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1571,
+      "t06_11": 0.1564,
+      "t11_14": 0.1452,
+      "t14_17": 0.1691,
+      "t17_21": 0.2497,
+      "t21_24": 0.1225
+     },
+     "workers_total": 3737,
+     "residents_total": 2009,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20223": {
+     "hansik_sales_krw": 12146357330,
+     "hansik_sales_count": 325463,
+     "avg_ticket_krw": 37320,
+     "weekend_share": 0.3136,
+     "dow_share": {
+      "mon": 0.1174,
+      "tue": 0.1214,
+      "wed": 0.1391,
+      "thu": 0.1408,
+      "fri": 0.1676,
+      "sat": 0.176,
+      "sun": 0.1376
+     },
+     "timeband_share": {
+      "t00_06": 0.0323,
+      "t06_11": 0.0107,
+      "t11_14": 0.232,
+      "t14_17": 0.1024,
+      "t17_21": 0.4661,
+      "t21_24": 0.1566
+     },
+     "evening_share_17_24": 0.6227,
+     "lunch_share_11_14": 0.232,
+     "age_share": {
+      "age10": 0.0162,
+      "age20": 0.3223,
+      "age30": 0.2411,
+      "age40": 0.1751,
+      "age50": 0.1674,
+      "age60plus": 0.0779
+     },
+     "sex_share": {
+      "male": 0.4927,
+      "female": 0.5073
+     },
+     "age_split_coverage": 0.8618,
+     "stores_total": 160,
+     "stores_independent": 127,
+     "stores_franchise": 33,
+     "stores_opened": 3,
+     "stores_closed": 7,
+     "sales_per_store_month_krw": 25304911,
+     "flpop_total": 3571027,
+     "flpop_age_share": {
+      "age10": 0.1294,
+      "age20": 0.3469,
+      "age30": 0.1626,
+      "age40": 0.1216,
+      "age50": 0.1103,
+      "age60plus": 0.1292
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1525,
+      "t06_11": 0.1542,
+      "t11_14": 0.1459,
+      "t14_17": 0.1731,
+      "t17_21": 0.2539,
+      "t21_24": 0.1205
+     },
+     "workers_total": 3737,
+     "residents_total": 2009,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20224": {
+     "hansik_sales_krw": 14759143469,
+     "hansik_sales_count": 366140,
+     "avg_ticket_krw": 40310,
+     "weekend_share": 0.3286,
+     "dow_share": {
+      "mon": 0.1117,
+      "tue": 0.1249,
+      "wed": 0.1375,
+      "thu": 0.1322,
+      "fri": 0.1651,
+      "sat": 0.1929,
+      "sun": 0.1357
+     },
+     "timeband_share": {
+      "t00_06": 0.0304,
+      "t06_11": 0.0083,
+      "t11_14": 0.2298,
+      "t14_17": 0.0978,
+      "t17_21": 0.4613,
+      "t21_24": 0.1724
+     },
+     "evening_share_17_24": 0.6337,
+     "lunch_share_11_14": 0.2298,
+     "age_share": {
+      "age10": 0.0215,
+      "age20": 0.3276,
+      "age30": 0.2239,
+      "age40": 0.1707,
+      "age50": 0.1771,
+      "age60plus": 0.0792
+     },
+     "sex_share": {
+      "male": 0.4789,
+      "female": 0.5211
+     },
+     "age_split_coverage": 0.8402,
+     "stores_total": 161,
+     "stores_independent": 128,
+     "stores_franchise": 33,
+     "stores_opened": 8,
+     "stores_closed": 7,
+     "sales_per_store_month_krw": 30557233,
+     "flpop_total": 3761066,
+     "flpop_age_share": {
+      "age10": 0.1353,
+      "age20": 0.3514,
+      "age30": 0.1602,
+      "age40": 0.1193,
+      "age50": 0.1099,
+      "age60plus": 0.124
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1504,
+      "t06_11": 0.1548,
+      "t11_14": 0.1487,
+      "t14_17": 0.1718,
+      "t17_21": 0.254,
+      "t21_24": 0.1203
+     },
+     "workers_total": 3388,
+     "residents_total": 1973,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20231": {
+     "hansik_sales_krw": 13450856546,
+     "hansik_sales_count": 337557,
+     "avg_ticket_krw": 39848,
+     "weekend_share": 0.3108,
+     "dow_share": {
+      "mon": 0.1242,
+      "tue": 0.1277,
+      "wed": 0.1384,
+      "thu": 0.14,
+      "fri": 0.1589,
+      "sat": 0.1795,
+      "sun": 0.1313
+     },
+     "timeband_share": {
+      "t00_06": 0.0304,
+      "t06_11": 0.0098,
+      "t11_14": 0.2282,
+      "t14_17": 0.0897,
+      "t17_21": 0.4615,
+      "t21_24": 0.1805
+     },
+     "evening_share_17_24": 0.642,
+     "lunch_share_11_14": 0.2282,
+     "age_share": {
+      "age10": 0.0132,
+      "age20": 0.3093,
+      "age30": 0.2548,
+      "age40": 0.1633,
+      "age50": 0.1772,
+      "age60plus": 0.0822
+     },
+     "sex_share": {
+      "male": 0.4854,
+      "female": 0.5146
+     },
+     "age_split_coverage": 0.8667,
+     "stores_total": 160,
+     "stores_independent": 127,
+     "stores_franchise": 33,
+     "stores_opened": 3,
+     "stores_closed": 4,
+     "sales_per_store_month_krw": 28022618,
+     "flpop_total": 3464545,
+     "flpop_age_share": {
+      "age10": 0.1266,
+      "age20": 0.3564,
+      "age30": 0.1618,
+      "age40": 0.1211,
+      "age50": 0.1086,
+      "age60plus": 0.1256
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1468,
+      "t06_11": 0.1487,
+      "t11_14": 0.1452,
+      "t14_17": 0.1757,
+      "t17_21": 0.2614,
+      "t21_24": 0.1221
+     },
+     "workers_total": 3388,
+     "residents_total": 1973,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20232": {
+     "hansik_sales_krw": 13095043801,
+     "hansik_sales_count": 339234,
+     "avg_ticket_krw": 38602,
+     "weekend_share": 0.3225,
+     "dow_share": {
+      "mon": 0.1153,
+      "tue": 0.125,
+      "wed": 0.1342,
+      "thu": 0.1423,
+      "fri": 0.1606,
+      "sat": 0.1879,
+      "sun": 0.1347
+     },
+     "timeband_share": {
+      "t00_06": 0.0317,
+      "t06_11": 0.0098,
+      "t11_14": 0.2275,
+      "t14_17": 0.0918,
+      "t17_21": 0.465,
+      "t21_24": 0.1743
+     },
+     "evening_share_17_24": 0.6393,
+     "lunch_share_11_14": 0.2275,
+     "age_share": {
+      "age10": 0.0173,
+      "age20": 0.3142,
+      "age30": 0.2394,
+      "age40": 0.1669,
+      "age50": 0.1761,
+      "age60plus": 0.0861
+     },
+     "sex_share": {
+      "male": 0.4775,
+      "female": 0.5225
+     },
+     "age_split_coverage": 0.861,
+     "stores_total": 166,
+     "stores_independent": 131,
+     "stores_franchise": 35,
+     "stores_opened": 10,
+     "stores_closed": 4,
+     "sales_per_store_month_krw": 26295269,
+     "flpop_total": 3655665,
+     "flpop_age_share": {
+      "age10": 0.1364,
+      "age20": 0.3608,
+      "age30": 0.1602,
+      "age40": 0.1162,
+      "age50": 0.104,
+      "age60plus": 0.1224
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.152,
+      "t06_11": 0.1529,
+      "t11_14": 0.1454,
+      "t14_17": 0.1701,
+      "t17_21": 0.256,
+      "t21_24": 0.1236
+     },
+     "workers_total": 3388,
+     "residents_total": 1973,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20233": {
+     "hansik_sales_krw": 13102842775,
+     "hansik_sales_count": 337887,
+     "avg_ticket_krw": 38779,
+     "weekend_share": 0.3314,
+     "dow_share": {
+      "mon": 0.1212,
+      "tue": 0.1259,
+      "wed": 0.1378,
+      "thu": 0.1378,
+      "fri": 0.146,
+      "sat": 0.1916,
+      "sun": 0.1398
+     },
+     "timeband_share": {
+      "t00_06": 0.0309,
+      "t06_11": 0.0084,
+      "t11_14": 0.235,
+      "t14_17": 0.0947,
+      "t17_21": 0.4706,
+      "t21_24": 0.1604
+     },
+     "evening_share_17_24": 0.631,
+     "lunch_share_11_14": 0.235,
+     "age_share": {
+      "age10": 0.0193,
+      "age20": 0.3203,
+      "age30": 0.2407,
+      "age40": 0.17,
+      "age50": 0.1679,
+      "age60plus": 0.0818
+     },
+     "sex_share": {
+      "male": 0.4744,
+      "female": 0.5256
+     },
+     "age_split_coverage": 0.8584,
+     "stores_total": 163,
+     "stores_independent": 128,
+     "stores_franchise": 35,
+     "stores_opened": 5,
+     "stores_closed": 8,
+     "sales_per_store_month_krw": 26795179,
+     "flpop_total": 3524596,
+     "flpop_age_share": {
+      "age10": 0.1289,
+      "age20": 0.345,
+      "age30": 0.1679,
+      "age40": 0.1224,
+      "age50": 0.1094,
+      "age60plus": 0.1264
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1452,
+      "t06_11": 0.1495,
+      "t11_14": 0.1464,
+      "t14_17": 0.1768,
+      "t17_21": 0.2621,
+      "t21_24": 0.1201
+     },
+     "workers_total": 3388,
+     "residents_total": 1973,
+     "households_total": 1346,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20234": {
+     "hansik_sales_krw": 15298102764,
+     "hansik_sales_count": 374088,
+     "avg_ticket_krw": 40894,
+     "weekend_share": 0.3289,
+     "dow_share": {
+      "mon": 0.1222,
+      "tue": 0.1229,
+      "wed": 0.1352,
+      "thu": 0.1376,
+      "fri": 0.1531,
+      "sat": 0.1754,
+      "sun": 0.1535
+     },
+     "timeband_share": {
+      "t00_06": 0.0337,
+      "t06_11": 0.0087,
+      "t11_14": 0.2265,
+      "t14_17": 0.1035,
+      "t17_21": 0.4648,
+      "t21_24": 0.1628
+     },
+     "evening_share_17_24": 0.6276,
+     "lunch_share_11_14": 0.2265,
+     "age_share": {
+      "age10": 0.0264,
+      "age20": 0.3116,
+      "age30": 0.2251,
+      "age40": 0.1756,
+      "age50": 0.1766,
+      "age60plus": 0.0846
+     },
+     "sex_share": {
+      "male": 0.4806,
+      "female": 0.5194
+     },
+     "age_split_coverage": 0.8403,
+     "stores_total": 163,
+     "stores_independent": 132,
+     "stores_franchise": 31,
+     "stores_opened": 6,
+     "stores_closed": 6,
+     "sales_per_store_month_krw": 31284464,
+     "flpop_total": 4029662,
+     "flpop_age_share": {
+      "age10": 0.1388,
+      "age20": 0.3497,
+      "age30": 0.1605,
+      "age40": 0.1201,
+      "age50": 0.1067,
+      "age60plus": 0.1244
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1447,
+      "t06_11": 0.1566,
+      "t11_14": 0.1481,
+      "t14_17": 0.1732,
+      "t17_21": 0.2575,
+      "t21_24": 0.1199
+     },
+     "workers_total": 2452,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20241": {
+     "hansik_sales_krw": 13797284752,
+     "hansik_sales_count": 349023,
+     "avg_ticket_krw": 39531,
+     "weekend_share": 0.3296,
+     "dow_share": {
+      "mon": 0.1132,
+      "tue": 0.1231,
+      "wed": 0.1402,
+      "thu": 0.1409,
+      "fri": 0.1529,
+      "sat": 0.186,
+      "sun": 0.1437
+     },
+     "timeband_share": {
+      "t00_06": 0.0332,
+      "t06_11": 0.0082,
+      "t11_14": 0.227,
+      "t14_17": 0.0987,
+      "t17_21": 0.4638,
+      "t21_24": 0.1693
+     },
+     "evening_share_17_24": 0.6331,
+     "lunch_share_11_14": 0.227,
+     "age_share": {
+      "age10": 0.0145,
+      "age20": 0.3105,
+      "age30": 0.2464,
+      "age40": 0.1603,
+      "age50": 0.1804,
+      "age60plus": 0.088
+     },
+     "sex_share": {
+      "male": 0.4688,
+      "female": 0.5312
+     },
+     "age_split_coverage": 0.8816,
+     "stores_total": 171,
+     "stores_independent": 134,
+     "stores_franchise": 37,
+     "stores_opened": 17,
+     "stores_closed": 9,
+     "sales_per_store_month_krw": 26895292,
+     "flpop_total": 3705077,
+     "flpop_age_share": {
+      "age10": 0.1251,
+      "age20": 0.345,
+      "age30": 0.1661,
+      "age40": 0.1242,
+      "age50": 0.1099,
+      "age60plus": 0.1298
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1438,
+      "t06_11": 0.153,
+      "t11_14": 0.1438,
+      "t14_17": 0.1774,
+      "t17_21": 0.262,
+      "t21_24": 0.1201
+     },
+     "workers_total": 2452,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20242": {
+     "hansik_sales_krw": 14087219247,
+     "hansik_sales_count": 371417,
+     "avg_ticket_krw": 37928,
+     "weekend_share": 0.3197,
+     "dow_share": {
+      "mon": 0.1106,
+      "tue": 0.1314,
+      "wed": 0.1408,
+      "thu": 0.1356,
+      "fri": 0.1619,
+      "sat": 0.1796,
+      "sun": 0.1402
+     },
+     "timeband_share": {
+      "t00_06": 0.0379,
+      "t06_11": 0.0072,
+      "t11_14": 0.231,
+      "t14_17": 0.1002,
+      "t17_21": 0.4431,
+      "t21_24": 0.1806
+     },
+     "evening_share_17_24": 0.6237,
+     "lunch_share_11_14": 0.231,
+     "age_share": {
+      "age10": 0.0209,
+      "age20": 0.308,
+      "age30": 0.2475,
+      "age40": 0.1632,
+      "age50": 0.1738,
+      "age60plus": 0.0867
+     },
+     "sex_share": {
+      "male": 0.4707,
+      "female": 0.5293
+     },
+     "age_split_coverage": 0.8712,
+     "stores_total": 172,
+     "stores_independent": 139,
+     "stores_franchise": 33,
+     "stores_opened": 13,
+     "stores_closed": 12,
+     "sales_per_store_month_krw": 27300812,
+     "flpop_total": 3871488,
+     "flpop_age_share": {
+      "age10": 0.1365,
+      "age20": 0.3566,
+      "age30": 0.1589,
+      "age40": 0.12,
+      "age50": 0.1057,
+      "age60plus": 0.1223
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1489,
+      "t06_11": 0.159,
+      "t11_14": 0.1457,
+      "t14_17": 0.1705,
+      "t17_21": 0.2554,
+      "t21_24": 0.1204
+     },
+     "workers_total": 2452,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20243": {
+     "hansik_sales_krw": 13673261201,
+     "hansik_sales_count": 354065,
+     "avg_ticket_krw": 38618,
+     "weekend_share": 0.3315,
+     "dow_share": {
+      "mon": 0.1207,
+      "tue": 0.1197,
+      "wed": 0.1366,
+      "thu": 0.1376,
+      "fri": 0.154,
+      "sat": 0.1853,
+      "sun": 0.1462
+     },
+     "timeband_share": {
+      "t00_06": 0.0418,
+      "t06_11": 0.0065,
+      "t11_14": 0.2239,
+      "t14_17": 0.0982,
+      "t17_21": 0.4463,
+      "t21_24": 0.1832
+     },
+     "evening_share_17_24": 0.6295,
+     "lunch_share_11_14": 0.2239,
+     "age_share": {
+      "age10": 0.0196,
+      "age20": 0.3192,
+      "age30": 0.2454,
+      "age40": 0.1685,
+      "age50": 0.1643,
+      "age60plus": 0.0831
+     },
+     "sex_share": {
+      "male": 0.4739,
+      "female": 0.5261
+     },
+     "age_split_coverage": 0.8538,
+     "stores_total": 174,
+     "stores_independent": 143,
+     "stores_franchise": 31,
+     "stores_opened": 10,
+     "stores_closed": 8,
+     "sales_per_store_month_krw": 26193987,
+     "flpop_total": 3579858,
+     "flpop_age_share": {
+      "age10": 0.123,
+      "age20": 0.3491,
+      "age30": 0.1685,
+      "age40": 0.1257,
+      "age50": 0.108,
+      "age60plus": 0.1258
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1439,
+      "t06_11": 0.1551,
+      "t11_14": 0.144,
+      "t14_17": 0.1767,
+      "t17_21": 0.2624,
+      "t21_24": 0.1179
+     },
+     "workers_total": 2452,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20244": {
+     "hansik_sales_krw": 16614322978,
+     "hansik_sales_count": 402015,
+     "avg_ticket_krw": 41328,
+     "weekend_share": 0.3247,
+     "dow_share": {
+      "mon": 0.1085,
+      "tue": 0.1263,
+      "wed": 0.1436,
+      "thu": 0.1382,
+      "fri": 0.1587,
+      "sat": 0.1852,
+      "sun": 0.1395
+     },
+     "timeband_share": {
+      "t00_06": 0.0516,
+      "t06_11": 0.007,
+      "t11_14": 0.205,
+      "t14_17": 0.0965,
+      "t17_21": 0.4462,
+      "t21_24": 0.1937
+     },
+     "evening_share_17_24": 0.6399,
+     "lunch_share_11_14": 0.205,
+     "age_share": {
+      "age10": 0.0271,
+      "age20": 0.3186,
+      "age30": 0.2357,
+      "age40": 0.1638,
+      "age50": 0.1716,
+      "age60plus": 0.0832
+     },
+     "sex_share": {
+      "male": 0.4732,
+      "female": 0.5268
+     },
+     "age_split_coverage": 0.8516,
+     "stores_total": 177,
+     "stores_independent": 145,
+     "stores_franchise": 32,
+     "stores_opened": 5,
+     "stores_closed": 2,
+     "sales_per_store_month_krw": 31288744,
+     "flpop_total": 3847942,
+     "flpop_age_share": {
+      "age10": 0.1336,
+      "age20": 0.357,
+      "age30": 0.1618,
+      "age40": 0.1215,
+      "age50": 0.1068,
+      "age60plus": 0.1192
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1442,
+      "t06_11": 0.1567,
+      "t11_14": 0.1476,
+      "t14_17": 0.1749,
+      "t17_21": 0.259,
+      "t21_24": 0.1176
+     },
+     "workers_total": 2991,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20251": {
+     "hansik_sales_krw": 14718902992,
+     "hansik_sales_count": 359729,
+     "avg_ticket_krw": 40917,
+     "weekend_share": 0.3578,
+     "dow_share": {
+      "mon": 0.1129,
+      "tue": 0.1081,
+      "wed": 0.1307,
+      "thu": 0.131,
+      "fri": 0.1595,
+      "sat": 0.2036,
+      "sun": 0.1542
+     },
+     "timeband_share": {
+      "t00_06": 0.0554,
+      "t06_11": 0.0073,
+      "t11_14": 0.1994,
+      "t14_17": 0.0987,
+      "t17_21": 0.4453,
+      "t21_24": 0.1939
+     },
+     "evening_share_17_24": 0.6392,
+     "lunch_share_11_14": 0.1994,
+     "age_share": {
+      "age10": 0.0163,
+      "age20": 0.3015,
+      "age30": 0.2561,
+      "age40": 0.169,
+      "age50": 0.1725,
+      "age60plus": 0.0846
+     },
+     "sex_share": {
+      "male": 0.4706,
+      "female": 0.5294
+     },
+     "age_split_coverage": 0.886,
+     "stores_total": 183,
+     "stores_independent": 151,
+     "stores_franchise": 32,
+     "stores_opened": 7,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 26810388,
+     "flpop_total": 3559167,
+     "flpop_age_share": {
+      "age10": 0.1236,
+      "age20": 0.3475,
+      "age30": 0.169,
+      "age40": 0.1281,
+      "age50": 0.1077,
+      "age60plus": 0.124
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1438,
+      "t06_11": 0.1513,
+      "t11_14": 0.144,
+      "t14_17": 0.1789,
+      "t17_21": 0.2644,
+      "t21_24": 0.1176
+     },
+     "workers_total": 2991,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20252": {
+     "hansik_sales_krw": 14988786047,
+     "hansik_sales_count": 393719,
+     "avg_ticket_krw": 38070,
+     "weekend_share": 0.3393,
+     "dow_share": {
+      "mon": 0.1112,
+      "tue": 0.1196,
+      "wed": 0.1344,
+      "thu": 0.1346,
+      "fri": 0.1609,
+      "sat": 0.1895,
+      "sun": 0.1498
+     },
+     "timeband_share": {
+      "t00_06": 0.0511,
+      "t06_11": 0.0084,
+      "t11_14": 0.2137,
+      "t14_17": 0.0969,
+      "t17_21": 0.4334,
+      "t21_24": 0.1963
+     },
+     "evening_share_17_24": 0.6297,
+     "lunch_share_11_14": 0.2137,
+     "age_share": {
+      "age10": 0.0191,
+      "age20": 0.289,
+      "age30": 0.2532,
+      "age40": 0.1698,
+      "age50": 0.1739,
+      "age60plus": 0.0949
+     },
+     "sex_share": {
+      "male": 0.4706,
+      "female": 0.5294
+     },
+     "age_split_coverage": 0.8699,
+     "stores_total": 189,
+     "stores_independent": 157,
+     "stores_franchise": 32,
+     "stores_opened": 7,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 26435249,
+     "flpop_total": 3753523,
+     "flpop_age_share": {
+      "age10": 0.1325,
+      "age20": 0.3569,
+      "age30": 0.1627,
+      "age40": 0.1239,
+      "age50": 0.105,
+      "age60plus": 0.119
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1488,
+      "t06_11": 0.1577,
+      "t11_14": 0.1462,
+      "t14_17": 0.1726,
+      "t17_21": 0.2566,
+      "t21_24": 0.118
+     },
+     "workers_total": 2991,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20253": {
+     "hansik_sales_krw": 13671820548,
+     "hansik_sales_count": 357457,
+     "avg_ticket_krw": 38247,
+     "weekend_share": 0.3342,
+     "dow_share": {
+      "mon": 0.1105,
+      "tue": 0.1301,
+      "wed": 0.134,
+      "thu": 0.139,
+      "fri": 0.1521,
+      "sat": 0.1906,
+      "sun": 0.1436
+     },
+     "timeband_share": {
+      "t00_06": 0.0427,
+      "t06_11": 0.0091,
+      "t11_14": 0.2214,
+      "t14_17": 0.0951,
+      "t17_21": 0.4439,
+      "t21_24": 0.1879
+     },
+     "evening_share_17_24": 0.6318,
+     "lunch_share_11_14": 0.2214,
+     "age_share": {
+      "age10": 0.0157,
+      "age20": 0.2755,
+      "age30": 0.2473,
+      "age40": 0.1817,
+      "age50": 0.1796,
+      "age60plus": 0.1002
+     },
+     "sex_share": {
+      "male": 0.4713,
+      "female": 0.5287
+     },
+     "age_split_coverage": 0.8534,
+     "stores_total": 191,
+     "stores_independent": 158,
+     "stores_franchise": 33,
+     "stores_opened": 7,
+     "stores_closed": 5,
+     "sales_per_store_month_krw": 23860071,
+     "flpop_total": 3494157,
+     "flpop_age_share": {
+      "age10": 0.1194,
+      "age20": 0.3439,
+      "age30": 0.1707,
+      "age40": 0.1309,
+      "age50": 0.11,
+      "age60plus": 0.1251
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1456,
+      "t06_11": 0.1557,
+      "t11_14": 0.1452,
+      "t14_17": 0.1756,
+      "t17_21": 0.2609,
+      "t21_24": 0.117
+     },
+     "workers_total": 2991,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20254": {
+     "hansik_sales_krw": 15707837040,
+     "hansik_sales_count": 407959,
+     "avg_ticket_krw": 38503,
+     "weekend_share": 0.3327,
+     "dow_share": {
+      "mon": 0.1069,
+      "tue": 0.1242,
+      "wed": 0.1441,
+      "thu": 0.1366,
+      "fri": 0.1554,
+      "sat": 0.1887,
+      "sun": 0.1439
+     },
+     "timeband_share": {
+      "t00_06": 0.04,
+      "t06_11": 0.0105,
+      "t11_14": 0.2245,
+      "t14_17": 0.1005,
+      "t17_21": 0.4489,
+      "t21_24": 0.1756
+     },
+     "evening_share_17_24": 0.6245,
+     "lunch_share_11_14": 0.2245,
+     "age_share": {
+      "age10": 0.0207,
+      "age20": 0.2692,
+      "age30": 0.2354,
+      "age40": 0.1824,
+      "age50": 0.189,
+      "age60plus": 0.1033
+     },
+     "sex_share": {
+      "male": 0.4768,
+      "female": 0.5232
+     },
+     "age_split_coverage": 0.848,
+     "stores_total": 191,
+     "stores_independent": 160,
+     "stores_franchise": 31,
+     "stores_opened": 4,
+     "stores_closed": 4,
+     "sales_per_store_month_krw": 27413328,
+     "flpop_total": 3707419,
+     "flpop_age_share": {
+      "age10": 0.1298,
+      "age20": 0.3509,
+      "age30": 0.1618,
+      "age40": 0.1275,
+      "age50": 0.1093,
+      "age60plus": 0.1207
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1419,
+      "t06_11": 0.1536,
+      "t11_14": 0.1493,
+      "t14_17": 0.1779,
+      "t17_21": 0.2613,
+      "t21_24": 0.116
+     },
+     "workers_total": 2991,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20261": {
+     "hansik_sales_krw": 14261448495,
+     "hansik_sales_count": 386714,
+     "avg_ticket_krw": 36879,
+     "weekend_share": 0.3615,
+     "dow_share": {
+      "mon": 0.1083,
+      "tue": 0.1188,
+      "wed": 0.1255,
+      "thu": 0.1342,
+      "fri": 0.1516,
+      "sat": 0.2034,
+      "sun": 0.1581
+     },
+     "timeband_share": {
+      "t00_06": 0.0405,
+      "t06_11": 0.011,
+      "t11_14": 0.2307,
+      "t14_17": 0.1039,
+      "t17_21": 0.4399,
+      "t21_24": 0.174
+     },
+     "evening_share_17_24": 0.6139,
+     "lunch_share_11_14": 0.2307,
+     "age_share": {
+      "age10": 0.0107,
+      "age20": 0.2572,
+      "age30": 0.2537,
+      "age40": 0.1789,
+      "age50": 0.192,
+      "age60plus": 0.1075
+     },
+     "sex_share": {
+      "male": 0.4731,
+      "female": 0.5269
+     },
+     "age_split_coverage": 0.8644,
+     "stores_total": 185,
+     "stores_independent": 155,
+     "stores_franchise": 30,
+     "stores_opened": 4,
+     "stores_closed": 10,
+     "sales_per_store_month_krw": 25696304,
+     "flpop_total": 3443525,
+     "flpop_age_share": {
+      "age10": 0.1242,
+      "age20": 0.3403,
+      "age30": 0.167,
+      "age40": 0.1318,
+      "age50": 0.1116,
+      "age60plus": 0.125
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1436,
+      "t06_11": 0.1468,
+      "t11_14": 0.1455,
+      "t14_17": 0.18,
+      "t17_21": 0.2656,
+      "t21_24": 0.1185
+     },
+     "workers_total": 2991,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    },
+    "20262": {
+     "hansik_sales_krw": 14774712434,
+     "hansik_sales_count": 413944,
+     "avg_ticket_krw": 35693,
+     "weekend_share": 0.3343,
+     "dow_share": {
+      "mon": 0.1125,
+      "tue": 0.126,
+      "wed": 0.1339,
+      "thu": 0.1349,
+      "fri": 0.1584,
+      "sat": 0.1901,
+      "sun": 0.1442
+     },
+     "timeband_share": {
+      "t00_06": 0.0397,
+      "t06_11": 0.0114,
+      "t11_14": 0.2413,
+      "t14_17": 0.0976,
+      "t17_21": 0.4327,
+      "t21_24": 0.1771
+     },
+     "evening_share_17_24": 0.6098,
+     "lunch_share_11_14": 0.2413,
+     "age_share": {
+      "age10": 0.0142,
+      "age20": 0.2496,
+      "age30": 0.2502,
+      "age40": 0.1726,
+      "age50": 0.2024,
+      "age60plus": 0.1109
+     },
+     "sex_share": {
+      "male": 0.4704,
+      "female": 0.5296
+     },
+     "age_split_coverage": 0.862,
+     "stores_total": 182,
+     "stores_independent": 152,
+     "stores_franchise": 30,
+     "stores_opened": 1,
+     "stores_closed": 4,
+     "sales_per_store_month_krw": 27059913,
+     "flpop_total": 3593343,
+     "flpop_age_share": {
+      "age10": 0.1382,
+      "age20": 0.3514,
+      "age30": 0.1614,
+      "age40": 0.1266,
+      "age50": 0.105,
+      "age60plus": 0.1174
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1502,
+      "t06_11": 0.1479,
+      "t11_14": 0.147,
+      "t14_17": 0.1746,
+      "t17_21": 0.2589,
+      "t21_24": 0.1213
+     },
+     "workers_total": 2991,
+     "residents_total": 1866,
+     "households_total": 1265,
+     "facilities": {
+      "facilities_total": 63,
+      "public_offices": 1,
+      "banks": 5,
+      "pharmacies": 10,
+      "universities": 4,
+      "theaters": 1,
+      "subway_stations": 1,
+      "bus_stops": 11
+     }
+    }
+   }
+  },
+  "3110021": {
+   "trdar_name": "성균관대학교",
+   "trdar_type": "골목상권",
+   "role": "fringe",
+   "adstrd_name": "혜화동",
+   "signgu_name": "종로구",
+   "area_m2": 77655,
+   "sbiz_stores": {
+    "snapshot": "20260630",
+    "I20107": {
+     "stores": 1,
+     "franchise_flag": 0
+    },
+    "I20108": {
+     "stores": 0,
+     "franchise_flag": 0
+    },
+    "I20109": {
+     "stores": 2,
+     "franchise_flag": 0
+    },
+    "I201_all": 21
+   },
+   "licenses": {
+    "all_uptae": 295,
+    "hansik": 71,
+    "hansik_open": 24,
+    "hansik_closed": 47
+   },
+   "store_license_match": {
+    "high": 3
+   },
+   "annual": {
+    "2021": {
+     "quarters": 4,
+     "hansik_sales_krw": 2077818491,
+     "stores_q4_total": 21,
+     "stores_q4_independent": 18,
+     "stores_q4_franchise": 3,
+     "sales_per_store_month_krw_q4_stores": 8245311
+    },
+    "2022": {
+     "quarters": 4,
+     "hansik_sales_krw": 2934057496,
+     "stores_q4_total": 19,
+     "stores_q4_independent": 16,
+     "stores_q4_franchise": 3,
+     "sales_per_store_month_krw_q4_stores": 12868673
+    },
+    "2023": {
+     "quarters": 4,
+     "hansik_sales_krw": 3523963846,
+     "stores_q4_total": 20,
+     "stores_q4_independent": 17,
+     "stores_q4_franchise": 3,
+     "sales_per_store_month_krw_q4_stores": 14683183
+    },
+    "2024": {
+     "quarters": 4,
+     "hansik_sales_krw": 3159271685,
+     "stores_q4_total": 21,
+     "stores_q4_independent": 18,
+     "stores_q4_franchise": 3,
+     "sales_per_store_month_krw_q4_stores": 12536792
+    },
+    "2025": {
+     "quarters": 4,
+     "hansik_sales_krw": 2739547746,
+     "stores_q4_total": 19,
+     "stores_q4_independent": 17,
+     "stores_q4_franchise": 2,
+     "sales_per_store_month_krw_q4_stores": 12015560
+    },
+    "2026": {
+     "quarters": 2,
+     "hansik_sales_krw": 1328068893,
+     "stores_q4_total": null,
+     "stores_q4_independent": null,
+     "stores_q4_franchise": null
+    }
+   },
+   "quarters": {
+    "20211": {
+     "hansik_sales_krw": 462294045,
+     "hansik_sales_count": 29960,
+     "avg_ticket_krw": 15430,
+     "weekend_share": 0.2319,
+     "dow_share": {
+      "mon": 0.1464,
+      "tue": 0.1473,
+      "wed": 0.1861,
+      "thu": 0.1407,
+      "fri": 0.1476,
+      "sat": 0.1514,
+      "sun": 0.0805
+     },
+     "timeband_share": {
+      "t00_06": 0.0007,
+      "t06_11": 0.0111,
+      "t11_14": 0.2673,
+      "t14_17": 0.0952,
+      "t17_21": 0.5376,
+      "t21_24": 0.0881
+     },
+     "evening_share_17_24": 0.6257,
+     "lunch_share_11_14": 0.2673,
+     "age_share": {
+      "age10": 0.0501,
+      "age20": 0.4233,
+      "age30": 0.1721,
+      "age40": 0.1359,
+      "age50": 0.1577,
+      "age60plus": 0.0609
+     },
+     "sex_share": {
+      "male": 0.6383,
+      "female": 0.3617
+     },
+     "age_split_coverage": 0.9238,
+     "stores_total": 21,
+     "stores_independent": 18,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 7338001,
+     "flpop_total": 1059721,
+     "flpop_age_share": {
+      "age10": 0.142,
+      "age20": 0.3617,
+      "age30": 0.1148,
+      "age40": 0.1218,
+      "age50": 0.1111,
+      "age60plus": 0.1484
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2296,
+      "t06_11": 0.1955,
+      "t11_14": 0.1287,
+      "t14_17": 0.1349,
+      "t17_21": 0.1838,
+      "t21_24": 0.1274
+     },
+     "workers_total": 437,
+     "residents_total": 1915,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20212": {
+     "hansik_sales_krw": 591207356,
+     "hansik_sales_count": 32424,
+     "avg_ticket_krw": 18234,
+     "weekend_share": 0.2357,
+     "dow_share": {
+      "mon": 0.1404,
+      "tue": 0.1326,
+      "wed": 0.1623,
+      "thu": 0.1604,
+      "fri": 0.1685,
+      "sat": 0.1342,
+      "sun": 0.1015
+     },
+     "timeband_share": {
+      "t00_06": 0.0007,
+      "t06_11": 0.014,
+      "t11_14": 0.2362,
+      "t14_17": 0.1076,
+      "t17_21": 0.471,
+      "t21_24": 0.1705
+     },
+     "evening_share_17_24": 0.6415,
+     "lunch_share_11_14": 0.2362,
+     "age_share": {
+      "age10": 0.0599,
+      "age20": 0.3838,
+      "age30": 0.1663,
+      "age40": 0.1354,
+      "age50": 0.1736,
+      "age60plus": 0.0811
+     },
+     "sex_share": {
+      "male": 0.6352,
+      "female": 0.3648
+     },
+     "age_split_coverage": 0.8847,
+     "stores_total": 20,
+     "stores_independent": 18,
+     "stores_franchise": 2,
+     "stores_opened": 1,
+     "stores_closed": 2,
+     "sales_per_store_month_krw": 9853456,
+     "flpop_total": 1116679,
+     "flpop_age_share": {
+      "age10": 0.1401,
+      "age20": 0.3861,
+      "age30": 0.1142,
+      "age40": 0.1181,
+      "age50": 0.1061,
+      "age60plus": 0.1354
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2322,
+      "t06_11": 0.1943,
+      "t11_14": 0.127,
+      "t14_17": 0.1331,
+      "t17_21": 0.1839,
+      "t21_24": 0.1294
+     },
+     "workers_total": 437,
+     "residents_total": 1915,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20213": {
+     "hansik_sales_krw": 454187552,
+     "hansik_sales_count": 24889,
+     "avg_ticket_krw": 18249,
+     "weekend_share": 0.2746,
+     "dow_share": {
+      "mon": 0.1315,
+      "tue": 0.1363,
+      "wed": 0.1601,
+      "thu": 0.1412,
+      "fri": 0.1563,
+      "sat": 0.1523,
+      "sun": 0.1223
+     },
+     "timeband_share": {
+      "t00_06": 0.0013,
+      "t06_11": 0.0111,
+      "t11_14": 0.2641,
+      "t14_17": 0.1205,
+      "t17_21": 0.5054,
+      "t21_24": 0.0976
+     },
+     "evening_share_17_24": 0.603,
+     "lunch_share_11_14": 0.2641,
+     "age_share": {
+      "age10": 0.0247,
+      "age20": 0.3685,
+      "age30": 0.1976,
+      "age40": 0.1527,
+      "age50": 0.19,
+      "age60plus": 0.0664
+     },
+     "sex_share": {
+      "male": 0.652,
+      "female": 0.348
+     },
+     "age_split_coverage": 0.8572,
+     "stores_total": 21,
+     "stores_independent": 18,
+     "stores_franchise": 3,
+     "stores_opened": 1,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 7209326,
+     "flpop_total": 1191770,
+     "flpop_age_share": {
+      "age10": 0.1266,
+      "age20": 0.3735,
+      "age30": 0.1134,
+      "age40": 0.1252,
+      "age50": 0.1146,
+      "age60plus": 0.1467
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2421,
+      "t06_11": 0.1975,
+      "t11_14": 0.124,
+      "t14_17": 0.1292,
+      "t17_21": 0.1782,
+      "t21_24": 0.129
+     },
+     "workers_total": 437,
+     "residents_total": 1915,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20214": {
+     "hansik_sales_krw": 570129538,
+     "hansik_sales_count": 27296,
+     "avg_ticket_krw": 20887,
+     "weekend_share": 0.2814,
+     "dow_share": {
+      "mon": 0.128,
+      "tue": 0.1265,
+      "wed": 0.14,
+      "thu": 0.1434,
+      "fri": 0.1807,
+      "sat": 0.1535,
+      "sun": 0.1279
+     },
+     "timeband_share": {
+      "t00_06": 0.0286,
+      "t06_11": 0.0108,
+      "t11_14": 0.2257,
+      "t14_17": 0.0965,
+      "t17_21": 0.4594,
+      "t21_24": 0.1791
+     },
+     "evening_share_17_24": 0.6385,
+     "lunch_share_11_14": 0.2257,
+     "age_share": {
+      "age10": 0.0484,
+      "age20": 0.4053,
+      "age30": 0.1526,
+      "age40": 0.1585,
+      "age50": 0.1708,
+      "age60plus": 0.0644
+     },
+     "sex_share": {
+      "male": 0.6129,
+      "female": 0.3871
+     },
+     "age_split_coverage": 0.915,
+     "stores_total": 21,
+     "stores_independent": 18,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 9049675,
+     "flpop_total": 1339871,
+     "flpop_age_share": {
+      "age10": 0.1265,
+      "age20": 0.3826,
+      "age30": 0.1139,
+      "age40": 0.1239,
+      "age50": 0.1131,
+      "age60plus": 0.14
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2341,
+      "t06_11": 0.1944,
+      "t11_14": 0.1249,
+      "t14_17": 0.1321,
+      "t17_21": 0.1843,
+      "t21_24": 0.1303
+     },
+     "workers_total": 413,
+     "residents_total": 1915,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20221": {
+     "hansik_sales_krw": 626008057,
+     "hansik_sales_count": 27880,
+     "avg_ticket_krw": 22454,
+     "weekend_share": 0.2757,
+     "dow_share": {
+      "mon": 0.1105,
+      "tue": 0.1328,
+      "wed": 0.1248,
+      "thu": 0.2127,
+      "fri": 0.1435,
+      "sat": 0.1892,
+      "sun": 0.0865
+     },
+     "timeband_share": {
+      "t00_06": 0.001,
+      "t06_11": 0.0089,
+      "t11_14": 0.3901,
+      "t14_17": 0.1155,
+      "t17_21": 0.3764,
+      "t21_24": 0.108
+     },
+     "evening_share_17_24": 0.4844,
+     "lunch_share_11_14": 0.3901,
+     "age_share": {
+      "age10": 0.042,
+      "age20": 0.3605,
+      "age30": 0.1858,
+      "age40": 0.1494,
+      "age50": 0.2153,
+      "age60plus": 0.0469
+     },
+     "sex_share": {
+      "male": 0.6303,
+      "female": 0.3697
+     },
+     "age_split_coverage": 0.7256,
+     "stores_total": 21,
+     "stores_independent": 18,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 9936636,
+     "flpop_total": 1315429,
+     "flpop_age_share": {
+      "age10": 0.143,
+      "age20": 0.3783,
+      "age30": 0.1132,
+      "age40": 0.1168,
+      "age50": 0.1124,
+      "age60plus": 0.1364
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2327,
+      "t06_11": 0.1962,
+      "t11_14": 0.1264,
+      "t14_17": 0.1325,
+      "t17_21": 0.184,
+      "t21_24": 0.1282
+     },
+     "workers_total": 413,
+     "residents_total": 1915,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20222": {
+     "hansik_sales_krw": 755645254,
+     "hansik_sales_count": 33895,
+     "avg_ticket_krw": 22294,
+     "weekend_share": 0.2654,
+     "dow_share": {
+      "mon": 0.1353,
+      "tue": 0.1366,
+      "wed": 0.1448,
+      "thu": 0.1451,
+      "fri": 0.1728,
+      "sat": 0.1649,
+      "sun": 0.1006
+     },
+     "timeband_share": {
+      "t00_06": 0.0496,
+      "t06_11": 0.0102,
+      "t11_14": 0.2135,
+      "t14_17": 0.1017,
+      "t17_21": 0.4362,
+      "t21_24": 0.1888
+     },
+     "evening_share_17_24": 0.625,
+     "lunch_share_11_14": 0.2135,
+     "age_share": {
+      "age10": 0.0534,
+      "age20": 0.4203,
+      "age30": 0.1575,
+      "age40": 0.144,
+      "age50": 0.1727,
+      "age60plus": 0.052
+     },
+     "sex_share": {
+      "male": 0.5804,
+      "female": 0.4196
+     },
+     "age_split_coverage": 0.8838,
+     "stores_total": 21,
+     "stores_independent": 18,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 11994369,
+     "flpop_total": 1451559,
+     "flpop_age_share": {
+      "age10": 0.1505,
+      "age20": 0.4051,
+      "age30": 0.1079,
+      "age40": 0.1092,
+      "age50": 0.1053,
+      "age60plus": 0.122
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.231,
+      "t06_11": 0.1913,
+      "t11_14": 0.1248,
+      "t14_17": 0.1314,
+      "t17_21": 0.1874,
+      "t21_24": 0.134
+     },
+     "workers_total": 413,
+     "residents_total": 1915,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20223": {
+     "hansik_sales_krw": 678289015,
+     "hansik_sales_count": 28751,
+     "avg_ticket_krw": 23592,
+     "weekend_share": 0.2592,
+     "dow_share": {
+      "mon": 0.1218,
+      "tue": 0.1365,
+      "wed": 0.1468,
+      "thu": 0.1603,
+      "fri": 0.1755,
+      "sat": 0.1661,
+      "sun": 0.093
+     },
+     "timeband_share": {
+      "t00_06": 0.032,
+      "t06_11": 0.0117,
+      "t11_14": 0.2571,
+      "t14_17": 0.0971,
+      "t17_21": 0.4034,
+      "t21_24": 0.1987
+     },
+     "evening_share_17_24": 0.6021,
+     "lunch_share_11_14": 0.2571,
+     "age_share": {
+      "age10": 0.036,
+      "age20": 0.4128,
+      "age30": 0.1655,
+      "age40": 0.1602,
+      "age50": 0.1738,
+      "age60plus": 0.0517
+     },
+     "sex_share": {
+      "male": 0.6187,
+      "female": 0.3813
+     },
+     "age_split_coverage": 0.8608,
+     "stores_total": 21,
+     "stores_independent": 18,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 10766492,
+     "flpop_total": 1399295,
+     "flpop_age_share": {
+      "age10": 0.1405,
+      "age20": 0.4121,
+      "age30": 0.1117,
+      "age40": 0.1108,
+      "age50": 0.1055,
+      "age60plus": 0.1195
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.232,
+      "t06_11": 0.1921,
+      "t11_14": 0.1254,
+      "t14_17": 0.1318,
+      "t17_21": 0.1858,
+      "t21_24": 0.1329
+     },
+     "workers_total": 413,
+     "residents_total": 1915,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20224": {
+     "hansik_sales_krw": 874115170,
+     "hansik_sales_count": 32941,
+     "avg_ticket_krw": 26536,
+     "weekend_share": 0.3079,
+     "dow_share": {
+      "mon": 0.1312,
+      "tue": 0.1387,
+      "wed": 0.1352,
+      "thu": 0.1384,
+      "fri": 0.1486,
+      "sat": 0.193,
+      "sun": 0.1149
+     },
+     "timeband_share": {
+      "t00_06": 0.0517,
+      "t06_11": 0.0084,
+      "t11_14": 0.1886,
+      "t14_17": 0.0892,
+      "t17_21": 0.446,
+      "t21_24": 0.2161
+     },
+     "evening_share_17_24": 0.6621,
+     "lunch_share_11_14": 0.1886,
+     "age_share": {
+      "age10": 0.0485,
+      "age20": 0.381,
+      "age30": 0.1848,
+      "age40": 0.1472,
+      "age50": 0.1892,
+      "age60plus": 0.0494
+     },
+     "sex_share": {
+      "male": 0.5927,
+      "female": 0.4073
+     },
+     "age_split_coverage": 0.9165,
+     "stores_total": 19,
+     "stores_independent": 16,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 2,
+     "sales_per_store_month_krw": 15335354,
+     "flpop_total": 1541952,
+     "flpop_age_share": {
+      "age10": 0.1446,
+      "age20": 0.4304,
+      "age30": 0.1077,
+      "age40": 0.1047,
+      "age50": 0.1016,
+      "age60plus": 0.111
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2224,
+      "t06_11": 0.1935,
+      "t11_14": 0.1325,
+      "t14_17": 0.1352,
+      "t17_21": 0.1871,
+      "t21_24": 0.1293
+     },
+     "workers_total": 581,
+     "residents_total": 1851,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20231": {
+     "hansik_sales_krw": 828495337,
+     "hansik_sales_count": 28694,
+     "avg_ticket_krw": 28873,
+     "weekend_share": 0.2485,
+     "dow_share": {
+      "mon": 0.1592,
+      "tue": 0.1489,
+      "wed": 0.1312,
+      "thu": 0.1457,
+      "fri": 0.1664,
+      "sat": 0.166,
+      "sun": 0.0825
+     },
+     "timeband_share": {
+      "t00_06": 0.0518,
+      "t06_11": 0.0058,
+      "t11_14": 0.1938,
+      "t14_17": 0.0872,
+      "t17_21": 0.4567,
+      "t21_24": 0.2047
+     },
+     "evening_share_17_24": 0.6614,
+     "lunch_share_11_14": 0.1938,
+     "age_share": {
+      "age10": 0.0216,
+      "age20": 0.415,
+      "age30": 0.1904,
+      "age40": 0.1467,
+      "age50": 0.1651,
+      "age60plus": 0.0613
+     },
+     "sex_share": {
+      "male": 0.6461,
+      "female": 0.3539
+     },
+     "age_split_coverage": 0.9159,
+     "stores_total": 20,
+     "stores_independent": 17,
+     "stores_franchise": 3,
+     "stores_opened": 2,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 13808256,
+     "flpop_total": 1443781,
+     "flpop_age_share": {
+      "age10": 0.1504,
+      "age20": 0.4113,
+      "age30": 0.1108,
+      "age40": 0.1078,
+      "age50": 0.1036,
+      "age60plus": 0.1162
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2188,
+      "t06_11": 0.1911,
+      "t11_14": 0.1309,
+      "t14_17": 0.1373,
+      "t17_21": 0.1912,
+      "t21_24": 0.1307
+     },
+     "workers_total": 581,
+     "residents_total": 1851,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20232": {
+     "hansik_sales_krw": 978935952,
+     "hansik_sales_count": 34919,
+     "avg_ticket_krw": 28034,
+     "weekend_share": 0.255,
+     "dow_share": {
+      "mon": 0.1221,
+      "tue": 0.1298,
+      "wed": 0.1418,
+      "thu": 0.1859,
+      "fri": 0.1654,
+      "sat": 0.1581,
+      "sun": 0.0969
+     },
+     "timeband_share": {
+      "t00_06": 0.0621,
+      "t06_11": 0.0105,
+      "t11_14": 0.1658,
+      "t14_17": 0.0796,
+      "t17_21": 0.4541,
+      "t21_24": 0.2279
+     },
+     "evening_share_17_24": 0.682,
+     "lunch_share_11_14": 0.1658,
+     "age_share": {
+      "age10": 0.0447,
+      "age20": 0.3971,
+      "age30": 0.1597,
+      "age40": 0.1245,
+      "age50": 0.2122,
+      "age60plus": 0.0617
+     },
+     "sex_share": {
+      "male": 0.6174,
+      "female": 0.3826
+     },
+     "age_split_coverage": 0.9125,
+     "stores_total": 20,
+     "stores_independent": 17,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 16315599,
+     "flpop_total": 1577966,
+     "flpop_age_share": {
+      "age10": 0.1632,
+      "age20": 0.4403,
+      "age30": 0.1026,
+      "age40": 0.0973,
+      "age50": 0.0927,
+      "age60plus": 0.104
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.225,
+      "t06_11": 0.1913,
+      "t11_14": 0.1288,
+      "t14_17": 0.1327,
+      "t17_21": 0.1891,
+      "t21_24": 0.1331
+     },
+     "workers_total": 581,
+     "residents_total": 1851,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20233": {
+     "hansik_sales_krw": 812688755,
+     "hansik_sales_count": 28288,
+     "avg_ticket_krw": 28729,
+     "weekend_share": 0.3001,
+     "dow_share": {
+      "mon": 0.1175,
+      "tue": 0.1343,
+      "wed": 0.1381,
+      "thu": 0.1391,
+      "fri": 0.1708,
+      "sat": 0.1875,
+      "sun": 0.1127
+     },
+     "timeband_share": {
+      "t00_06": 0.0616,
+      "t06_11": 0.0098,
+      "t11_14": 0.1875,
+      "t14_17": 0.0844,
+      "t17_21": 0.4456,
+      "t21_24": 0.2111
+     },
+     "evening_share_17_24": 0.6567,
+     "lunch_share_11_14": 0.1875,
+     "age_share": {
+      "age10": 0.0292,
+      "age20": 0.3821,
+      "age30": 0.1776,
+      "age40": 0.1299,
+      "age50": 0.1975,
+      "age60plus": 0.0837
+     },
+     "sex_share": {
+      "male": 0.6615,
+      "female": 0.3385
+     },
+     "age_split_coverage": 0.9121,
+     "stores_total": 20,
+     "stores_independent": 17,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 13544813,
+     "flpop_total": 1276719,
+     "flpop_age_share": {
+      "age10": 0.1399,
+      "age20": 0.4106,
+      "age30": 0.1173,
+      "age40": 0.1076,
+      "age50": 0.1061,
+      "age60plus": 0.1185
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2169,
+      "t06_11": 0.1919,
+      "t11_14": 0.131,
+      "t14_17": 0.1372,
+      "t17_21": 0.1919,
+      "t21_24": 0.131
+     },
+     "workers_total": 581,
+     "residents_total": 1851,
+     "households_total": 1229,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20234": {
+     "hansik_sales_krw": 903843802,
+     "hansik_sales_count": 32374,
+     "avg_ticket_krw": 27919,
+     "weekend_share": 0.2643,
+     "dow_share": {
+      "mon": 0.1187,
+      "tue": 0.141,
+      "wed": 0.1547,
+      "thu": 0.1633,
+      "fri": 0.158,
+      "sat": 0.1731,
+      "sun": 0.0912
+     },
+     "timeband_share": {
+      "t00_06": 0.0467,
+      "t06_11": 0.0265,
+      "t11_14": 0.1979,
+      "t14_17": 0.0959,
+      "t17_21": 0.4208,
+      "t21_24": 0.2122
+     },
+     "evening_share_17_24": 0.633,
+     "lunch_share_11_14": 0.1979,
+     "age_share": {
+      "age10": 0.045,
+      "age20": 0.3801,
+      "age30": 0.158,
+      "age40": 0.1487,
+      "age50": 0.204,
+      "age60plus": 0.0641
+     },
+     "sex_share": {
+      "male": 0.6045,
+      "female": 0.3955
+     },
+     "age_split_coverage": 0.894,
+     "stores_total": 20,
+     "stores_independent": 17,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 15064063,
+     "flpop_total": 1486690,
+     "flpop_age_share": {
+      "age10": 0.1492,
+      "age20": 0.4444,
+      "age30": 0.1058,
+      "age40": 0.1002,
+      "age50": 0.0934,
+      "age60plus": 0.107
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2067,
+      "t06_11": 0.1917,
+      "t11_14": 0.1366,
+      "t14_17": 0.1391,
+      "t17_21": 0.1959,
+      "t21_24": 0.13
+     },
+     "workers_total": 899,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20241": {
+     "hansik_sales_krw": 745443987,
+     "hansik_sales_count": 26558,
+     "avg_ticket_krw": 28069,
+     "weekend_share": 0.2734,
+     "dow_share": {
+      "mon": 0.1246,
+      "tue": 0.1403,
+      "wed": 0.1475,
+      "thu": 0.1564,
+      "fri": 0.1579,
+      "sat": 0.1558,
+      "sun": 0.1176
+     },
+     "timeband_share": {
+      "t00_06": 0.0738,
+      "t06_11": 0.0176,
+      "t11_14": 0.1829,
+      "t14_17": 0.0907,
+      "t17_21": 0.4165,
+      "t21_24": 0.2185
+     },
+     "evening_share_17_24": 0.635,
+     "lunch_share_11_14": 0.1829,
+     "age_share": {
+      "age10": 0.0287,
+      "age20": 0.4129,
+      "age30": 0.1631,
+      "age40": 0.104,
+      "age50": 0.1997,
+      "age60plus": 0.0916
+     },
+     "sex_share": {
+      "male": 0.6159,
+      "female": 0.3841
+     },
+     "age_split_coverage": 0.9506,
+     "stores_total": 21,
+     "stores_independent": 18,
+     "stores_franchise": 3,
+     "stores_opened": 1,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 11832444,
+     "flpop_total": 1349411,
+     "flpop_age_share": {
+      "age10": 0.145,
+      "age20": 0.4046,
+      "age30": 0.1124,
+      "age40": 0.1113,
+      "age50": 0.105,
+      "age60plus": 0.1217
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2169,
+      "t06_11": 0.191,
+      "t11_14": 0.1302,
+      "t14_17": 0.1373,
+      "t17_21": 0.1931,
+      "t21_24": 0.1314
+     },
+     "workers_total": 899,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20242": {
+     "hansik_sales_krw": 931150625,
+     "hansik_sales_count": 30437,
+     "avg_ticket_krw": 30593,
+     "weekend_share": 0.2841,
+     "dow_share": {
+      "mon": 0.1212,
+      "tue": 0.1529,
+      "wed": 0.1174,
+      "thu": 0.145,
+      "fri": 0.1795,
+      "sat": 0.1819,
+      "sun": 0.1022
+     },
+     "timeband_share": {
+      "t00_06": 0.0562,
+      "t06_11": 0.0106,
+      "t11_14": 0.1624,
+      "t14_17": 0.085,
+      "t17_21": 0.3819,
+      "t21_24": 0.3039
+     },
+     "evening_share_17_24": 0.6858,
+     "lunch_share_11_14": 0.1624,
+     "age_share": {
+      "age10": 0.0355,
+      "age20": 0.4056,
+      "age30": 0.1697,
+      "age40": 0.1134,
+      "age50": 0.1949,
+      "age60plus": 0.0809
+     },
+     "sex_share": {
+      "male": 0.6006,
+      "female": 0.3994
+     },
+     "age_split_coverage": 0.9092,
+     "stores_total": 21,
+     "stores_independent": 18,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 14780169,
+     "flpop_total": 1546351,
+     "flpop_age_share": {
+      "age10": 0.1578,
+      "age20": 0.4451,
+      "age30": 0.1014,
+      "age40": 0.098,
+      "age50": 0.0927,
+      "age60plus": 0.1051
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2264,
+      "t06_11": 0.1911,
+      "t11_14": 0.1289,
+      "t14_17": 0.1321,
+      "t17_21": 0.1882,
+      "t21_24": 0.1334
+     },
+     "workers_total": 899,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20243": {
+     "hansik_sales_krw": 691974749,
+     "hansik_sales_count": 23195,
+     "avg_ticket_krw": 29833,
+     "weekend_share": 0.2765,
+     "dow_share": {
+      "mon": 0.141,
+      "tue": 0.1232,
+      "wed": 0.1542,
+      "thu": 0.1277,
+      "fri": 0.1774,
+      "sat": 0.1782,
+      "sun": 0.0983
+     },
+     "timeband_share": {
+      "t00_06": 0.0668,
+      "t06_11": 0.0144,
+      "t11_14": 0.2057,
+      "t14_17": 0.0721,
+      "t17_21": 0.3943,
+      "t21_24": 0.2468
+     },
+     "evening_share_17_24": 0.6411,
+     "lunch_share_11_14": 0.2057,
+     "age_share": {
+      "age10": 0.0299,
+      "age20": 0.3274,
+      "age30": 0.2086,
+      "age40": 0.1628,
+      "age50": 0.1804,
+      "age60plus": 0.0909
+     },
+     "sex_share": {
+      "male": 0.6017,
+      "female": 0.3983
+     },
+     "age_split_coverage": 0.9288,
+     "stores_total": 23,
+     "stores_independent": 20,
+     "stores_franchise": 3,
+     "stores_opened": 2,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 10028620,
+     "flpop_total": 1328037,
+     "flpop_age_share": {
+      "age10": 0.136,
+      "age20": 0.4145,
+      "age30": 0.118,
+      "age40": 0.109,
+      "age50": 0.1023,
+      "age60plus": 0.1202
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.231,
+      "t06_11": 0.1914,
+      "t11_14": 0.1268,
+      "t14_17": 0.1329,
+      "t17_21": 0.1862,
+      "t21_24": 0.1317
+     },
+     "workers_total": 899,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20244": {
+     "hansik_sales_krw": 790702324,
+     "hansik_sales_count": 26534,
+     "avg_ticket_krw": 29800,
+     "weekend_share": 0.2868,
+     "dow_share": {
+      "mon": 0.0896,
+      "tue": 0.1642,
+      "wed": 0.1389,
+      "thu": 0.159,
+      "fri": 0.1616,
+      "sat": 0.1708,
+      "sun": 0.1159
+     },
+     "timeband_share": {
+      "t00_06": 0.0564,
+      "t06_11": 0.0138,
+      "t11_14": 0.2115,
+      "t14_17": 0.0793,
+      "t17_21": 0.4166,
+      "t21_24": 0.2225
+     },
+     "evening_share_17_24": 0.6391,
+     "lunch_share_11_14": 0.2115,
+     "age_share": {
+      "age10": 0.0497,
+      "age20": 0.3848,
+      "age30": 0.1503,
+      "age40": 0.1291,
+      "age50": 0.1881,
+      "age60plus": 0.098
+     },
+     "sex_share": {
+      "male": 0.5661,
+      "female": 0.4339
+     },
+     "age_split_coverage": 0.9034,
+     "stores_total": 21,
+     "stores_independent": 18,
+     "stores_franchise": 3,
+     "stores_opened": 0,
+     "stores_closed": 2,
+     "sales_per_store_month_krw": 12550831,
+     "flpop_total": 1537717,
+     "flpop_age_share": {
+      "age10": 0.1472,
+      "age20": 0.4474,
+      "age30": 0.1066,
+      "age40": 0.0991,
+      "age50": 0.0947,
+      "age60plus": 0.1049
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2313,
+      "t06_11": 0.1929,
+      "t11_14": 0.129,
+      "t14_17": 0.1317,
+      "t17_21": 0.1848,
+      "t21_24": 0.1304
+     },
+     "workers_total": 669,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20251": {
+     "hansik_sales_krw": 662268242,
+     "hansik_sales_count": 19942,
+     "avg_ticket_krw": 33210,
+     "weekend_share": 0.3233,
+     "dow_share": {
+      "mon": 0.1329,
+      "tue": 0.1142,
+      "wed": 0.1365,
+      "thu": 0.1252,
+      "fri": 0.168,
+      "sat": 0.2063,
+      "sun": 0.117
+     },
+     "timeband_share": {
+      "t00_06": 0.0591,
+      "t06_11": 0.0124,
+      "t11_14": 0.1639,
+      "t14_17": 0.1306,
+      "t17_21": 0.4329,
+      "t21_24": 0.201
+     },
+     "evening_share_17_24": 0.6339,
+     "lunch_share_11_14": 0.1639,
+     "age_share": {
+      "age10": 0.0283,
+      "age20": 0.3683,
+      "age30": 0.1806,
+      "age40": 0.1297,
+      "age50": 0.1939,
+      "age60plus": 0.0992
+     },
+     "sex_share": {
+      "male": 0.6309,
+      "female": 0.3691
+     },
+     "age_split_coverage": 0.9201,
+     "stores_total": 20,
+     "stores_independent": 18,
+     "stores_franchise": 2,
+     "stores_opened": 0,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 11037804,
+     "flpop_total": 1332515,
+     "flpop_age_share": {
+      "age10": 0.146,
+      "age20": 0.406,
+      "age30": 0.1175,
+      "age40": 0.1084,
+      "age50": 0.1054,
+      "age60plus": 0.1167
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2328,
+      "t06_11": 0.1912,
+      "t11_14": 0.1268,
+      "t14_17": 0.132,
+      "t17_21": 0.1859,
+      "t21_24": 0.1313
+     },
+     "workers_total": 669,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20252": {
+     "hansik_sales_krw": 805401129,
+     "hansik_sales_count": 24677,
+     "avg_ticket_krw": 32638,
+     "weekend_share": 0.3227,
+     "dow_share": {
+      "mon": 0.1042,
+      "tue": 0.1164,
+      "wed": 0.1453,
+      "thu": 0.1261,
+      "fri": 0.1852,
+      "sat": 0.196,
+      "sun": 0.1267
+     },
+     "timeband_share": {
+      "t00_06": 0.058,
+      "t06_11": 0.0054,
+      "t11_14": 0.1364,
+      "t14_17": 0.0806,
+      "t17_21": 0.4493,
+      "t21_24": 0.2703
+     },
+     "evening_share_17_24": 0.7196,
+     "lunch_share_11_14": 0.1364,
+     "age_share": {
+      "age10": 0.055,
+      "age20": 0.3835,
+      "age30": 0.1519,
+      "age40": 0.1163,
+      "age50": 0.2173,
+      "age60plus": 0.0761
+     },
+     "sex_share": {
+      "male": 0.6282,
+      "female": 0.3718
+     },
+     "age_split_coverage": 0.93,
+     "stores_total": 20,
+     "stores_independent": 18,
+     "stores_franchise": 2,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 13423352,
+     "flpop_total": 1466834,
+     "flpop_age_share": {
+      "age10": 0.1459,
+      "age20": 0.451,
+      "age30": 0.107,
+      "age40": 0.0966,
+      "age50": 0.0959,
+      "age60plus": 0.1036
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2383,
+      "t06_11": 0.192,
+      "t11_14": 0.1267,
+      "t14_17": 0.128,
+      "t17_21": 0.1838,
+      "t21_24": 0.1313
+     },
+     "workers_total": 669,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20253": {
+     "hansik_sales_krw": 558020066,
+     "hansik_sales_count": 19434,
+     "avg_ticket_krw": 28714,
+     "weekend_share": 0.3014,
+     "dow_share": {
+      "mon": 0.1097,
+      "tue": 0.1316,
+      "wed": 0.1601,
+      "thu": 0.1319,
+      "fri": 0.1653,
+      "sat": 0.1853,
+      "sun": 0.1161
+     },
+     "timeband_share": {
+      "t00_06": 0.0654,
+      "t06_11": 0.01,
+      "t11_14": 0.2577,
+      "t14_17": 0.0743,
+      "t17_21": 0.3922,
+      "t21_24": 0.2004
+     },
+     "evening_share_17_24": 0.5926,
+     "lunch_share_11_14": 0.2577,
+     "age_share": {
+      "age10": 0.0445,
+      "age20": 0.3002,
+      "age30": 0.1671,
+      "age40": 0.1394,
+      "age50": 0.2295,
+      "age60plus": 0.1193
+     },
+     "sex_share": {
+      "male": 0.6359,
+      "female": 0.3641
+     },
+     "age_split_coverage": 0.9329,
+     "stores_total": 20,
+     "stores_independent": 18,
+     "stores_franchise": 2,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 9300334,
+     "flpop_total": 1263100,
+     "flpop_age_share": {
+      "age10": 0.1324,
+      "age20": 0.4179,
+      "age30": 0.1209,
+      "age40": 0.1069,
+      "age50": 0.1042,
+      "age60plus": 0.1176
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2417,
+      "t06_11": 0.1922,
+      "t11_14": 0.1248,
+      "t14_17": 0.1292,
+      "t17_21": 0.1814,
+      "t21_24": 0.1307
+     },
+     "workers_total": 669,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20254": {
+     "hansik_sales_krw": 713858309,
+     "hansik_sales_count": 22051,
+     "avg_ticket_krw": 32373,
+     "weekend_share": 0.3099,
+     "dow_share": {
+      "mon": 0.1045,
+      "tue": 0.1266,
+      "wed": 0.1409,
+      "thu": 0.1445,
+      "fri": 0.1735,
+      "sat": 0.1783,
+      "sun": 0.1315
+     },
+     "timeband_share": {
+      "t00_06": 0.0631,
+      "t06_11": 0.0146,
+      "t11_14": 0.2393,
+      "t14_17": 0.077,
+      "t17_21": 0.4017,
+      "t21_24": 0.2043
+     },
+     "evening_share_17_24": 0.606,
+     "lunch_share_11_14": 0.2393,
+     "age_share": {
+      "age10": 0.035,
+      "age20": 0.3382,
+      "age30": 0.1675,
+      "age40": 0.1114,
+      "age50": 0.1988,
+      "age60plus": 0.1492
+     },
+     "sex_share": {
+      "male": 0.6184,
+      "female": 0.3816
+     },
+     "age_split_coverage": 0.8856,
+     "stores_total": 19,
+     "stores_independent": 17,
+     "stores_franchise": 2,
+     "stores_opened": 0,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 12523830,
+     "flpop_total": 1438083,
+     "flpop_age_share": {
+      "age10": 0.1358,
+      "age20": 0.4479,
+      "age30": 0.112,
+      "age40": 0.0995,
+      "age50": 0.0963,
+      "age60plus": 0.1086
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2383,
+      "t06_11": 0.1922,
+      "t11_14": 0.1281,
+      "t14_17": 0.1304,
+      "t17_21": 0.1818,
+      "t21_24": 0.1292
+     },
+     "workers_total": 669,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20261": {
+     "hansik_sales_krw": 580428926,
+     "hansik_sales_count": 17283,
+     "avg_ticket_krw": 33584,
+     "weekend_share": 0.2992,
+     "dow_share": {
+      "mon": 0.0954,
+      "tue": 0.1176,
+      "wed": 0.1403,
+      "thu": 0.1741,
+      "fri": 0.1735,
+      "sat": 0.195,
+      "sun": 0.1041
+     },
+     "timeband_share": {
+      "t00_06": 0.0828,
+      "t06_11": 0.0094,
+      "t11_14": 0.2325,
+      "t14_17": 0.0783,
+      "t17_21": 0.3622,
+      "t21_24": 0.2349
+     },
+     "evening_share_17_24": 0.5971,
+     "lunch_share_11_14": 0.2325,
+     "age_share": {
+      "age10": 0.0148,
+      "age20": 0.3726,
+      "age30": 0.1476,
+      "age40": 0.1216,
+      "age50": 0.2167,
+      "age60plus": 0.1268
+     },
+     "sex_share": {
+      "male": 0.6817,
+      "female": 0.3183
+     },
+     "age_split_coverage": 0.9366,
+     "stores_total": 19,
+     "stores_independent": 17,
+     "stores_franchise": 2,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 10182964,
+     "flpop_total": 1262792,
+     "flpop_age_share": {
+      "age10": 0.1391,
+      "age20": 0.4049,
+      "age30": 0.1221,
+      "age40": 0.1071,
+      "age50": 0.1048,
+      "age60plus": 0.122
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2378,
+      "t06_11": 0.1902,
+      "t11_14": 0.1261,
+      "t14_17": 0.1311,
+      "t17_21": 0.1839,
+      "t21_24": 0.1309
+     },
+     "workers_total": 669,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    },
+    "20262": {
+     "hansik_sales_krw": 747639967,
+     "hansik_sales_count": 21643,
+     "avg_ticket_krw": 34544,
+     "weekend_share": 0.2822,
+     "dow_share": {
+      "mon": 0.1112,
+      "tue": 0.1101,
+      "wed": 0.1316,
+      "thu": 0.1609,
+      "fri": 0.204,
+      "sat": 0.1586,
+      "sun": 0.1237
+     },
+     "timeband_share": {
+      "t00_06": 0.0721,
+      "t06_11": 0.0152,
+      "t11_14": 0.1762,
+      "t14_17": 0.0717,
+      "t17_21": 0.4219,
+      "t21_24": 0.243
+     },
+     "evening_share_17_24": 0.6649,
+     "lunch_share_11_14": 0.1762,
+     "age_share": {
+      "age10": 0.0204,
+      "age20": 0.346,
+      "age30": 0.1655,
+      "age40": 0.1562,
+      "age50": 0.2125,
+      "age60plus": 0.0994
+     },
+     "sex_share": {
+      "male": 0.6506,
+      "female": 0.3494
+     },
+     "age_split_coverage": 0.8762,
+     "stores_total": 20,
+     "stores_independent": 18,
+     "stores_franchise": 2,
+     "stores_opened": 2,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 12460666,
+     "flpop_total": 1400561,
+     "flpop_age_share": {
+      "age10": 0.1443,
+      "age20": 0.4464,
+      "age30": 0.1134,
+      "age40": 0.0952,
+      "age50": 0.0922,
+      "age60plus": 0.1085
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2388,
+      "t06_11": 0.1892,
+      "t11_14": 0.1266,
+      "t14_17": 0.1287,
+      "t17_21": 0.1838,
+      "t21_24": 0.1328
+     },
+     "workers_total": 669,
+     "residents_total": 1887,
+     "households_total": 1232,
+     "facilities": {
+      "facilities_total": 11,
+      "pharmacies": 2,
+      "universities": 1,
+      "bus_stops": 2
+     }
+    }
+   }
+  },
+  "3110024": {
+   "trdar_name": "혜회동주민센터",
+   "trdar_type": "골목상권",
+   "role": "fringe",
+   "adstrd_name": "혜화동",
+   "signgu_name": "종로구",
+   "area_m2": 52850,
+   "sbiz_stores": {
+    "snapshot": "20260630",
+    "I20107": {
+     "stores": 0,
+     "franchise_flag": 0
+    },
+    "I20108": {
+     "stores": 0,
+     "franchise_flag": 0
+    },
+    "I20109": {
+     "stores": 0,
+     "franchise_flag": 0
+    },
+    "I201_all": 10
+   },
+   "licenses": {
+    "all_uptae": 74,
+    "hansik": 26,
+    "hansik_open": 6,
+    "hansik_closed": 20
+   },
+   "store_license_match": {},
+   "annual": {
+    "2021": {
+     "quarters": 4,
+     "hansik_sales_krw": 4061611181,
+     "stores_q4_total": 13,
+     "stores_q4_independent": 13,
+     "stores_q4_franchise": 0,
+     "sales_per_store_month_krw_q4_stores": 26035969
+    },
+    "2022": {
+     "quarters": 4,
+     "hansik_sales_krw": 4599377424,
+     "stores_q4_total": 13,
+     "stores_q4_independent": 13,
+     "stores_q4_franchise": 0,
+     "sales_per_store_month_krw_q4_stores": 29483189
+    },
+    "2023": {
+     "quarters": 4,
+     "hansik_sales_krw": 5449359371,
+     "stores_q4_total": 13,
+     "stores_q4_independent": 13,
+     "stores_q4_franchise": 0,
+     "sales_per_store_month_krw_q4_stores": 34931791
+    },
+    "2024": {
+     "quarters": 4,
+     "hansik_sales_krw": 5983197236,
+     "stores_q4_total": 13,
+     "stores_q4_independent": 13,
+     "stores_q4_franchise": 0,
+     "sales_per_store_month_krw_q4_stores": 38353828
+    },
+    "2025": {
+     "quarters": 4,
+     "hansik_sales_krw": 5880799575,
+     "stores_q4_total": 13,
+     "stores_q4_independent": 13,
+     "stores_q4_franchise": 0,
+     "sales_per_store_month_krw_q4_stores": 37697433
+    },
+    "2026": {
+     "quarters": 2,
+     "hansik_sales_krw": 2932238046,
+     "stores_q4_total": null,
+     "stores_q4_independent": null,
+     "stores_q4_franchise": null
+    }
+   },
+   "quarters": {
+    "20211": {
+     "hansik_sales_krw": 899000256,
+     "hansik_sales_count": 38891,
+     "avg_ticket_krw": 23116,
+     "weekend_share": 0.2545,
+     "dow_share": {
+      "mon": 0.1538,
+      "tue": 0.1455,
+      "wed": 0.1667,
+      "thu": 0.1359,
+      "fri": 0.1436,
+      "sat": 0.131,
+      "sun": 0.1235
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0047,
+      "t11_14": 0.4742,
+      "t14_17": 0.18,
+      "t17_21": 0.323,
+      "t21_24": 0.018
+     },
+     "evening_share_17_24": 0.341,
+     "lunch_share_11_14": 0.4742,
+     "age_share": {
+      "age10": 0.0042,
+      "age20": 0.1215,
+      "age30": 0.1746,
+      "age40": 0.1954,
+      "age50": 0.2819,
+      "age60plus": 0.2223
+     },
+     "sex_share": {
+      "male": 0.5298,
+      "female": 0.4702
+     },
+     "age_split_coverage": 0.8002,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 23051289,
+     "flpop_total": 377983,
+     "flpop_age_share": {
+      "age10": 0.1735,
+      "age20": 0.1967,
+      "age30": 0.1277,
+      "age40": 0.1597,
+      "age50": 0.1381,
+      "age60plus": 0.2043
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2064,
+      "t06_11": 0.207,
+      "t11_14": 0.1402,
+      "t14_17": 0.1399,
+      "t17_21": 0.1877,
+      "t21_24": 0.1187
+     },
+     "workers_total": 486,
+     "residents_total": 1257,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20212": {
+     "hansik_sales_krw": 993688695,
+     "hansik_sales_count": 45394,
+     "avg_ticket_krw": 21890,
+     "weekend_share": 0.2885,
+     "dow_share": {
+      "mon": 0.1381,
+      "tue": 0.1336,
+      "wed": 0.1485,
+      "thu": 0.1423,
+      "fri": 0.149,
+      "sat": 0.1452,
+      "sun": 0.1433
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0093,
+      "t11_14": 0.4664,
+      "t14_17": 0.1631,
+      "t17_21": 0.3359,
+      "t21_24": 0.0253
+     },
+     "evening_share_17_24": 0.3612,
+     "lunch_share_11_14": 0.4664,
+     "age_share": {
+      "age10": 0.0077,
+      "age20": 0.1307,
+      "age30": 0.1676,
+      "age40": 0.2043,
+      "age50": 0.2587,
+      "age60plus": 0.231
+     },
+     "sex_share": {
+      "male": 0.496,
+      "female": 0.504
+     },
+     "age_split_coverage": 0.8304,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 25479197,
+     "flpop_total": 383317,
+     "flpop_age_share": {
+      "age10": 0.1898,
+      "age20": 0.1982,
+      "age30": 0.1284,
+      "age40": 0.157,
+      "age50": 0.1343,
+      "age60plus": 0.1923
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1999,
+      "t06_11": 0.2092,
+      "t11_14": 0.1433,
+      "t14_17": 0.142,
+      "t17_21": 0.1883,
+      "t21_24": 0.1174
+     },
+     "workers_total": 486,
+     "residents_total": 1257,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20213": {
+     "hansik_sales_krw": 985389848,
+     "hansik_sales_count": 45103,
+     "avg_ticket_krw": 21848,
+     "weekend_share": 0.2687,
+     "dow_share": {
+      "mon": 0.132,
+      "tue": 0.1295,
+      "wed": 0.1556,
+      "thu": 0.1508,
+      "fri": 0.1633,
+      "sat": 0.1418,
+      "sun": 0.1268
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0074,
+      "t11_14": 0.4763,
+      "t14_17": 0.1718,
+      "t17_21": 0.327,
+      "t21_24": 0.0176
+     },
+     "evening_share_17_24": 0.3446,
+     "lunch_share_11_14": 0.4763,
+     "age_share": {
+      "age10": 0.007,
+      "age20": 0.131,
+      "age30": 0.1838,
+      "age40": 0.2137,
+      "age50": 0.2624,
+      "age60plus": 0.202
+     },
+     "sex_share": {
+      "male": 0.5275,
+      "female": 0.4725
+     },
+     "age_split_coverage": 0.818,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 25266406,
+     "flpop_total": 306317,
+     "flpop_age_share": {
+      "age10": 0.1672,
+      "age20": 0.2036,
+      "age30": 0.1304,
+      "age40": 0.1609,
+      "age50": 0.136,
+      "age60plus": 0.2018
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2075,
+      "t06_11": 0.2036,
+      "t11_14": 0.1394,
+      "t14_17": 0.1393,
+      "t17_21": 0.1897,
+      "t21_24": 0.1206
+     },
+     "workers_total": 486,
+     "residents_total": 1257,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20214": {
+     "hansik_sales_krw": 1183532382,
+     "hansik_sales_count": 48947,
+     "avg_ticket_krw": 24180,
+     "weekend_share": 0.3013,
+     "dow_share": {
+      "mon": 0.1346,
+      "tue": 0.1383,
+      "wed": 0.1385,
+      "thu": 0.1358,
+      "fri": 0.1513,
+      "sat": 0.1483,
+      "sun": 0.153
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0076,
+      "t11_14": 0.4429,
+      "t14_17": 0.1849,
+      "t17_21": 0.337,
+      "t21_24": 0.0277
+     },
+     "evening_share_17_24": 0.3647,
+     "lunch_share_11_14": 0.4429,
+     "age_share": {
+      "age10": 0.0061,
+      "age20": 0.1398,
+      "age30": 0.1802,
+      "age40": 0.2051,
+      "age50": 0.2429,
+      "age60plus": 0.226
+     },
+     "sex_share": {
+      "male": 0.4895,
+      "female": 0.5105
+     },
+     "age_split_coverage": 0.8248,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 30346984,
+     "flpop_total": 317006,
+     "flpop_age_share": {
+      "age10": 0.184,
+      "age20": 0.2013,
+      "age30": 0.1271,
+      "age40": 0.1579,
+      "age50": 0.1343,
+      "age60plus": 0.1954
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2172,
+      "t06_11": 0.2085,
+      "t11_14": 0.1388,
+      "t14_17": 0.1345,
+      "t17_21": 0.1821,
+      "t21_24": 0.1189
+     },
+     "workers_total": 402,
+     "residents_total": 1257,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20221": {
+     "hansik_sales_krw": 1001716642,
+     "hansik_sales_count": 38895,
+     "avg_ticket_krw": 25754,
+     "weekend_share": 0.2985,
+     "dow_share": {
+      "mon": 0.1501,
+      "tue": 0.1302,
+      "wed": 0.1404,
+      "thu": 0.1368,
+      "fri": 0.1439,
+      "sat": 0.1504,
+      "sun": 0.1481
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0101,
+      "t11_14": 0.4908,
+      "t14_17": 0.1817,
+      "t17_21": 0.3087,
+      "t21_24": 0.0087
+     },
+     "evening_share_17_24": 0.3174,
+     "lunch_share_11_14": 0.4908,
+     "age_share": {
+      "age10": 0.0025,
+      "age20": 0.1217,
+      "age30": 0.1575,
+      "age40": 0.1893,
+      "age50": 0.2672,
+      "age60plus": 0.2618
+     },
+     "sex_share": {
+      "male": 0.5329,
+      "female": 0.4671
+     },
+     "age_split_coverage": 0.8156,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 25685042,
+     "flpop_total": 316429,
+     "flpop_age_share": {
+      "age10": 0.1806,
+      "age20": 0.2003,
+      "age30": 0.1268,
+      "age40": 0.1572,
+      "age50": 0.1344,
+      "age60plus": 0.2007
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.221,
+      "t06_11": 0.2066,
+      "t11_14": 0.1367,
+      "t14_17": 0.1343,
+      "t17_21": 0.1818,
+      "t21_24": 0.1196
+     },
+     "workers_total": 402,
+     "residents_total": 1257,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20222": {
+     "hansik_sales_krw": 1195439089,
+     "hansik_sales_count": 46854,
+     "avg_ticket_krw": 25514,
+     "weekend_share": 0.2984,
+     "dow_share": {
+      "mon": 0.1413,
+      "tue": 0.134,
+      "wed": 0.1383,
+      "thu": 0.1503,
+      "fri": 0.1377,
+      "sat": 0.1517,
+      "sun": 0.1468
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0079,
+      "t11_14": 0.4704,
+      "t14_17": 0.1778,
+      "t17_21": 0.3111,
+      "t21_24": 0.0328
+     },
+     "evening_share_17_24": 0.3439,
+     "lunch_share_11_14": 0.4704,
+     "age_share": {
+      "age10": 0.0048,
+      "age20": 0.1246,
+      "age30": 0.1653,
+      "age40": 0.1918,
+      "age50": 0.2698,
+      "age60plus": 0.2437
+     },
+     "sex_share": {
+      "male": 0.4953,
+      "female": 0.5047
+     },
+     "age_split_coverage": 0.8249,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 30652284,
+     "flpop_total": 331171,
+     "flpop_age_share": {
+      "age10": 0.1991,
+      "age20": 0.2045,
+      "age30": 0.1208,
+      "age40": 0.1509,
+      "age50": 0.1323,
+      "age60plus": 0.1924
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2153,
+      "t06_11": 0.2094,
+      "t11_14": 0.1408,
+      "t14_17": 0.1363,
+      "t17_21": 0.1811,
+      "t21_24": 0.117
+     },
+     "workers_total": 402,
+     "residents_total": 1257,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20223": {
+     "hansik_sales_krw": 1175839426,
+     "hansik_sales_count": 43088,
+     "avg_ticket_krw": 27289,
+     "weekend_share": 0.2878,
+     "dow_share": {
+      "mon": 0.1438,
+      "tue": 0.1335,
+      "wed": 0.1417,
+      "thu": 0.1444,
+      "fri": 0.1487,
+      "sat": 0.1506,
+      "sun": 0.1373
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0045,
+      "t11_14": 0.4828,
+      "t14_17": 0.1577,
+      "t17_21": 0.3386,
+      "t21_24": 0.0164
+     },
+     "evening_share_17_24": 0.355,
+     "lunch_share_11_14": 0.4828,
+     "age_share": {
+      "age10": 0.0055,
+      "age20": 0.116,
+      "age30": 0.1608,
+      "age40": 0.2068,
+      "age50": 0.2548,
+      "age60plus": 0.2561
+     },
+     "sex_share": {
+      "male": 0.4979,
+      "female": 0.5021
+     },
+     "age_split_coverage": 0.8312,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 2,
+     "stores_closed": 2,
+     "sales_per_store_month_krw": 30149729,
+     "flpop_total": 323937,
+     "flpop_age_share": {
+      "age10": 0.1894,
+      "age20": 0.2057,
+      "age30": 0.1254,
+      "age40": 0.1507,
+      "age50": 0.1373,
+      "age60plus": 0.1915
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2137,
+      "t06_11": 0.2072,
+      "t11_14": 0.1411,
+      "t14_17": 0.138,
+      "t17_21": 0.1825,
+      "t21_24": 0.1175
+     },
+     "workers_total": 402,
+     "residents_total": 1257,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20224": {
+     "hansik_sales_krw": 1226382267,
+     "hansik_sales_count": 41254,
+     "avg_ticket_krw": 29728,
+     "weekend_share": 0.3105,
+     "dow_share": {
+      "mon": 0.1684,
+      "tue": 0.1225,
+      "wed": 0.1195,
+      "thu": 0.1431,
+      "fri": 0.1361,
+      "sat": 0.1722,
+      "sun": 0.1383
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0054,
+      "t11_14": 0.4695,
+      "t14_17": 0.1698,
+      "t17_21": 0.3372,
+      "t21_24": 0.0181
+     },
+     "evening_share_17_24": 0.3553,
+     "lunch_share_11_14": 0.4695,
+     "age_share": {
+      "age10": 0.0041,
+      "age20": 0.123,
+      "age30": 0.1637,
+      "age40": 0.1884,
+      "age50": 0.2509,
+      "age60plus": 0.27
+     },
+     "sex_share": {
+      "male": 0.4805,
+      "female": 0.5195
+     },
+     "age_split_coverage": 0.831,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 31445699,
+     "flpop_total": 330807,
+     "flpop_age_share": {
+      "age10": 0.193,
+      "age20": 0.2093,
+      "age30": 0.123,
+      "age40": 0.1523,
+      "age50": 0.1345,
+      "age60plus": 0.188
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2169,
+      "t06_11": 0.2107,
+      "t11_14": 0.1399,
+      "t14_17": 0.1366,
+      "t17_21": 0.1796,
+      "t21_24": 0.1162
+     },
+     "workers_total": 425,
+     "residents_total": 980,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20231": {
+     "hansik_sales_krw": 1280410114,
+     "hansik_sales_count": 42576,
+     "avg_ticket_krw": 30074,
+     "weekend_share": 0.2945,
+     "dow_share": {
+      "mon": 0.1305,
+      "tue": 0.1387,
+      "wed": 0.1435,
+      "thu": 0.1513,
+      "fri": 0.1415,
+      "sat": 0.1516,
+      "sun": 0.1429
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0067,
+      "t11_14": 0.48,
+      "t14_17": 0.1759,
+      "t17_21": 0.3247,
+      "t21_24": 0.0128
+     },
+     "evening_share_17_24": 0.3375,
+     "lunch_share_11_14": 0.48,
+     "age_share": {
+      "age10": 0.0022,
+      "age20": 0.0981,
+      "age30": 0.1377,
+      "age40": 0.182,
+      "age50": 0.2737,
+      "age60plus": 0.3063
+     },
+     "sex_share": {
+      "male": 0.5085,
+      "female": 0.4915
+     },
+     "age_split_coverage": 0.8317,
+     "stores_total": 12,
+     "stores_independent": 12,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 35566948,
+     "flpop_total": 324535,
+     "flpop_age_share": {
+      "age10": 0.1786,
+      "age20": 0.202,
+      "age30": 0.1229,
+      "age40": 0.1537,
+      "age50": 0.1414,
+      "age60plus": 0.2015
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.211,
+      "t06_11": 0.2065,
+      "t11_14": 0.1411,
+      "t14_17": 0.1399,
+      "t17_21": 0.1841,
+      "t21_24": 0.1175
+     },
+     "workers_total": 425,
+     "residents_total": 980,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20232": {
+     "hansik_sales_krw": 1279165645,
+     "hansik_sales_count": 44873,
+     "avg_ticket_krw": 28506,
+     "weekend_share": 0.3079,
+     "dow_share": {
+      "mon": 0.1367,
+      "tue": 0.1327,
+      "wed": 0.1371,
+      "thu": 0.1517,
+      "fri": 0.1338,
+      "sat": 0.1588,
+      "sun": 0.1491
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0088,
+      "t11_14": 0.4524,
+      "t14_17": 0.1698,
+      "t17_21": 0.3569,
+      "t21_24": 0.0121
+     },
+     "evening_share_17_24": 0.369,
+     "lunch_share_11_14": 0.4524,
+     "age_share": {
+      "age10": 0.0048,
+      "age20": 0.0973,
+      "age30": 0.1473,
+      "age40": 0.1781,
+      "age50": 0.276,
+      "age60plus": 0.2965
+     },
+     "sex_share": {
+      "male": 0.5029,
+      "female": 0.4971
+     },
+     "age_split_coverage": 0.8287,
+     "stores_total": 12,
+     "stores_independent": 12,
+     "stores_franchise": 0,
+     "stores_opened": 1,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 35532379,
+     "flpop_total": 330046,
+     "flpop_age_share": {
+      "age10": 0.1968,
+      "age20": 0.2082,
+      "age30": 0.1181,
+      "age40": 0.1491,
+      "age50": 0.1373,
+      "age60plus": 0.1905
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2098,
+      "t06_11": 0.2076,
+      "t11_14": 0.142,
+      "t14_17": 0.1405,
+      "t17_21": 0.1841,
+      "t21_24": 0.1159
+     },
+     "workers_total": 425,
+     "residents_total": 980,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20233": {
+     "hansik_sales_krw": 1278910156,
+     "hansik_sales_count": 43108,
+     "avg_ticket_krw": 29668,
+     "weekend_share": 0.322,
+     "dow_share": {
+      "mon": 0.1426,
+      "tue": 0.1323,
+      "wed": 0.1295,
+      "thu": 0.1421,
+      "fri": 0.1313,
+      "sat": 0.1758,
+      "sun": 0.1463
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0083,
+      "t11_14": 0.455,
+      "t14_17": 0.1594,
+      "t17_21": 0.3607,
+      "t21_24": 0.0167
+     },
+     "evening_share_17_24": 0.3774,
+     "lunch_share_11_14": 0.455,
+     "age_share": {
+      "age10": 0.0029,
+      "age20": 0.0942,
+      "age30": 0.1573,
+      "age40": 0.1896,
+      "age50": 0.28,
+      "age60plus": 0.276
+     },
+     "sex_share": {
+      "male": 0.5131,
+      "female": 0.4869
+     },
+     "age_split_coverage": 0.8242,
+     "stores_total": 12,
+     "stores_independent": 12,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 35525282,
+     "flpop_total": 258133,
+     "flpop_age_share": {
+      "age10": 0.1807,
+      "age20": 0.2022,
+      "age30": 0.1227,
+      "age40": 0.1564,
+      "age50": 0.1411,
+      "age60plus": 0.1968
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2215,
+      "t06_11": 0.2065,
+      "t11_14": 0.1364,
+      "t14_17": 0.1371,
+      "t17_21": 0.1805,
+      "t21_24": 0.1181
+     },
+     "workers_total": 425,
+     "residents_total": 980,
+     "households_total": 800,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20234": {
+     "hansik_sales_krw": 1610873456,
+     "hansik_sales_count": 51135,
+     "avg_ticket_krw": 31502,
+     "weekend_share": 0.3264,
+     "dow_share": {
+      "mon": 0.1395,
+      "tue": 0.1217,
+      "wed": 0.1328,
+      "thu": 0.1356,
+      "fri": 0.144,
+      "sat": 0.1614,
+      "sun": 0.165
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0096,
+      "t11_14": 0.4615,
+      "t14_17": 0.1649,
+      "t17_21": 0.354,
+      "t21_24": 0.0099
+     },
+     "evening_share_17_24": 0.3639,
+     "lunch_share_11_14": 0.4615,
+     "age_share": {
+      "age10": 0.0031,
+      "age20": 0.1068,
+      "age30": 0.16,
+      "age40": 0.1619,
+      "age50": 0.2737,
+      "age60plus": 0.2946
+     },
+     "sex_share": {
+      "male": 0.4894,
+      "female": 0.5106
+     },
+     "age_split_coverage": 0.8356,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 1,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 41304448,
+     "flpop_total": 256949,
+     "flpop_age_share": {
+      "age10": 0.1826,
+      "age20": 0.2092,
+      "age30": 0.1215,
+      "age40": 0.1564,
+      "age50": 0.1384,
+      "age60plus": 0.1919
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2249,
+      "t06_11": 0.2119,
+      "t11_14": 0.1371,
+      "t14_17": 0.1355,
+      "t17_21": 0.177,
+      "t21_24": 0.1136
+     },
+     "workers_total": 444,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20241": {
+     "hansik_sales_krw": 1473768082,
+     "hansik_sales_count": 47013,
+     "avg_ticket_krw": 31348,
+     "weekend_share": 0.3103,
+     "dow_share": {
+      "mon": 0.1372,
+      "tue": 0.1336,
+      "wed": 0.1354,
+      "thu": 0.1554,
+      "fri": 0.1281,
+      "sat": 0.1647,
+      "sun": 0.1456
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0137,
+      "t11_14": 0.4687,
+      "t14_17": 0.1654,
+      "t17_21": 0.3429,
+      "t21_24": 0.0093
+     },
+     "evening_share_17_24": 0.3522,
+     "lunch_share_11_14": 0.4687,
+     "age_share": {
+      "age10": 0.001,
+      "age20": 0.0794,
+      "age30": 0.1595,
+      "age40": 0.1705,
+      "age50": 0.2686,
+      "age60plus": 0.321
+     },
+     "sex_share": {
+      "male": 0.5255,
+      "female": 0.4745
+     },
+     "age_split_coverage": 0.8319,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 37788925,
+     "flpop_total": 252502,
+     "flpop_age_share": {
+      "age10": 0.178,
+      "age20": 0.1971,
+      "age30": 0.1256,
+      "age40": 0.1579,
+      "age50": 0.1449,
+      "age60plus": 0.1965
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2286,
+      "t06_11": 0.2109,
+      "t11_14": 0.1322,
+      "t14_17": 0.1342,
+      "t17_21": 0.177,
+      "t21_24": 0.1171
+     },
+     "workers_total": 444,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20242": {
+     "hansik_sales_krw": 1490926914,
+     "hansik_sales_count": 49676,
+     "avg_ticket_krw": 30013,
+     "weekend_share": 0.2991,
+     "dow_share": {
+      "mon": 0.1412,
+      "tue": 0.1349,
+      "wed": 0.1398,
+      "thu": 0.1401,
+      "fri": 0.1449,
+      "sat": 0.1676,
+      "sun": 0.1315
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.016,
+      "t11_14": 0.4539,
+      "t14_17": 0.1511,
+      "t17_21": 0.3692,
+      "t21_24": 0.0097
+     },
+     "evening_share_17_24": 0.3789,
+     "lunch_share_11_14": 0.4539,
+     "age_share": {
+      "age10": 0.0024,
+      "age20": 0.0907,
+      "age30": 0.1585,
+      "age40": 0.176,
+      "age50": 0.2704,
+      "age60plus": 0.302
+     },
+     "sex_share": {
+      "male": 0.5056,
+      "female": 0.4944
+     },
+     "age_split_coverage": 0.8346,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 1,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 38228895,
+     "flpop_total": 266781,
+     "flpop_age_share": {
+      "age10": 0.2057,
+      "age20": 0.2166,
+      "age30": 0.119,
+      "age40": 0.1387,
+      "age50": 0.1373,
+      "age60plus": 0.1827
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.225,
+      "t06_11": 0.2127,
+      "t11_14": 0.136,
+      "t14_17": 0.1343,
+      "t17_21": 0.1761,
+      "t21_24": 0.1159
+     },
+     "workers_total": 444,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20243": {
+     "hansik_sales_krw": 1390547492,
+     "hansik_sales_count": 47018,
+     "avg_ticket_krw": 29575,
+     "weekend_share": 0.2884,
+     "dow_share": {
+      "mon": 0.1378,
+      "tue": 0.1328,
+      "wed": 0.139,
+      "thu": 0.1473,
+      "fri": 0.1548,
+      "sat": 0.1505,
+      "sun": 0.1378
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0147,
+      "t11_14": 0.4938,
+      "t14_17": 0.1418,
+      "t17_21": 0.3418,
+      "t21_24": 0.008
+     },
+     "evening_share_17_24": 0.3498,
+     "lunch_share_11_14": 0.4938,
+     "age_share": {
+      "age10": 0.0027,
+      "age20": 0.0926,
+      "age30": 0.1575,
+      "age40": 0.1843,
+      "age50": 0.2695,
+      "age60plus": 0.2934
+     },
+     "sex_share": {
+      "male": 0.4951,
+      "female": 0.5049
+     },
+     "age_split_coverage": 0.8117,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 35655064,
+     "flpop_total": 262081,
+     "flpop_age_share": {
+      "age10": 0.1832,
+      "age20": 0.2041,
+      "age30": 0.1235,
+      "age40": 0.1476,
+      "age50": 0.1447,
+      "age60plus": 0.1969
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2123,
+      "t06_11": 0.2119,
+      "t11_14": 0.1393,
+      "t14_17": 0.1395,
+      "t17_21": 0.1819,
+      "t21_24": 0.1151
+     },
+     "workers_total": 444,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20244": {
+     "hansik_sales_krw": 1627954748,
+     "hansik_sales_count": 50069,
+     "avg_ticket_krw": 32514,
+     "weekend_share": 0.2981,
+     "dow_share": {
+      "mon": 0.1372,
+      "tue": 0.1477,
+      "wed": 0.1497,
+      "thu": 0.1443,
+      "fri": 0.1229,
+      "sat": 0.1533,
+      "sun": 0.1449
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.013,
+      "t11_14": 0.4704,
+      "t14_17": 0.15,
+      "t17_21": 0.3571,
+      "t21_24": 0.0095
+     },
+     "evening_share_17_24": 0.3666,
+     "lunch_share_11_14": 0.4704,
+     "age_share": {
+      "age10": 0.0044,
+      "age20": 0.0894,
+      "age30": 0.1461,
+      "age40": 0.1815,
+      "age50": 0.2903,
+      "age60plus": 0.2883
+     },
+     "sex_share": {
+      "male": 0.4923,
+      "female": 0.5077
+     },
+     "age_split_coverage": 0.8198,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 41742429,
+     "flpop_total": 276546,
+     "flpop_age_share": {
+      "age10": 0.1844,
+      "age20": 0.2176,
+      "age30": 0.123,
+      "age40": 0.1434,
+      "age50": 0.1433,
+      "age60plus": 0.1883
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2105,
+      "t06_11": 0.2172,
+      "t11_14": 0.141,
+      "t14_17": 0.1383,
+      "t17_21": 0.1802,
+      "t21_24": 0.1129
+     },
+     "workers_total": 521,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20251": {
+     "hansik_sales_krw": 1351559915,
+     "hansik_sales_count": 41785,
+     "avg_ticket_krw": 32346,
+     "weekend_share": 0.3031,
+     "dow_share": {
+      "mon": 0.1484,
+      "tue": 0.1128,
+      "wed": 0.1496,
+      "thu": 0.1438,
+      "fri": 0.1423,
+      "sat": 0.1647,
+      "sun": 0.1384
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0109,
+      "t11_14": 0.4686,
+      "t14_17": 0.1567,
+      "t17_21": 0.3595,
+      "t21_24": 0.0043
+     },
+     "evening_share_17_24": 0.3638,
+     "lunch_share_11_14": 0.4686,
+     "age_share": {
+      "age10": 0.0022,
+      "age20": 0.0803,
+      "age30": 0.1318,
+      "age40": 0.1748,
+      "age50": 0.2708,
+      "age60plus": 0.3401
+     },
+     "sex_share": {
+      "male": 0.5089,
+      "female": 0.4911
+     },
+     "age_split_coverage": 0.839,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 34655382,
+     "flpop_total": 268083,
+     "flpop_age_share": {
+      "age10": 0.1722,
+      "age20": 0.2095,
+      "age30": 0.126,
+      "age40": 0.1465,
+      "age50": 0.1484,
+      "age60plus": 0.1973
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2141,
+      "t06_11": 0.2145,
+      "t11_14": 0.1396,
+      "t14_17": 0.1378,
+      "t17_21": 0.1786,
+      "t21_24": 0.1154
+     },
+     "workers_total": 521,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20252": {
+     "hansik_sales_krw": 1426552318,
+     "hansik_sales_count": 47359,
+     "avg_ticket_krw": 30122,
+     "weekend_share": 0.3121,
+     "dow_share": {
+      "mon": 0.1419,
+      "tue": 0.1272,
+      "wed": 0.1319,
+      "thu": 0.1399,
+      "fri": 0.1469,
+      "sat": 0.1616,
+      "sun": 0.1505
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0125,
+      "t11_14": 0.4857,
+      "t14_17": 0.1557,
+      "t17_21": 0.3394,
+      "t21_24": 0.0067
+     },
+     "evening_share_17_24": 0.3461,
+     "lunch_share_11_14": 0.4857,
+     "age_share": {
+      "age10": 0.0035,
+      "age20": 0.0846,
+      "age30": 0.1466,
+      "age40": 0.1754,
+      "age50": 0.2719,
+      "age60plus": 0.318
+     },
+     "sex_share": {
+      "male": 0.4921,
+      "female": 0.5079
+     },
+     "age_split_coverage": 0.8462,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 36578265,
+     "flpop_total": 305058,
+     "flpop_age_share": {
+      "age10": 0.1919,
+      "age20": 0.2213,
+      "age30": 0.1206,
+      "age40": 0.1392,
+      "age50": 0.1459,
+      "age60plus": 0.1812
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2139,
+      "t06_11": 0.218,
+      "t11_14": 0.1395,
+      "t14_17": 0.1365,
+      "t17_21": 0.1749,
+      "t21_24": 0.1172
+     },
+     "workers_total": 521,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20253": {
+     "hansik_sales_krw": 1408521486,
+     "hansik_sales_count": 45858,
+     "avg_ticket_krw": 30715,
+     "weekend_share": 0.3101,
+     "dow_share": {
+      "mon": 0.1246,
+      "tue": 0.1486,
+      "wed": 0.1411,
+      "thu": 0.1284,
+      "fri": 0.1472,
+      "sat": 0.1585,
+      "sun": 0.1516
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0114,
+      "t11_14": 0.4714,
+      "t14_17": 0.1361,
+      "t17_21": 0.372,
+      "t21_24": 0.0091
+     },
+     "evening_share_17_24": 0.3811,
+     "lunch_share_11_14": 0.4714,
+     "age_share": {
+      "age10": 0.0029,
+      "age20": 0.0814,
+      "age30": 0.1426,
+      "age40": 0.184,
+      "age50": 0.261,
+      "age60plus": 0.3281
+     },
+     "sex_share": {
+      "male": 0.5102,
+      "female": 0.4898
+     },
+     "age_split_coverage": 0.8414,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 36115936,
+     "flpop_total": 388789,
+     "flpop_age_share": {
+      "age10": 0.1782,
+      "age20": 0.2106,
+      "age30": 0.1291,
+      "age40": 0.1382,
+      "age50": 0.1604,
+      "age60plus": 0.1834
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2122,
+      "t06_11": 0.2279,
+      "t11_14": 0.1393,
+      "t14_17": 0.134,
+      "t17_21": 0.171,
+      "t21_24": 0.1156
+     },
+     "workers_total": 521,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20254": {
+     "hansik_sales_krw": 1694165856,
+     "hansik_sales_count": 47699,
+     "avg_ticket_krw": 35518,
+     "weekend_share": 0.2945,
+     "dow_share": {
+      "mon": 0.1425,
+      "tue": 0.1464,
+      "wed": 0.1476,
+      "thu": 0.1316,
+      "fri": 0.1373,
+      "sat": 0.1649,
+      "sun": 0.1296
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0103,
+      "t11_14": 0.4636,
+      "t14_17": 0.1621,
+      "t17_21": 0.3482,
+      "t21_24": 0.0158
+     },
+     "evening_share_17_24": 0.364,
+     "lunch_share_11_14": 0.4636,
+     "age_share": {
+      "age10": 0.0047,
+      "age20": 0.0694,
+      "age30": 0.1363,
+      "age40": 0.1696,
+      "age50": 0.2815,
+      "age60plus": 0.3385
+     },
+     "sex_share": {
+      "male": 0.4961,
+      "female": 0.5039
+     },
+     "age_split_coverage": 0.8223,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 43440150,
+     "flpop_total": 433974,
+     "flpop_age_share": {
+      "age10": 0.178,
+      "age20": 0.2173,
+      "age30": 0.1254,
+      "age40": 0.138,
+      "age50": 0.1592,
+      "age60plus": 0.1822
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.232,
+      "t06_11": 0.2278,
+      "t11_14": 0.1336,
+      "t14_17": 0.1272,
+      "t17_21": 0.1641,
+      "t21_24": 0.1153
+     },
+     "workers_total": 521,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20261": {
+     "hansik_sales_krw": 1502856795,
+     "hansik_sales_count": 42676,
+     "avg_ticket_krw": 35216,
+     "weekend_share": 0.3086,
+     "dow_share": {
+      "mon": 0.1373,
+      "tue": 0.1434,
+      "wed": 0.1237,
+      "thu": 0.1421,
+      "fri": 0.145,
+      "sat": 0.1677,
+      "sun": 0.1409
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0117,
+      "t11_14": 0.4659,
+      "t14_17": 0.1623,
+      "t17_21": 0.3418,
+      "t21_24": 0.0184
+     },
+     "evening_share_17_24": 0.3602,
+     "lunch_share_11_14": 0.4659,
+     "age_share": {
+      "age10": 0.0013,
+      "age20": 0.056,
+      "age30": 0.124,
+      "age40": 0.1698,
+      "age50": 0.286,
+      "age60plus": 0.3629
+     },
+     "sex_share": {
+      "male": 0.5158,
+      "female": 0.4842
+     },
+     "age_split_coverage": 0.8313,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 38534790,
+     "flpop_total": 488211,
+     "flpop_age_share": {
+      "age10": 0.1713,
+      "age20": 0.2153,
+      "age30": 0.1287,
+      "age40": 0.14,
+      "age50": 0.159,
+      "age60plus": 0.1857
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2422,
+      "t06_11": 0.2187,
+      "t11_14": 0.1289,
+      "t14_17": 0.1244,
+      "t17_21": 0.1646,
+      "t21_24": 0.1213
+     },
+     "workers_total": 521,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    },
+    "20262": {
+     "hansik_sales_krw": 1429381251,
+     "hansik_sales_count": 41702,
+     "avg_ticket_krw": 34276,
+     "weekend_share": 0.331,
+     "dow_share": {
+      "mon": 0.1252,
+      "tue": 0.1264,
+      "wed": 0.1277,
+      "thu": 0.146,
+      "fri": 0.1436,
+      "sat": 0.1672,
+      "sun": 0.1638
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.01,
+      "t11_14": 0.4664,
+      "t14_17": 0.1431,
+      "t17_21": 0.3569,
+      "t21_24": 0.0235
+     },
+     "evening_share_17_24": 0.3804,
+     "lunch_share_11_14": 0.4664,
+     "age_share": {
+      "age10": 0.0034,
+      "age20": 0.0762,
+      "age30": 0.134,
+      "age40": 0.1745,
+      "age50": 0.2666,
+      "age60plus": 0.3453
+     },
+     "sex_share": {
+      "male": 0.5039,
+      "female": 0.4961
+     },
+     "age_split_coverage": 0.8315,
+     "stores_total": 13,
+     "stores_independent": 13,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 36650801,
+     "flpop_total": 688421,
+     "flpop_age_share": {
+      "age10": 0.1973,
+      "age20": 0.2186,
+      "age30": 0.1262,
+      "age40": 0.1367,
+      "age50": 0.1474,
+      "age60plus": 0.1738
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2427,
+      "t06_11": 0.2248,
+      "t11_14": 0.1296,
+      "t14_17": 0.1218,
+      "t17_21": 0.1595,
+      "t21_24": 0.1216
+     },
+     "workers_total": 521,
+     "residents_total": 979,
+     "households_total": 612,
+     "facilities": {
+      "facilities_total": 9,
+      "public_offices": 2,
+      "pharmacies": 2,
+      "bus_stops": 3
+     }
+    }
+   }
+  },
+  "3110027": {
+   "trdar_name": "혜화역 1번",
+   "trdar_type": "골목상권",
+   "role": "fringe",
+   "adstrd_name": "이화동",
+   "signgu_name": "종로구",
+   "area_m2": 117673,
+   "sbiz_stores": {
+    "snapshot": "20260630",
+    "I20107": {
+     "stores": 0,
+     "franchise_flag": 0
+    },
+    "I20108": {
+     "stores": 0,
+     "franchise_flag": 0
+    },
+    "I20109": {
+     "stores": 0,
+     "franchise_flag": 0
+    },
+    "I201_all": 6
+   },
+   "licenses": {
+    "all_uptae": 81,
+    "hansik": 22,
+    "hansik_open": 6,
+    "hansik_closed": 16
+   },
+   "store_license_match": {},
+   "annual": {
+    "2021": {
+     "quarters": 4,
+     "hansik_sales_krw": 458286807,
+     "stores_q4_total": 8,
+     "stores_q4_independent": 8,
+     "stores_q4_franchise": 0,
+     "sales_per_store_month_krw_q4_stores": 4773821
+    },
+    "2022": {
+     "quarters": 4,
+     "hansik_sales_krw": 398742028,
+     "stores_q4_total": 7,
+     "stores_q4_independent": 7,
+     "stores_q4_franchise": 0,
+     "sales_per_store_month_krw_q4_stores": 4746929
+    },
+    "2023": {
+     "quarters": 4,
+     "hansik_sales_krw": 616057729,
+     "stores_q4_total": 7,
+     "stores_q4_independent": 7,
+     "stores_q4_franchise": 0,
+     "sales_per_store_month_krw_q4_stores": 7334021
+    },
+    "2024": {
+     "quarters": 4,
+     "hansik_sales_krw": 636931213,
+     "stores_q4_total": 6,
+     "stores_q4_independent": 6,
+     "stores_q4_franchise": 0,
+     "sales_per_store_month_krw_q4_stores": 8846267
+    },
+    "2025": {
+     "quarters": 4,
+     "hansik_sales_krw": 567742015,
+     "stores_q4_total": 7,
+     "stores_q4_independent": 7,
+     "stores_q4_franchise": 0,
+     "sales_per_store_month_krw_q4_stores": 6758834
+    },
+    "2026": {
+     "quarters": 2,
+     "hansik_sales_krw": 258022978,
+     "stores_q4_total": null,
+     "stores_q4_independent": null,
+     "stores_q4_franchise": null
+    }
+   },
+   "quarters": {
+    "20211": {
+     "hansik_sales_krw": 89953073,
+     "hansik_sales_count": 3647,
+     "avg_ticket_krw": 24665,
+     "weekend_share": 0.154,
+     "dow_share": {
+      "mon": 0.1469,
+      "tue": 0.1679,
+      "wed": 0.2022,
+      "thu": 0.1456,
+      "fri": 0.1833,
+      "sat": 0.1403,
+      "sun": 0.0137
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.5046,
+      "t14_17": 0.0951,
+      "t17_21": 0.3488,
+      "t21_24": 0.0515
+     },
+     "evening_share_17_24": 0.4003,
+     "lunch_share_11_14": 0.5046,
+     "age_share": {
+      "age10": 0.0031,
+      "age20": 0.2515,
+      "age30": 0.3167,
+      "age40": 0.2153,
+      "age50": 0.1394,
+      "age60plus": 0.0739
+     },
+     "sex_share": {
+      "male": 0.4489,
+      "female": 0.5511
+     },
+     "age_split_coverage": 0.7763,
+     "stores_total": 8,
+     "stores_independent": 8,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 3748045,
+     "flpop_total": 475450,
+     "flpop_age_share": {
+      "age10": 0.109,
+      "age20": 0.2368,
+      "age30": 0.1696,
+      "age40": 0.1487,
+      "age50": 0.1354,
+      "age60plus": 0.2004
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2734,
+      "t06_11": 0.1878,
+      "t11_14": 0.1159,
+      "t14_17": 0.1258,
+      "t17_21": 0.1756,
+      "t21_24": 0.1215
+     },
+     "workers_total": 140,
+     "residents_total": 2669,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20212": {
+     "hansik_sales_krw": 133128592,
+     "hansik_sales_count": 5996,
+     "avg_ticket_krw": 22203,
+     "weekend_share": 0.1614,
+     "dow_share": {
+      "mon": 0.1687,
+      "tue": 0.1713,
+      "wed": 0.1592,
+      "thu": 0.1505,
+      "fri": 0.1889,
+      "sat": 0.1551,
+      "sun": 0.0063
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.4871,
+      "t14_17": 0.1124,
+      "t17_21": 0.3488,
+      "t21_24": 0.0517
+     },
+     "evening_share_17_24": 0.4005,
+     "lunch_share_11_14": 0.4871,
+     "age_share": {
+      "age10": 0.0027,
+      "age20": 0.2379,
+      "age30": 0.3522,
+      "age40": 0.1896,
+      "age50": 0.1525,
+      "age60plus": 0.0651
+     },
+     "sex_share": {
+      "male": 0.46,
+      "female": 0.54
+     },
+     "age_split_coverage": 0.8065,
+     "stores_total": 8,
+     "stores_independent": 8,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 5547025,
+     "flpop_total": 485421,
+     "flpop_age_share": {
+      "age10": 0.1104,
+      "age20": 0.2528,
+      "age30": 0.1692,
+      "age40": 0.14,
+      "age50": 0.1341,
+      "age60plus": 0.1936
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.267,
+      "t06_11": 0.1818,
+      "t11_14": 0.1161,
+      "t14_17": 0.129,
+      "t17_21": 0.1842,
+      "t21_24": 0.1219
+     },
+     "workers_total": 140,
+     "residents_total": 2669,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20213": {
+     "hansik_sales_krw": 129800417,
+     "hansik_sales_count": 5365,
+     "avg_ticket_krw": 24194,
+     "weekend_share": 0.2088,
+     "dow_share": {
+      "mon": 0.1416,
+      "tue": 0.1699,
+      "wed": 0.1611,
+      "thu": 0.1652,
+      "fri": 0.1534,
+      "sat": 0.1566,
+      "sun": 0.0521
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.465,
+      "t14_17": 0.1428,
+      "t17_21": 0.3809,
+      "t21_24": 0.0114
+     },
+     "evening_share_17_24": 0.3923,
+     "lunch_share_11_14": 0.465,
+     "age_share": {
+      "age10": 0.0035,
+      "age20": 0.2942,
+      "age30": 0.3201,
+      "age40": 0.1814,
+      "age50": 0.1437,
+      "age60plus": 0.0571
+     },
+     "sex_share": {
+      "male": 0.4802,
+      "female": 0.5198
+     },
+     "age_split_coverage": 0.8225,
+     "stores_total": 9,
+     "stores_independent": 9,
+     "stores_franchise": 0,
+     "stores_opened": 1,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 4807423,
+     "flpop_total": 376964,
+     "flpop_age_share": {
+      "age10": 0.0985,
+      "age20": 0.2561,
+      "age30": 0.1745,
+      "age40": 0.1454,
+      "age50": 0.1349,
+      "age60plus": 0.1907
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2315,
+      "t06_11": 0.1828,
+      "t11_14": 0.1279,
+      "t14_17": 0.1461,
+      "t17_21": 0.1966,
+      "t21_24": 0.115
+     },
+     "workers_total": 140,
+     "residents_total": 2669,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20214": {
+     "hansik_sales_krw": 105404725,
+     "hansik_sales_count": 4118,
+     "avg_ticket_krw": 25596,
+     "weekend_share": 0.1503,
+     "dow_share": {
+      "mon": 0.1361,
+      "tue": 0.1674,
+      "wed": 0.1809,
+      "thu": 0.1735,
+      "fri": 0.1918,
+      "sat": 0.1319,
+      "sun": 0.0184
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0024,
+      "t11_14": 0.5529,
+      "t14_17": 0.1077,
+      "t17_21": 0.3359,
+      "t21_24": 0.0011
+     },
+     "evening_share_17_24": 0.337,
+     "lunch_share_11_14": 0.5529,
+     "age_share": {
+      "age10": 0.0022,
+      "age20": 0.2584,
+      "age30": 0.3457,
+      "age40": 0.1891,
+      "age50": 0.1482,
+      "age60plus": 0.0564
+     },
+     "sex_share": {
+      "male": 0.4515,
+      "female": 0.5485
+     },
+     "age_split_coverage": 0.8141,
+     "stores_total": 8,
+     "stores_independent": 8,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 4391864,
+     "flpop_total": 380019,
+     "flpop_age_share": {
+      "age10": 0.103,
+      "age20": 0.2713,
+      "age30": 0.179,
+      "age40": 0.1433,
+      "age50": 0.1287,
+      "age60plus": 0.1747
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2,
+      "t06_11": 0.1713,
+      "t11_14": 0.137,
+      "t14_17": 0.1627,
+      "t17_21": 0.2179,
+      "t21_24": 0.1113
+     },
+     "workers_total": 198,
+     "residents_total": 2669,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20221": {
+     "hansik_sales_krw": 105565747,
+     "hansik_sales_count": 3401,
+     "avg_ticket_krw": 31040,
+     "weekend_share": 0.1282,
+     "dow_share": {
+      "mon": 0.1414,
+      "tue": 0.2897,
+      "wed": 0.1456,
+      "thu": 0.1345,
+      "fri": 0.1606,
+      "sat": 0.114,
+      "sun": 0.0143
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.4276,
+      "t14_17": 0.2512,
+      "t17_21": 0.3172,
+      "t21_24": 0.004
+     },
+     "evening_share_17_24": 0.3212,
+     "lunch_share_11_14": 0.4276,
+     "age_share": {
+      "age10": 0.0005,
+      "age20": 0.2023,
+      "age30": 0.4926,
+      "age40": 0.1416,
+      "age50": 0.1304,
+      "age60plus": 0.0326
+     },
+     "sex_share": {
+      "male": 0.5785,
+      "female": 0.4215
+     },
+     "age_split_coverage": 0.8608,
+     "stores_total": 8,
+     "stores_independent": 8,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 4398573,
+     "flpop_total": 371364,
+     "flpop_age_share": {
+      "age10": 0.0954,
+      "age20": 0.2648,
+      "age30": 0.1816,
+      "age40": 0.1426,
+      "age50": 0.1327,
+      "age60plus": 0.1828
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.2074,
+      "t06_11": 0.1746,
+      "t11_14": 0.1338,
+      "t14_17": 0.1609,
+      "t17_21": 0.2126,
+      "t21_24": 0.1106
+     },
+     "workers_total": 198,
+     "residents_total": 2669,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20222": {
+     "hansik_sales_krw": 127443962,
+     "hansik_sales_count": 4349,
+     "avg_ticket_krw": 29304,
+     "weekend_share": 0.1842,
+     "dow_share": {
+      "mon": 0.1307,
+      "tue": 0.1698,
+      "wed": 0.1837,
+      "thu": 0.1686,
+      "fri": 0.1629,
+      "sat": 0.1744,
+      "sun": 0.0098
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0035,
+      "t11_14": 0.4928,
+      "t14_17": 0.1046,
+      "t17_21": 0.392,
+      "t21_24": 0.0071
+     },
+     "evening_share_17_24": 0.3991,
+     "lunch_share_11_14": 0.4928,
+     "age_share": {
+      "age10": 0.0008,
+      "age20": 0.21,
+      "age30": 0.3537,
+      "age40": 0.1928,
+      "age50": 0.1573,
+      "age60plus": 0.0854
+     },
+     "sex_share": {
+      "male": 0.4082,
+      "female": 0.5918
+     },
+     "age_split_coverage": 0.822,
+     "stores_total": 8,
+     "stores_independent": 8,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 5310165,
+     "flpop_total": 391012,
+     "flpop_age_share": {
+      "age10": 0.105,
+      "age20": 0.2757,
+      "age30": 0.1807,
+      "age40": 0.1406,
+      "age50": 0.1273,
+      "age60plus": 0.1708
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1959,
+      "t06_11": 0.1664,
+      "t11_14": 0.1351,
+      "t14_17": 0.1614,
+      "t17_21": 0.2252,
+      "t21_24": 0.1161
+     },
+     "workers_total": 198,
+     "residents_total": 2669,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20223": {
+     "hansik_sales_krw": 32743163,
+     "hansik_sales_count": 2169,
+     "avg_ticket_krw": 15096,
+     "weekend_share": 0.0678,
+     "dow_share": {
+      "mon": 0.1405,
+      "tue": 0.1785,
+      "wed": 0.2066,
+      "thu": 0.1973,
+      "fri": 0.2092,
+      "sat": 0.0391,
+      "sun": 0.0288
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.6172,
+      "t14_17": 0.0717,
+      "t17_21": 0.3035,
+      "t21_24": 0.0076
+     },
+     "evening_share_17_24": 0.3111,
+     "lunch_share_11_14": 0.6172,
+     "age_share": {
+      "age10": 0.0066,
+      "age20": 0.2791,
+      "age30": 0.3386,
+      "age40": 0.1735,
+      "age50": 0.167,
+      "age60plus": 0.0352
+     },
+     "sex_share": {
+      "male": 0.4679,
+      "female": 0.5321
+     },
+     "age_split_coverage": 0.9501,
+     "stores_total": 8,
+     "stores_independent": 8,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 1364298,
+     "flpop_total": 385225,
+     "flpop_age_share": {
+      "age10": 0.11,
+      "age20": 0.2832,
+      "age30": 0.182,
+      "age40": 0.1373,
+      "age50": 0.1289,
+      "age60plus": 0.1585
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1893,
+      "t06_11": 0.1623,
+      "t11_14": 0.135,
+      "t14_17": 0.1671,
+      "t17_21": 0.2325,
+      "t21_24": 0.1138
+     },
+     "workers_total": 198,
+     "residents_total": 2669,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20224": {
+     "hansik_sales_krw": 132989156,
+     "hansik_sales_count": 4857,
+     "avg_ticket_krw": 27381,
+     "weekend_share": 0.1208,
+     "dow_share": {
+      "mon": 0.1248,
+      "tue": 0.1664,
+      "wed": 0.1905,
+      "thu": 0.1953,
+      "fri": 0.2022,
+      "sat": 0.1054,
+      "sun": 0.0154
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.5367,
+      "t14_17": 0.0898,
+      "t17_21": 0.3732,
+      "t21_24": 0.0004
+     },
+     "evening_share_17_24": 0.3736,
+     "lunch_share_11_14": 0.5367,
+     "age_share": {
+      "age10": 0.0023,
+      "age20": 0.2604,
+      "age30": 0.2865,
+      "age40": 0.2088,
+      "age50": 0.1785,
+      "age60plus": 0.0634
+     },
+     "sex_share": {
+      "male": 0.441,
+      "female": 0.559
+     },
+     "age_split_coverage": 0.8007,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 2,
+     "stores_closed": 3,
+     "sales_per_store_month_krw": 6332817,
+     "flpop_total": 396052,
+     "flpop_age_share": {
+      "age10": 0.1145,
+      "age20": 0.2869,
+      "age30": 0.181,
+      "age40": 0.1363,
+      "age50": 0.1269,
+      "age60plus": 0.1543
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1845,
+      "t06_11": 0.1593,
+      "t11_14": 0.1383,
+      "t14_17": 0.1687,
+      "t17_21": 0.236,
+      "t21_24": 0.1134
+     },
+     "workers_total": 131,
+     "residents_total": 2999,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20231": {
+     "hansik_sales_krw": 122110574,
+     "hansik_sales_count": 5203,
+     "avg_ticket_krw": 23469,
+     "weekend_share": 0.1165,
+     "dow_share": {
+      "mon": 0.1419,
+      "tue": 0.1657,
+      "wed": 0.1853,
+      "thu": 0.2068,
+      "fri": 0.1837,
+      "sat": 0.1037,
+      "sun": 0.0128
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.5277,
+      "t14_17": 0.1037,
+      "t17_21": 0.3686,
+      "t21_24": 0.0
+     },
+     "evening_share_17_24": 0.3686,
+     "lunch_share_11_14": 0.5277,
+     "age_share": {
+      "age10": 0.0057,
+      "age20": 0.2532,
+      "age30": 0.3121,
+      "age40": 0.1872,
+      "age50": 0.1959,
+      "age60plus": 0.0459
+     },
+     "sex_share": {
+      "male": 0.4118,
+      "female": 0.5882
+     },
+     "age_split_coverage": 0.8268,
+     "stores_total": 8,
+     "stores_independent": 8,
+     "stores_franchise": 0,
+     "stores_opened": 1,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 5087941,
+     "flpop_total": 367406,
+     "flpop_age_share": {
+      "age10": 0.0958,
+      "age20": 0.2854,
+      "age30": 0.1884,
+      "age40": 0.1412,
+      "age50": 0.1327,
+      "age60plus": 0.1565
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1884,
+      "t06_11": 0.1534,
+      "t11_14": 0.1327,
+      "t14_17": 0.1721,
+      "t17_21": 0.2391,
+      "t21_24": 0.1143
+     },
+     "workers_total": 131,
+     "residents_total": 2999,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20232": {
+     "hansik_sales_krw": 158219032,
+     "hansik_sales_count": 5669,
+     "avg_ticket_krw": 27910,
+     "weekend_share": 0.1436,
+     "dow_share": {
+      "mon": 0.1479,
+      "tue": 0.155,
+      "wed": 0.1593,
+      "thu": 0.1938,
+      "fri": 0.2005,
+      "sat": 0.1325,
+      "sun": 0.0111
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0151,
+      "t11_14": 0.4766,
+      "t14_17": 0.1384,
+      "t17_21": 0.3663,
+      "t21_24": 0.0036
+     },
+     "evening_share_17_24": 0.3699,
+     "lunch_share_11_14": 0.4766,
+     "age_share": {
+      "age10": 0.002,
+      "age20": 0.221,
+      "age30": 0.3028,
+      "age40": 0.2132,
+      "age50": 0.1832,
+      "age60plus": 0.0779
+     },
+     "sex_share": {
+      "male": 0.423,
+      "female": 0.577
+     },
+     "age_split_coverage": 0.7421,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 7534240,
+     "flpop_total": 381344,
+     "flpop_age_share": {
+      "age10": 0.0989,
+      "age20": 0.2857,
+      "age30": 0.1884,
+      "age40": 0.136,
+      "age50": 0.1345,
+      "age60plus": 0.1566
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1877,
+      "t06_11": 0.1609,
+      "t11_14": 0.1377,
+      "t14_17": 0.1681,
+      "t17_21": 0.2316,
+      "t21_24": 0.1139
+     },
+     "workers_total": 131,
+     "residents_total": 2999,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20233": {
+     "hansik_sales_krw": 184171786,
+     "hansik_sales_count": 6676,
+     "avg_ticket_krw": 27587,
+     "weekend_share": 0.1583,
+     "dow_share": {
+      "mon": 0.1365,
+      "tue": 0.188,
+      "wed": 0.1742,
+      "thu": 0.1424,
+      "fri": 0.2005,
+      "sat": 0.1441,
+      "sun": 0.0142
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0102,
+      "t11_14": 0.4,
+      "t14_17": 0.1704,
+      "t17_21": 0.4122,
+      "t21_24": 0.0072
+     },
+     "evening_share_17_24": 0.4194,
+     "lunch_share_11_14": 0.4,
+     "age_share": {
+      "age10": 0.0026,
+      "age20": 0.2217,
+      "age30": 0.3176,
+      "age40": 0.1966,
+      "age50": 0.1784,
+      "age60plus": 0.0831
+     },
+     "sex_share": {
+      "male": 0.4138,
+      "female": 0.5862
+     },
+     "age_split_coverage": 0.7953,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 8770085,
+     "flpop_total": 385582,
+     "flpop_age_share": {
+      "age10": 0.1006,
+      "age20": 0.2755,
+      "age30": 0.1934,
+      "age40": 0.136,
+      "age50": 0.1394,
+      "age60plus": 0.1551
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1852,
+      "t06_11": 0.157,
+      "t11_14": 0.1357,
+      "t14_17": 0.1733,
+      "t17_21": 0.236,
+      "t21_24": 0.1128
+     },
+     "workers_total": 131,
+     "residents_total": 2999,
+     "households_total": 1450,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20234": {
+     "hansik_sales_krw": 151556337,
+     "hansik_sales_count": 5159,
+     "avg_ticket_krw": 29377,
+     "weekend_share": 0.1674,
+     "dow_share": {
+      "mon": 0.1387,
+      "tue": 0.144,
+      "wed": 0.1502,
+      "thu": 0.2226,
+      "fri": 0.177,
+      "sat": 0.1536,
+      "sun": 0.0139
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.5089,
+      "t14_17": 0.1326,
+      "t17_21": 0.3515,
+      "t21_24": 0.007
+     },
+     "evening_share_17_24": 0.3585,
+     "lunch_share_11_14": 0.5089,
+     "age_share": {
+      "age10": 0.0044,
+      "age20": 0.182,
+      "age30": 0.3601,
+      "age40": 0.2038,
+      "age50": 0.1409,
+      "age60plus": 0.1088
+     },
+     "sex_share": {
+      "male": 0.4209,
+      "female": 0.5791
+     },
+     "age_split_coverage": 0.7839,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 7216968,
+     "flpop_total": 403757,
+     "flpop_age_share": {
+      "age10": 0.1094,
+      "age20": 0.2775,
+      "age30": 0.1858,
+      "age40": 0.1378,
+      "age50": 0.1378,
+      "age60plus": 0.1517
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1814,
+      "t06_11": 0.1611,
+      "t11_14": 0.1421,
+      "t14_17": 0.1729,
+      "t17_21": 0.2342,
+      "t21_24": 0.1082
+     },
+     "workers_total": 103,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20241": {
+     "hansik_sales_krw": 132542733,
+     "hansik_sales_count": 4581,
+     "avg_ticket_krw": 28933,
+     "weekend_share": 0.1624,
+     "dow_share": {
+      "mon": 0.1321,
+      "tue": 0.1643,
+      "wed": 0.1832,
+      "thu": 0.1721,
+      "fri": 0.186,
+      "sat": 0.1478,
+      "sun": 0.0146
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.5207,
+      "t14_17": 0.1326,
+      "t17_21": 0.3464,
+      "t21_24": 0.0003
+     },
+     "evening_share_17_24": 0.3467,
+     "lunch_share_11_14": 0.5207,
+     "age_share": {
+      "age10": 0.0033,
+      "age20": 0.1553,
+      "age30": 0.3732,
+      "age40": 0.1973,
+      "age50": 0.1908,
+      "age60plus": 0.0801
+     },
+     "sex_share": {
+      "male": 0.4516,
+      "female": 0.5484
+     },
+     "age_split_coverage": 0.8075,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 6311559,
+     "flpop_total": 371701,
+     "flpop_age_share": {
+      "age10": 0.0981,
+      "age20": 0.2806,
+      "age30": 0.1875,
+      "age40": 0.1368,
+      "age50": 0.1404,
+      "age60plus": 0.1566
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1877,
+      "t06_11": 0.1556,
+      "t11_14": 0.1356,
+      "t14_17": 0.1768,
+      "t17_21": 0.2348,
+      "t21_24": 0.1095
+     },
+     "workers_total": 103,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20242": {
+     "hansik_sales_krw": 165914514,
+     "hansik_sales_count": 5460,
+     "avg_ticket_krw": 30387,
+     "weekend_share": 0.1401,
+     "dow_share": {
+      "mon": 0.1293,
+      "tue": 0.1536,
+      "wed": 0.2067,
+      "thu": 0.1801,
+      "fri": 0.1902,
+      "sat": 0.1239,
+      "sun": 0.0162
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.002,
+      "t11_14": 0.5242,
+      "t14_17": 0.1149,
+      "t17_21": 0.3551,
+      "t21_24": 0.0037
+     },
+     "evening_share_17_24": 0.3588,
+     "lunch_share_11_14": 0.5242,
+     "age_share": {
+      "age10": 0.0047,
+      "age20": 0.158,
+      "age30": 0.311,
+      "age40": 0.2235,
+      "age50": 0.2271,
+      "age60plus": 0.0757
+     },
+     "sex_share": {
+      "male": 0.4428,
+      "female": 0.5572
+     },
+     "age_split_coverage": 0.764,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 7900691,
+     "flpop_total": 373693,
+     "flpop_age_share": {
+      "age10": 0.1096,
+      "age20": 0.2891,
+      "age30": 0.1847,
+      "age40": 0.1357,
+      "age50": 0.1317,
+      "age60plus": 0.1492
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1768,
+      "t06_11": 0.1547,
+      "t11_14": 0.1409,
+      "t14_17": 0.1761,
+      "t17_21": 0.2432,
+      "t21_24": 0.1083
+     },
+     "workers_total": 103,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20243": {
+     "hansik_sales_krw": 195692911,
+     "hansik_sales_count": 5555,
+     "avg_ticket_krw": 35228,
+     "weekend_share": 0.146,
+     "dow_share": {
+      "mon": 0.1579,
+      "tue": 0.2295,
+      "wed": 0.1347,
+      "thu": 0.1497,
+      "fri": 0.1822,
+      "sat": 0.134,
+      "sun": 0.0121
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.4368,
+      "t14_17": 0.26,
+      "t17_21": 0.3032,
+      "t21_24": 0.0
+     },
+     "evening_share_17_24": 0.3032,
+     "lunch_share_11_14": 0.4368,
+     "age_share": {
+      "age10": 0.0062,
+      "age20": 0.1533,
+      "age30": 0.3887,
+      "age40": 0.2004,
+      "age50": 0.1663,
+      "age60plus": 0.0851
+     },
+     "sex_share": {
+      "male": 0.3363,
+      "female": 0.6637
+     },
+     "age_split_coverage": 0.783,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 9318710,
+     "flpop_total": 365772,
+     "flpop_age_share": {
+      "age10": 0.1011,
+      "age20": 0.2919,
+      "age30": 0.1867,
+      "age40": 0.1384,
+      "age50": 0.133,
+      "age60plus": 0.1488
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1749,
+      "t06_11": 0.1518,
+      "t11_14": 0.1374,
+      "t14_17": 0.1813,
+      "t17_21": 0.2473,
+      "t21_24": 0.1072
+     },
+     "workers_total": 103,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20244": {
+     "hansik_sales_krw": 142781055,
+     "hansik_sales_count": 4183,
+     "avg_ticket_krw": 34134,
+     "weekend_share": 0.1278,
+     "dow_share": {
+      "mon": 0.1389,
+      "tue": 0.2029,
+      "wed": 0.1597,
+      "thu": 0.1637,
+      "fri": 0.2071,
+      "sat": 0.1175,
+      "sun": 0.0103
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0013,
+      "t11_14": 0.5293,
+      "t14_17": 0.1365,
+      "t17_21": 0.3329,
+      "t21_24": 0.0
+     },
+     "evening_share_17_24": 0.3329,
+     "lunch_share_11_14": 0.5293,
+     "age_share": {
+      "age10": 0.0038,
+      "age20": 0.1896,
+      "age30": 0.3279,
+      "age40": 0.2704,
+      "age50": 0.1425,
+      "age60plus": 0.0657
+     },
+     "sex_share": {
+      "male": 0.4335,
+      "female": 0.5665
+     },
+     "age_split_coverage": 0.7392,
+     "stores_total": 6,
+     "stores_independent": 6,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 1,
+     "sales_per_store_month_krw": 7932281,
+     "flpop_total": 376769,
+     "flpop_age_share": {
+      "age10": 0.1145,
+      "age20": 0.2854,
+      "age30": 0.181,
+      "age40": 0.1371,
+      "age50": 0.1337,
+      "age60plus": 0.1481
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.169,
+      "t06_11": 0.1559,
+      "t11_14": 0.144,
+      "t14_17": 0.1823,
+      "t17_21": 0.2434,
+      "t21_24": 0.1054
+     },
+     "workers_total": 130,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20251": {
+     "hansik_sales_krw": 111427030,
+     "hansik_sales_count": 3483,
+     "avg_ticket_krw": 31992,
+     "weekend_share": 0.1564,
+     "dow_share": {
+      "mon": 0.1196,
+      "tue": 0.1484,
+      "wed": 0.1572,
+      "thu": 0.1671,
+      "fri": 0.2513,
+      "sat": 0.1394,
+      "sun": 0.017
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.547,
+      "t14_17": 0.1057,
+      "t17_21": 0.3473,
+      "t21_24": 0.0
+     },
+     "evening_share_17_24": 0.3473,
+     "lunch_share_11_14": 0.547,
+     "age_share": {
+      "age10": 0.0026,
+      "age20": 0.2155,
+      "age30": 0.2958,
+      "age40": 0.2552,
+      "age50": 0.1413,
+      "age60plus": 0.0896
+     },
+     "sex_share": {
+      "male": 0.4112,
+      "female": 0.5888
+     },
+     "age_split_coverage": 0.8091,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 1,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 5306049,
+     "flpop_total": 364642,
+     "flpop_age_share": {
+      "age10": 0.1051,
+      "age20": 0.2869,
+      "age30": 0.1821,
+      "age40": 0.1426,
+      "age50": 0.1339,
+      "age60plus": 0.1494
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1668,
+      "t06_11": 0.149,
+      "t11_14": 0.1389,
+      "t14_17": 0.1861,
+      "t17_21": 0.2502,
+      "t21_24": 0.109
+     },
+     "workers_total": 130,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20252": {
+     "hansik_sales_krw": 131687742,
+     "hansik_sales_count": 4172,
+     "avg_ticket_krw": 31565,
+     "weekend_share": 0.1485,
+     "dow_share": {
+      "mon": 0.1458,
+      "tue": 0.1711,
+      "wed": 0.1826,
+      "thu": 0.1522,
+      "fri": 0.1997,
+      "sat": 0.1297,
+      "sun": 0.0188
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.5795,
+      "t14_17": 0.1203,
+      "t17_21": 0.3003,
+      "t21_24": 0.0
+     },
+     "evening_share_17_24": 0.3003,
+     "lunch_share_11_14": 0.5795,
+     "age_share": {
+      "age10": 0.0011,
+      "age20": 0.164,
+      "age30": 0.2694,
+      "age40": 0.221,
+      "age50": 0.2617,
+      "age60plus": 0.0829
+     },
+     "sex_share": {
+      "male": 0.405,
+      "female": 0.595
+     },
+     "age_split_coverage": 0.8377,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 6270845,
+     "flpop_total": 377140,
+     "flpop_age_share": {
+      "age10": 0.1113,
+      "age20": 0.2886,
+      "age30": 0.1822,
+      "age40": 0.1399,
+      "age50": 0.1325,
+      "age60plus": 0.1456
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1676,
+      "t06_11": 0.1577,
+      "t11_14": 0.1437,
+      "t14_17": 0.1798,
+      "t17_21": 0.2428,
+      "t21_24": 0.1085
+     },
+     "workers_total": 130,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20253": {
+     "hansik_sales_krw": 202464852,
+     "hansik_sales_count": 4906,
+     "avg_ticket_krw": 41269,
+     "weekend_share": 0.1683,
+     "dow_share": {
+      "mon": 0.2675,
+      "tue": 0.1253,
+      "wed": 0.1405,
+      "thu": 0.1418,
+      "fri": 0.1565,
+      "sat": 0.1341,
+      "sun": 0.0342
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0022,
+      "t11_14": 0.403,
+      "t14_17": 0.3084,
+      "t17_21": 0.2863,
+      "t21_24": 0.0
+     },
+     "evening_share_17_24": 0.2863,
+     "lunch_share_11_14": 0.403,
+     "age_share": {
+      "age10": 0.0026,
+      "age20": 0.1289,
+      "age30": 0.4782,
+      "age40": 0.1597,
+      "age50": 0.1512,
+      "age60plus": 0.0794
+     },
+     "sex_share": {
+      "male": 0.5232,
+      "female": 0.4768
+     },
+     "age_split_coverage": 0.7772,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 9641183,
+     "flpop_total": 356715,
+     "flpop_age_share": {
+      "age10": 0.1035,
+      "age20": 0.2777,
+      "age30": 0.1902,
+      "age40": 0.1459,
+      "age50": 0.1382,
+      "age60plus": 0.1444
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1654,
+      "t06_11": 0.1544,
+      "t11_14": 0.14,
+      "t14_17": 0.1819,
+      "t17_21": 0.2488,
+      "t21_24": 0.1095
+     },
+     "workers_total": 130,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20254": {
+     "hansik_sales_krw": 122162391,
+     "hansik_sales_count": 3638,
+     "avg_ticket_krw": 33580,
+     "weekend_share": 0.1278,
+     "dow_share": {
+      "mon": 0.1368,
+      "tue": 0.1324,
+      "wed": 0.2081,
+      "thu": 0.1835,
+      "fri": 0.2113,
+      "sat": 0.1122,
+      "sun": 0.0156
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.516,
+      "t14_17": 0.1341,
+      "t17_21": 0.3499,
+      "t21_24": 0.0
+     },
+     "evening_share_17_24": 0.3499,
+     "lunch_share_11_14": 0.516,
+     "age_share": {
+      "age10": 0.0043,
+      "age20": 0.141,
+      "age30": 0.2942,
+      "age40": 0.2719,
+      "age50": 0.2047,
+      "age60plus": 0.0839
+     },
+     "sex_share": {
+      "male": 0.4115,
+      "female": 0.5885
+     },
+     "age_split_coverage": 0.7179,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 5817257,
+     "flpop_total": 328255,
+     "flpop_age_share": {
+      "age10": 0.1148,
+      "age20": 0.2657,
+      "age30": 0.1889,
+      "age40": 0.1472,
+      "age50": 0.1362,
+      "age60plus": 0.1473
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1601,
+      "t06_11": 0.1505,
+      "t11_14": 0.1448,
+      "t14_17": 0.19,
+      "t17_21": 0.249,
+      "t21_24": 0.1055
+     },
+     "workers_total": 130,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20261": {
+     "hansik_sales_krw": 117276865,
+     "hansik_sales_count": 3166,
+     "avg_ticket_krw": 37043,
+     "weekend_share": 0.1135,
+     "dow_share": {
+      "mon": 0.1322,
+      "tue": 0.2237,
+      "wed": 0.1364,
+      "thu": 0.2411,
+      "fri": 0.1532,
+      "sat": 0.1079,
+      "sun": 0.0056
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.553,
+      "t14_17": 0.1394,
+      "t17_21": 0.3076,
+      "t21_24": 0.0
+     },
+     "evening_share_17_24": 0.3076,
+     "lunch_share_11_14": 0.553,
+     "age_share": {
+      "age10": 0.0014,
+      "age20": 0.1473,
+      "age30": 0.3051,
+      "age40": 0.2572,
+      "age50": 0.2077,
+      "age60plus": 0.0812
+     },
+     "sex_share": {
+      "male": 0.4219,
+      "female": 0.5781
+     },
+     "age_split_coverage": 0.6764,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 5584613,
+     "flpop_total": 324079,
+     "flpop_age_share": {
+      "age10": 0.1036,
+      "age20": 0.258,
+      "age30": 0.1925,
+      "age40": 0.1522,
+      "age50": 0.1371,
+      "age60plus": 0.1566
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1745,
+      "t06_11": 0.1481,
+      "t11_14": 0.1361,
+      "t14_17": 0.1827,
+      "t17_21": 0.2475,
+      "t21_24": 0.1111
+     },
+     "workers_total": 130,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    },
+    "20262": {
+     "hansik_sales_krw": 140746113,
+     "hansik_sales_count": 3875,
+     "avg_ticket_krw": 36322,
+     "weekend_share": 0.1318,
+     "dow_share": {
+      "mon": 0.1677,
+      "tue": 0.182,
+      "wed": 0.1579,
+      "thu": 0.1859,
+      "fri": 0.1746,
+      "sat": 0.1153,
+      "sun": 0.0166
+     },
+     "timeband_share": {
+      "t00_06": 0.0,
+      "t06_11": 0.0,
+      "t11_14": 0.562,
+      "t14_17": 0.0958,
+      "t17_21": 0.3422,
+      "t21_24": 0.0
+     },
+     "evening_share_17_24": 0.3422,
+     "lunch_share_11_14": 0.562,
+     "age_share": {
+      "age10": 0.0011,
+      "age20": 0.138,
+      "age30": 0.2471,
+      "age40": 0.2201,
+      "age50": 0.2128,
+      "age60plus": 0.1809
+     },
+     "sex_share": {
+      "male": 0.4364,
+      "female": 0.5636
+     },
+     "age_split_coverage": 0.7413,
+     "stores_total": 7,
+     "stores_independent": 7,
+     "stores_franchise": 0,
+     "stores_opened": 0,
+     "stores_closed": 0,
+     "sales_per_store_month_krw": 6702196,
+     "flpop_total": 339103,
+     "flpop_age_share": {
+      "age10": 0.1218,
+      "age20": 0.2565,
+      "age30": 0.1853,
+      "age40": 0.1525,
+      "age50": 0.131,
+      "age60plus": 0.1528
+     },
+     "flpop_timeband_share": {
+      "t00_06": 0.1714,
+      "t06_11": 0.1477,
+      "t11_14": 0.1392,
+      "t14_17": 0.1813,
+      "t17_21": 0.2486,
+      "t21_24": 0.1119
+     },
+     "workers_total": 130,
+     "residents_total": 2475,
+     "households_total": 1423,
+     "facilities": {
+      "facilities_total": 6,
+      "pharmacies": 1,
+      "universities": 1
+     }
+    }
+   }
+  }
+ },
+ "survival": {
+  "cohort": "licenses approved on/after 2015-01-01, right-censored at run date. 한식 = 업태 ['한식']; recent licenses often use 업태 '기타' (cafes, 마라탕, some 한식), so the 한식 cohort undercounts. all_uptae is the broad restaurant baseline.",
+  "all_uptae_primary": {
+   "n": 349,
+   "events": 110,
+   "censored": 239,
+   "engine": "lifelines",
+   "median_months": 110.1,
+   "table": [
+    {
+     "month": 6,
+     "survival": 0.9883,
+     "ci_low": 0.9691,
+     "ci_high": 0.9956,
+     "at_risk": 333
+    },
+    {
+     "month": 12,
+     "survival": 0.9702,
+     "ci_low": 0.9454,
+     "ci_high": 0.9839,
+     "at_risk": 319
+    },
+    {
+     "month": 24,
+     "survival": 0.9064,
+     "ci_low": 0.8688,
+     "ci_high": 0.9337,
+     "at_risk": 267
+    },
+    {
+     "month": 36,
+     "survival": 0.8484,
+     "ci_low": 0.8025,
+     "ci_high": 0.8844,
+     "at_risk": 219
+    },
+    {
+     "month": 48,
+     "survival": 0.7508,
+     "ci_low": 0.6941,
+     "ci_high": 0.7986,
+     "at_risk": 160
+    },
+    {
+     "month": 60,
+     "survival": 0.676,
+     "ci_low": 0.6129,
+     "ci_high": 0.7312,
+     "at_risk": 124
+    },
+    {
+     "month": 84,
+     "survival": 0.5896,
+     "ci_low": 0.5195,
+     "ci_high": 0.653,
+     "at_risk": 84
+    },
+    {
+     "month": 120,
+     "survival": 0.4794,
+     "ci_low": 0.3961,
+     "ci_high": 0.5578,
+     "at_risk": 23
+    }
+   ],
+   "share_closed_within_24m": 0.101,
+   "n_with_24m_outcome": 297,
+   "median_area_pyeong": 21.9
+  },
+  "hansik_primary": {
+   "n": 89,
+   "events": 26,
+   "censored": 63,
+   "engine": "lifelines",
+   "median_months": 110.3,
+   "table": [
+    {
+     "month": 6,
+     "survival": 1.0,
+     "ci_low": 1.0,
+     "ci_high": 1.0,
+     "at_risk": 87
+    },
+    {
+     "month": 12,
+     "survival": 1.0,
+     "ci_low": 1.0,
+     "ci_high": 1.0,
+     "at_risk": 86
+    },
+    {
+     "month": 24,
+     "survival": 0.9392,
+     "ci_low": 0.8599,
+     "ci_high": 0.9742,
+     "at_risk": 72
+    },
+    {
+     "month": 36,
+     "survival": 0.8838,
+     "ci_low": 0.7879,
+     "ci_high": 0.938,
+     "at_risk": 54
+    },
+    {
+     "month": 48,
+     "survival": 0.7775,
+     "ci_low": 0.6544,
+     "ci_high": 0.8612,
+     "at_risk": 40
+    },
+    {
+     "month": 60,
+     "survival": 0.6936,
+     "ci_low": 0.5563,
+     "ci_high": 0.796,
+     "at_risk": 32
+    },
+    {
+     "month": 84,
+     "survival": 0.6189,
+     "ci_low": 0.4713,
+     "ci_high": 0.7364,
+     "at_risk": 24
+    },
+    {
+     "month": 120,
+     "survival": 0.4704,
+     "ci_low": 0.2738,
+     "ci_high": 0.6446,
+     "at_risk": 4
+    }
+   ],
+   "share_closed_within_24m": 0.0649,
+   "n_with_24m_outcome": 77,
+   "median_area_pyeong": 24.2
+  },
+  "hansik_primary_plus_fringe": {
+   "n": 108,
+   "events": 36,
+   "censored": 72,
+   "engine": "lifelines",
+   "median_months": 110.3,
+   "table": [
+    {
+     "month": 6,
+     "survival": 0.9907,
+     "ci_low": 0.9361,
+     "ci_high": 0.9987,
+     "at_risk": 103
+    },
+    {
+     "month": 12,
+     "survival": 0.9811,
+     "ci_low": 0.9266,
+     "ci_high": 0.9952,
+     "at_risk": 101
+    },
+    {
+     "month": 24,
+     "survival": 0.8997,
+     "ci_low": 0.8214,
+     "ci_high": 0.9448,
+     "at_risk": 84
+    },
+    {
+     "month": 36,
+     "survival": 0.8547,
+     "ci_low": 0.7664,
+     "ci_high": 0.9115,
+     "at_risk": 64
+    },
+    {
+     "month": 48,
+     "survival": 0.725,
+     "ci_low": 0.6119,
+     "ci_high": 0.8102,
+     "at_risk": 46
+    },
+    {
+     "month": 60,
+     "survival": 0.6408,
+     "ci_low": 0.5178,
+     "ci_high": 0.7402,
+     "at_risk": 37
+    },
+    {
+     "month": 84,
+     "survival": 0.563,
+     "ci_low": 0.4332,
+     "ci_high": 0.674,
+     "at_risk": 27
+    },
+    {
+     "month": 120,
+     "survival": 0.4496,
+     "ci_low": 0.2899,
+     "ci_high": 0.5969,
+     "at_risk": 5
+    }
+   ],
+   "share_closed_within_24m": 0.1064,
+   "n_with_24m_outcome": 94,
+   "median_area_pyeong": 24.075
+  },
+  "pork_like_primary_plus_fringe": {
+   "definition": "Licenses of any 업태 whose name contains a pork/grill keyword (config license.name_keywords) or that matched an sbiz I20107 store (high/medium). Heuristic; keywords also catch 소고기 places. Current I20107 matches are survivors, so this group leans optimistic.",
+   "n": 12,
+   "events": 3,
+   "censored": 9,
+   "engine": "lifelines",
+   "median_months": null,
+   "table": [
+    {
+     "month": 6,
+     "survival": 1.0,
+     "ci_low": 1.0,
+     "ci_high": 1.0,
+     "at_risk": 12
+    },
+    {
+     "month": 12,
+     "survival": 1.0,
+     "ci_low": 1.0,
+     "ci_high": 1.0,
+     "at_risk": 12
+    },
+    {
+     "month": 24,
+     "survival": 0.9167,
+     "ci_low": 0.539,
+     "ci_high": 0.9878,
+     "at_risk": 10
+    },
+    {
+     "month": 36,
+     "survival": 0.9167,
+     "ci_low": 0.539,
+     "ci_high": 0.9878,
+     "at_risk": 8
+    },
+    {
+     "month": 48,
+     "survival": 0.9167,
+     "ci_low": 0.539,
+     "ci_high": 0.9878,
+     "at_risk": 6
+    },
+    {
+     "month": 60,
+     "survival": 0.9167,
+     "ci_low": 0.539,
+     "ci_high": 0.9878,
+     "at_risk": 6
+    },
+    {
+     "month": 84,
+     "survival": 0.6111,
+     "ci_low": 0.195,
+     "ci_high": 0.8621,
+     "at_risk": 2
+    },
+    {
+     "month": 120,
+     "survival": 0.6111,
+     "ci_low": 0.195,
+     "ci_high": 0.8621,
+     "at_risk": 1
+    }
+   ],
+   "share_closed_within_24m": 0.0909,
+   "n_with_24m_outcome": 11,
+   "median_area_pyeong": 33.275
+  }
+ },
+ "survival_scope": "wide",
+ "survival_wide": {
+  "scope": "wide",
+  "areas": [
+   "신촌역 3120094",
+   "종로구 전체"
+  ],
+  "cohort": "licenses approved on/after 2015-01-01, right-censored at run date",
+  "pork_like_definition": "license name contains a pork/grill keyword (config license.name_keywords) or the license matched an sbiz I20107 store (high/medium). Name keywords also catch some 소고기 places; I20107 matches are current survivors.",
+  "pork_name_only": {
+   "n": 119,
+   "events": 35,
+   "censored": 84,
+   "engine": "lifelines",
+   "median_months": null,
+   "table": [
+    {
+     "month": 6,
+     "survival": 0.9491,
+     "ci_low": 0.8902,
+     "ci_high": 0.9768,
+     "at_risk": 109
+    },
+    {
+     "month": 12,
+     "survival": 0.9228,
+     "ci_low": 0.8568,
+     "ci_high": 0.9591,
+     "at_risk": 105
+    },
+    {
+     "month": 24,
+     "survival": 0.8587,
+     "ci_low": 0.7795,
+     "ci_high": 0.9111,
+     "at_risk": 88
+    },
+    {
+     "month": 36,
+     "survival": 0.7942,
+     "ci_low": 0.7034,
+     "ci_high": 0.86,
+     "at_risk": 70
+    },
+    {
+     "month": 48,
+     "survival": 0.734,
+     "ci_low": 0.6342,
+     "ci_high": 0.8106,
+     "at_risk": 57
+    },
+    {
+     "month": 60,
+     "survival": 0.708,
+     "ci_low": 0.6049,
+     "ci_high": 0.7889,
+     "at_risk": 51
+    },
+    {
+     "month": 84,
+     "survival": 0.6493,
+     "ci_low": 0.5388,
+     "ci_high": 0.7396,
+     "at_risk": 37
+    },
+    {
+     "month": 120,
+     "survival": 0.6105,
+     "ci_low": 0.4934,
+     "ci_high": 0.7084,
+     "at_risk": 11
+    }
+   ],
+   "share_closed_within_24m": 0.1538,
+   "median_area_pyeong": 21.8
+  },
+  "pork_name_only_note": "PRIMARY comparison: name keyword only. Unbiased by survival, noisier by name.",
+  "pork_like": {
+   "n": 182,
+   "events": 37,
+   "censored": 145,
+   "engine": "lifelines",
+   "median_months": null,
+   "table": [
+    {
+     "month": 6,
+     "survival": 0.9668,
+     "ci_low": 0.9276,
+     "ci_high": 0.985,
+     "at_risk": 171
+    },
+    {
+     "month": 12,
+     "survival": 0.9496,
+     "ci_low": 0.9054,
+     "ci_high": 0.9735,
+     "at_risk": 165
+    },
+    {
+     "month": 24,
+     "survival": 0.9077,
+     "ci_low": 0.8537,
+     "ci_high": 0.9425,
+     "at_risk": 145
+    },
+    {
+     "month": 36,
+     "survival": 0.8676,
+     "ci_low": 0.8055,
+     "ci_high": 0.911,
+     "at_risk": 123
+    },
+    {
+     "month": 48,
+     "survival": 0.8298,
+     "ci_low": 0.7606,
+     "ci_high": 0.8805,
+     "at_risk": 100
+    },
+    {
+     "month": 60,
+     "survival": 0.8127,
+     "ci_low": 0.7404,
+     "ci_high": 0.8667,
+     "at_risk": 88
+    },
+    {
+     "month": 84,
+     "survival": 0.7636,
+     "ci_low": 0.6819,
+     "ci_high": 0.8269,
+     "at_risk": 60
+    },
+    {
+     "month": 120,
+     "survival": 0.7214,
+     "ci_low": 0.6291,
+     "ci_high": 0.7944,
+     "at_risk": 19
+    }
+   ],
+   "share_closed_within_24m": 0.0994,
+   "median_area_pyeong": 22.2
+  },
+  "pork_like_note": "name keyword OR matched to a current I20107 store: survivor-biased upward, because only open stores can be matched.",
+  "hansik_all": {
+   "n": 1915,
+   "events": 709,
+   "censored": 1206,
+   "engine": "lifelines",
+   "median_months": 104.5,
+   "table": [
+    {
+     "month": 6,
+     "survival": 0.9493,
+     "ci_low": 0.9384,
+     "ci_high": 0.9583,
+     "at_risk": 1736
+    },
+    {
+     "month": 12,
+     "survival": 0.9093,
+     "ci_low": 0.8953,
+     "ci_high": 0.9216,
+     "at_risk": 1606
+    },
+    {
+     "month": 24,
+     "survival": 0.8348,
+     "ci_low": 0.8166,
+     "ci_high": 0.8513,
+     "at_risk": 1353
+    },
+    {
+     "month": 36,
+     "survival": 0.7657,
+     "ci_low": 0.7447,
+     "ci_high": 0.7853,
+     "at_risk": 1092
+    },
+    {
+     "month": 48,
+     "survival": 0.706,
+     "ci_low": 0.6828,
+     "ci_high": 0.7279,
+     "at_risk": 892
+    },
+    {
+     "month": 60,
+     "survival": 0.6452,
+     "ci_low": 0.62,
+     "ci_high": 0.6691,
+     "at_risk": 739
+    },
+    {
+     "month": 84,
+     "survival": 0.5573,
+     "ci_low": 0.5298,
+     "ci_high": 0.5839,
+     "at_risk": 519
+    },
+    {
+     "month": 120,
+     "survival": 0.4741,
+     "ci_low": 0.4427,
+     "ci_high": 0.5048,
+     "at_risk": 175
+    }
+   ],
+   "share_closed_within_24m": 0.1785,
+   "median_area_pyeong": 17.6
+  },
+  "hansik_not_pork": {
+   "n": 1772,
+   "events": 681,
+   "censored": 1091,
+   "engine": "lifelines",
+   "median_months": 100.1,
+   "table": [
+    {
+     "month": 6,
+     "survival": 0.9481,
+     "ci_low": 0.9366,
+     "ci_high": 0.9575,
+     "at_risk": 1602
+    },
+    {
+     "month": 12,
+     "survival": 0.9066,
+     "ci_low": 0.8918,
+     "ci_high": 0.9195,
+     "at_risk": 1478
+    },
+    {
+     "month": 24,
+     "survival": 0.829,
+     "ci_low": 0.8098,
+     "ci_high": 0.8464,
+     "at_risk": 1239
+    },
+    {
+     "month": 36,
+     "survival": 0.757,
+     "ci_low": 0.7348,
+     "ci_high": 0.7776,
+     "at_risk": 996
+    },
+    {
+     "month": 48,
+     "survival": 0.6947,
+     "ci_low": 0.6703,
+     "ci_high": 0.7178,
+     "at_risk": 812
+    },
+    {
+     "month": 60,
+     "survival": 0.6308,
+     "ci_low": 0.6043,
+     "ci_high": 0.6559,
+     "at_risk": 671
+    },
+    {
+     "month": 84,
+     "survival": 0.5403,
+     "ci_low": 0.5116,
+     "ci_high": 0.568,
+     "at_risk": 472
+    },
+    {
+     "month": 120,
+     "survival": 0.4542,
+     "ci_low": 0.4217,
+     "ci_high": 0.4862,
+     "at_risk": 158
+    }
+   ],
+   "share_closed_within_24m": 0.1849,
+   "median_area_pyeong": 17.3
+  },
+  "all_uptae": {
+   "n": 5831,
+   "events": 2334,
+   "censored": 3497,
+   "engine": "lifelines",
+   "median_months": 93.3,
+   "table": [
+    {
+     "month": 6,
+     "survival": 0.9355,
+     "ci_low": 0.9288,
+     "ci_high": 0.9415,
+     "at_risk": 5279
+    },
+    {
+     "month": 12,
+     "survival": 0.8991,
+     "ci_low": 0.891,
+     "ci_high": 0.9066,
+     "at_risk": 4887
+    },
+    {
+     "month": 24,
+     "survival": 0.8208,
+     "ci_low": 0.8103,
+     "ci_high": 0.8307,
+     "at_risk": 4098
+    },
+    {
+     "month": 36,
+     "survival": 0.7413,
+     "ci_low": 0.7291,
+     "ci_high": 0.753,
+     "at_risk": 3321
+    },
+    {
+     "month": 48,
+     "survival": 0.6745,
+     "ci_low": 0.6611,
+     "ci_high": 0.6875,
+     "at_risk": 2653
+    },
+    {
+     "month": 60,
+     "survival": 0.6143,
+     "ci_low": 0.5999,
+     "ci_high": 0.6283,
+     "at_risk": 2152
+    },
+    {
+     "month": 84,
+     "survival": 0.5213,
+     "ci_low": 0.5056,
+     "ci_high": 0.5368,
+     "at_risk": 1340
+    },
+    {
+     "month": 120,
+     "survival": 0.436,
+     "ci_low": 0.4177,
+     "ci_high": 0.4541,
+     "at_risk": 443
+    }
+   ],
+   "share_closed_within_24m": 0.1935,
+   "median_area_pyeong": 17.1
+  },
+  "by_area": {
+   "신촌역 3120094": {
+    "pork_like": {
+     "n": 34,
+     "events": 9,
+     "censored": 25,
+     "engine": "lifelines",
+     "median_months": null,
+     "table": [
+      {
+       "month": 6,
+       "survival": 0.9118,
+       "ci_low": 0.7509,
+       "ci_high": 0.9707,
+       "at_risk": 31
+      },
+      {
+       "month": 12,
+       "survival": 0.9118,
+       "ci_low": 0.7509,
+       "ci_high": 0.9707,
+       "at_risk": 29
+      },
+      {
+       "month": 24,
+       "survival": 0.8803,
+       "ci_low": 0.7116,
+       "ci_high": 0.9534,
+       "at_risk": 28
+      },
+      {
+       "month": 36,
+       "survival": 0.8126,
+       "ci_low": 0.6284,
+       "ci_high": 0.9115,
+       "at_risk": 23
+      },
+      {
+       "month": 48,
+       "survival": 0.7773,
+       "ci_low": 0.5871,
+       "ci_high": 0.8876,
+       "at_risk": 21
+      },
+      {
+       "month": 60,
+       "survival": 0.7773,
+       "ci_low": 0.5871,
+       "ci_high": 0.8876,
+       "at_risk": 20
+      },
+      {
+       "month": 84,
+       "survival": 0.7384,
+       "ci_low": 0.5414,
+       "ci_high": 0.8608,
+       "at_risk": 13
+      },
+      {
+       "month": 120,
+       "survival": 0.6769,
+       "ci_low": 0.4555,
+       "ci_high": 0.8239,
+       "at_risk": 4
+      }
+     ],
+     "share_closed_within_24m": 0.125,
+     "median_area_pyeong": 20.9
+    },
+    "hansik_all": {
+     "n": 297,
+     "events": 141,
+     "censored": 156,
+     "engine": "lifelines",
+     "median_months": 58.1,
+     "table": [
+      {
+       "month": 6,
+       "survival": 0.8343,
+       "ci_low": 0.7868,
+       "ci_high": 0.8721,
+       "at_risk": 231
+      },
+      {
+       "month": 12,
+       "survival": 0.7792,
+       "ci_low": 0.7267,
+       "ci_high": 0.8228,
+       "at_risk": 206
+      },
+      {
+       "month": 24,
+       "survival": 0.6857,
+       "ci_low": 0.6266,
+       "ci_high": 0.7374,
+       "at_risk": 161
+      },
+      {
+       "month": 36,
+       "survival": 0.5858,
+       "ci_low": 0.5214,
+       "ci_high": 0.6446,
+       "at_risk": 115
+      },
+      {
+       "month": 48,
+       "survival": 0.5183,
+       "ci_low": 0.451,
+       "ci_high": 0.5814,
+       "at_risk": 88
+      },
+      {
+       "month": 60,
+       "survival": 0.4938,
+       "ci_low": 0.4257,
+       "ci_high": 0.5583,
+       "at_risk": 76
+      },
+      {
+       "month": 84,
+       "survival": 0.4111,
+       "ci_low": 0.3394,
+       "ci_high": 0.4813,
+       "at_risk": 48
+      },
+      {
+       "month": 120,
+       "survival": 0.366,
+       "ci_low": 0.2892,
+       "ci_high": 0.4428,
+       "at_risk": 20
+      }
+     ],
+     "share_closed_within_24m": 0.3508,
+     "median_area_pyeong": 18.3
+    }
+   },
+   "종로구 전체": {
+    "pork_like": {
+     "n": 148,
+     "events": 28,
+     "censored": 120,
+     "engine": "lifelines",
+     "median_months": null,
+     "table": [
+      {
+       "month": 6,
+       "survival": 0.9796,
+       "ci_low": 0.9382,
+       "ci_high": 0.9934,
+       "at_risk": 140
+      },
+      {
+       "month": 12,
+       "survival": 0.9586,
+       "ci_low": 0.9101,
+       "ci_high": 0.9812,
+       "at_risk": 136
+      },
+      {
+       "month": 24,
+       "survival": 0.9147,
+       "ci_low": 0.8545,
+       "ci_high": 0.9507,
+       "at_risk": 117
+      },
+      {
+       "month": 36,
+       "survival": 0.8814,
+       "ci_low": 0.8133,
+       "ci_high": 0.9258,
+       "at_risk": 100
+      },
+      {
+       "month": 48,
+       "survival": 0.8424,
+       "ci_low": 0.765,
+       "ci_high": 0.896,
+       "at_risk": 79
+      },
+      {
+       "month": 60,
+       "survival": 0.8204,
+       "ci_low": 0.7379,
+       "ci_high": 0.879,
+       "at_risk": 68
+      },
+      {
+       "month": 84,
+       "survival": 0.7684,
+       "ci_low": 0.674,
+       "ci_high": 0.8387,
+       "at_risk": 47
+      },
+      {
+       "month": 120,
+       "survival": 0.7326,
+       "ci_low": 0.6279,
+       "ci_high": 0.8122,
+       "at_risk": 15
+      }
+     ],
+     "share_closed_within_24m": 0.093,
+     "median_area_pyeong": 22.9
+    },
+    "hansik_all": {
+     "n": 1618,
+     "events": 568,
+     "censored": 1050,
+     "engine": "lifelines",
+     "median_months": 110.9,
+     "table": [
+      {
+       "month": 6,
+       "survival": 0.9705,
+       "ci_low": 0.9609,
+       "ci_high": 0.9777,
+       "at_risk": 1505
+      },
+      {
+       "month": 12,
+       "survival": 0.9331,
+       "ci_low": 0.9196,
+       "ci_high": 0.9445,
+       "at_risk": 1400
+      },
+      {
+       "month": 24,
+       "survival": 0.8617,
+       "ci_low": 0.8431,
+       "ci_high": 0.8782,
+       "at_risk": 1192
+      },
+      {
+       "month": 36,
+       "survival": 0.7974,
+       "ci_low": 0.7755,
+       "ci_high": 0.8174,
+       "at_risk": 977
+      },
+      {
+       "month": 48,
+       "survival": 0.7385,
+       "ci_low": 0.714,
+       "ci_high": 0.7612,
+       "at_risk": 804
+      },
+      {
+       "month": 60,
+       "survival": 0.6718,
+       "ci_low": 0.6448,
+       "ci_high": 0.6972,
+       "at_risk": 663
+      },
+      {
+       "month": 84,
+       "survival": 0.5825,
+       "ci_low": 0.5528,
+       "ci_high": 0.6109,
+       "at_risk": 471
+      },
+      {
+       "month": 120,
+       "survival": 0.4935,
+       "ci_low": 0.4593,
+       "ci_high": 0.5267,
+       "at_risk": 155
+      }
+     ],
+     "share_closed_within_24m": 0.148,
+     "median_area_pyeong": 17.3
+    }
+   }
+  },
+  "logrank": {
+   "pork_name_only_vs_other_hansik": {
+    "p_value": 0.0914,
+    "test_statistic": 2.85,
+    "n": [
+     119,
+     1822
+    ]
+   },
+   "pork_like_vs_other_hansik": {
+    "p_value": 2.21e-06,
+    "test_statistic": 22.403,
+    "n": [
+     182,
+     1772
+    ]
+   }
+  },
+  "inputs": {
+   "stores_I20107": 362,
+   "licenses": 24486,
+   "per_area": {
+    "종로구 전체": {
+     "pulled": 20555,
+     "in_area": 20555,
+     "coords": {
+      "localdata": 14903,
+      "sbiz_address_lookup": 3496,
+      "none": 2156
+     }
+    },
+    "신촌역 3120094": {
+     "pulled": 48260,
+     "in_area": 3931,
+     "coords": {
+      "localdata": 44081,
+      "none": 3628,
+      "sbiz_address_lookup": 551
+     }
+    }
+   },
+   "matched_high_medium": 330
+  }
+ }
+}

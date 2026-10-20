@@ -1,0 +1,18 @@
+/* the canvas's stand-in when WebGL is off: a quiet field with one note, under every other panel */
+.gl-fallback {
+  position: absolute; inset: 0; display: grid; place-items: center; padding: 24px;
+  background: oklch(0.955 0.005 240);
+  font-family: "SUIT Variable", SUIT, "Pretendard Variable", Pretendard, system-ui, sans-serif;
+}
+.gl-fallback-card {
+  display: flex; align-items: center; gap: 14px; max-inline-size: 440px; padding: 16px 20px;
+  background: oklch(0.996 0.002 240); color: oklch(0.42 0.014 255); border-radius: 14px;
+  box-shadow: 0 0 0 1px oklch(0 0 0 / 0.06), 0 1px 2px -1px oklch(0 0 0 / 0.08), 0 6px 18px oklch(0 0 0 / 0.06);
+}
+.gl-fallback-card svg {
+  flex: none; inline-size: 40px; block-size: 34px; fill: none; stroke: oklch(0.6 0.012 255);
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.gl-fallback-card p { margin: 0; font-size: 14px; line-height: 1.55; word-break: keep-all; }
+/* the v2 home panel covers the left 560px: center the note in what is left */
+.v2[data-mode="home"] .gl-fallback { padding-inline-start: min(584px, 100%); }

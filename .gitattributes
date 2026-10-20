@@ -1,0 +1,4 @@
+# LF로 체크아웃한다. CSV는 파이썬 csv 모듈이 쓴 바이트(CRLF)를 그대로 둔다.
+* text=auto eol=lf
+*.csv -text
+*.xlsx binary

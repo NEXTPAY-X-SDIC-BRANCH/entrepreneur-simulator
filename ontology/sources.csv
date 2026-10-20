@@ -1,0 +1,77 @@
+source_id,title,publisher_author,year,url,type,reliability_note
+S01,Why Restaurants Fail,Parsa et al. (Cornell HRAQ),2005,https://econ.ucsb.edu/%7Etedb/Courses/Ec1F07/restaurantsfail.pdf,paper,"Peer-reviewed; Columbus OH permits 1996-99; label = ownership turnover; independents 61.36% vs chains 57.22% 3-yr failure"
+S02,Why Restaurants Fail Part II,Parsa et al. (J. Foodservice Business Research),2011,https://foodethics.univie.ac.at/fileadmin/user_upload/p_foodethik/Parsa___et.al._2011_Why_Restaurants_Fail_Part_2.pdf,paper,"Peer-reviewed; K-M + Cox; size and independence predict closure; US data"
+S03,"Reviews, Reputation, and Revenue (The Yelp Factor)",Michael Luca (HBS Working Knowledge summary),,https://www.library.hbs.edu/working-knowledge/the-yelp-factor-are-consumer-reviews-good-for-business,paper,"Summary page read, not the paper; +1 star = +5-9% revenue for independents; Seattle; year not stated in research file"
+S04,Mining Yelp (restaurant closure),Mejia; Mankad & Gopal (UMD news),,https://rhsmith.umd.edu/news/mining-yelp,news,"University news summary of a study; closed yes/no label; DC 2005-14"
+S05,Restaurant survival prediction from Yelp,Vallapuram et al. (arXiv),2021,https://www.arxiv.org/pdf/2109.12370,paper,"Preprint; binary open-2017 to dead-2019 label; AUC 0.72"
+S06,Review score variance and restaurant survival,Li et al. (Tourism Management; PolyU news),2025,https://www.polyu.edu.hk/shtm/news-and-events/news/2026/20260720_restaurant-reviews/,paper,"Peer-reviewed per news page; variance of review scores predicts 1-yr survival better than mean; Boston"
+S07,RevPASH (revenue per available seat-hour),Sheryl Kimes (Cornell eCommons),,https://ecommons.cornell.edu/entities/publication/519ba198-3b5b-4fa3-84ca-042677dd7a5e,paper,"Formula taken from a search summary; the eCommons record itself was not opened (see S47)"
+S08,이태원 음식점 생존분석,정동규·윤희연 (대한건축학회),2017,https://laplanning.snu.ac.kr/publication/2017-jeong/,paper,"Peer-reviewed; 폐업 여부 + 영업기간 (K-M + Cox); median survival 골목 2304 vs 발달상권 2748 days"
+S09,서울 카페 생존분석 (LOCALDATA 인허가),이채은·최인수 (한국경영공학회지; via dhnews),2026,https://dhnews.co.kr/news/view/1065577402337354,paper,"Read via news article; closure hazard peaks at 24 months; Seoul 한식 3-yr survival ~70%"
+S10,강남구 프랜차이즈 매출 성공 예측,안예린 외 (JCCT),2022,https://koreascience.or.kr/article/JAKO202221737437258.pdf,paper,"Peer-reviewed; revenue normalized by population; RF accuracy 0.92"
+S11,서울 상권 매출 공간회귀,이민주 외 (지역연구),2024,https://koreascience.or.kr/article/JAKO202409378810072.pdf,paper,"Peer-reviewed; unit = 상권 not store"
+S12,상권분석서비스 추정매출-상권 (OA-15572 VwsmTrdarSelngQq),서울특별시 / 서울신용보증재단,2026,https://data.seoul.go.kr/dataList/OA-15572/S/1/datasetView.do,public_data,"Card-based estimate at 상권 x 한식 (CS100001) level; no pork code; 당월_매출_금액 is a quarterly total; 대학로 2025 한식 ₩590.9억 measured live 2026-09-30"
+S13,상권분석서비스 점포-상권 (OA-15577 VwsmTrdarStorQq),서울특별시 / 서울신용보증재단,2026,https://data.seoul.go.kr/dataList/OA-15577/S/1/datasetView.do,public_data,"Store counts incl. franchise and open/close; 대학로 한식 191 (31 franchise) 2025Q4"
+S14,상권분석서비스 길단위인구-상권 (OA-15568),서울특별시 / 서울신용보증재단,2026,https://data.seoul.go.kr/dataList/OA-15568/S/1/datasetView.do,public_data,"Foot traffic by age / time band / 요일; quarterly rows"
+S15,상권분석서비스 상주인구-상권 (OA-15584),서울특별시 / 서울신용보증재단,2026,https://data.seoul.go.kr/dataList/OA-15584/S/1/datasetView.do,public_data,"Resident population; Q4 value repeats in next Q1-Q3"
+S16,상권분석서비스 직장인구-상권 (OA-15569),서울특별시 / 서울신용보증재단,2026,https://data.seoul.go.kr/dataList/OA-15569/S/1/datasetView.do,public_data,"Worker population; Q4 value repeats in next Q1-Q3"
+S17,상권분석서비스 집객시설-상권 (OA-15580),서울특별시 / 서울신용보증재단,2026,https://data.seoul.go.kr/dataList/OA-15580/S/1/datasetView.do,public_data,"Universities / subway / bus / theaters counts; yearly"
+S18,상권분석서비스 영역-상권 (OA-15560),서울특별시 / 서울신용보증재단,2026,https://data.seoul.go.kr/dataList/OA-15560/S/1/datasetView.do,public_data,"상권 polygons EPSG:5181; used for point-in-polygon"
+S19,상권분석서비스 상권변화지표-상권 (OA-15576),서울특별시 / 서울신용보증재단,2026,https://data.seoul.go.kr/dataList/OA-15576/S/1/datasetView.do,public_data,"Change index; average months open / to closure"
+S20,소상공인시장진흥공단 상가(상권)정보 (15083033),소상공인시장진흥공단,2026,https://www.data.go.kr/data/15083033/fileData.do,public_data,"Open stores snapshot (20260630 file); I20107 돼지고기 구이/찜; 지점명 = franchise hint; 27 I20107 in 3120012"
+S21,서울시 일반음식점 인허가 정보 (OA-16094 LOCALDATA_072404),서울특별시,2026,https://data.seoul.go.kr/dataList/OA-16094/S/1/datasetView.do,public_data,"Open + closed licenses; 인허가일자 / 폐업일자 = survival label; 소재지면적 ㎡; 폐업 may be relocation or 양도"
+S22,행정안전부 일반음식점 인허가 API (15154916),행정안전부 (data.go.kr),2026,https://www.data.go.kr/data/15154916/openapi.do,public_data,"LOCALDATA replacement; field list not confirmed without key"
+S23,참가격 외식비 삼겹살 200g 서울 ₩21321 (2026-06),세계일보,2026,https://www.segye.com/newsView/20260801501857,news,"Secondhand report of 참가격 (price.go.kr blocked); verified figure per proposal"
+S24,참가격 외식비 삼겹살 서울 ₩21056 (2026-01),아시아경제,2026,https://view.asiae.co.kr/article/2026072014394339053,news,"Secondhand report of 참가격"
+S25,마포 골목 삼겹살 ~₩17000 / 소주 ₩4000-6000,헤럴드경제,2026,https://www.heraldk.com/article/2026030317453827657,news,"Anecdotal store prices; 마포 not 대학로. Article states 1인분(200g) 기준 1만7000원 안팎, so ₩17,000 is per 200g (checked 2026-10-03)"
+S26,강남 소주 ₩7000-8000,데일리안,2023,https://www.dailian.co.kr/news/view/1203849/,news,"Dated (2023); 강남 premium"
+S27,식당 소주 마진 ₩4400 at ₩6000,머니투데이,2023,https://www.mt.co.kr/living/2023/02/24/2023022323513823951,news,"Dated (2023); implies cost ~₩1600 per bottle"
+S28,삼겹살 2인분 + 소주 = ₩50000+,쿠키뉴스,2024,https://www.kukinews.com/article/view/kuk202408160146,news,"Anecdotal floor for 객단가"
+S29,외식 평균 객단가 ₩14310 / 2024 외식업 매출,뉴시스,2026,https://www.newsis.com/view/NISX20260328_0003567838,news,"All-외식 averages; not comparable to BBQ ticket"
+S30,고기집 수익률 계산법 (65/20/15 매출 구조; 3회전+),moneycat.wandererkator.com (anonymous blog),,https://moneycat.wandererkator.com/entry/%EA%B3%A0%EA%B8%B0%EC%A7%91-%EC%88%98%EC%9D%B5%EB%A5%A0-%EA%B3%84%EC%82%B0%EB%B2%95%EA%B3%BC-%EB%A7%A4%EC%B6%9C-%EA%B5%AC%EC%A1%B0-%EC%99%84%EB%B2%BD-%EC%A0%95%EB%A6%AC,blog,"UNVERIFIED anonymous blog; only published meat/alcohol/meal split found; use as weak prior only"
+S31,외식업 경영실태 (한식 육류요리전문점 / 육류구이) C2020_77-6,KREI / 서울대 for 농식품부,2020,https://repository.krei.re.kr/bitstream/2018.oak/26686/1/C2020_77-6.pdf,report,"2018 data; nationwide; cost shares of operating cost (식재료 41.0 / 인건비 34.2 / 임차 9.3) converted to revenue; OP 9.4% after imputed owner wage; 3.2 staff"
+S32,KREI 외식업 경영실태 리플릿 2403,KREI,2024,https://www.krei.re.kr/namo/binary/files/000025/2403_Leflet_4.pdf,report,"2022 all-외식: 인건비 33.2% of cost (대표자 14.9 / 고용인 14.8 / 가족 3.5); 임차 9.6%; avg deposit ₩3301만"
+S33,외식업체 경영실태조사 (2024 data),농림축산식품부,,https://www.mafra.go.kr/bbs/home/792/577439/artclView.do,report,"Press/summary level; all-외식 revenue ₩2.553억 (한식 ₩2.911억; non-franchise ₩2.3억); OP 8.7%; publication year not stated in research file"
+S34,30평 삼겹살 프랜차이즈 사례 (15테이블 60석),한경비즈니스,2021,https://magazine.hankyung.com/business/article/202103043150b,news,"Single franchise case in 미금 (성남) not Seoul; ~₩3000만/월"
+S35,저녁 영업 삼겹살집 / 상위권 매장 매출,머니투데이,2022,https://www.mt.co.kr/culture/2022/09/01/2022090109505555998,news,"Anecdotal; evening-only 6h store; top-tier ₩9000만-1억 outliers"
+S36,2026 최저임금 ₩10320 (월 209h ₩2156880),bizforms 365guide,2026,https://www.bizforms.co.kr/365guide/view.asp?number=162,blog,"Statutory figure restated by a forms site; value matches the 2026 minimum wage decision"
+S37,프랜차이즈 고깃집 고매출 저이익 사례,아시아경제,2025,https://www.asiae.co.kr/visual-news/article/2025101015353443475,news,"Anecdotal outlier (~₩1억 revenue netting ~0)"
+S38,한식음식점 5년 생존율 34% (국세청 2023),택스워치,2025,https://www.taxwatch.co.kr/article/tax/2025/08/13/0002,news,"사업자 폐업 basis (differs from 인허가 basis)"
+S39,100대 생활업종 생존율 (3년 53.8% / 5년 39.6%),한국경제,2025,https://www.hankyung.com/article/2025043073077,news,"National all-업종 average"
+S40,외식업 폐업률 2023 (서울 18.99%; 핀다 오픈업),한경비즈니스,2024,https://magazine.hankyung.com/business/article/202404281767b,news,"Private data vendor estimate"
+S41,서울 2025 1분기 개업 8772 / 폐업 14988,한국경제,2025,https://www.hankyung.com/article/2025060190501,news,"Category scope unclear in the article"
+S42,2024 소상공인실태조사 발표,파이낸셜뉴스,2026,https://www.fnnews.com/news/202603130840507888,news,"2024 survey dropped revenue/cost items; sector totals only"
+S43,LOCALDATA 인허가 데이터 data.go.kr 이관,경향신문,2026,https://www.khan.co.kr/article/202601251400011/,news,"Context for data access only"
+S44,우리마을가게 상권분석서비스,서울특별시,2026,https://golmok.seoul.go.kr/,public_data,"Front end of S12-S19; no new data"
+S45,소상공인365 빅데이터,소상공인시장진흥공단,2026,https://bigdata.sbiz.or.kr/,public_data,"Web reports on S20; cross-check only"
+S46,상권분석서비스 소비-상권 (OA-21278),서울특별시 / 서울신용보증재단,2026,https://data.seoul.go.kr/dataList/OA-21278/S/1/datasetView.do,public_data,"Spending totals only; income fields removed 2026-05-13; no longer updated"
+S47,Restaurant RevPASH explainer,SevenRooms blog,,https://sevenrooms.com/blog/restaurant-revpash/,blog,"Vendor blog; the RevPASH formula actually used came from this summary"
+S48,"지난해 돈가 예측 왜 크게 빗나갔나? (지육 2024 평균 5,239 / 2025 평균 5,763원/kg)",양돈타임스 (pigpeople.net),2026,https://pigpeople.net/news/article.html?no=18429,news,Trade press; 축산물품질평가원 basis as reported; 지육 not 삼겹
+S49,"9월 돼지 도매가격 7개월 만에 하락 전환 (2025-09 6,499 / 08 6,602 / 2024-09 6,098)",양돈타임스 (pigpeople.net),2025,https://pigpeople.net/news/article.html?no=17903,news,Trade press; monthly 지육 averages
+S50,하반기 돼지 도매가격 전년 대비 3.9% 내외 하락 전망 (KREI 농업관측 6월호),양돈타임스 citing KREI,2026,https://www.pigpeople.net/mobile/article.html?no=19357,news,Forecast; 2025 forecasts missed by ~10%
+S51,"추석 성수품 수급관리 (KAMIS 삼겹살 1인분 상차림 재료비 7,082 / 7,594원)",농림축산식품부,2026,https://www.mafra.go.kr/bbs/home/793/578847/artclView.do,report,"Government press release; retail basket, gram weight not stated"
+S52,상업용부동산 임대동향조사 R-ONE open API (혜화동 CLS_ID 520059; T248223134698125 등),한국부동산원,2026,https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do?STATBL_ID=T248223134698125&DTACYCLE_CD=QY&WRTTIME_IDTFR_ID=202602&CLS_ID=520059&Type=json,public_data,"Official, this exact 상권; 소규모 상가 1층 ₩60,033/㎡/월 2026Q2 incl. deposit at 전환율 7.481%; ㎡ basis (전용/계약) unverified"
+S53,"상가는 1층 기준, 오피스는 3층 이상 기준 임대료 산정",시대일보 (한국부동산원 설명),2023,https://www.sidae.com/article/2023042617091572592,news,Explains that published 상가 rent is the 1층 rent
+S54,경기 침체에 전국 공실률 13.4% (2026Q2 임대동향),뉴시스,2026,https://mobile.newsis.com/view/NISX20260729_0003728100,news,"National 소규모 상가 ₩20,600/㎡; consistent with S52"
+S55,서울시 주요 상권 통상임대료 ㎡당 7만4900원 (2023 상가임대차 실태조사),뉴스핌,2024,https://www.newspim.com/news/view/20240306000198,news,Deposit ≈ 12.8× monthly rent in 2023 Seoul survey; supports the 10× deposit assumption
+S56,혜화역·대학로 상업용 부동산 시장 분석 (매물 호가),dbritz.kr forum (anonymous),,https://dbritz.kr/forum/?bmode=view&idx=172165235,blog,"UNVERIFIED, weak; asking prices only; possibly AI-written"
+S57,"상가건물 임대차보호법 시행령 제4조 (증액 5% 상한, 서울 환산보증금 9억)",korea.legal (법령 미러),,https://korea.legal/wiki/상가건물-임대차보호법-시행령-제4조/,report,"Statute text via mirror (search snippet, page not opened); the 5% cap is statutory"
+S58,The impact of food prices on consumption: a systematic review of price elasticity (AJPH 100(2)),"Andreyeva, Long & Brownell",2010,https://pmc.ncbi.nlm.nih.gov/articles/PMC2804646,paper,"Peer-reviewed meta-analysis; food away from home −0.81 (CI −0.56 to −1.07); US, category level"
+S59,품목·분위별 식생활 관련 가계 소비지출 결정요인 분석 (농촌경제 49(2)),곽대영·김종진 (KREI),2026,https://repository.krei.re.kr/bitstream/2018.oak/33106/1/RE49-2-02.pdf,paper,Peer-reviewed; Korean 음식서비스 own-price elasticity not significant; seasonal pattern Q1 −8.4% vs Q4
+S60,How long diners will wait for a table (Toast survey: 72% ≤ 30 min),Chowhound / Tasting Table,2024,https://chowhound.com/1550126/how-long-diners-wait-restaurant-table,news,"US vendor survey, stated preference; sample not disclosed"
+S61,Worth the wait? How restaurant waiting time influences customer behavior and revenue (JOM 63),"de Vries, Roy & de Koster",2018,https://facultynewsletter.iima.ac.in/pastideas/november2019/Worth-the-wait-How-restaurant-waiting-time-influences-customer-behavior-and-revenue%3Csup%3E1%3Csup%3E.html,paper,"Peer-reviewed; supports the reneging mechanism, no usable number"
+S62,식약처 주류 소비·섭취 실태조사 (1회 평균 소주 6.1잔),데일리팜 citing 식약처,2017,https://dailypharm.com/user/news/91742,news,Old survey; per drinker per occasion ≈ 0.85 bottle
+S63,2025년 카드수수료 개편 우대수수료율 (시행 2025-02-14),금융위원회,2025,https://www.fsc.go.kr/edu/news/84133,report,Official fee table by annual-sales bracket
+S64,"2026년 세제개편안, 사장님이 주목해야 할 포인트 (신용카드 매출세액공제)",KB Think,2026,https://kbthink.com/business/tips/ceo-tip/260824.html,blog,Bank content page; VAT card credit not modelled
+S65,2024년 지급수단 및 모바일금융서비스 이용행태 조사,뉴시스 citing 한국은행,2025,https://www.newsis.com/view/NISX20250325_0003111896,news,"National, count basis: credit 46.2%, check 16.4%, cash 15.9%"
+S66,"2026년 최저임금 기준, 급여 및 4대보험 계산법",토스플레이스,2026,https://tossplace.com/story/2026_minimum_wage,blog,Payroll vendor guide; employer 4대보험 ≈ 11–12%
+S67,2026 장기요양 0.9448% / 산재 음식·숙박 8‰ + 출퇴근 0.6‰,헤럴드경제 (search snippets),2025,https://www.heraldk.com/article/2025123016313362622,news,Rates from snippets; pages not opened
+S68,"돈육 부위별 시세 (냉장 일반 삼겹살 공장출고 ₩/kg, 2023-01~2026-09 주간)",한국육류유통수출협회 (KMTA),2026,https://www.kmta.or.kr/m/price/pork.php,report,"Industry association price table; week-2 snapshots; 2026 Jan–Sep mean ₩18,647/kg"
+S69,"소·돼지값 들썩…더 커진 '외식물가 공포' (소매 삼겹 ₩2,559/100g; 서울 외식 200g ₩21,218)",헤럴드경제,2026,https://www.heraldk.com/article/2026042018372851890,news,Cites 축산물품질평가원 / KAMIS / 참가격; retail ceiling for meat cost
+S70,"주요 축산물 유통비용 비중 45.8% (돼지고기 43.7%, 2017)",데일리벳 citing 축산물품질평가원,2018,https://www.dailyvet.co.kr/?p=93337,news,Old; explains retail vs wholesale gap
+S71,명륜진사갈비 이용시간 (평일 120분 / 주말 100분),mom-mom.net listing,,https://mom-mom.net/travel/places/68ac35f0ca795b20d1869bd8,blog,Single branch listing; revealed upper bound on dwell
+S72,The Impact of Restaurant Table Characteristics on Meal Duration and Spending (CHRAQ 45(4)),Kimes & Robson (Cornell),2004,https://ecommons.cornell.edu/server/api/core/bitstreams/e4a944d8-bdad-4220-9281-df8203ba1e8c/content,paper,Peer-reviewed; US casual dining; dwell CV 0.37; party mix 58.4% pairs
+S73,How long should dinner take? Measuring expected meal duration,Kimes (Cornell),,https://ecommons.cornell.edu/server/api/core/bitstreams/019c3aa9-4744-4709-9d77-d18dd8abfa30/content,paper,Student sample (n=134); expectation not behaviour
+S74,[녹색세상] 삼겹살 1인분은 왜 180그램?,경향신문 (김연식),2022,https://www.khan.co.kr/article/202209300300015,news,Opinion column; anecdote for the portions upper tail
+S75,2024년 10월 기후특성 (10월 전국 강수일수 평년 5.9일; 평년값 1991~2020),기상청,2024,https://www.kma.go.kr/download_02/ellinonewsletter_2024_10.pdf,report,"Official; nationwide normal. The Seoul station (108) normal was not reached, so the national value stands in"
+D0930,Team 고기 decisions 2026-09-30 (ARCHITECTURE-PROPOSAL §9),Team 고기 (internal),2026,,internal,"Scope definitions only (composite 미도입 independent hero; shocks = main profit drivers); NOT evidence for any number"

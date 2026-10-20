@@ -1,0 +1,119 @@
+{
+ "_meta": {
+  "source": "기상청 지상(종관, ASOS) 일자료 조회서비스 (data.go.kr 15059093), 서울 지점 108",
+  "period": "2016~2025",
+  "fetched_at": "2026-10-13T19:55:26",
+  "method": "달마다 10년치 날을 모아 비율을 냄. 비 온 날 = 일강수량 1.0mm 이상, 큰비 = 30mm 이상, 한파 = 최저기온 영하 10도 이하, 폭염 = 최고기온 33도 이상",
+  "caveat": "하루 전체 강수량 기준이라 저녁 장사 시간에 비가 왔는지는 알 수 없음"
+ },
+ "months": [
+  {
+   "month": 1,
+   "days": 310,
+   "rain_share": 0.097,
+   "heavy_rain_share": 0.006,
+   "cold_share": 0.155,
+   "hot_share": 0.0,
+   "avg_temp": -1.5
+  },
+  {
+   "month": 2,
+   "days": 283,
+   "rain_share": 0.134,
+   "heavy_rain_share": 0.0,
+   "cold_share": 0.067,
+   "hot_share": 0.0,
+   "avg_temp": 0.9
+  },
+  {
+   "month": 3,
+   "days": 310,
+   "rain_share": 0.145,
+   "heavy_rain_share": 0.01,
+   "cold_share": 0.0,
+   "hot_share": 0.0,
+   "avg_temp": 7.8
+  },
+  {
+   "month": 4,
+   "days": 300,
+   "rain_share": 0.203,
+   "heavy_rain_share": 0.017,
+   "cold_share": 0.0,
+   "hot_share": 0.0,
+   "avg_temp": 13.7
+  },
+  {
+   "month": 5,
+   "days": 310,
+   "rain_share": 0.245,
+   "heavy_rain_share": 0.042,
+   "cold_share": 0.0,
+   "hot_share": 0.003,
+   "avg_temp": 18.7
+  },
+  {
+   "month": 6,
+   "days": 300,
+   "rain_share": 0.267,
+   "heavy_rain_share": 0.053,
+   "cold_share": 0.0,
+   "hot_share": 0.04,
+   "avg_temp": 23.5
+  },
+  {
+   "month": 7,
+   "days": 310,
+   "rain_share": 0.381,
+   "heavy_rain_share": 0.119,
+   "cold_share": 0.0,
+   "hot_share": 0.248,
+   "avg_temp": 26.9
+  },
+  {
+   "month": 8,
+   "days": 310,
+   "rain_share": 0.381,
+   "heavy_rain_share": 0.116,
+   "cold_share": 0.0,
+   "hot_share": 0.329,
+   "avg_temp": 27.3
+  },
+  {
+   "month": 9,
+   "days": 300,
+   "rain_share": 0.237,
+   "heavy_rain_share": 0.067,
+   "cold_share": 0.0,
+   "hot_share": 0.023,
+   "avg_temp": 22.8
+  },
+  {
+   "month": 10,
+   "days": 310,
+   "rain_share": 0.168,
+   "heavy_rain_share": 0.023,
+   "cold_share": 0.0,
+   "hot_share": 0.0,
+   "avg_temp": 15.5
+  },
+  {
+   "month": 11,
+   "days": 300,
+   "rain_share": 0.17,
+   "heavy_rain_share": 0.013,
+   "cold_share": 0.0,
+   "hot_share": 0.0,
+   "avg_temp": 7.9
+  },
+  {
+   "month": 12,
+   "days": 310,
+   "rain_share": 0.142,
+   "heavy_rain_share": 0.003,
+   "cold_share": 0.123,
+   "hot_share": 0.0,
+   "avg_temp": 0.1
+  }
+ ]
+}

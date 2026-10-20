@@ -1,0 +1,663 @@
+{
+ "scope": "wide",
+ "areas": [
+  "신촌역 3120094",
+  "종로구 전체"
+ ],
+ "cohort": "licenses approved on/after 2015-01-01, right-censored at run date",
+ "pork_like_definition": "license name contains a pork/grill keyword (config license.name_keywords) or the license matched an sbiz I20107 store (high/medium). Name keywords also catch some 소고기 places; I20107 matches are current survivors.",
+ "pork_name_only": {
+  "n": 119,
+  "events": 35,
+  "censored": 84,
+  "engine": "lifelines",
+  "median_months": null,
+  "table": [
+   {
+    "month": 6,
+    "survival": 0.9491,
+    "ci_low": 0.8902,
+    "ci_high": 0.9768,
+    "at_risk": 109
+   },
+   {
+    "month": 12,
+    "survival": 0.9228,
+    "ci_low": 0.8568,
+    "ci_high": 0.9591,
+    "at_risk": 105
+   },
+   {
+    "month": 24,
+    "survival": 0.8587,
+    "ci_low": 0.7795,
+    "ci_high": 0.9111,
+    "at_risk": 88
+   },
+   {
+    "month": 36,
+    "survival": 0.7942,
+    "ci_low": 0.7034,
+    "ci_high": 0.86,
+    "at_risk": 70
+   },
+   {
+    "month": 48,
+    "survival": 0.734,
+    "ci_low": 0.6342,
+    "ci_high": 0.8106,
+    "at_risk": 57
+   },
+   {
+    "month": 60,
+    "survival": 0.708,
+    "ci_low": 0.6049,
+    "ci_high": 0.7889,
+    "at_risk": 51
+   },
+   {
+    "month": 84,
+    "survival": 0.6493,
+    "ci_low": 0.5388,
+    "ci_high": 0.7396,
+    "at_risk": 37
+   },
+   {
+    "month": 120,
+    "survival": 0.6105,
+    "ci_low": 0.4934,
+    "ci_high": 0.7084,
+    "at_risk": 11
+   }
+  ],
+  "share_closed_within_24m": 0.1538,
+  "median_area_pyeong": 21.8
+ },
+ "pork_name_only_note": "PRIMARY comparison: name keyword only. Unbiased by survival, noisier by name.",
+ "pork_like": {
+  "n": 182,
+  "events": 37,
+  "censored": 145,
+  "engine": "lifelines",
+  "median_months": null,
+  "table": [
+   {
+    "month": 6,
+    "survival": 0.9668,
+    "ci_low": 0.9276,
+    "ci_high": 0.985,
+    "at_risk": 171
+   },
+   {
+    "month": 12,
+    "survival": 0.9496,
+    "ci_low": 0.9054,
+    "ci_high": 0.9735,
+    "at_risk": 165
+   },
+   {
+    "month": 24,
+    "survival": 0.9077,
+    "ci_low": 0.8537,
+    "ci_high": 0.9425,
+    "at_risk": 145
+   },
+   {
+    "month": 36,
+    "survival": 0.8676,
+    "ci_low": 0.8055,
+    "ci_high": 0.911,
+    "at_risk": 123
+   },
+   {
+    "month": 48,
+    "survival": 0.8298,
+    "ci_low": 0.7606,
+    "ci_high": 0.8805,
+    "at_risk": 100
+   },
+   {
+    "month": 60,
+    "survival": 0.8127,
+    "ci_low": 0.7404,
+    "ci_high": 0.8667,
+    "at_risk": 88
+   },
+   {
+    "month": 84,
+    "survival": 0.7636,
+    "ci_low": 0.6819,
+    "ci_high": 0.8269,
+    "at_risk": 60
+   },
+   {
+    "month": 120,
+    "survival": 0.7214,
+    "ci_low": 0.6291,
+    "ci_high": 0.7944,
+    "at_risk": 19
+   }
+  ],
+  "share_closed_within_24m": 0.0994,
+  "median_area_pyeong": 22.2
+ },
+ "pork_like_note": "name keyword OR matched to a current I20107 store: survivor-biased upward, because only open stores can be matched.",
+ "hansik_all": {
+  "n": 1915,
+  "events": 709,
+  "censored": 1206,
+  "engine": "lifelines",
+  "median_months": 104.5,
+  "table": [
+   {
+    "month": 6,
+    "survival": 0.9493,
+    "ci_low": 0.9384,
+    "ci_high": 0.9583,
+    "at_risk": 1736
+   },
+   {
+    "month": 12,
+    "survival": 0.9093,
+    "ci_low": 0.8953,
+    "ci_high": 0.9216,
+    "at_risk": 1606
+   },
+   {
+    "month": 24,
+    "survival": 0.8348,
+    "ci_low": 0.8166,
+    "ci_high": 0.8513,
+    "at_risk": 1353
+   },
+   {
+    "month": 36,
+    "survival": 0.7657,
+    "ci_low": 0.7447,
+    "ci_high": 0.7853,
+    "at_risk": 1092
+   },
+   {
+    "month": 48,
+    "survival": 0.706,
+    "ci_low": 0.6828,
+    "ci_high": 0.7279,
+    "at_risk": 892
+   },
+   {
+    "month": 60,
+    "survival": 0.6452,
+    "ci_low": 0.62,
+    "ci_high": 0.6691,
+    "at_risk": 739
+   },
+   {
+    "month": 84,
+    "survival": 0.5573,
+    "ci_low": 0.5298,
+    "ci_high": 0.5839,
+    "at_risk": 519
+   },
+   {
+    "month": 120,
+    "survival": 0.4741,
+    "ci_low": 0.4427,
+    "ci_high": 0.5048,
+    "at_risk": 175
+   }
+  ],
+  "share_closed_within_24m": 0.1785,
+  "median_area_pyeong": 17.6
+ },
+ "hansik_not_pork": {
+  "n": 1772,
+  "events": 681,
+  "censored": 1091,
+  "engine": "lifelines",
+  "median_months": 100.1,
+  "table": [
+   {
+    "month": 6,
+    "survival": 0.9481,
+    "ci_low": 0.9366,
+    "ci_high": 0.9575,
+    "at_risk": 1602
+   },
+   {
+    "month": 12,
+    "survival": 0.9066,
+    "ci_low": 0.8918,
+    "ci_high": 0.9195,
+    "at_risk": 1478
+   },
+   {
+    "month": 24,
+    "survival": 0.829,
+    "ci_low": 0.8098,
+    "ci_high": 0.8464,
+    "at_risk": 1239
+   },
+   {
+    "month": 36,
+    "survival": 0.757,
+    "ci_low": 0.7348,
+    "ci_high": 0.7776,
+    "at_risk": 996
+   },
+   {
+    "month": 48,
+    "survival": 0.6947,
+    "ci_low": 0.6703,
+    "ci_high": 0.7178,
+    "at_risk": 812
+   },
+   {
+    "month": 60,
+    "survival": 0.6308,
+    "ci_low": 0.6043,
+    "ci_high": 0.6559,
+    "at_risk": 671
+   },
+   {
+    "month": 84,
+    "survival": 0.5403,
+    "ci_low": 0.5116,
+    "ci_high": 0.568,
+    "at_risk": 472
+   },
+   {
+    "month": 120,
+    "survival": 0.4542,
+    "ci_low": 0.4217,
+    "ci_high": 0.4862,
+    "at_risk": 158
+   }
+  ],
+  "share_closed_within_24m": 0.1849,
+  "median_area_pyeong": 17.3
+ },
+ "all_uptae": {
+  "n": 5831,
+  "events": 2334,
+  "censored": 3497,
+  "engine": "lifelines",
+  "median_months": 93.3,
+  "table": [
+   {
+    "month": 6,
+    "survival": 0.9355,
+    "ci_low": 0.9288,
+    "ci_high": 0.9415,
+    "at_risk": 5279
+   },
+   {
+    "month": 12,
+    "survival": 0.8991,
+    "ci_low": 0.891,
+    "ci_high": 0.9066,
+    "at_risk": 4887
+   },
+   {
+    "month": 24,
+    "survival": 0.8208,
+    "ci_low": 0.8103,
+    "ci_high": 0.8307,
+    "at_risk": 4098
+   },
+   {
+    "month": 36,
+    "survival": 0.7413,
+    "ci_low": 0.7291,
+    "ci_high": 0.753,
+    "at_risk": 3321
+   },
+   {
+    "month": 48,
+    "survival": 0.6745,
+    "ci_low": 0.6611,
+    "ci_high": 0.6875,
+    "at_risk": 2653
+   },
+   {
+    "month": 60,
+    "survival": 0.6143,
+    "ci_low": 0.5999,
+    "ci_high": 0.6283,
+    "at_risk": 2152
+   },
+   {
+    "month": 84,
+    "survival": 0.5213,
+    "ci_low": 0.5056,
+    "ci_high": 0.5368,
+    "at_risk": 1340
+   },
+   {
+    "month": 120,
+    "survival": 0.436,
+    "ci_low": 0.4177,
+    "ci_high": 0.4541,
+    "at_risk": 443
+   }
+  ],
+  "share_closed_within_24m": 0.1935,
+  "median_area_pyeong": 17.1
+ },
+ "by_area": {
+  "신촌역 3120094": {
+   "pork_like": {
+    "n": 34,
+    "events": 9,
+    "censored": 25,
+    "engine": "lifelines",
+    "median_months": null,
+    "table": [
+     {
+      "month": 6,
+      "survival": 0.9118,
+      "ci_low": 0.7509,
+      "ci_high": 0.9707,
+      "at_risk": 31
+     },
+     {
+      "month": 12,
+      "survival": 0.9118,
+      "ci_low": 0.7509,
+      "ci_high": 0.9707,
+      "at_risk": 29
+     },
+     {
+      "month": 24,
+      "survival": 0.8803,
+      "ci_low": 0.7116,
+      "ci_high": 0.9534,
+      "at_risk": 28
+     },
+     {
+      "month": 36,
+      "survival": 0.8126,
+      "ci_low": 0.6284,
+      "ci_high": 0.9115,
+      "at_risk": 23
+     },
+     {
+      "month": 48,
+      "survival": 0.7773,
+      "ci_low": 0.5871,
+      "ci_high": 0.8876,
+      "at_risk": 21
+     },
+     {
+      "month": 60,
+      "survival": 0.7773,
+      "ci_low": 0.5871,
+      "ci_high": 0.8876,
+      "at_risk": 20
+     },
+     {
+      "month": 84,
+      "survival": 0.7384,
+      "ci_low": 0.5414,
+      "ci_high": 0.8608,
+      "at_risk": 13
+     },
+     {
+      "month": 120,
+      "survival": 0.6769,
+      "ci_low": 0.4555,
+      "ci_high": 0.8239,
+      "at_risk": 4
+     }
+    ],
+    "share_closed_within_24m": 0.125,
+    "median_area_pyeong": 20.9
+   },
+   "hansik_all": {
+    "n": 297,
+    "events": 141,
+    "censored": 156,
+    "engine": "lifelines",
+    "median_months": 58.1,
+    "table": [
+     {
+      "month": 6,
+      "survival": 0.8343,
+      "ci_low": 0.7868,
+      "ci_high": 0.8721,
+      "at_risk": 231
+     },
+     {
+      "month": 12,
+      "survival": 0.7792,
+      "ci_low": 0.7267,
+      "ci_high": 0.8228,
+      "at_risk": 206
+     },
+     {
+      "month": 24,
+      "survival": 0.6857,
+      "ci_low": 0.6266,
+      "ci_high": 0.7374,
+      "at_risk": 161
+     },
+     {
+      "month": 36,
+      "survival": 0.5858,
+      "ci_low": 0.5214,
+      "ci_high": 0.6446,
+      "at_risk": 115
+     },
+     {
+      "month": 48,
+      "survival": 0.5183,
+      "ci_low": 0.451,
+      "ci_high": 0.5814,
+      "at_risk": 88
+     },
+     {
+      "month": 60,
+      "survival": 0.4938,
+      "ci_low": 0.4257,
+      "ci_high": 0.5583,
+      "at_risk": 76
+     },
+     {
+      "month": 84,
+      "survival": 0.4111,
+      "ci_low": 0.3394,
+      "ci_high": 0.4813,
+      "at_risk": 48
+     },
+     {
+      "month": 120,
+      "survival": 0.366,
+      "ci_low": 0.2892,
+      "ci_high": 0.4428,
+      "at_risk": 20
+     }
+    ],
+    "share_closed_within_24m": 0.3508,
+    "median_area_pyeong": 18.3
+   }
+  },
+  "종로구 전체": {
+   "pork_like": {
+    "n": 148,
+    "events": 28,
+    "censored": 120,
+    "engine": "lifelines",
+    "median_months": null,
+    "table": [
+     {
+      "month": 6,
+      "survival": 0.9796,
+      "ci_low": 0.9382,
+      "ci_high": 0.9934,
+      "at_risk": 140
+     },
+     {
+      "month": 12,
+      "survival": 0.9586,
+      "ci_low": 0.9101,
+      "ci_high": 0.9812,
+      "at_risk": 136
+     },
+     {
+      "month": 24,
+      "survival": 0.9147,
+      "ci_low": 0.8545,
+      "ci_high": 0.9507,
+      "at_risk": 117
+     },
+     {
+      "month": 36,
+      "survival": 0.8814,
+      "ci_low": 0.8133,
+      "ci_high": 0.9258,
+      "at_risk": 100
+     },
+     {
+      "month": 48,
+      "survival": 0.8424,
+      "ci_low": 0.765,
+      "ci_high": 0.896,
+      "at_risk": 79
+     },
+     {
+      "month": 60,
+      "survival": 0.8204,
+      "ci_low": 0.7379,
+      "ci_high": 0.879,
+      "at_risk": 68
+     },
+     {
+      "month": 84,
+      "survival": 0.7684,
+      "ci_low": 0.674,
+      "ci_high": 0.8387,
+      "at_risk": 47
+     },
+     {
+      "month": 120,
+      "survival": 0.7326,
+      "ci_low": 0.6279,
+      "ci_high": 0.8122,
+      "at_risk": 15
+     }
+    ],
+    "share_closed_within_24m": 0.093,
+    "median_area_pyeong": 22.9
+   },
+   "hansik_all": {
+    "n": 1618,
+    "events": 568,
+    "censored": 1050,
+    "engine": "lifelines",
+    "median_months": 110.9,
+    "table": [
+     {
+      "month": 6,
+      "survival": 0.9705,
+      "ci_low": 0.9609,
+      "ci_high": 0.9777,
+      "at_risk": 1505
+     },
+     {
+      "month": 12,
+      "survival": 0.9331,
+      "ci_low": 0.9196,
+      "ci_high": 0.9445,
+      "at_risk": 1400
+     },
+     {
+      "month": 24,
+      "survival": 0.8617,
+      "ci_low": 0.8431,
+      "ci_high": 0.8782,
+      "at_risk": 1192
+     },
+     {
+      "month": 36,
+      "survival": 0.7974,
+      "ci_low": 0.7755,
+      "ci_high": 0.8174,
+      "at_risk": 977
+     },
+     {
+      "month": 48,
+      "survival": 0.7385,
+      "ci_low": 0.714,
+      "ci_high": 0.7612,
+      "at_risk": 804
+     },
+     {
+      "month": 60,
+      "survival": 0.6718,
+      "ci_low": 0.6448,
+      "ci_high": 0.6972,
+      "at_risk": 663
+     },
+     {
+      "month": 84,
+      "survival": 0.5825,
+      "ci_low": 0.5528,
+      "ci_high": 0.6109,
+      "at_risk": 471
+     },
+     {
+      "month": 120,
+      "survival": 0.4935,
+      "ci_low": 0.4593,
+      "ci_high": 0.5267,
+      "at_risk": 155
+     }
+    ],
+    "share_closed_within_24m": 0.148,
+    "median_area_pyeong": 17.3
+   }
+  }
+ },
+ "logrank": {
+  "pork_name_only_vs_other_hansik": {
+   "p_value": 0.0914,
+   "test_statistic": 2.85,
+   "n": [
+    119,
+    1822
+   ]
+  },
+  "pork_like_vs_other_hansik": {
+   "p_value": 2.21e-06,
+   "test_statistic": 22.403,
+   "n": [
+    182,
+    1772
+   ]
+  }
+ },
+ "inputs": {
+  "stores_I20107": 362,
+  "licenses": 24486,
+  "per_area": {
+   "종로구 전체": {
+    "pulled": 20555,
+    "in_area": 20555,
+    "coords": {
+     "localdata": 14903,
+     "sbiz_address_lookup": 3496,
+     "none": 2156
+    }
+   },
+   "신촌역 3120094": {
+    "pulled": 48260,
+    "in_area": 3931,
+    "coords": {
+     "localdata": 44081,
+     "none": 3628,
+     "sbiz_address_lookup": 551
+    }
+   }
+  },
+  "matched_high_medium": 330
+ }
+}

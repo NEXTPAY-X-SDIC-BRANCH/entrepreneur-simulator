@@ -1,0 +1,9 @@
+file,columns,unit,note
+seoul_sales.csv,sales_amt_*,KRW per QUARTER,"Source column is 당월_매출_금액 (THSMON_SELNG_AMT) but the value is the quarter total. Card-company estimate scaled up. Age/sex splits exclude corporate cards, so they sum to less than sales_amt_total."
+seoul_sales.csv,sales_cnt_*,transactions per QUARTER,Same caveats as sales_amt_*.
+seoul_stores.csv,stores_*,stores (count at quarter),stores_total = stores_non_franchise + stores_franchise (SIMILR_INDUTY_STOR_CO).
+seoul_stores.csv,open_rate_pct / close_rate_pct,percent,Openings/closures in the quarter.
+seoul_flpop.csv,flpop_*,"persons (estimated, quarter aggregate as served)","Mobile-signal estimate. flpop_total = sum of the 7 weekday columns; per-day unit not stated by the source, so compare within the dataset only."
+seoul_workers.csv,workers_*,persons,Refreshed yearly (Q4); Q1-Q3 of the next year repeat it.
+seoul_residents.csv,residents_* / households_*,persons / households,Same yearly refresh.
+seoul_facilities.csv,all numeric,count of facilities,Same yearly refresh.

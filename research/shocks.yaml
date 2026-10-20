@@ -1,0 +1,161 @@
+_meta:
+  generated_by: research/build_workbook.py (Shocks sheet)
+  scope: main profit drivers only; tech adoption out of scope (D0930)
+  delta_types:
+    pct: relative, 0.10 = +10%
+    abs: added to the base value
+    set: replaces the base value
+  illustrative: true
+SH01:
+  driver: 가격
+  params:
+  - parameter: prd_meat_price
+    delta_type: pct
+    low: 0.05
+    base: 0.1
+    high: 0.15
+    mechanism: 고기 가격이 오르면 객단가는 오르고, 가격탄력성만큼 찾아오는 손님이 줄어든다
+    source_id: S23;S25
+    rationale: 인상폭과 가격탄력성(mkt_price_elasticity)은 가정값
+    confidence: L
+SH02:
+  driver: 가격
+  params:
+  - parameter: prd_meat_price
+    delta_type: pct
+    low: -0.05
+    base: -0.1
+    high: -0.15
+    mechanism: 고기 가격이 내리면 객단가는 내려가고, 좌석이 남는 한 손님이 늘어난다
+    source_id: S23;S25
+    rationale: 인하폭은 가정값
+    confidence: L
+SH03:
+  driver: COGS
+  params:
+  - parameter: cst_meat_cost_per_portion
+    delta_type: pct
+    low: 0.05
+    base: 0.08
+    high: 0.28
+    mechanism: 1인분 원가가 오른다. 사장은 그대로 버티거나 가격에 반영할 수 있다
+    source_id: S68;S48
+    rationale: 삼겹 부분육 도매가는 2024년 대비 2025년 +8.1%, 월별 전년 대비 최대 +15%, 1월 대비 8월 +28%
+    confidence: M
+SH04:
+  driver: 주류
+  params:
+  - parameter: prd_alcohol_price
+    delta_type: abs
+    low: 500
+    base: 1000
+    high: 1500
+    mechanism: 객단가는 오르고, 1인당 소주 병수는 가격탄력성만큼 줄어든다
+    source_id: S25;S26;S27
+    rationale: 소주 4,000~6,000원(마포)과 7,000~8,000원(강남) 사례
+    confidence: M
+SH05:
+  driver: 주류
+  params:
+  - parameter: prd_alcohol_per_cover
+    delta_type: pct
+    low: -0.1
+    base: -0.2
+    high: -0.3
+    mechanism: 주류 매출 비중이 줄어 이익률이 높은 매출이 빠진다
+    source_id: S27;S30
+    rationale: 음주 감소 폭은 가정값
+    confidence: L
+SH06:
+  driver: 인건비
+  params:
+  - parameter: sto_parttime_wage
+    delta_type: pct
+    low: 0.029
+    base: 0.05
+    high: 0.1
+    mechanism: 알바 인건비가 오른다
+    source_id: S36
+    rationale: 2026년 인상률 2.9%를 하한으로 둔다
+    confidence: M
+SH07:
+  driver: 인건비
+  params:
+  - parameter: sto_parttimers
+    delta_type: abs
+    low: -1
+    base: -1
+    high: -1
+    mechanism: 인건비는 줄지만 서빙 인력이 줄어 대기와 이탈이 늘 수 있다
+    source_id: S31
+    rationale: 교대당 알바 1명 감축
+    confidence: L
+SH08:
+  driver: 임차료
+  params:
+  - parameter: drv_rent
+    delta_type: pct
+    low: 0.05
+    base: 0.05
+    high: 0.15
+    mechanism: 재계약 때 임대료가 오르면 고정비가 늘어 손익분기 손님 수가 늘어난다
+    source_id: S57;S52
+    rationale: 재계약 때는 법정 상한 5%(환산보증금 9억 이하). +15%는 새로 계약할 때만 가능
+    confidence: H
+SH09:
+  driver: 수요
+  params:
+  - parameter: drv_arrival_rate
+    delta_type: pct
+    low: -0.05
+    base: -0.08
+    high: -0.15
+    mechanism: 방학과 비수기에는 찾아오는 손님이 줄어든다
+    source_id: S12;S59
+    rationale: 대학로 한식 3분기 매출은 2분기의 0.96배(전체), 0.92배(21~24시)라 방학 달은 −6%~−11%
+    confidence: H
+SH10:
+  driver: 수요(비)
+  params:
+  - parameter: wx_rain_nights_share
+    delta_type: set
+    low: 0.13
+    base: 0.19
+    high: 0.35
+    mechanism: 비 오는 밤에는 야장을 접고 손님이 줄어든다. 평년 10월처럼 한 달에 6일쯤
+    source_id: S75
+    rationale: 기상청 10월 전국 평년 강수일수 5.9일 (1991~2020) ÷ 31일. 비 오는 밤 손님 감소폭(−10%)은 가정
+    confidence: M
+SH10b:
+  driver: 수요(비)
+  params:
+  - parameter: wx_rain_nights_share
+    delta_type: set
+    low: 1.0
+    base: 1.0
+    high: 1.0
+    mechanism: 한 달 내내 비가 와 야장을 한 번도 못 펴고 매일 손님이 줄어든다 (최악의 경우)
+    source_id: S75
+    rationale: 현실적인 달이 아니라 상한. 비 오는 밤 손님 감소폭(−10%)은 가정
+    confidence: L
+SH11:
+  driver: 경쟁
+  params:
+  - parameter: reg_competitors
+    delta_type: abs
+    low: 1
+    base: 1
+    high: 1
+    mechanism: 근처에 경쟁 고깃집이 한 곳 문을 연다
+    source_id: S20
+    rationale: 27곳에서 28곳으로
+    confidence: H
+  - parameter: drv_arrival_rate
+    delta_type: pct
+    low: -0.05
+    base: -0.1
+    high: -0.2
+    mechanism: 거리에 따라 손님을 나눠 갖는다
+    source_id: S20
+    rationale: 균등하게 나누면 3.6% 감소, 바로 옆 개점이면 더 크다 (가정)
+    confidence: L
