@@ -38,6 +38,16 @@ def data() -> dict:
     return {"P": load("season_params.yaml"), "CAL": load("calendar.yaml"), "EV": load("events.yaml")}
 
 
+@functools.lru_cache(maxsize=1)
+def _delivery_month_index() -> dict[int, float]:
+    """달별 배달 배율 (pipelines/fetch_kosis_delivery.py, KOSIS 온라인쇼핑동향 음식서비스). 파일이 없으면 모든 달 1."""
+    f = ROOT / "web" / "public" / "mock" / "delivery_market.json"
+    if not f.exists():
+        return {}
+    import json
+    return {int(k): float(x) for k, x in json.loads(f.read_text(encoding="utf-8"))["month_index"].items()}
+
+
 def v(path: str):
     """season_params value by dotted path; {value: x} leaves are unwrapped."""
     node = data()["P"]
@@ -228,6 +238,7 @@ def _validate(plan: dict) -> dict:
     p["close_hour"] = int(p["close_hour"]) if int(p["close_hour"]) in (23, 24, 25) else 24
     p["marketing_budget"] = int(min(max(p["marketing_budget"], 0), 3_000_000))
     p["hygiene"] = p["hygiene"] if p["hygiene"] in ("basic", "normal", "high") else "normal"
+    p["delivery"] = p.get("delivery") if p.get("delivery") in data()["P"]["delivery"]["tier"] else "none"
     for k in ("staff_grilling", "lunch", "terrace", "review_event", "group_reservations"):
         p[k] = bool(p[k])
     return p
@@ -352,7 +363,7 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
     off = {"meat_writeoff": writeoff, "tables_per_server": p["sto_tables"] / servers, "fatigue": state["fatigue"], "lunch": plan["lunch"], "groups": plan["group_reservations"], "staff_grilling": plan["staff_grilling"],
            "group_bookings": cal["group_bookings"], "waste": sum(x["waste"] for x in extras),
            "hygiene_hours": P["hygiene"][plan["hygiene"]]["labor_hours"], "marketing": plan["marketing_budget"],
-           "review_event": plan["review_event"], "open_days": p["sto_open_days"],
+           "review_event": plan["review_event"], "open_days": p["sto_open_days"], "delivery": plan["delivery"],
            "lunch_demand": cal["demand_index"] * demand["rating"] * demand["awareness"]}
     return {"params": p, "a": a, "profile": prof, "plan": plan, "flags": flags, "demand": demand, "off": off, "events": list(events),
             "month": m, "cal": cal, "tolerance": g["tolerance"], "price_ceiling": g.get("price_ceiling"),
@@ -389,6 +400,21 @@ def _pnl(month: dict, su: dict, rng: np.random.Generator | None, n_reviews: floa
         out["mgmt"] += v("marketing.review_event_fixed") + v("marketing.review_event_cost_per_review") * n_reviews
     rev = revenue + out["lunch_revenue"] + out["group_revenue"]
     out["fees"] = rev * p["cst_card_share"] * p["cst_card_fee_rate"]
+    out["delivery_revenue"] = out["delivery_fee"] = out["delivery_orders"] = 0.0
+    if off.get("delivery", "none") != "none":
+        # 배달 매출 = 저녁 매출 x 배달 비중 x 달별 배율. 그중 cannibal 몫은 원래 매장에 왔을 손님이라 매장 매출에서 뺀다.
+        # 앱 결제라 매장 카드 수수료는 붙지 않고, 중개수수료·결제대행 수수료·건당 배달비·포장재가 나간다.
+        # 결제대행 수수료는 영세·중소 우대수수료율로 환급되므로 매장 카드 수수료율과 같게 둔다 (쿠팡이츠 상생 요금제 공지).
+        d_rev = revenue * v("delivery.share") * _delivery_month_index().get(su["month"], 1.0)
+        lost = d_rev * v("delivery.cannibal")
+        orders = d_rev / (ticket * v("delivery.people_per_order")) if ticket else 0.0
+        tier = data()["P"]["delivery"]["tier"][off["delivery"]]
+        fee = (d_rev * (tier["commission"] + p["cst_card_fee_rate"])
+               + orders * (tier["rider_fee"] + v("delivery.packaging_per_order")))
+        out["cogs"] += (d_rev - lost) * food_ratio
+        out["fees"] += fee - lost * p["cst_card_share"] * p["cst_card_fee_rate"]
+        out["delivery_revenue"], out["delivery_fee"], out["delivery_orders"] = d_rev, fee, orders
+        rev += d_rev - lost
     out["revenue"] = rev
     out["covers"] = covers + out["lunch_covers"] + out["group_covers"]
     out["cost"] = out["cogs"] + out["labor"] + out["rent"] + out["mgmt"] + out["fees"]
@@ -693,7 +719,7 @@ def _waterfall(base: dict, draw: dict, plan: dict | None = None, events: list[st
 
 KPI_KEYS = ["revenue", "op", "op_margin", "covers", "dinner_covers", "ticket", "walkaways", "avg_wait_min",
             "table_utilization", "staff_load", "alcohol_share", "cogs", "labor", "rent", "mgmt", "fees",
-            "lunch_revenue", "group_revenue", "groups"]
+            "lunch_revenue", "group_revenue", "groups", "delivery_revenue", "delivery_fee", "delivery_orders"]
 
 
 def _round(x):

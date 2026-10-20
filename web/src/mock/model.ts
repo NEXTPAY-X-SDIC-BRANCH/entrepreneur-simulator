@@ -314,7 +314,15 @@ export function storeStats(store: Store) {
 
 // ---- opening cost -------------------------------------------------------------------------------------
 export const SIGN = 250, FIRST_STOCK = 300; // 가정
-export const LOAN_RATE = 0.06; // 연 이자율, 가정. 이자만 매달 냄
+// 대출 이자율. pipelines/fetch_ecos.py가 만든 ecos_rates.json의 예금은행 신규취급 중소기업대출 최신 금리(한국은행 121Y006).
+// 파일이 없으면 연 6% 가정. 이자만 매달 낸다. let이라 setEcos 뒤에는 import한 쪽에서도 새 값이 보인다.
+export let LOAN_RATE = 0.06;
+export type EcosRate = { month: string; rate: number };
+export type EcosData = { latest: Partial<Record<"base_rate" | "loan_sme" | "loan_corp" | "loan_avg", EcosRate>> };
+let ECOS: EcosData | null = null;
+export const setEcos = (d: EcosData | null) => { ECOS = d; LOAN_RATE = d?.latest.loan_sme ? d.latest.loan_sme.rate / 100 : 0.06; };
+export const ecosRates = () => ECOS?.latest ?? null;
+export const ymKo = (ym: string) => `${ym.slice(0, 4)}년 ${+ym.slice(4, 6)}월`;
 export const cashLeft = (profile: Profile, store: Store) => profile.capital + store.loan - openingCost(store, profile.gu, profile.keyMoney ?? 0).total;
 export type CostLine = { key: string; label: string; amount: number; basis: string };
 export function openingCost(store: Store, gu: string, keyMoney = 0): { lines: CostLine[]; total: number } {

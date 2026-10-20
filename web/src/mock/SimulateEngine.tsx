@@ -19,7 +19,7 @@ const SHIRTS = ["#e0735a", "#43648a", "#d4a032", "#5679a3", "#ec8a4f", "#35614a"
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
 const TURNS = 6;
 
-type Plan = { meat_price: number; staff_per_shift: number; close_hour: number; marketing_budget: number; meat_grade: string; banchan: number };
+type Plan = { meat_price: number; staff_per_shift: number; close_hour: number; marketing_budget: number; meat_grade: string; banchan: number; delivery: string };
 type Night = { dow: string; rain: boolean; revenue: number; covers: number; walkaways: number; cogs: number; fees: number };
 type Ev = { id: string; label: string; group: string; mechanism: string | null; outcome?: string | null };
 type Option = { id: string; label: string; hint: string; downside: string; tag: string };
@@ -56,6 +56,13 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 const GRADES = ["imported", "domestic", "aged"] as const;
 const GRADE_KO: Record<string, string> = { imported: "수입 냉동", domestic: "국내산", aged: "숙성" };
 const GRADE_HINT: Record<string, string> = { imported: "원가가 낮고 맛 평가도 낮아요", domestic: "기본이에요", aged: "원가가 높고 맛 평가도 높아요" };
+// 배민배달 매출 규모 구간 (research/season_params.yaml delivery.tier). 앱 안에서 내 가게의 순위로 정해져 사용자가 고른다.
+const DELIVERY = ["none", "bottom20", "mid50_80", "mid35_50", "top35"] as const;
+const DELIVERY_KO: Record<string, string> = {
+  none: "안 함", bottom20: "하위 20% · 2.0% + 2,900원", mid50_80: "상위 50~80% · 6.8% + 2,900원",
+  mid35_50: "상위 35~50% · 6.8% + 3,100원", top35: "상위 35% · 7.8% + 3,400원",
+};
+const DELIVERY_HINT = "배달앱 안에서 내 매출 순위 구간이에요. 중개수수료와 건당 배달비(서울)가 달라지고, 결제 수수료·포장재도 나가요. 배달 손님 일부는 원래 매장에 올 손님이에요";
 const closeText = (h: number) => (h === 23 ? "밤 11시" : h === 24 ? "밤 12시" : "새벽 1시");
 const mktText = (v: number) => (v ? `${v / 1e4}만원` : "없음");
 
@@ -74,6 +81,11 @@ const LEVERS: LeverDef[] = [
     key: "meat_grade", label: "고기", hint: "", text: (p) => GRADE_KO[p.meat_grade] ?? p.meat_grade,
     can: (p, d) => { const i = GRADES.indexOf(p.meat_grade as (typeof GRADES)[number]); return i + d >= 0 && i + d < GRADES.length; },
     move: (p, d) => ({ ...p, meat_grade: GRADES[GRADES.indexOf(p.meat_grade as (typeof GRADES)[number]) + d] }),
+  },
+  {
+    key: "delivery", label: "배달", hint: DELIVERY_HINT, text: (p) => DELIVERY_KO[p.delivery] ?? p.delivery,
+    can: (p, d) => { const i = DELIVERY.indexOf(p.delivery as (typeof DELIVERY)[number]); return i + d >= 0 && i + d < DELIVERY.length; },
+    move: (p, d) => ({ ...p, delivery: DELIVERY[DELIVERY.indexOf(p.delivery as (typeof DELIVERY)[number]) + d] }),
   },
 ];
 
@@ -173,7 +185,7 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
     if (nt) {
       ticks.push({ label: "매출", amount: revenue });
       ticks.push({ label: "재료비", amount: -food });
-      if (fee > 0) ticks.push({ label: "카드 수수료", amount: -fee });
+      if (fee > 0) ticks.push({ label: k.delivery_fee > 0 ? "카드·배달 수수료" : "카드 수수료", amount: -fee });
     }
     if (i === 0) {
       ticks.push({ label: "월세", amount: -k.rent });
@@ -295,7 +307,18 @@ function SettleTable({ m, imputed }: { m: MonthResult; imputed: number }) {
         <tr><th>재료비</th><td>−{man(won(k.cogs))}</td><td>매출의 {Math.round((k.cogs / k.revenue) * 100)}%</td></tr>
         <tr><th>인건비</th><td>−{man(won(k.labor))}</td><td>사장 가상 급여 {man(won(imputed))} 포함</td></tr>
         <tr><th>월세·관리비</th><td>−{man(won(k.rent + k.mgmt))}</td><td /></tr>
-        <tr><th>카드 수수료</th><td>−{man(won(k.fees))}</td><td /></tr>
+        {k.delivery_revenue > 0 && (
+          <tr><th>배달 매출</th><td>{man(won(k.delivery_revenue))}</td><td>매출에 포함, 주문 {fmt(Math.round(k.delivery_orders))}건. 일부는 원래 매장에 올 손님이라 그만큼 매장 매출이 줄었어요</td></tr>
+        )}
+        <tr><th>카드 수수료</th><td>−{man(won(k.fees - (k.delivery_fee ?? 0)))}</td><td /></tr>
+        {k.delivery_fee > 0 && (
+          <tr><th>배달 수수료</th><td>−{man(won(k.delivery_fee))}</td><td>중개수수료, 결제 수수료, 건당 배달비·포장재. 배달 매출의 {Math.round((k.delivery_fee / k.delivery_revenue) * 100)}%.{" "}
+            {k.delivery_orders >= 1 && (() => {
+              const per = k.delivery_revenue / k.delivery_orders;
+              const net = per - k.delivery_fee / k.delivery_orders - per * (k.cogs / k.revenue);
+              return `한 건 평균 ${fmt(Math.round(per / 100) * 100)}원 주문에 재료비까지 빼면 ${fmt(Math.round(net / 100) * 100)}원 남아요`;
+            })()}</td></tr>
+        )}
         <tr className="sum"><th>영업이익</th><td>{signed(won(k.op))}</td><td>비슷한 달 10번 중 8번은 {signed(won(m.p10.op))} ~ {signed(won(m.p90.op))}</td></tr>
       </tbody>
     </table>
@@ -383,7 +406,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const [seed, setSeed] = useState(() => 1000 + Math.floor(Math.random() * 9000));
   const [engineState, setEngineState] = useState<Record<string, unknown> | null>(null);
   const [done, setDone] = useState<Done[]>([]);
-  const [plan, setPlan] = useState<Plan>({ meat_price: levers.price, staff_per_shift: Math.min(4, levers.staff), close_hour: 24, marketing_budget: 0, meat_grade: "domestic", banchan: 5 });
+  const [plan, setPlan] = useState<Plan>({ meat_price: levers.price, staff_per_shift: Math.min(4, levers.staff), close_hour: 24, marketing_budget: 0, meat_grade: "domestic", banchan: 5, delivery: "none" });
   const gfx = useGfx();
   const [view, setView] = useState<View>("intro");
   const [fade, setFade] = useState(false);
