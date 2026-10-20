@@ -7,7 +7,8 @@ import { GRADES, OWNER_DRAW, STATUS_LABEL, guStat, man, type Grade, type Profile
 
 const LOAN_STEP = 500;
 
-function FloorPlan({ pyeong }: { pyeong: number }) {
+// people: 시뮬레이션에서 가게 안 손님 수 (점으로 그린다). 가게 꾸미기에서는 0
+export function FloorPlan({ pyeong, people = 0 }: { pyeong: number; people?: number }) {
   // 평면: 1평 = 3.3㎡. 가로:세로 = 1.6:1 로 그린다 (모양은 가정, 넓이만 맞춘다)
   const m2 = pyeong * 3.3058, w = Math.sqrt(m2 * 1.6), d = m2 / w, s = 300 / Math.max(w, d * 1.6);
   const W = w * s, D = d * s;
@@ -25,6 +26,11 @@ function FloorPlan({ pyeong }: { pyeong: number }) {
       <text x={W - 45} y={D / 2 - 22} className="ap-label" textAnchor="middle">계산대</text>
       <rect x={W - 70} y={D / 2 + 4} width={50} height={36} rx={4} className="ap-fit" />
       <text x={W - 45} y={D / 2 + 27} className="ap-label" textAnchor="middle">피팅룸</text>
+      {Array.from({ length: Math.min(40, people) }, (_, i) => {
+        // 손님 자리는 i로 정해지는 의사 난수 (매번 같은 자리)
+        const rx = ((i * 7919) % 97) / 97, ry = ((i * 104729) % 89) / 89;
+        return <circle key={`p${i}`} cx={24 + rx * (W - 120)} cy={44 + ry * (D - 96)} r={5} className="ap-person" />;
+      })}
       <rect x={W / 2 - 30} y={D - 4} width={60} height={8} className="ap-door" />
       <text x={W / 2} y={D + 24} className="ap-label" textAnchor="middle">출입문 · {pyeong}평 ({Math.round(m2)}㎡) · 행거 {racks}개</text>
     </svg>

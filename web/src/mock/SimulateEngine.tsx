@@ -277,7 +277,8 @@ function Stepper({ lv, plan, prev, set }: { lv: LeverDef; plan: Plan; prev?: Pla
   );
 }
 
-function CashChart({ start, months, labels, compact }: { start: number; months: Done[]; labels: number[]; compact?: boolean }) {
+// 옷가게 시뮬레이션(ApparelSim.tsx)도 같은 그래프를 쓴다: 달마다 날짜별 현금(원)만 있으면 된다
+export function CashChart({ start, months, labels, compact }: { start: number; months: { days: { cash: number }[] }[]; labels: number[]; compact?: boolean }) {
   const W = compact ? 360 : 640, H = compact ? 170 : 200, P = { l: compact ? 58 : 70, r: 10, t: 12, b: 24 };
   const pts: { x: number; v: number }[] = [{ x: 0, v: start }];
   months.forEach((m, mi) => m.days.forEach((d, di) => pts.push({ x: mi * 31 + di + 1, v: d.cash })));
