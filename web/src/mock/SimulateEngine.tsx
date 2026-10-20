@@ -12,6 +12,7 @@ import { flowRatioNote } from "./DongFlow";
 import { flowShape, profileOf } from "./area";
 import "./simulate-engine.css";
 import { setEngineCtx } from "./chatContext";
+import Assume from "./Assume";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, roomSize, storeStats, type Levers, type Profile, type Store } from "./model";
 
@@ -264,7 +265,7 @@ function Stepper({ lv, plan, prev, set }: { lv: LeverDef; plan: Plan; prev?: Pla
     <div className={`sx-step${changed ? " is-changed" : ""}`}>
       <div className="sx-step-t">
         <span id={id} className="sx-step-l">{lv.label}</span>
-        <small>{lv.key === "meat_grade" ? GRADE_HINT[plan.meat_grade] : lv.hint}</small>
+        <small>{lv.key === "meat_grade" ? GRADE_HINT[plan.meat_grade] : lv.hint}{lv.key === "delivery" && <Assume what="배달 매출 중 30%는 원래 매장 손님, 배달 1건 2인분, 포장재 건당 800원" />}</small>
         {changed && <small className="sx-step-prev">지난달 {lv.text(prev!)}</small>}
       </div>
       <div className="sx-step-c">
@@ -321,11 +322,11 @@ function SettleTable({ m, imputed, dep, interest }: { m: MonthResult; imputed: n
         <tr><th>월세</th><td>−{man(won(k.rent))}</td><td /></tr>
         <tr><th>관리비·공과금·기타</th><td>−{man(won(k.mgmt))}</td><td>전기·가스·수도, 소모품·수선, 마케팅</td></tr>
         {k.delivery_revenue > 0 && (
-          <tr><th>배달 매출</th><td>{man(won(k.delivery_revenue))}</td><td>매출에 포함, 주문 {fmt(Math.round(k.delivery_orders))}건. 일부는 원래 매장에 올 손님이라 그만큼 매장 매출이 줄었어요</td></tr>
+          <tr><th>배달 매출</th><td>{man(won(k.delivery_revenue))}</td><td>매출에 포함, 주문 {fmt(Math.round(k.delivery_orders))}건. 일부는 원래 매장에 올 손님이라 그만큼 매장 매출이 줄었어요<Assume what="배달 매출 중 30%는 원래 매장에 왔을 손님, 배달 1건 = 2인분" /></td></tr>
         )}
         <tr><th>카드 수수료</th><td>−{man(won(k.fees - (k.delivery_fee ?? 0)))}</td><td /></tr>
         {k.delivery_fee > 0 && (
-          <tr><th>배달 수수료</th><td>−{man(won(k.delivery_fee))}</td><td>중개수수료, 결제 수수료, 건당 배달비·포장재. 배달 매출의 {Math.round((k.delivery_fee / k.delivery_revenue) * 100)}%.{" "}
+          <tr><th>배달 수수료</th><td>−{man(won(k.delivery_fee))}</td><td>중개수수료, 결제 수수료, 건당 배달비·포장재<Assume what="포장재 건당 800원" />. 배달 매출의 {Math.round((k.delivery_fee / k.delivery_revenue) * 100)}%.{" "}
             {k.delivery_orders >= 1 && (() => {
               const per = k.delivery_revenue / k.delivery_orders;
               const net = per - k.delivery_fee / k.delivery_orders - per * (k.cogs / k.revenue);

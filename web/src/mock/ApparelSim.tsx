@@ -6,6 +6,7 @@ import {
   type ApMonth, type ApPlan, type ApState, type ApStratId, type ApparelCfg,
 } from "./apparel";
 import { LOAN_RATE, guStat, man, type Profile } from "./model";
+import Assume from "./Assume";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import "./simulate-engine.css";
 
@@ -175,7 +176,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                         ["buy", 0.7, 1.5, 0.1], ["discount", 0, 0.3, 0.05], ["staff", 0, 2, 1], ["marketing", 0, 100, 25],
                       ] as [keyof ApPlan, number, number, number][]).map(([k, lo, hi, step]) => (
                         <div key={k} className="sx-step">
-                          <div className="sx-step-t"><span className="sx-step-l">{PLAN_TEXT[k].label}</span><small>{PLAN_TEXT[k].hint}</small></div>
+                          <div className="sx-step-t"><span className="sx-step-l">{PLAN_TEXT[k].label}{PLAN_TEXT[k].hint.includes("가정") && <Assume what={PLAN_TEXT[k].hint} />}</span><small>{PLAN_TEXT[k].hint}</small></div>
                           <div className="sx-step-c">
                             <button type="button" aria-label={`${PLAN_TEXT[k].label} 낮추기`} disabled={plan[k] - step < lo - 1e-9} onClick={() => setPlan({ ...plan, [k]: +(plan[k] - step).toFixed(2) })}>−</button>
                             <output>{PLAN_TEXT[k].text(plan)}</output>
@@ -199,7 +200,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
               <section className="sx-evbox"><h2>{ev.title}</h2><p className="sx-note">{ev.prompt}</p></section>
               <section className="sx-sec">
                 <h2>어떻게 대응할까요?</h2>
-                <p className="sx-note">사장님의 선택이 이번 달 이익과 재고를 바꿔요. 장점(+)과 단점(−)을 보고 하나를 골라 주세요. {ev.note}.</p>
+                <p className="sx-note">사장님의 선택이 이번 달 이익과 재고를 바꿔요. 장점(+)과 단점(−)을 보고 하나를 골라 주세요. {ev.note}.<Assume what={`${ev.title}의 효과 크기 (${ev.note})`} /></p>
               </section>
               <div className="sx-dps is-single">
                 <div className="sx-dp" role="radiogroup" aria-label={ev.title}>
@@ -246,14 +247,14 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                   <section className="sx-sec">
                     <h2>정산표 (손익계산서 순서)</h2>
                     <table className="sx-table"><tbody>
-                      <tr><th>매출</th><td>{man(w(cur.revenue))}</td><td>결제 약 {Math.round(cur.tx).toLocaleString("ko-KR")}건, 한 건 {cur.ticket.toLocaleString("ko-KR")}원</td></tr>
+                      <tr><th>매출</th><td>{man(w(cur.revenue))}</td><td><Assume what="평수 효과(13평 기준 제곱근), 새 가게 인지도 0.6에서 매달 15%씩 회복" /> 결제 약 {Math.round(cur.tx).toLocaleString("ko-KR")}건, 한 건 {cur.ticket.toLocaleString("ko-KR")}원</td></tr>
                       <tr><th>매출원가</th><td>−{man(w(cur.cogs))}</td><td>판 옷의 원가 (원가율 {Math.round(KOSIS.cogs * 100)}%{cur.plan.discount ? `, ${Math.round(cur.plan.discount * 100)}% 할인` : ""})</td></tr>
                       <tr className="sub"><th>매출총이익</th><td>{signed(gross)}</td><td /></tr>
                       <tr><th>인건비</th><td>{cur.staffPay ? `−${man(w(cur.staffPay))}` : "0원"}</td><td>알바 {cur.plan.staff}명 (사장 인건비 제외)</td></tr>
                       <tr><th>월세</th><td>−{man(w(cur.rent))}</td><td /></tr>
                       <tr><th>기타경비</th><td>−{man(w(cur.other))}</td><td>카드 수수료·공과금·포장 등, 매출의 {Math.round(KOSIS.other * 100)}% (도소매업조사)</td></tr>
                       {cur.marketing + cur.eventCost > 0 && <tr><th>홍보·사건 대응</th><td>−{man(w(cur.marketing + cur.eventCost))}</td><td /></tr>}
-                      {cur.writeOff > 0 && <tr><th>재고 평가손</th><td>−{man(w(cur.writeOff))}</td><td>철 지난 옷 값이 20% 떨어졌어요 (가정)</td></tr>}
+                      {cur.writeOff > 0 && <tr><th>재고 평가손</th><td>−{man(w(cur.writeOff))}</td><td>철 지난 옷 값이 20% 떨어졌어요<Assume what="철 지난 옷 값 하락 20%, 시즌마다 재고의 40%가 철 지난 옷이 됨" /></td></tr>}
                       <tr className="sum"><th>영업이익</th><td>{signed(cur.op)}</td><td>감가상각 전</td></tr>
                       <tr><th>감가상각비</th><td>−{man(w(dep))}</td><td>인테리어·집기·간판을 5년에 나눈 몫. 현금은 안 나가요</td></tr>
                       {cur.interest > 0 && <tr><th>이자비용</th><td>−{man(w(cur.interest))}</td><td>연 {+(LOAN_RATE * 100).toFixed(2)}%</td></tr>}

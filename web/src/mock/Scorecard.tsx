@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { man } from "./model";
 import { useAccount } from "./account";
+import Assume from "./Assume";
 
 export type ScoreMonth = {
   month: number; revenue: number; op: number; cogs: number; labor: number; rent: number; mgmt: number; fees: number;
@@ -66,7 +67,7 @@ export function scoreOf(months: ScoreMonth[], startCash: number, lowestCash: num
       key: "cash", label: "현금 여유", max: 20,
       got: 20 * clamp(runway / 3),
       detail: `6개월 뒤 현금 ${won(endCash)}은 한 달에 나가는 고정 지출(${won(monthlyCashOut)})의 ${runway.toFixed(1)}개월치예요.`,
-      fix: "비수기나 사건이 와도 버티려면 고정 지출 3개월치는 남겨야 해요. 사장 생활비와 고정비를 다시 잡아 보세요.",
+      fix: "이 시뮬레이터는 고정 지출 3개월치가 남아 있으면 만점으로 봐요. 사장 생활비와 고정비를 다시 잡아 보세요.",
     },
     {
       key: "ops", label: "운영 효율", max: 15,
@@ -155,7 +156,7 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
       <ul className="sc-areas">
         {areas.map((a) => (
           <li key={a.key}>
-            <span className="sc-label">{a.label}</span>
+            <span className="sc-label">{a.label}{a.key === "cash" && <Assume what="고정 지출 3개월치가 남으면 만점" />}</span>
             <span className="sc-bar" aria-hidden="true"><i style={{ width: `${(a.got / a.max) * 100}%` }} /></span>
             <span className="sc-pts">{Math.round(a.got)}/{a.max}</span>
             <small>{a.detail}</small>
@@ -170,7 +171,7 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
         </ol>
       )}
       {benchmark ? <p className="sx-note">{benchmark}</p> : surv && <p className="sx-note">참고로 서울에서 새로 연 음식점(숙박·음식점업)은 3년 뒤 {surv.s3}%만 남아요 (통계청 기업생멸행정통계 {surv.y}년).</p>}
-      <p className="sx-note">배점(생존 30, 수익성 25, 현금 여유 20, 운영 효율 15, 위기 대응 10)과 만점 기준은 교육용으로 정한 가정이에요. 진단은 결과 숫자로 만든 규칙이에요.</p>
+      <p className="sx-note">배점(생존 30, 수익성 25, 현금 여유 20, 운영 효율 15, 위기 대응 10)과 만점 기준은 교육용으로 정한 가정이에요<Assume what="성적표 배점과 만점 기준, 등급 구간(90·80·60점)" />. 진단은 결과 숫자로 만든 규칙이에요.</p>
 
       <h2>랭킹</h2>
       <div className="sc-save">

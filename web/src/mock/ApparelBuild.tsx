@@ -2,6 +2,7 @@
 // 카페·고깃집과 같은 틀(m-build)을 쓰고, 3D 대신 평면 그림을 그린다.
 import { DEFAULT_PLAN, KOSIS, STAFF_PAY, apparelOpeningCost, expectedSales, type ApparelCfg } from "./apparel";
 import { Mark } from "./Checks";
+import Assume from "./Assume";
 import { GRADES, OWNER_DRAW, STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
 
 const LOAN_STEP = 500;
@@ -44,10 +45,10 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
   const settled = Math.round(sales * margin - fixed);
   const firstMonth = Math.round(sales * 0.6 * margin - fixed); // 새 가게 인지도 0.6
   const checks = [
-    { title: "자리 잡은 뒤 한 달", ok: settled >= 0, line: `매출 ${man(sales)}이면 원가(${Math.round(KOSIS.cogs * 100)}%)·기타경비(${Math.round(KOSIS.other * 100)}%)·월세·알바·사장 생활비를 빼고 ${settled >= 0 ? "+" : "−"}${man(Math.abs(settled))}이에요.` },
+    { title: "자리 잡은 뒤 한 달", assume: "매출의 평수 효과 (13평 기준, 평수의 제곱근에 비례)", ok: settled >= 0, line: `매출 ${man(sales)}이면 원가(${Math.round(KOSIS.cogs * 100)}%)·기타경비(${Math.round(KOSIS.other * 100)}%)·월세·알바·사장 생활비를 빼고 ${settled >= 0 ? "+" : "−"}${man(Math.abs(settled))}이에요.` },
     { title: "본전 매출", ok: sales >= breakeven, line: `한 달에 ${man(breakeven)}은 팔아야 0원이에요. 이 구 옷가게 평균(${man(st.sales)})의 ${Math.round((breakeven / Math.max(1, st.sales)) * 100)}%예요.` },
-    { title: "첫 달 (손님이 아직 적을 때)", ok: firstMonth >= 0, line: `새 가게는 알려지기 전이라 손님이 60%쯤이에요. 첫 달은 ${firstMonth >= 0 ? "+" : "−"}${man(Math.abs(firstMonth))}이에요.` },
-    { title: "버틸 돈", ok: left >= fixed * 3, line: `남는 현금 ${man(Math.max(0, left))}은 한 달 고정 지출(${man(fixed)})의 ${(Math.max(0, left) / fixed).toFixed(1)}개월치예요. 3개월치는 있어야 비수기를 버텨요.` },
+    { title: "첫 달 (손님이 아직 적을 때)", assume: "새 가게 인지도 0.6 (고깃집 엔진과 같은 가정)", ok: firstMonth >= 0, line: `새 가게는 알려지기 전이라 손님이 60%쯤이에요. 첫 달은 ${firstMonth >= 0 ? "+" : "−"}${man(Math.abs(firstMonth))}이에요.` },
+    { title: "버틸 돈", ok: left >= fixed * 3, line: `남는 현금 ${man(Math.max(0, left))}은 한 달 고정 지출(${man(fixed)})의 ${(Math.max(0, left) / fixed).toFixed(1)}개월치예요. 이 시뮬레이터는 3개월치를 기준으로 봐요.`, assume: "버틸 돈 기준 3개월치" },
   ];
   return (
     <main className="m-build">
@@ -94,7 +95,7 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
 
       <div className="m-tray">
         <dl className="m-spent">
-          {open.lines.map((l) => <div key={l.key}><dt>{l.label}</dt><dd>{man(l.amount)}</dd></div>)}
+          {open.lines.map((l) => <div key={l.key}><dt>{l.label}{l.basis.includes("가정") && <Assume what={`${l.label}: ${l.basis}`} />}</dt><dd>{man(l.amount)}</dd></div>)}
         </dl>
         <div className="m-tray-go">
           <button type="button" className="m-btn m-btn-outline" onClick={() => document.querySelector(".m-checks")?.scrollIntoView({ behavior: "smooth", block: "start" })}>오픈 전 점검 보러가기</button>
@@ -110,7 +111,7 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
             <li key={c.title}>
               <Mark s={c.ok ? "ok" : "weak"} />
               <div>
-                <h2>{c.title}<span className={`m-status is-${c.ok ? "ok" : "weak"}`}>{STATUS_LABEL[c.ok ? "ok" : "weak"]}</span></h2>
+                <h2>{c.title}<span className={`m-status is-${c.ok ? "ok" : "weak"}`}>{STATUS_LABEL[c.ok ? "ok" : "weak"]}</span>{"assume" in c && c.assume && <Assume what={c.assume} />}</h2>
                 <p>{c.line}</p>
               </div>
             </li>
