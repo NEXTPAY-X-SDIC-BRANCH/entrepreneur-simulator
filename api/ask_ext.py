@@ -25,7 +25,7 @@ FAMILIES: dict[str, tuple[str, ...]] = {
     "holiday": ("holiday",),
     "rent": ("rent_", "premium", "kosis_cost_임차료", "live_rent", "live_deposit", "cafe_rent"),
     "competition": ("pork", "dong_", "live_shop", "cafe_competition"),
-    "sales": ("hansik", "cafe", "dong_", "cafe_sales"),
+    "sales": ("hansik", "cafe", "dong_", "cafe_sales", "survival_"),
     "neighborhood": ("dong_", "rent_dong_", "cafe_dong"),
     "meat_price": ("price_", "kmta_pork", "kmta_import", "kmta_retail_pork", "kmta_market_pork", "pork_retail", "pork_import",
                    "pork_wholesale", "pork_margin", "pork_stock", "pig_auction"),
@@ -37,6 +37,9 @@ FAMILIES: dict[str, tuple[str, ...]] = {
     "cost": ("kosis_", "cafe_cost_"),
     "myshop": ("live_", "cafe_myshop"),
     "flow": ("flow_", "live_flow", "live_type"),
+    "loan": ("ecos_", "live_loan"),       # 은행 대출 금리 (pipelines/fetch_ecos.py)
+    "support": ("kstartup_",),            # 창업 지원사업 공고 (pipelines/fetch_kstartup.py)
+    "delivery": ("delivery_",),           # 배달 시장·수수료 (pipelines/fetch_kosis_delivery.py, season_params.yaml delivery)
 }
 TOPIC_RE: list[tuple[str, re.Pattern]] = [
     ("weather", re.compile(r"날씨|기온|장마|강수|소나기|비가|비 ?(오|와|온|올|내)|눈이|눈 ?(오|와|온)|더위|추위|한파|폭염")),
@@ -54,6 +57,9 @@ TOPIC_RE: list[tuple[str, re.Pattern]] = [
                               r"생강|브로콜리|파프리카|피망|열무|채소|야채|쌀|현미|콩|팥|녹두|밀가루|식용유|설탕|계란|달걀")),
     ("sales", re.compile(r"매출|객단가|폐업|생존|문 ?닫|결제|한식음식점")),
     ("flow", re.compile(r"유동|지나가|지나다|인구|직장인|일하러|상주|거주|주민|사는 ?사람|연령|나이대|성별|남성|여성|남자|여자|[1-6]0대|시간대|요일|붐비|북적")),
+    ("loan", re.compile(r"금리|이자|기준금리|대출|정책 ?자금|융자")),
+    ("support", re.compile(r"지원 ?사업|공고|창업 ?교육|컨설팅|멘토링|보육|입주|지원금|[Kk]-?스타트업|케이스타트업")),
+    ("delivery", re.compile(r"배달|배민|쿠팡 ?이츠|요기요|중개 ?수수료")),
     ("neighborhood", re.compile(r"동네|행정동|유형")),
     ("cost", re.compile(r"영업이익률|원가율|마진|비용 ?구조|비율|퍼센트|몇 ?%|몇 ?프로")),
     ("myshop", re.compile(r"이 ?(동네|구|지역)|내 ?(가게|점포|조건)|제 ?가게|우리 ?가게|입력한|내가|제가|본전|회수|되찾|흑자|적자|몇 ?달|개월|영업이익(?!률)|"
@@ -61,7 +67,7 @@ TOPIC_RE: list[tuple[str, re.Pattern]] = [
                           r"하루에 ?몇|몇 ?명|남기|남아요|남나요")),
 ]
 OWN = re.compile(r"내 ?(가게|점포|조건|월세)|제 ?가게|우리 ?가게|입력한|내가|제가|지금 ?(내|제)|이 ?(동네|구|지역)|여기")
-OFFTOPIC = re.compile(r"로또|비트코인|코인|주식|펀드|환율|대통령|선거|축구|야구|연애|영화|숙제|세금|세무|부가세|법률|소송|대출 ?상품|"
+OFFTOPIC = re.compile(r"로또|비트코인|코인|주식|펀드|환율|대통령|선거|축구|야구|연애|영화|숙제|세금|세무|부가세|법률|소송|"
                       r"(내일|오늘|모레|이번 ?주).{0,6}(날씨|비)|맛집 ?추천|번호 ?알려")
 PORK_PRICE = re.compile(r"^pork_(retail|import|wholesale|margin|stock)")
 RULEQ = re.compile(r"어떻게 ?(나눠|분류|정해|구분|나누)|분류 ?(기준|방법)|기준이 ?뭐|규칙")
@@ -101,6 +107,8 @@ NONE_MESSAGE = ("죄송해요, 그 질문에 맞는 근거 자료를 찾지 못�
                 "• 동네 분석: 유동인구, 직장인구, 동네 유형\n"
                 "• 고기 가격: 돼지고기 소비자가격, 물가지수\n"
                 "• 채소·곡물 가격: 서울 소매가격 (상추, 양파, 대파, 마늘, 쌀 등)\n"
+                "• 대출 금리 (은행 평균, 기준금리), 창업 지원사업 공고\n"
+                "• 배달 시장 규모, 배달앱 수수료, 신생 가게 생존율\n"
                 "• 날씨, 공휴일")
 OFF_MESSAGE = "죄송해요, 그건 이 서비스 범위를 벗어나요. 🙅\n이 서비스는 가게를 열 때 필요한 숫자(동네 분석, 월세, 창업 비용, 재료비, 메뉴 가격, 시뮬레이션)만 다뤄요.\n세금, 법률, 투자 상품, 주식 같은 질문은 전문가 상담을 받아보세요."
 
@@ -217,7 +225,10 @@ def static_facts() -> tuple[list[dict], dict]:
                     "publisher": "농림축산식품부·한국농촌경제연구원" if "경영실태조사" in src else "언론·업계 자료",
                     "title": src, "api": "카페 리서치 정리본 (cafe_cost.json)", "url": "", "period": "2025~2026년"}
 
-    sources = {**a["sources"], **b["sources"]}
+    more, more_src = money_facts()
+    facts += more
+
+    sources = {**a["sources"], **b["sources"], **more_src}
     sources[FLOW_SRC] = {"title": "서울시 상권분석서비스 길단위인구·상주인구·직장인구 (행정동, 자치구)", "publisher": "서울특별시 열린데이터광장",
                          "period": "2026년 2분기", "url": "https://data.seoul.go.kr/", "api": "VwsmAdstrdFlpopW, VwsmAdstrdRepopW, VwsmAdstrdWrcPopltnW, VwsmSignguFlpopW"}
     if c.get("sources"):
@@ -229,6 +240,101 @@ def static_facts() -> tuple[list[dict], dict]:
         sources.update(f["sources"])
 
     return facts, sources
+
+
+def _ym(ym: str) -> str:
+    return f"{ym[:4]}년 {int(ym[4:6])}월"
+
+
+def _eok(v: float) -> str:
+    """억원 -> '3조 9,677억 원'"""
+    jo, rest = divmod(round(v), 10000)
+    return (f"{jo}조 " if jo else "") + f"{rest:,}억 원"
+
+
+def money_facts() -> tuple[list[dict], dict]:
+    """대출 금리, 생존율, 배달 시장·수수료, 지원사업 공고를 근거 문장으로. 파일이 없으면 그 묶음만 빠진다."""
+    facts: list[dict] = []
+    src: dict[str, dict] = {}
+
+    ecos = _load("ecos_rates.json").get("latest")  # pipelines/fetch_ecos.py
+    if ecos and ecos.get("loan_sme"):
+        sme, base = ecos["loan_sme"], ecos.get("base_rate")
+        others = ", ".join(f"{n} 연 {ecos[k]['rate']}%" for k, n in (("loan_corp", "기업대출"), ("loan_avg", "대출 평균")) if ecos.get(k))
+        facts.append({"id": "ecos_loan", "tags": ["대출", "금리", "이자", "은행", "중소기업", "사업자"],
+                      "text": f"은행에서 새로 받는 중소기업대출 평균 금리는 연 {yeyo(str(sme['rate']) + '%')} ({_ym(sme['month'])})."
+                              + (f" 같은 달 {others}예요." if others else "")
+                              + " 정책자금이 아니라 은행 평균이라, 실제 금리는 신용과 상품에 따라 달라요."})
+        if base:
+            facts.append({"id": "ecos_base", "tags": ["기준금리", "금리", "한국은행", "변동금리"],
+                          "text": f"한국은행 기준금리는 연 {yeyo(str(base['rate']) + '%')} ({_ym(base['month'])}). 변동금리 정책자금은 이 값을 따라 움직여요."})
+        for f in facts[-2:]:
+            f["sources"] = ["ecos"]
+        src["ecos"] = {"publisher": "한국은행", "title": "경제통계시스템 기준금리·예금은행 대출금리(신규취급액)", "api": "ECOS 722Y001, 121Y006",
+                       "url": "https://ecos.bok.or.kr", "period": _ym(sme["month"])}
+
+    sv = _load("survival_kosis.json")  # pipelines/fetch_kosis_survival.py
+    if sv.get("region"):
+        y = sv["_meta"]["latest"]
+        sf, ka = sv["region"]["seoul_food"][y], sv["region"]["korea_all"][y]
+        facts.append({"id": "survival_seoul_food", "tags": ["생존율", "폐업", "생존", "음식점", "서울", "신생", "몇 년"],
+                      "text": f"서울에서 새로 문을 연 숙박·음식점업 가게는 1년 뒤 {sf['1']}%, 3년 뒤 {sf['3']}%, 5년 뒤 {sf['5']}%가 살아남아요 ({y}년 기준). "
+                              f"전국 전 업종은 1년 {ka['1']}%, 3년 {ka['3']}%, 5년 {ka['5']}%예요.", "sources": ["kosis_survival"]})
+        ages = ", ".join(f"{a} {v[y]['3']}%" for a, v in sv["age"].items() if v.get(y))
+        facts.append({"id": "survival_age", "tags": ["생존율", "폐업", "생존", "나이", "연령", "20대", "30대", "40대", "50대", "대표자"],
+                      "text": f"대표자 나이대별 3년 생존율은 {ages}예요 (전 업종, {y}년 기준). 음식점업만 따로 본 나이대별 값은 없어요.",
+                      "sources": ["kosis_survival"]})
+        src["kosis_survival"] = {"publisher": "통계청", "title": "기업생멸행정통계 신생기업 생존율", "api": "KOSIS DT_6BD1109, DT_2BD1104",
+                                 "url": "https://kosis.kr", "period": f"{y}년"}
+
+    dm = _load("delivery_market.json")  # pipelines/fetch_kosis_delivery.py
+    if dm.get("latest"):
+        lt, mi = dm["latest"], {int(k): x for k, x in dm["month_index"].items()}
+        hi, lo = max(mi, key=mi.get), min(mi, key=mi.get)
+        facts.append({"id": "delivery_market", "tags": ["배달", "배달앱", "시장", "거래액", "온라인", "주문"],
+                      "text": f"배달앱 같은 온라인 음식 주문 거래액은 {_ym(lt['month'])} 한 달 {_eok(lt['amount'])}으로, 1년 전보다 {lt['yoy']}% {'늘었' if lt['yoy'] >= 0 else '줄었'}어요. "
+                              f"한 해 중 {hi}월이 가장 많고(평소의 {mi[hi]:.2f}배) {lo}월이 가장 적어요({mi[lo]:.2f}배).", "sources": ["kosis_delivery"]})
+        src["kosis_delivery"] = {"publisher": "통계청", "title": "온라인쇼핑동향 상품군별 거래액 (음식서비스)", "api": "KOSIS DT_1KE10071",
+                                 "url": "https://kosis.kr", "period": _ym(lt["month"])}
+    try:
+        import yaml
+        dl = yaml.safe_load((ROOT / "research" / "season_params.yaml").read_text(encoding="utf-8"))["delivery"]
+        tiers = "; ".join(f"{t['label']}는 중개수수료 {t['commission'] * 100:.1f}%에 배달비 건당 {t['rider_fee']:,}원"
+                          for t in reversed(list(dl["tier"].values())))
+        facts.append({"id": "delivery_fee", "tags": ["배달", "수수료", "중개", "배달비", "배민", "쿠팡이츠", "비용", "구간", "요금제"],
+                      "text": f"배달앱 상생 요금제는 앱 안 매출 순위에 따라 달라요. {tiers}이에요 (서울, 부가세 별도). "
+                              "결제대행 수수료는 따로 붙지만 영세·중소 가게는 카드 우대수수료율만큼만 내고 차액을 돌려받아요. 시뮬레이션에서는 포장재까지 빼요.",
+                      "sources": ["delivery_baemin", "delivery_coupang"]})
+        src["delivery_coupang"] = {"publisher": "쿠팡이츠", "title": "쿠팡이츠 상생 요금제 (중개 이용료·배달비 구간표)", "api": "쿠팡이츠 파트너스 공지",
+                                   "url": "https://partners.coupangeats.com/news/notice/2480/", "period": "2025년 4월 1일 시행"}
+        src["delivery_baemin"] = {"publisher": "우아한형제들 (배달의민족)", "title": "배민배달 상생 요금제 (배달비)", "api": "배민 사장님광장 안내",
+                                  "url": "https://ceo.baemin.com/guide/13419", "period": "2025년 2월 26일 적용"}
+        # 업종 필터(MEAT_TEXT)가 문장 단위로 걸러서, 고깃집과 카페 문장을 나눠 둔다
+        facts.append({"id": "delivery_share_bbq", "tags": ["배달", "비중", "매장", "포장", "채널", "고깃집"],
+                      "text": "고깃집(한식 육류) 매출 중 배달은 평균 5.2%이고, 배달앱을 쓰는 가게는 14.5%예요.",
+                      "sources": ["delivery_research"]})
+        facts.append({"id": "delivery_share_cafe", "tags": ["배달", "비중", "매장", "포장", "채널", "카페", "커피"],
+                      "text": "커피전문점은 매출의 8.8%가 배달이고, 테이크아웃이 26.4%, 매장이 64.8%예요.",
+                      "sources": ["delivery_research"]})
+        src["delivery_research"] = {"publisher": "농림축산식품부·한국농촌경제연구원, 배달앱 상생안", "title": "외식업체 경영실태조사 판매 채널(표58), 배달앱 수수료 정리",
+                                    "api": "외식업체 경영실태조사 2025 판매 채널 표 정리", "url": "", "period": "2024~2025년"}
+    except (OSError, KeyError):
+        pass
+
+    ks = _load("kstartup.json")  # pipelines/fetch_kstartup.py
+    if ks.get("items"):
+        import time
+        today = time.strftime("%Y%m%d")
+        for x in (x for x in ks["items"] if x["end"] >= today):
+            where = x["gu"] or ("서울" if x["seoul"] else "전국")
+            facts.append({"id": f"kstartup_{x['id']}", "gu": x["gu"], "end": x["end"],
+                          "tags": [where, x["kind"], "지원사업", "공고", "창업", "예비창업자", *(["소상공인", "외식"] if x["food"] else [])],
+                          "text": f"{x['name']}: {x['org']}, {x['kind']}, {where} 대상, {int(x['end'][4:6])}월 {int(x['end'][6:])}일 마감이에요."
+                                  + (f" 신청: {x['url']}" if x.get("url") else ""),
+                          "sources": ["kstartup"]})
+        src["kstartup"] = {"publisher": "창업진흥원", "title": "K-Startup 사업공고 (예비창업자 대상, 접수 중)", "api": "data.go.kr 15125364",
+                           "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do", "period": ks["_meta"]["fetched_at"][:10]}
+    return facts, src
 
 
 def dong_names() -> set[str]:
@@ -367,8 +473,11 @@ def live_facts(ctx: dict | None) -> list[dict]:
         loan = f" + 대출 {man(ctx['loan'])}" if ctx.get("loan") else ""
         add("cash", ["현금", "잔고", "남", "자금", "가진", "운영자금", "통장"],
             f"가진 돈 {man(ctx.get('capital', 0))}{loan}에서 여는 데 {man(total or 0)}을 쓰고 {man(ctx['cash_left'])}이 남아요.")
+        sme = (_load("ecos_rates.json").get("latest") or {}).get("loan_sme")
+        rate = f"은행 중소기업대출 평균 연 {sme['rate']}%" if sme else "연 6%"
         add("loan", ["대출", "이자", "빚"],
-            f"대출은 {man(ctx['loan'])}이고 이자만 매달 낸다고 가정했어요(연 6%)." if ctx.get("loan") else "대출은 받지 않았어요.")
+            f"대출은 {man(ctx['loan'])}이고 이자만 매달 낸다고 가정했어요({rate}, 한 달 약 {man(ctx['loan'] * (sme['rate'] if sme else 6) / 100 / 12)})."
+            if ctx.get("loan") else "대출은 받지 않았어요.")
 
     eng = ctx.get("engine")
     if not eng or not eng.get("months"):
@@ -488,7 +597,13 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
     if not named_dong and "neighborhood" not in tps:
         pool = [f for f in pool if not f["id"].startswith(("dong_", "rent_dong_"))]
     pool = [f for f in pool if allowed_ids(f["id"], tps, q) or f["id"].startswith("live_") and "myshop" in tps]
-    if "flow" in tps:
+    # 지원사업 공고: 다른 구 공고는 그 구 주민만 받는 경우가 많아 뺀다. 물은 구(없으면 화면에서 고른 구) 공고는 위로 올린다.
+    want_gu = (GU.search(q).group() if GU.search(q) else None) or (ctx or {}).get("gu")
+    if "support" in tps:
+        pool = [f for f in pool if not f["id"].startswith("kstartup_") or f.get("gu") in (None, want_gu)]
+        k = max(k, 5)
+    # '30대 생존율', '20대 대출'처럼 나이대가 나와도 생존율·대출·지원사업·배달을 묻는 질문은 인구 질문이 아니다
+    if "flow" in tps and not re.search(r"생존|폐업", q) and not tps & {"loan", "support", "delivery"}:
         # 사람 수 질문은 사람 근거만 쓴다. 이름이 나온 동이 없고 화면의 동네도 모르면 다른 주제의 문장으로 대신하지 않는다.
         pool = [f for f in pool if f["id"].startswith(("flow_", "live_flow_"))]
         if not pool:
@@ -527,7 +642,8 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
 
     ranked = C._rank_facts(q, pool)
     # 화면이 보낸 값은 지금 사용자가 보고 있는 가게의 값이라 같은 점수면 먼저 보여 준다
-    ranked = sorted(((s * (1.25 if f["id"].startswith("live_") else 1.0), f) for s, f in ranked), key=lambda x: -x[0])
+    ranked = sorted(((s * (1.25 if f["id"].startswith("live_") or (want_gu and f.get("gu") == want_gu) else 1.0), f) for s, f in ranked),
+                    key=lambda x: -x[0])
     top = ranked[0][0] if ranked else 0.0
     # 주제가 명확히 인식된 경우 임계값을 더 높게 (엉뚱한 답을 피하기 위해)
     threshold = 0.0 if price_q else 0.25 if tps else 0.20   # 품목 가격 질문은 이미 품목 이름으로 걸렀다

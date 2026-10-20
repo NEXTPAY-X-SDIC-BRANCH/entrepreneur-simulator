@@ -2,7 +2,7 @@ _meta:
   generated_by: research/build_workbook.py
   store: composite 미도입 independent 삼겹살집, 대학로(혜화역) 3120012
   illustrative: true
-  note: Seed guesstimates, not facts, until reviewed_by is filled in research/guesstimate.xlsx.
+  note: Seed guesstimates, not facts, until a named reviewer confirms them.
 drv_dwell_time:
   base: 105
   low: 75
