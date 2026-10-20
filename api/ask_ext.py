@@ -305,7 +305,7 @@ def money_facts() -> tuple[list[dict], dict]:
                           for t in reversed(list(dl["tier"].values())))
         facts.append({"id": "delivery_fee", "tags": ["배달", "수수료", "중개", "배달비", "배민", "쿠팡이츠", "비용", "구간", "요금제"],
                       "text": f"배달앱 상생 요금제는 앱 안 매출 순위에 따라 달라요. {tiers}이에요 (서울, 부가세 별도). "
-                              "결제대행 수수료는 따로 붙지만 영세·중소 가게는 카드 우대수수료율만큼만 내고 차액을 돌려받아요. 시뮬레이션에서는 포장재까지 빼요.",
+                              "결제대행 수수료는 따로 붙지만 영세·중소 가게는 카드 우대수수료율만큼만 내고 차액을 돌려받아요. 시뮬레이션에서는 포장재도 빼는데, 건당 800원은 출처 없는 가정이에요.",
                       "sources": ["delivery_baemin", "delivery_coupang"]})
         src["delivery_coupang"] = {"publisher": "쿠팡이츠", "title": "쿠팡이츠 상생 요금제 (중개 이용료·배달비 구간표)", "api": "쿠팡이츠 파트너스 공지",
                                    "url": "https://partners.coupangeats.com/news/notice/2480/", "period": "2025년 4월 1일 시행"}

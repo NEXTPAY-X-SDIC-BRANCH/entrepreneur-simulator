@@ -521,3 +521,6 @@ html:has(.m-app) { background: #fff; }
 .ap-fit { fill: #e6dccb; stroke: #b9ae9c; }
 .ap-door { fill: #2e9d63; }
 .ap-label { font-size: 11px; fill: #5b5345; }
+
+/* 출처 없는 가정 표시 (Assume.tsx) */
+.m-assume { display: inline-block; margin-inline-start: 4px; padding: 0 6px; border: 1px dashed #b07a1a; border-radius: 6px; background: #fff6e2; color: #8a5a12; font-size: 11px; font-weight: 700; line-height: 18px; vertical-align: 1px; cursor: help; white-space: nowrap; }
