@@ -9,7 +9,7 @@ import Checks from "./Checks";
 import { Items, Piece, Room } from "./Parts3D";
 import { FitControls, StoreLights, ViewBar, gfxDpr, gfxFrameloop, gfxShadows, useGfx } from "./Scene3D";
 import {
-  CATALOG, DEPOSIT_MONTHS, GRADES, ITEM, cashLeft, eul, fits, footprint, guStat, kitchenSpot, man, nextUid, openingCost, roomSize, snap,
+  CATALOG, DEPOSIT_MONTHS, GRADES, ITEM, LOAN_RATE, cashLeft, ecosRates, eul, ymKo, fits, footprint, guStat, kitchenSpot, man, nextUid, openingCost, roomSize, snap,
   recommend, storeStats, type CatalogItem, type Grade, type Levers, type Placed, type Profile, type Store,
 } from "./model";
 
@@ -230,6 +230,12 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
             <output aria-labelledby="loan">{man(store.loan)}</output>
             <button type="button" aria-label={`대출 ${LOAN_STEP}만원 늘리기`} disabled={store.loan >= 20000} onClick={() => loan(LOAN_STEP)}>+</button>
           </div>
+          {(() => {
+            const r = ecosRates();
+            return r?.loan_sme
+              ? <small>지금 은행 평균 금리 연 {r.loan_sme.rate}% (중소기업대출 신규, 한국은행 {ymKo(r.loan_sme.month)} 기준){r.base_rate ? `, 기준금리 ${r.base_rate.rate}%` : ""}. 이자는 이 금리로 계산해요.</small>
+              : <small>대출 이자는 연 {(LOAN_RATE * 100).toFixed(1)}%로 가정했어요.</small>;
+          })()}
           {left < 0 && <p className="m-warn">이대로는 가게를 열 수 없어요. 평수나 마감을 낮추거나 대출을 받으세요.</p>}
         </div>
 

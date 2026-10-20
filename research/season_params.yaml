@@ -31,6 +31,7 @@ base_plan:   # the hero store as it is today (hero_base.yaml); 평소 = this pla
   review_event: false
   group_reservations: false
   hygiene: normal
+  delivery: none   # none | bottom20 | mid50_80 | mid35_50 | top35 (배민배달 매출 규모 구간, delivery.tier)
 
 demand:
   rating_per_star: {value: 0.07, tag: S03, note: "평점 1점 = 독립점 매출 +5~9% (Luca)"}
@@ -99,6 +100,25 @@ marketing:   # 리뷰이벤트와 SNS 협찬
   review_event_share: {value: 0.652, tag: S82, note: "리뷰를 쓴 사람 중 리뷰 이벤트 때문이라는 응답 65.2%"}
   review_event_skeptic_prob: {value: 0.3, tag: 가정, note: "이벤트 중 만족이 평소보다 낮은 일반 리뷰어 열에 셋은 '별점이 부풀려졌다'고 쓴다"}
   review_event_star_noise: {value: 0.5, tag: 가정, note: "보상 리뷰는 별점이 들쭉날쭉해 평점이 덜 믿을 만하다"}
+
+delivery:   # 배달앱 주문 (저녁 매출에 붙는 off-DES 채널, sim/season.py _pnl)
+  share: {value: 0.052, tag: "KREI 표58", note: "한식 육류 점포 매출 중 배달 5.2% (앱을 안 쓰는 가게까지 넣은 평균). 앱을 쓰는 가게(14.5%, 표48)만 보면 더 클 수 있다. low 0.03, high 0.15 (가정)"}
+  cannibal: {value: 0.3, tag: 가정, note: "배달 매출 중 원래 매장에 왔을 손님 몫. 그만큼 매장 매출이 준다. low 0.1, high 0.5. 리서치 문서에 미정으로 남은 값"}
+  people_per_order: {value: 2, tag: 가정, note: "배달 한 건 = 2인분. 건당 배달비·포장재 계산에 쓴다"}
+  # 배민배달 매출 규모 구간 (사용자가 운영 계획에서 고른다). rider_fee는 서울, 건당, 부가세 별도:
+  #   배민 사장님광장 '배민배달 상생 요금제' https://ceo.baemin.com/guide/13419 (2025-02-26 적용, 2026-10-20 확인)
+  # commission은 쿠팡이츠 상생 요금제 공지의 구간표(이미지 mceclip0-1.png, 2026-10-20 확인): 1구간 상위 35% 7.8% / 2구간 35~50% 6.8% /
+  #   3구간 50~80% 6.8% / 4구간 80~100% 2.0%, 배달비 2,400~3,400 / 2,100~3,100 / 1,900~2,900 / 1,900~2,900원, 부가세 별도.
+  #   https://partners.coupangeats.com/news/notice/2480/ (2025-04-01 시행). 배달비 범위의 위쪽 끝이 배민 서울 배달비와 같다.
+  # 배민 페이지에는 중개이용료가 없지만 구간과 배달비가 같아 두 앱을 한 표로 둔다.
+  tier:
+    bottom20: {commission: 0.02, rider_fee: 2900, label: "매출 하위 20%", tag: "배민 상생 요금제;쿠팡이츠 상생 요금제"}
+    mid50_80: {commission: 0.068, rider_fee: 2900, label: "매출 상위 50~80%", tag: "배민 상생 요금제;쿠팡이츠 상생 요금제"}
+    mid35_50: {commission: 0.068, rider_fee: 3100, label: "매출 상위 35~50%", tag: "배민 상생 요금제;쿠팡이츠 상생 요금제"}
+    top35: {commission: 0.078, rider_fee: 3400, label: "매출 상위 35%", tag: "배민 상생 요금제;쿠팡이츠 상생 요금제"}
+  packaging_per_order: {value: 800, tag: 가정, note: "용기·비닐·수저. 확인 필요"}
+  # 결제 수수료는 따로 두지 않고 매장 카드 수수료율(hero_base cst_card_fee_rate)을 쓴다. 쿠팡이츠 공지: "결제대행사 수수료는 별도 부과되며,
+  # 영세/중소 가맹점은 우대수수료율이 적용되어 차액이 환급됩니다". 매장 카드 수수료는 배달 매출에 붙지 않는다.
 
 groups:   # 단체·회식 예약
   people: {value: 8, tag: 가정}

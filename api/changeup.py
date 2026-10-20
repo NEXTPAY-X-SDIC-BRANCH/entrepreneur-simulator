@@ -35,7 +35,7 @@ from api.cafe import router as cafe_router  # 카페 엔진 (sim/cafe, docs/CAFE
 app.include_router(cafe_router)
 
 KPI = ("revenue", "op", "covers", "ticket", "cogs", "labor", "rent", "mgmt", "fees", "walkaways", "avg_wait_min",
-       "table_utilization", "satisfaction", "reviews")
+       "table_utilization", "satisfaction", "reviews", "delivery_revenue", "delivery_fee", "delivery_orders")
 
 
 _LOCK = threading.Lock()  # 엔진의 점포 설정과 캐시가 프로세스 전역이라 요청을 한 번에 하나씩 처리한다
