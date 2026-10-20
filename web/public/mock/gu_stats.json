@@ -1596,5 +1596,712 @@
     "demand_index": 0.47
    }
   }
+ },
+ "apparel": {
+  "service_code": "CS300011",
+  "service_name": "일반의류",
+  "seoul": {
+   "trdar": 909,
+   "stores": 51953,
+   "sales_per_store_month": 1240,
+   "tx_per_store_day": 6.4,
+   "ticket": 63765,
+   "evening_share": 0.343,
+   "weekend_share": 0.373,
+   "dow_share": [
+    0.1111,
+    0.1234,
+    0.1236,
+    0.1285,
+    0.1401,
+    0.2012,
+    0.1719
+   ],
+   "quarter_index": [
+    0.904,
+    1.024,
+    0.968,
+    1.103
+   ],
+   "closure_rate": 0.089,
+   "opening_rate": 0.028
+  },
+  "gu": {
+   "강남구": {
+    "trdar": 62,
+    "stores": 3192,
+    "sales_per_store_month": 2775,
+    "tx_per_store_day": 4.0,
+    "ticket": 228893,
+    "evening_share": 0.355,
+    "weekend_share": 0.308,
+    "dow_share": [
+     0.1089,
+     0.1321,
+     0.1446,
+     0.1524,
+     0.1544,
+     0.176,
+     0.1315
+    ],
+    "quarter_index": [
+     0.901,
+     1.027,
+     0.942,
+     1.13
+    ],
+    "closure_rate": 0.084,
+    "opening_rate": 0.042,
+    "demand_index": 2.24
+   },
+   "강동구": {
+    "trdar": 37,
+    "stores": 988,
+    "sales_per_store_month": 1377,
+    "tx_per_store_day": 6.8,
+    "ticket": 66448,
+    "evening_share": 0.327,
+    "weekend_share": 0.365,
+    "dow_share": [
+     0.1114,
+     0.1221,
+     0.1338,
+     0.127,
+     0.1403,
+     0.1951,
+     0.1703
+    ],
+    "quarter_index": [
+     0.947,
+     1.062,
+     0.936,
+     1.055
+    ],
+    "closure_rate": 0.08,
+    "opening_rate": 0.033,
+    "demand_index": 1.11
+   },
+   "강북구": {
+    "trdar": 29,
+    "stores": 466,
+    "sales_per_store_month": 972,
+    "tx_per_store_day": 5.2,
+    "ticket": 61268,
+    "evening_share": 0.352,
+    "weekend_share": 0.357,
+    "dow_share": [
+     0.1189,
+     0.1266,
+     0.126,
+     0.1318,
+     0.1396,
+     0.194,
+     0.1631
+    ],
+    "quarter_index": [
+     1.111,
+     1.32,
+     0.688,
+     0.881
+    ],
+    "closure_rate": 0.131,
+    "opening_rate": 0.03,
+    "demand_index": 0.78
+   },
+   "강서구": {
+    "trdar": 37,
+    "stores": 641,
+    "sales_per_store_month": 401,
+    "tx_per_store_day": 2.1,
+    "ticket": 64319,
+    "evening_share": 0.322,
+    "weekend_share": 0.242,
+    "dow_share": [
+     0.1479,
+     0.147,
+     0.1639,
+     0.1524,
+     0.1466,
+     0.1508,
+     0.0913
+    ],
+    "quarter_index": [
+     0.961,
+     1.251,
+     0.801,
+     0.986
+    ],
+    "closure_rate": 0.086,
+    "opening_rate": 0.045,
+    "demand_index": 0.32
+   },
+   "관악구": {
+    "trdar": 39,
+    "stores": 533,
+    "sales_per_store_month": 1000,
+    "tx_per_store_day": 5.4,
+    "ticket": 61196,
+    "evening_share": 0.355,
+    "weekend_share": 0.313,
+    "dow_share": [
+     0.1296,
+     0.1333,
+     0.1375,
+     0.1429,
+     0.1439,
+     0.1733,
+     0.1394
+    ],
+    "quarter_index": [
+     0.805,
+     1.104,
+     0.868,
+     1.223
+    ],
+    "closure_rate": 0.111,
+    "opening_rate": 0.038,
+    "demand_index": 0.81
+   },
+   "광진구": {
+    "trdar": 40,
+    "stores": 835,
+    "sales_per_store_month": 822,
+    "tx_per_store_day": 4.3,
+    "ticket": 63056,
+    "evening_share": 0.371,
+    "weekend_share": 0.355,
+    "dow_share": [
+     0.1198,
+     0.1169,
+     0.1312,
+     0.1349,
+     0.1419,
+     0.1954,
+     0.1597
+    ],
+    "quarter_index": [
+     0.854,
+     1.079,
+     0.986,
+     1.08
+    ],
+    "closure_rate": 0.098,
+    "opening_rate": 0.046,
+    "demand_index": 0.66
+   },
+   "구로구": {
+    "trdar": 29,
+    "stores": 840,
+    "sales_per_store_month": 354,
+    "tx_per_store_day": 1.5,
+    "ticket": 75468,
+    "evening_share": 0.315,
+    "weekend_share": 0.239,
+    "dow_share": [
+     0.1258,
+     0.1515,
+     0.1722,
+     0.1649,
+     0.1468,
+     0.1363,
+     0.1025
+    ],
+    "quarter_index": [
+     0.824,
+     1.041,
+     0.854,
+     1.281
+    ],
+    "closure_rate": 0.108,
+    "opening_rate": 0.029,
+    "demand_index": 0.29
+   },
+   "금천구": {
+    "trdar": 25,
+    "stores": 1352,
+    "sales_per_store_month": 12702,
+    "tx_per_store_day": 57.1,
+    "ticket": 73183,
+    "evening_share": 0.315,
+    "weekend_share": 0.484,
+    "dow_share": [
+     0.0967,
+     0.0993,
+     0.1005,
+     0.1034,
+     0.1164,
+     0.2394,
+     0.2444
+    ],
+    "quarter_index": [
+     0.977,
+     1.025,
+     0.937,
+     1.061
+    ],
+    "closure_rate": 0.089,
+    "opening_rate": 0.022,
+    "demand_index": 10.24
+   },
+   "노원구": {
+    "trdar": 20,
+    "stores": 790,
+    "sales_per_store_month": 1154,
+    "tx_per_store_day": 7.7,
+    "ticket": 49371,
+    "evening_share": 0.341,
+    "weekend_share": 0.356,
+    "dow_share": [
+     0.111,
+     0.1255,
+     0.1315,
+     0.1333,
+     0.1433,
+     0.1972,
+     0.1583
+    ],
+    "quarter_index": [
+     0.757,
+     1.059,
+     0.978,
+     1.206
+    ],
+    "closure_rate": 0.114,
+    "opening_rate": 0.027,
+    "demand_index": 0.93
+   },
+   "도봉구": {
+    "trdar": 23,
+    "stores": 258,
+    "sales_per_store_month": 570,
+    "tx_per_store_day": 3.0,
+    "ticket": 62596,
+    "evening_share": 0.25,
+    "weekend_share": 0.346,
+    "dow_share": [
+     0.1092,
+     0.1383,
+     0.1227,
+     0.1435,
+     0.1407,
+     0.1761,
+     0.1695
+    ],
+    "quarter_index": [
+     0.831,
+     0.976,
+     0.935,
+     1.258
+    ],
+    "closure_rate": 0.12,
+    "opening_rate": 0.062,
+    "demand_index": 0.46
+   },
+   "동대문구": {
+    "trdar": 37,
+    "stores": 1000,
+    "sales_per_store_month": 1055,
+    "tx_per_store_day": 3.9,
+    "ticket": 89096,
+    "evening_share": 0.271,
+    "weekend_share": 0.308,
+    "dow_share": [
+     0.1173,
+     0.1451,
+     0.118,
+     0.1368,
+     0.1746,
+     0.1688,
+     0.1394
+    ],
+    "quarter_index": [
+     1.013,
+     1.025,
+     0.847,
+     1.115
+    ],
+    "closure_rate": 0.076,
+    "opening_rate": 0.033,
+    "demand_index": 0.85
+   },
+   "동작구": {
+    "trdar": 29,
+    "stores": 537,
+    "sales_per_store_month": 311,
+    "tx_per_store_day": 1.5,
+    "ticket": 68817,
+    "evening_share": 0.335,
+    "weekend_share": 0.274,
+    "dow_share": [
+     0.1323,
+     0.1406,
+     0.1492,
+     0.1483,
+     0.1552,
+     0.159,
+     0.1154
+    ],
+    "quarter_index": [
+     0.784,
+     0.89,
+     0.678,
+     1.649
+    ],
+    "closure_rate": 0.075,
+    "opening_rate": 0.028,
+    "demand_index": 0.25
+   },
+   "마포구": {
+    "trdar": 38,
+    "stores": 1070,
+    "sales_per_store_month": 1756,
+    "tx_per_store_day": 9.8,
+    "ticket": 58636,
+    "evening_share": 0.431,
+    "weekend_share": 0.372,
+    "dow_share": [
+     0.1014,
+     0.12,
+     0.1203,
+     0.1355,
+     0.1506,
+     0.2367,
+     0.1354
+    ],
+    "quarter_index": [
+     0.797,
+     1.004,
+     1.035,
+     1.165
+    ],
+    "closure_rate": 0.109,
+    "opening_rate": 0.099,
+    "demand_index": 1.42
+   },
+   "서대문구": {
+    "trdar": 30,
+    "stores": 498,
+    "sales_per_store_month": 447,
+    "tx_per_store_day": 2.2,
+    "ticket": 66364,
+    "evening_share": 0.375,
+    "weekend_share": 0.289,
+    "dow_share": [
+     0.1449,
+     0.1355,
+     0.1367,
+     0.1468,
+     0.1473,
+     0.1591,
+     0.1296
+    ],
+    "quarter_index": [
+     0.792,
+     1.228,
+     0.912,
+     1.069
+    ],
+    "closure_rate": 0.109,
+    "opening_rate": 0.048,
+    "demand_index": 0.36
+   },
+   "서초구": {
+    "trdar": 41,
+    "stores": 1572,
+    "sales_per_store_month": 761,
+    "tx_per_store_day": 5.2,
+    "ticket": 48277,
+    "evening_share": 0.382,
+    "weekend_share": 0.289,
+    "dow_share": [
+     0.1378,
+     0.1416,
+     0.1372,
+     0.1344,
+     0.1596,
+     0.1948,
+     0.0945
+    ],
+    "quarter_index": [
+     0.963,
+     1.022,
+     0.968,
+     1.047
+    ],
+    "closure_rate": 0.068,
+    "opening_rate": 0.034,
+    "demand_index": 0.61
+   },
+   "성동구": {
+    "trdar": 30,
+    "stores": 737,
+    "sales_per_store_month": 2530,
+    "tx_per_store_day": 9.7,
+    "ticket": 86072,
+    "evening_share": 0.35,
+    "weekend_share": 0.392,
+    "dow_share": [
+     0.0945,
+     0.1078,
+     0.1123,
+     0.1409,
+     0.1524,
+     0.2175,
+     0.1746
+    ],
+    "quarter_index": [
+     0.952,
+     1.102,
+     0.884,
+     1.061
+    ],
+    "closure_rate": 0.075,
+    "opening_rate": 0.114,
+    "demand_index": 2.04
+   },
+   "성북구": {
+    "trdar": 41,
+    "stores": 668,
+    "sales_per_store_month": 445,
+    "tx_per_store_day": 2.1,
+    "ticket": 70701,
+    "evening_share": 0.302,
+    "weekend_share": 0.238,
+    "dow_share": [
+     0.1215,
+     0.1547,
+     0.1478,
+     0.1769,
+     0.1615,
+     0.1643,
+     0.0733
+    ],
+    "quarter_index": [
+     1.006,
+     1.041,
+     0.838,
+     1.115
+    ],
+    "closure_rate": 0.09,
+    "opening_rate": 0.069,
+    "demand_index": 0.36
+   },
+   "송파구": {
+    "trdar": 42,
+    "stores": 2424,
+    "sales_per_store_month": 5430,
+    "tx_per_store_day": 48.5,
+    "ticket": 36829,
+    "evening_share": 0.433,
+    "weekend_share": 0.406,
+    "dow_share": [
+     0.1097,
+     0.1212,
+     0.1139,
+     0.1157,
+     0.1334,
+     0.2038,
+     0.2022
+    ],
+    "quarter_index": [
+     0.983,
+     1.006,
+     1.006,
+     1.006
+    ],
+    "closure_rate": 0.096,
+    "opening_rate": 0.019,
+    "demand_index": 4.38
+   },
+   "양천구": {
+    "trdar": 39,
+    "stores": 834,
+    "sales_per_store_month": 290,
+    "tx_per_store_day": 2.5,
+    "ticket": 38731,
+    "evening_share": 0.279,
+    "weekend_share": 0.297,
+    "dow_share": [
+     0.1215,
+     0.1384,
+     0.1341,
+     0.1447,
+     0.1638,
+     0.173,
+     0.1244
+    ],
+    "quarter_index": [
+     0.796,
+     1.186,
+     0.971,
+     1.048
+    ],
+    "closure_rate": 0.097,
+    "opening_rate": 0.036,
+    "demand_index": 0.23
+   },
+   "영등포구": {
+    "trdar": 41,
+    "stores": 1130,
+    "sales_per_store_month": 771,
+    "tx_per_store_day": 5.5,
+    "ticket": 45896,
+    "evening_share": 0.383,
+    "weekend_share": 0.361,
+    "dow_share": [
+     0.1214,
+     0.122,
+     0.1333,
+     0.1251,
+     0.1372,
+     0.1919,
+     0.1691
+    ],
+    "quarter_index": [
+     0.857,
+     0.985,
+     0.982,
+     1.176
+    ],
+    "closure_rate": 0.097,
+    "opening_rate": 0.038,
+    "demand_index": 0.62
+   },
+   "용산구": {
+    "trdar": 35,
+    "stores": 1251,
+    "sales_per_store_month": 1003,
+    "tx_per_store_day": 2.4,
+    "ticket": 134846,
+    "evening_share": 0.34,
+    "weekend_share": 0.409,
+    "dow_share": [
+     0.0956,
+     0.0956,
+     0.1208,
+     0.1248,
+     0.1545,
+     0.2215,
+     0.1872
+    ],
+    "quarter_index": [
+     0.915,
+     0.985,
+     0.814,
+     1.286
+    ],
+    "closure_rate": 0.058,
+    "opening_rate": 0.074,
+    "demand_index": 0.81
+   },
+   "은평구": {
+    "trdar": 39,
+    "stores": 608,
+    "sales_per_store_month": 514,
+    "tx_per_store_day": 3.3,
+    "ticket": 51720,
+    "evening_share": 0.303,
+    "weekend_share": 0.254,
+    "dow_share": [
+     0.1315,
+     0.1568,
+     0.1519,
+     0.1522,
+     0.1531,
+     0.1604,
+     0.094
+    ],
+    "quarter_index": [
+     0.921,
+     1.078,
+     0.884,
+     1.118
+    ],
+    "closure_rate": 0.1,
+    "opening_rate": 0.043,
+    "demand_index": 0.41
+   },
+   "종로구": {
+    "trdar": 37,
+    "stores": 1674,
+    "sales_per_store_month": 799,
+    "tx_per_store_day": 3.3,
+    "ticket": 79589,
+    "evening_share": 0.248,
+    "weekend_share": 0.305,
+    "dow_share": [
+     0.1264,
+     0.1351,
+     0.1382,
+     0.139,
+     0.1562,
+     0.1741,
+     0.131
+    ],
+    "quarter_index": [
+     0.833,
+     1.082,
+     0.91,
+     1.175
+    ],
+    "closure_rate": 0.081,
+    "opening_rate": 0.06,
+    "demand_index": 0.64
+   },
+   "중구": {
+    "trdar": 50,
+    "stores": 27500,
+    "sales_per_store_month": 349,
+    "tx_per_store_day": 1.7,
+    "ticket": 67786,
+    "evening_share": 0.259,
+    "weekend_share": 0.244,
+    "dow_share": [
+     0.1348,
+     0.1572,
+     0.149,
+     0.155,
+     0.1606,
+     0.1623,
+     0.0812
+    ],
+    "quarter_index": [
+     0.691,
+     0.989,
+     1.084,
+     1.236
+    ],
+    "closure_rate": 0.088,
+    "opening_rate": 0.012,
+    "demand_index": 0.28
+   },
+   "중랑구": {
+    "trdar": 39,
+    "stores": 554,
+    "sales_per_store_month": 519,
+    "tx_per_store_day": 2.4,
+    "ticket": 70379,
+    "evening_share": 0.314,
+    "weekend_share": 0.277,
+    "dow_share": [
+     0.1276,
+     0.1458,
+     0.141,
+     0.1539,
+     0.1552,
+     0.1551,
+     0.1215
+    ],
+    "quarter_index": [
+     0.805,
+     1.099,
+     0.92,
+     1.176
+    ],
+    "closure_rate": 0.108,
+    "opening_rate": 0.07,
+    "demand_index": 0.42
+   }
+  }
  }
 }

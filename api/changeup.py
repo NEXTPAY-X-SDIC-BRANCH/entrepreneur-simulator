@@ -10,10 +10,15 @@ DB, LLM, 임베딩은 쓰지 않는다 (기존 api/main.py와 별개). 상태는
     POST /season/play    한 달 진행 (상태, 계획, 사건, 밤 결정 선택 → 결과와 다음 상태)
     POST /season/run     6개월을 한 번에 돌리고 투자·대출 장부까지 계산
     POST /venture        월별 영업이익 목록만 주고 현금 장부와 회수 시점 계산
+    GET/POST /scores     6개월 성적표 점수 랭킹 (반 코드별, data/scores.json)
 """
 from __future__ import annotations
 
+import json
 import threading
+import time
+import uuid
+from pathlib import Path
 from typing import Any
 
 from fastapi import Body, FastAPI, HTTPException
@@ -207,3 +212,51 @@ def venture(body: dict[str, Any] = Body(...)) -> dict:
     return venture_ledger([float(x) for x in ops], body.get("invest") or {}, body.get("loan"),
                           own_capital=float(body.get("own_capital", 0.0)), owner_draw=float(body.get("owner_draw", 0.0)),
                           imputed_owner_wage=float(body.get("imputed_owner_wage", _owner_wage())))
+
+
+# --- 성적표 랭킹 ---------------------------------------------------------------------------------------------
+# 6개월 성적표 점수를 반(클래스 코드)별로 모은다. 같은 서버를 쓰는 사람끼리 순위를 본다 (교육 현장 시연용).
+# 파일 하나에 쌓고 DB는 쓰지 않는다. 이름은 화면에서 받은 별명이고 개인정보는 받지 않는다.
+SCORES = Path(__file__).resolve().parents[1] / "data" / "scores.json"
+_SCORE_LOCK = threading.Lock()
+
+
+def _load_scores() -> list[dict]:
+    try:
+        return json.loads(SCORES.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+
+
+def _board(rows: list[dict], cls: str, limit: int = 20) -> list[dict]:
+    mine = sorted((r for r in rows if r["cls"] == cls), key=lambda r: (-r["score"], r["ts"]))
+    return [{**r, "rank": i + 1} for i, r in enumerate(mine[:limit])]
+
+
+@app.get("/scores")
+def scores(cls: str = "공개") -> dict:
+    rows = _load_scores()
+    return {"cls": cls, "count": sum(r["cls"] == cls for r in rows), "top": _board(rows, cls)}
+
+
+@app.post("/scores")
+def score_add(body: dict[str, Any] = Body(...)) -> dict:
+    """body: {name, cls?, score (0~100), grade, mode, gu, end_cash}. 저장한 기록의 순위와 그 반의 상위 20명을 돌려준다."""
+    name = str(body.get("name", "")).strip()[:12]
+    cls = str(body.get("cls") or "공개").strip()[:20] or "공개"
+    try:
+        score = int(round(float(body["score"])))
+    except (KeyError, TypeError, ValueError) as e:
+        raise HTTPException(422, "score가 필요합니다") from e
+    if not name or not 0 <= score <= 100:
+        raise HTTPException(422, "별명과 0~100 점수가 필요합니다")
+    row = {"id": uuid.uuid4().hex[:10], "name": name, "cls": cls, "score": score, "grade": str(body.get("grade", ""))[:20],
+           "mode": "hard" if body.get("mode") == "hard" else "easy", "gu": str(body.get("gu", ""))[:10], "shop": str(body.get("shop", "고깃집"))[:10],
+           "end_cash": int(float(body.get("end_cash", 0))), "ts": time.strftime("%Y-%m-%dT%H:%M:%S")}
+    with _SCORE_LOCK:
+        rows = _load_scores() + [row]
+        SCORES.parent.mkdir(parents=True, exist_ok=True)
+        SCORES.write_text(json.dumps(rows, ensure_ascii=False, indent=1), encoding="utf-8")
+    ranked = sorted((r for r in rows if r["cls"] == cls), key=lambda r: (-r["score"], r["ts"]))
+    rank = next(i + 1 for i, r in enumerate(ranked) if r["id"] == row["id"])
+    return {"id": row["id"], "rank": rank, "count": len(ranked), "cls": cls, "top": _board(rows, cls)}

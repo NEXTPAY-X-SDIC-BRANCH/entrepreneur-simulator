@@ -3,6 +3,7 @@
 // 한도·금리·접수 시기는 기관 공고가 기준이고, 자료마다 다르게 적힌 값은 그대로 두었다. 신청 전에 공고 원문을 확인하세요.
 export type Fund = {
   name: string; org: string; who: string; pre: "가능" | "등록 후" | "조건부"; youth?: boolean; // youth: 만 39세 이하 조건
+  program?: boolean; // 대출이 아니라 교육·선발 프로그램 (모자란 돈 탭에서 대출과 따로 보여 준다)
   limit: string; terms: string; where: string; note: string;
   rate?: [number, number]; // 연 금리 % 범위 (terms 문장에 적힌 값). 화면에서 ECOS 은행 평균과 견준다
   floating?: boolean; // 기준금리 연동 변동금리
@@ -13,10 +14,10 @@ export const FUNDS: Fund[] = [
   { name: "청년전용창업자금", rate: [2, 3.9], url: "https://www.kosmes.or.kr/nsh/SH/SBI/SHSBI004M0.do", org: "중소벤처기업진흥공단", who: "만 39세 이하 예비창업자 또는 업력 3년 미만", pre: "가능", youth: true,
     limit: "최대 1억원 (제조업 등 우대 업종은 2억원)", terms: "연 2~3%대, 6년 (거치 3년 + 상환 3년). 자료마다 금리가 달라요.", where: "중진공 온라인 신청 (kosmes.or.kr), 서울 지역본부",
     note: "상시 접수, 예산이 떨어지면 마감. 사업계획서와 사업성 평가가 있어요." },
-  { name: "프렙 아카데미", url: "https://www.seoul.go.kr/policy/view.do?id=77&lan=KO", org: "서울시 · 서울신용보증재단", who: "서울 거주 만 19~39세 외식업 예비창업 청년", pre: "가능", youth: true,
+  { name: "프렙 아카데미", program: true, url: "https://www.seoul.go.kr/policy/view.do?id=77&lan=KO", org: "서울시 · 서울신용보증재단", who: "서울 거주 만 19~39세 외식업 예비창업 청년", pre: "가능", youth: true,
     limit: "교육 12주 뒤 서울신보 연계 최대 7,000만원 융자", terms: "장기·저리 (세부 금리 미확인)", where: "서울시 소상공인 종합지원 포털",
     note: "서류와 면접으로 뽑아요. 차기 기수 일정은 아직 확인되지 않았어요." },
-  { name: "모두의 창업 프로젝트 로컬트랙", url: "https://www.modoo.or.kr/", org: "중소벤처기업부", who: "예비창업자 (사업자등록이 없어야 해요)", pre: "가능",
+  { name: "모두의 창업 프로젝트 로컬트랙", program: true, url: "https://www.modoo.or.kr/", org: "중소벤처기업부", who: "예비창업자 (사업자등록이 없어야 해요)", pre: "가능",
     limit: "1라운드 활동자금 200만원, 최종 우승 상금 최대 1억원", terms: "대출이 아니에요 (교육·멘토링 포함)", where: "modoo.or.kr",
     note: "수도권 선발 비중이 약 10%라 서울은 경쟁이 센 편이에요." },
   { name: "예비창업가육성보증", url: "https://www.kodit.co.kr/", org: "신용보증기금", who: "창업 전 6개월 이내 예비창업가", pre: "조건부",

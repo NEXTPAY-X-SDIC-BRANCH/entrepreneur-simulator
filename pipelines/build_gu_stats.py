@@ -30,7 +30,7 @@ import requests
 REPO = Path(__file__).resolve().parents[1]
 RAW = REPO / "data" / "raw" / "seoul_files"
 OUT = REPO / "web" / "public" / "mock" / "gu_stats.json"
-SERVICES = {"bbq": ("CS100001", "한식음식점"), "cafe": ("CS100010", "커피-음료")}
+SERVICES = {"bbq": ("CS100001", "한식음식점"), "cafe": ("CS100010", "커피-음료"), "apparel": ("CS300011", "일반의류")}
 UA = {"User-Agent": "Mozilla/5.0"}
 
 

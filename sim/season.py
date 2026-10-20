@@ -227,8 +227,26 @@ def quit_prob(fatigue: float, parttimers: int) -> float:
 
 
 # --- plan + state + month + events -> engine inputs -------------------------------------------------------
+def _menu(items) -> list[dict]:
+    """하드 모드 메뉴 등록: [{name, price, cost, share}] (1인분 원, 주문 비중 %). 잘못된 줄은 버리고 비중 합을 1로 맞춘다.
+    메뉴가 있으면 가격은 비중 가중 평균(손님이 보는 가격), 원가는 비중 가중 평균 원가로 엔진에 들어간다 (_setup)."""
+    out = []
+    for x in (items or [])[:8]:
+        try:
+            price, cost, share = float(x["price"]), float(x["cost"]), float(x["share"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if 3000 <= price <= 60000 and 0 <= cost <= price and share > 0:
+            out.append({"name": str(x.get("name", ""))[:20], "price": price, "cost": cost, "share": share})
+    total = sum(x["share"] for x in out)
+    return [{**x, "share": x["share"] / total} for x in out] if total else []
+
+
 def _validate(plan: dict) -> dict:
     p = {**base_plan(), **(plan or {})}
+    p["menu"] = _menu(p.get("menu"))
+    if p["menu"]:
+        p["meat_price"] = round(sum(x["price"] * x["share"] for x in p["menu"]))
     p["meat_price"] = int(min(max(p["meat_price"], 12000), 30000))
     p["soju_price"] = int(min(max(p["soju_price"], 3000), 9000))
     p["meat_grade"] = p["meat_grade"] if p["meat_grade"] in data()["P"]["meat_grade"] else "domestic"
@@ -290,7 +308,9 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
     elif plan["meat_grade"] == "aged":
         pork = 1 + (pork - 1) * v("meat_grade.pork_event_strength_aged")
     p["cst_meat_cost_per_portion"] = g["cost"] * pork
-    extras = [P["menu_extras"][x] for x in plan["menu_extras"]]
+    if plan["menu"]:   # 메뉴를 직접 등록했으면 등급 원가 대신 메뉴 원가의 비중 가중 평균 (도매가 사건 배율은 그대로 곱한다)
+        p["cst_meat_cost_per_portion"] = sum(x["cost"] * x["share"] for x in plan["menu"]) * pork
+    extras =[P["menu_extras"][x] for x in plan["menu_extras"]]
     p["cst_banchan_cost_per_cover"] = (plan["banchan"] * v("banchan.cost_per_item") * op_mult.get("cst_banchan_cost_per_cover", 1.0)
                                        + sum(x["cost_per_cover"] for x in extras))
     a["svc_extra_per_party_min"] = v("staff.table_tasks_min") + sum(x["service_min"] for x in extras)
