@@ -30,7 +30,8 @@ import requests
 REPO = Path(__file__).resolve().parents[1]
 RAW = REPO / "data" / "raw" / "seoul_files"
 OUT = REPO / "web" / "public" / "mock" / "gu_stats.json"
-SERVICES = {"bbq": ("CS100001", "한식음식점"), "cafe": ("CS100010", "커피-음료"), "apparel": ("CS300011", "일반의류")}
+SERVICES = {"bbq": ("CS100001", "한식음식점"), "cafe": ("CS100010", "커피-음료"), "apparel": ("CS300011", "일반의류"),
+            "chicken": ("CS100007", "치킨전문점"), "bunsik": ("CS100008", "분식전문점")}
 UA = {"User-Agent": "Mozilla/5.0"}
 
 
@@ -158,6 +159,10 @@ if __name__ == "__main__":
     ap.add_argument("--refresh", action="store_true")
     a = ap.parse_args()
     data = build(a.year, a.refresh)
+    if "pork" not in data and OUT.exists():   # sbiz zip이 없으면 지난번 고깃집 가게 수를 그대로 둔다
+        old = json.loads(OUT.read_text(encoding="utf-8"))
+        if "pork" in old:
+            data = {"pork": old["pork"], **data}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
     b = data["bbq"]
