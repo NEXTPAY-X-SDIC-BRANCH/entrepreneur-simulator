@@ -154,6 +154,7 @@ function recommend(last: Done | undefined, plan: Plan): Rec[] {
     n = { ...lp, meat_grade: GRADES[gi - 1] };
     rec("meat_grade", n, `재료비가 매출의 ${Math.round((k.cogs / k.revenue) * 100)}%예요. 한 단계 낮춰 원가를 줄여 보세요.`);
   } else rec("meat_grade", lp, "바꿀 신호가 없어요. 바꾸면 단골이 조금 빠져요.");
+  for (const lv of LEVERS) if (!out.some((r) => r.lever.key === lv.key)) rec(lv.key, lp, ""); // lab:finance bugfix: 배달 추천이 없어 2달째 계획 화면이 멈췄다 (main에도 있음)
   return LEVERS.map((l) => out.find((r) => r.lever.key === l.key)!);
 }
 
@@ -649,7 +650,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
       </div>
 
       <header className="sx-hud">
-        <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금에서 매출과 비용이 날마다 더해지고 빠져요. 월세와 이자는 달 첫날에, 인건비·사장 생활비·매장 운영비는 문 연 날마다 하루치씩 나가요.</>}>
+        <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금에서 매출과 비용이 날마다 더해지고 빠져요. 월세와 이자는 달 첫날에, 인건비·사장 생활비·매장 운영비는 문 연 날마다 하루치씩 나가요.</>}>{/* lab:cost */}
           {man(won(cashNow))}
         </Metric>
         <Metric icon={<IconCal />} label="달" tip={<>시작 달부터 6개월을 한 달씩 진행해요.</>}>

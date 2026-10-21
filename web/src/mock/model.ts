@@ -367,8 +367,11 @@ export const mgmtOf = (pyeong: number) => UTIL_PER_PYEONG * pyeong + OTHER_OPEX;
 export const FEE_SHARE = 0.0084;      // hero pnl fees ÷ rev
 export const OWNER_DRAW = 300;        // 만원/월, hero owner_wage
 export const OPEN_CURVE = [0.55, 0.7, 0.82, 0.9, 0.96, 1.0]; // 오픈 곡선, 가정
-export const SEAT_TURN = 1.5;         // covers per seat per day the room can take, 가정
-export const COVERS_PER_STAFF = 15;   // 가정
+export const SEAT_TURN = 2.1;         // covers per seat per day the room can take (lab:cost calibrated to engine, was 1.5)
+export const COVERS_PER_STAFF = 34;   // covers per worker per day incl. the owner (lab:cost calibrated to engine, was 15)
+// lab:cost — 받을 수 있는 손님: 좌석 한계와 일손 한계의 부드러운 최솟값 (engineCovers 와 같은 식, 수요 항 없음)
+export const capacityOf = (seats: number, staff: number) =>
+  seats <= 0 ? 0 : ((SEAT_TURN * seats) ** -2.3 + (COVERS_PER_STAFF * (staff + 1)) ** -2.3) ** (-1 / 2.3);
 // opening every day means four more shifts a month to pay for (가정: 급여가 영업일에 비례)
 export const staffPay = (staff: number, days: 26 | 30) => staff * STAFF_COST * (days === 30 ? 30 / 26 : 1);
 
@@ -378,7 +381,7 @@ export const staffPay = (staff: number, days: 26 | 30) => staff * STAFF_COST * (
 // (75점), 최대 오차 9.9%, 평균 5.0%. 예전 식 min(수요, 좌석 × 1.5, (직원 + 1) × 15)은 최대 36% 어긋났다 (관악은 높게, 직원 0명은 낮게).
 // 엔진은 직원이 늘어도 매출이 조금만 늘어서, 예전 식은 직원을 늘리면 매출이 크게 는다고 보고 큰 가게를 추천했다.
 export const engineCovers = (demand: number, seats: number, staff: number) =>
-  demand <= 0 || seats <= 0 ? 0 : ((0.92 * demand) ** -2.3 + (2.1 * seats) ** -2.3 + (34 * (staff + 1)) ** -2.3) ** (-1 / 2.3);
+  demand <= 0 || seats <= 0 ? 0 : ((0.92 * demand) ** -2.3 + (SEAT_TURN * seats) ** -2.3 + (COVERS_PER_STAFF * (staff + 1)) ** -2.3) ** (-1 / 2.3);
 
 export type MonthRow = { m: number; demand: number; capacity: number; covers: number; revenue: number; cost: number; op: number; cash: number };
 export type Run = { rows: MonthRow[]; start: number; opening: number; capMonthly: number };
@@ -389,7 +392,7 @@ export function simulate(profile: Profile, store: Store, lv: Levers, shocks: Sho
   const opening = openingCost(store, profile.gu, profile.keyMoney ?? 0).total;
   const start = profile.capital + store.loan - opening;
   const staff = Math.max(0, lv.staff - (shocks.includes("quit") ? 1 : 0));
-  const capacity = s.hasKitchen ? Math.min(s.seats * SEAT_TURN, (staff + 1) * COVERS_PER_STAFF) : 0;
+  const capacity = s.hasKitchen ? capacityOf(s.seats, staff) : 0; // lab:cost
   const ticket = lv.price + SIDE_TICKET;
   const priceFx = Math.pow(lv.price / 19000, -0.8);
   const shockFx = (shocks.includes("rain") ? 1 - 0.35 * 0.1 : 1) * (shocks.includes("rival") ? 0.9 : 1);
@@ -503,7 +506,7 @@ export function checks(profile: Profile, store: Store, lv: Levers): Check[] {
     fit.status = fit.status === "ok" ? "warn" : fit.status;
     fit.todo = `직원을 한 명 줄여도 하루 ${Math.round(lv.staff * COVERS_PER_STAFF)}명까지 받을 수 있어요. 한 달에 ${man(STAFF_COST)}을 아껴요.`;
   }
-  fit.rule = `올 손님 ${want}명은 ${profile.gu} 한식음식점 한 곳의 월매출 ${man(st.sales)}을 손님 한 명 ${PERSON_TICKET.toLocaleString("ko-KR")}원, 한 달 ${OPEN_DAYS}일로 나눈 값이에요(자리 잡힌 6개월째, 가격 반영). 받을 수 있는 손님은 좌석 ${s.seats}석 × 하루 ${SEAT_TURN}번 = ${Math.round(bySeat)}명과, 일하는 사람 ${lv.staff + 1}명 × ${COVERS_PER_STAFF}명 = ${byStaff}명 가운데 작은 쪽이에요. 회전수와 1인당 손님 수는 가정이에요.`;
+  fit.rule = `올 손님 ${want}명은 ${profile.gu} 한식음식점 한 곳의 월매출 ${man(st.sales)}을 손님 한 명 ${PERSON_TICKET.toLocaleString("ko-KR")}원, 한 달 ${OPEN_DAYS}일로 나눈 값이에요(자리 잡힌 6개월째, 가격 반영). 받을 수 있는 손님은 좌석 ${s.seats}석 × 하루 ${SEAT_TURN}번 = ${Math.round(bySeat)}명과, 일하는 사람 ${lv.staff + 1}명 × ${COVERS_PER_STAFF}명 = ${byStaff}명 을 함께 본 값이에요(둘 중 작은 쪽보다 조금 적어요). 회전수와 1인당 손님 수는 시뮬레이션 엔진의 결과에 맞춘 가정이에요.`; // lab:cost
 
   return [
     {
@@ -527,7 +530,7 @@ export function checks(profile: Profile, store: Store, lv: Levers): Check[] {
       status: net <= 0 ? "weak" : sunk / net <= 36 ? "ok" : sunk / net <= 60 ? "warn" : "weak",
       line: net <= 0 ? `자리가 잡힌 뒤에도 한 달에 ${man(-net)}씩 줄어요. 이 구성으로는 돌아오지 않아요.`
         : `자리가 잡히면 한 달에 ${man(net)}이 남아요. 들인 돈 ${man(sunk)}은 약 ${months(Math.ceil(sunk / net))} 뒤에 돌아와요.`,
-      rule: `들인 돈은 보증금을 뺀 공사, 설비, 간판, 첫 재료 값이에요(보증금은 나갈 때 돌려받아요). 한 달에 남는 돈은 6개월째 매출에서 재료비, 급여, 월세, 매장 운영비, 사장 생활비 ${man(OWNER_DRAW)}, 이자를 뺀 값이에요.`,
+      rule: `들인 돈은 보증금을 뺀 공사, 설비, 간판, 첫 재료 값이에요(보증금은 나갈 때 돌려받아요). 한 달에 남는 돈은 6개월째 매출에서 재료비, 급여, 월세, 매장 운영비, 사장 생활비 ${man(OWNER_DRAW)}, 이자를 뺀 값이에요.`, // lab:cost
     },
     {
       key: "shock", title: "오픈 이후 어떤 사건들이 생길까요?",

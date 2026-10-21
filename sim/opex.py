@@ -42,8 +42,11 @@ def bbq_detail(k: dict) -> dict[str, float]:
     if mkt:
         out["마케팅 (SNS 협찬·리뷰 이벤트)"] = round(mkt)
     rest = round(mgmt) - sum(out.values())
-    if abs(rest) >= 1:          # 이달 사건·밤 결정에 쓴 돈 (events.yaml cost_won, 결정 대응 비용)
+    if abs(rest) >= 100:        # 이달 사건·밤 결정에 쓴 돈 (events.yaml cost_won, 결정 대응 비용)
         out["이달 사건 대응"] = rest
+    elif rest:                  # 반올림 차이 몇 원은 마지막 줄에 넣어 합을 맞춘다
+        last = o["bbq_other_opex"][-1]["label"]
+        out[last] += rest
     return out
 
 

@@ -21,7 +21,7 @@ export function bbqStack(k: BbqKpis, imputed: number): Stack {
     { key: "hired", label: "인건비 · 알바", amount: Math.max(0, k.labor - owner), hint: "알바·직원 급여, 주휴수당 포함" },
     { key: "owner", label: "인건비 · 사장", amount: owner, hint: `사장 가상 급여 월 ${Math.round(owner / 1e4)}만원`, tag: "가정" },
     { key: "rent", label: "임차료", amount: k.rent, hint: "월세" },
-    { key: "mgmt", label: "매장 운영비", amount: k.mgmt, hint: "공과금·소모품·수선·보험·통신·마케팅", kids: kidsOf(k.opex_detail) },
+    { key: "mgmt", label: "매장 운영비", amount: k.mgmt, hint: "총액은 엔진 계산, 내역 비율은 가정", tag: "가정", kids: kidsOf(k.opex_detail) },
     { key: "fees", label: delivery > 0 ? "카드·배달 수수료" : "카드 수수료", amount: k.fees },
   ];
   return { revenue: k.revenue, rows, op: k.op };
@@ -38,7 +38,7 @@ export function cafeStack(m: CafeLine): Stack {
       { key: "hired", label: "인건비 · 알바", amount: m.labor_hired, hint: "시간대별 필요 인원, 4대보험·주휴 포함" },
       { key: "owner", label: "인건비 · 사장", amount: m.labor_owner, hint: `사장 가상 급여 월 ${Math.round(m.labor_owner / 1e4)}만원 (커피 전문점 대표자 평균)`, tag: "조사" },
       { key: "rent", label: "임차료", amount: m.rent, hint: "월세" },
-      { key: "mgmt", label: "매장 운영비", amount: m.mgmt, hint: "전기·관리비·소모품·포장재·수선·마케팅", kids: kidsOf(m.opex_detail) },
+      { key: "mgmt", label: "매장 운영비", amount: m.mgmt, hint: "전기·관리비·소모품·포장재·수선·마케팅", tag: "가정", kids: kidsOf(m.opex_detail) },
       { key: "fees", label: "카드 수수료", amount: m.fees },
       { key: "dep", label: "감가상각", amount: m.depreciation, hint: "설비·인테리어 값을 5년에 나눠 뺌, 현금은 안 나가요" },
     ],

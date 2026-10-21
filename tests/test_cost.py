@@ -27,6 +27,9 @@ def test_bbq_detail_sums_to_mgmt():
     assert d["마케팅 (SNS 협찬·리뷰 이벤트)"] == 500_000
     assert d["이달 사건 대응"] == round(k["mgmt"]) - 3_700_000      # 남는 몫 = 사건·밤 결정 비용
     assert "가스 (불판·주방)" in d and "세무 기장" in d
+    # 사건이 없는 달: 반올림 차이 몇 원으로 '이달 사건 대응' 줄이 생기지 않는다
+    d0 = opex.bbq_detail({"mgmt": 1_020_001.4, "opex_util": 612_000.3, "opex_other": 408_001.1, "opex_mkt": 0})
+    assert "이달 사건 대응" not in d0 and sum(d0.values()) == round(1_020_001.4)
     # 예전 캐시처럼 내역 키가 없으면 총액 한 줄
     assert opex.bbq_detail({"mgmt": 100.4}) == {"매장 운영비": 100}
 

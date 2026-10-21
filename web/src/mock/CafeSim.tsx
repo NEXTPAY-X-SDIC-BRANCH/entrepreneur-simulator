@@ -51,7 +51,7 @@ type Month = {
   kpi: { revenue_krw: number; op_krw: number; cash_krw: number; customers: number; walkaways: number; walkaway_share: number; rating: number; regulars: number };
   pnl: { revenue_krw: number; lines: { key: string; item_ko: string; krw: number }[]; op_krw: number };
   month_line?: CafeLine; // lab:cost
-  cash: { start_krw: number; op_krw: number; depreciation_addback_krw: number; owner_pay_addback_krw?: number; loan_interest_krw: number; loan_principal_krw: number; vat_refund_krw: number; end_krw: number };
+  cash: { start_krw: number; op_krw: number; depreciation_addback_krw: number; owner_pay_addback_krw?: number; loan_interest_krw: number; loan_principal_krw: number; vat_refund_krw: number; end_krw: number }; // lab:cost
   events: { key: string; label_ko: string; effect_ko: string }[];
   waterfall: { steps: { key: string; label_ko: string; krw: number }[] };
   closure: { closed: boolean; reason_ko: string };
