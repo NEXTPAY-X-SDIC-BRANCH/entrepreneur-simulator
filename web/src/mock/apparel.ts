@@ -74,7 +74,12 @@ export const invTotal = (inv: Inv, from = 0, to = AGES) => CATS.reduce((a, c) =>
 // 한 달치면 86%, 1.5달치 95%, 반 달치 63%. 재고가 판매량만큼 있어도 사이즈·색이 다 맞지는 않는다
 const FILL_K = 2;
 export const fillOf = (cover: number) => 1 - Math.exp(-FILL_K * Math.max(0, cover));
-const DECAY = [0, 0, 0, 0.06, 0.06, 0.06, 0.12]; // 가정: 나이별 한 달 값 하락. 석 달 넘으면 매달 6%, 반년 넘으면 12%
+// 나이별 한 달 값 하락. 석 달 넘으면 매달 11% (석 달이면 약 30%), 반년 넘으면 12%.
+// 근거: 장은영(2001) 「국내 의류업체의 재고처리 및 재고감축실태 연구」 복식 51(2), 의류업체 92곳 조사:
+// "제품수명이 짧은 의류제품은 시즌을 넘기면 값이 30% 이상 떨어진다" (S109). 반년 넘은 칸은 가정
+const DECAY = [0, 0, 0, 0.11, 0.11, 0.11, 0.12];
+// 비교 기준: 같은 논문의 제품 판매 비율 (정상가 44.9%, 30% 세일 21.4%, 50% 세일 12.9%, 시즌 재고율 28.8%). 성적표에 내 가게 값과 나란히 보여 준다
+export const PAPER_SELL = { full: 0.4491, sale30: 0.2142, sale50: 0.1285, leftover: 0.2875, leadDays: 10.91 };
 const MD_BASE = 0.1;      // 가정: 세일 칸의 옷이 한 달에 팔리는 비율 = 0.1 + 1.5 × 세일 폭 (제철 품목 기준)
 const CONSIGN_RETURN = 3; // 가정: 위탁 옷은 석 달 안 팔리면 돌려보낸다
 // 가정: 일손 한 명이 감당하는 매출 = 도소매업조사 종사자 1명당 평균 매출(KOSIS.perWorker) × 1.4. 평균은 한가한 날까지 섞인 값이라
@@ -83,11 +88,11 @@ const CONSIGN_RETURN = 3; // 가정: 위탁 옷은 석 달 안 팔리면 돌려�
 const HEADROOM = 1.4, CAP_K = 4;
 
 export const BUY_MODES: Record<BuyMode, { label: string; cost: number; reorder: number; desc: string }> = {
-  react: { label: "동대문 반응 재주문", cost: 1, reorder: 1, desc: "매달 팔리는 만큼 다시 사요. 원가는 도소매업조사 원가율 그대로예요" },
+  react: { label: "동대문 반응 재주문", cost: 1, reorder: 1, desc: "매달 팔리는 만큼 다시 사요. 원가는 도소매업조사 원가율 그대로예요. 재주문하면 평균 11일 안에 들어와요 (의류업체 QR 생산 리드타임 10.9일, 장은영 2001)" },
   pre: { label: "시즌 선발주", cost: 0.88, reorder: 1.05, desc: "분기 첫 달(3·6·9·12월)에 석 달치를 한 번에 12% 싸게 사요. 중간에 떨어지면 소량 재주문은 5% 비싸요" },
-  consign: { label: "위탁 매입", cost: 1.25, reorder: 1.25, desc: "선반의 옷은 도매상 것이라 미리 돈이 안 나가요. 팔린 만큼만 정산하고 석 달 안 팔린 옷은 돌려보내요. 대신 원가가 25% 비싸요" },
+  consign: { label: "위탁 매입", cost: 1.54, reorder: 1.54, desc: "선반의 옷은 도매상 것이라 미리 돈이 안 나가요. 팔린 만큼만 정산하고 석 달 안 팔린 옷은 돌려보내요. 대신 원가가 54% 비싸요 (사입이 위탁보다 30~40% 싸다는 조사, 장은영 2001)" },
 };
-export const BUY_MODE_ASSUME = "매입 방식별 원가 (선발주 −12%, 소량 재주문 +5%, 위탁 +25%)와 위탁 반품 기한 석 달은 가정";
+export const BUY_MODE_ASSUME = "선발주 −12%, 소량 재주문 +5%, 위탁 반품 기한 석 달은 가정. 위탁 원가 ×1.54는 '수주(사입)판매는 위탁판매보다 30~40% 낮은 가격'(장은영 2001)의 가운데 35%로 계산";
 const ORDER_MONTHS = [3, 6, 9, 12];
 
 export const expectedSales = (gu: string, pyeong: number) => guStat(gu).sales * Math.sqrt(pyeong / BASE_PYEONG); // 만원/월, 자리 잡은 뒤
@@ -120,7 +125,8 @@ export function apparelEstimate(profile: Profile): { pyeong: number; cost: Retur
 // ---------------------------------------------------------------- 한 달
 // buy: 예상 판매분 대비 매입 배수, marketing 만원, markdownAge: 몇 달 지난 옷부터 세일 칸으로 옮길지, markdown: 세일 폭, focus: 더 들일 품목
 export type ApPlan = { buy: number; discount: number; staff: number; marketing: number; markdownAge: number; markdown: number; focus: Cat | "none" };
-export const DEFAULT_PLAN: ApPlan = { buy: 1, discount: 0, staff: 0, marketing: 0, markdownAge: 3, markdown: 0.3, focus: "none" };
+// 세일 시작 2달·폭 30%: "직영점이나 백화점에서 통상 1~2개월 정상판매되고 … 정상가의 20~30% 할인된 가격으로" (장은영 2001)
+export const DEFAULT_PLAN: ApPlan = { buy: 1, discount: 0, staff: 0, marketing: 0, markdownAge: 2, markdown: 0.3, focus: "none" };
 // costAvg = 지금 선반 재고를 산 평균 원가 배수 (매입 방식·재주문에 따라 1 근처). 재고를 돈으로 셀 때 곱한다
 export type ApState = { cash: number; inv: Inv; costAvg: number; awareness: number; negMonths: number; closed: boolean };
 export type Fx = { demand?: number; buy?: number; discount?: number; cost?: number; awareness?: number; clear?: number; clearCut?: number; buyCost?: number }; // buyCost: 이달 매입 단가 배수
@@ -367,7 +373,7 @@ export const PLAN_TEXT: Record<keyof ApPlan, { label: string; text: (p: ApPlan) 
   buy: { label: "매입량", text: (p) => `예상 판매의 ${Math.round(p.buy * 100)}%`, hint: "많이 사면 사이즈가 덜 빠지지만 현금이 재고에 묶여요. 한 달치가 있어도 찾는 사이즈가 있는 손님은 86%예요 (가정)" },
   focus: { label: "더 들일 품목", text: (p) => catLabel(p.focus), hint: "고른 품목을 30% 더 사요. 철에 맞으면 결품이 줄고, 철이 지나면 오래된 옷이 돼요" },
   discount: { label: "상시 할인", text: (p) => (p.discount ? `${Math.round(p.discount * 100)}%` : "없음"), hint: "할인하면 더 팔리지만 한 벌에 남는 돈이 줄어요 (10% 할인 = 판매량 +15%, 가정)" },
-  markdownAge: { label: "세일 시작", text: (p) => `${p.markdownAge}달 지난 옷부터`, hint: "세일 칸으로 옮긴 옷은 정가로 안 팔고 매달 일부가 세일로 빠져요. 석 달 넘은 옷은 매달 값이 6% 떨어져요 (가정)" },
+  markdownAge: { label: "세일 시작", text: (p) => `${p.markdownAge}달 지난 옷부터`, hint: "세일 칸으로 옮긴 옷은 정가로 안 팔고 매달 일부가 세일로 빠져요. 석 달 넘은 옷은 매달 값이 11% 떨어져요 (시즌을 넘기면 30% 이상 떨어진다는 조사, 장은영 2001). 보통 1~2달 정가로 팔고 20~30% 세일해요" },
   markdown: { label: "세일 폭", text: (p) => `${Math.round(p.markdown * 100)}%`, hint: "폭이 클수록 세일 칸이 빨리 비지만 남는 돈이 줄어요. 30%면 제철 품목은 한 달에 55%가 팔려요 (가정)" },
   staff: { label: "알바", text: (p) => `${p.staff}명`, hint: `한 명에 월 ${STAFF_PAY}만원. 일손이 모자라면 바쁜 날 손님을 놓쳐요` },
   marketing: { label: "SNS 홍보비", text: (p) => (p.marketing ? `${p.marketing}만원` : "없음"), hint: "인지도가 올라 손님이 늘어요 (100만원당 인지도 +0.15, 고깃집과 같은 가정)" },

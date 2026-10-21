@@ -4,7 +4,7 @@
 // 계산은 apparel.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 옷가게의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
-  BUY_MODES, BUY_MODE_ASSUME, CATS, MARKET, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
+  BUY_MODES, BUY_MODE_ASSUME, CATS, MARKET, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
   playMonth, startState, stateAfter, stockValue,
   type ApMonth, type ApPlan, type ApState, type ApStratId, type ApparelCfg, type Cat,
 } from "./apparel";
@@ -200,7 +200,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
         </Metric>
         <Metric icon={<IconBox />} label={consign ? "위탁 재고" : "재고 (원가)"} tip={consign
           ? <>선반의 옷은 도매상 것이라 내 현금이 묶이지 않아요. 팔린 만큼만 25일에 정산하고, 석 달 안 팔린 옷은 돌려보내요<Assume what={BUY_MODE_ASSUME} />.</>
-          : <>선반 위 옷을 산 값이에요. 많을수록 현금이 묶여요. 석 달 넘게 안 팔린 옷은 매달 값이 6%씩 떨어져요<Assume what="석 달 넘은 옷 매달 6%, 반년 넘은 옷 12% 값 하락" />.</>}>
+          : <>선반 위 옷을 산 값이에요. 많을수록 현금이 묶여요. 석 달 넘게 안 팔린 옷은 매달 값이 11%씩 떨어져요<Assume what="석 달 넘은 옷 매달 11% (시즌을 넘기면 30% 이상, 장은영 2001), 반년 넘은 옷 12% (가정)" />.</>}>
           {man(w(consign ? invTotal(state.inv) * BUY_MODES.consign.cost : stockValue(state, cfg)))}
         </Metric>
         <Metric icon={<IconStar />} label="인지도" tip={<>1.00이 동네에서 평소 알려진 수준이에요. 새 가게는 0.60에서 시작해 매달 1.00 쪽으로 15%씩 다가가요<Assume what="새 가게 인지도 0.6, 매달 15% 회복 (고깃집 엔진과 같은 가정)" />.</>}>
@@ -470,7 +470,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                           <tr><th>월세</th><td>−{man(w(c.rent))}</td><td /></tr>
                           <tr><th>기타경비</th><td>−{man(w(c.other))}</td><td>카드 수수료·공과금·포장 등, 매출의 {Math.round(KOSIS.other * 100)}% (도소매업조사)</td></tr>
                           {c.marketing + c.eventCost > 0 && <tr><th>홍보·사건 대응</th><td>−{man(w(c.marketing + c.eventCost))}</td><td /></tr>}
-                          {c.writeOff > 0 && <tr><th>재고 평가손</th><td>−{man(w(c.writeOff))}</td><td>석 달 넘은 옷 값이 떨어졌어요<Assume what="석 달 넘은 옷 매달 6%, 반년 넘은 옷 12% 값 하락" /></td></tr>}
+                          {c.writeOff > 0 && <tr><th>재고 평가손</th><td>−{man(w(c.writeOff))}</td><td>석 달 넘은 옷 값이 떨어졌어요<Assume what="석 달 넘은 옷 매달 11% (시즌을 넘기면 30% 이상, 장은영 2001), 반년 넘은 옷 12% (가정)" /></td></tr>}
                           <tr className="sum"><th>영업이익</th><td>{signed(c.op)}</td><td>감가상각 전</td></tr>
                           <tr><th>감가상각비</th><td>−{man(w(dep))}</td><td>인테리어·집기·간판을 5년에 나눈 몫. 현금은 안 나가요</td></tr>
                           {c.interest > 0 && <tr><th>이자비용</th><td>−{man(w(c.interest))}</td><td>연 {+(LOAN_RATE * 100).toFixed(2)}%</td></tr>}
@@ -512,6 +512,18 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                     <CashChart start={start.cash * 1e4} labels={monthSeq} months={done.map((x) => ({ days: x.days.map((d) => ({ cash: d.cash * 1e4 })) }))} />
                   </section>
                   <section className="sx-sec">
+                    {(() => {
+                      // 팔린 옷(원가 기준) 중 정가로 판 몫과 세일로 판 몫, 논문의 의류업체 값과 비교
+                      const full = months.reduce((a, x) => a + CATS.reduce((b, c) => b + x.cats[c.id].sold, 0), 0);
+                      const md = months.reduce((a, x) => a + CATS.reduce((b, c) => b + x.cats[c.id].mdSold, 0), 0);
+                      const tot = full + md;
+                      if (tot <= 0) return null;
+                      return (
+                        <p className="sx-note">팔린 옷 중 <b>{Math.round((full / tot) * 100)}%</b>를 정가로, {Math.round((md / tot) * 100)}%를 세일로 팔았어요.
+                          {" "}참고로 의류 브랜드 92곳은 정가 {Math.round(PAPER_SELL.full * 100)}%, 30% 세일 {Math.round(PAPER_SELL.sale30 * 100)}%, 50% 세일 {Math.round(PAPER_SELL.sale50 * 100)}%였고 시즌마다 {Math.round(PAPER_SELL.leftover * 100)}%가 재고로 남았어요
+                          {" "}(장은영 2001, 백화점·대리점 브랜드 기준이라 작은 옷가게와는 달라요).</p>
+                      );
+                    })()}
                     <h2>달마다</h2>
                     <table className="sx-table">
                       <thead><tr><th>달</th><th>매출</th><th>영업이익</th><th>사건 · 대응</th><th>사이즈 맞은 손님</th><th>월말 재고</th><th>월말 현금</th></tr></thead>
