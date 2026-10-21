@@ -1,6 +1,7 @@
 // 동네(행정동) 분석: 경쟁 강도, 비용, 성장, 동네 특징을 한 번에 묶어 '~형 상권' 이름과 키워드, 해 볼 일을 만든다.
 // 숫자는 dong_profile.json(pipelines/build_dong_profile.py), 경계는 seoul_dong.json(pipelines/build_seoul_dong.py).
 // 이름·키워드·제안은 현장 조사가 아니라 아래 규칙으로 만든다. 규칙마다 근거 숫자를 같이 보여 준다(why).
+import { LAB_IDS, labDongMetrics, type LabIndustry } from "../lab/industry/industries"; // lab:industry
 import { T, cashRent, dongsOf, growthMeta, guStat, iga, industry, kreiMean, krei, rankOf, setIndustry, type Dong, type Industry } from "./model";
 
 export type DongProfile = {
@@ -46,6 +47,7 @@ const DONG_METRICS_BY: Record<Industry, Record<DongMetric, DongMetricInfo>> = {
     compete: { label: "경쟁", hint: "카페 수 ÷ 동 면적", fmt: (v) => `${v}곳/㎢`, high: "카페가 많은 동네", low: "카페가 적은 동네" },
     cost, life,
   },
+  ...(Object.fromEntries(LAB_IDS.map((i) => [i, labDongMetrics(i)])) as Record<LabIndustry, Record<DongMetric, DongMetricInfo>>), // lab:industry
 };
 export const DONG_METRICS: Record<DongMetric, DongMetricInfo> = { ...DONG_METRICS_BY.bbq };
 // 업종을 바꾼다 (모델의 지표 문구와 이 파일의 동네 지도 문구를 함께). 화면이 읽기 전에 부른다.

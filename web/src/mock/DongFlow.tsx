@@ -27,7 +27,7 @@ function Bars({ labels, v, hi, title }: { labels: string[]; v: number[]; hi: rea
 export default function DongFlow({ code, gu, dong }: { code: string | undefined; gu: string; dong: string | null }) {
   const f = flowOf(code, gu), meta = flowMeta();
   if (!f || !meta) return null;
-  const ind = industry(), hi = HI[ind], r: FlowBlock = f.row;
+  const ind = industry(), hi = HI[ind === "cafe" ? "cafe" : "bbq"], r: FlowBlock = f.row; // lab:industry 새 업종은 고깃집 기준 시간대
   const place = f.scope === "dong" && dong ? dong : gu;
   const top = (v: number[]) => v.indexOf(Math.max(...v));
   const hiShare = (v: number[] | undefined, idx: readonly number[]) => (v ? idx.reduce((a, i) => a + v[i], 0) : 0);

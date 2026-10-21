@@ -3,11 +3,13 @@
 // rent, which is still a placeholder. Store constants are borrowed from the 대학로 hero store (hero.json pnl) and the
 // shock sizes from research/shocks.yaml. Every input and its standing is listed on the #/sources page (sources.ts).
 
-export type Industry = "bbq" | "cafe";
+import { LAB_IDS, LAB_TXT, isLab, labMetrics, type LabIndustry } from "../lab/industry/industries"; // lab:industry
+export type Industry = "bbq" | "cafe" | LabIndustry; // lab:industry 새 업종 id
 // 화면 문구와 계산에서 업종마다 달라지는 말. 동네 분석은 setIndustry로 업종을 바꾸면 같은 코드가 카페용 자료로 돈다.
 export const TXT = {
   bbq: { shop: "고깃집", base: "한식음식점", kind: "돼지고기 구이 가게", cat: "한식 가게" },
   cafe: { shop: "카페", base: "커피·음료 가게", kind: "카페", cat: "커피·음료 가게" },
+  ...LAB_TXT, // lab:industry
 } as const;
 let IND: Industry = "bbq";
 export const industry = (): Industry => IND;
@@ -43,7 +45,7 @@ type Row = Record<string, number> & { dow_share: number[]; quarter_index: number
 type Block = { service_name: string; seoul: Row; gu: Record<string, Row> };
 export type GuData = {
   _meta: { generated: string; year: number; quarters: string[]; sources: Record<string, string>; license: string; method: string; caveats: string[] };
-  bbq: Block; cafe: Block;
+  bbq: Block; cafe: Block; [lab: string]: unknown; // lab:industry 새 업종 블록 (industry_gu.json을 Mock.tsx가 합친다)
   pork?: { snapshot: string; source: string; codes: Record<string, string>; gu: Record<string, { hansik: number; pork: number; beef: number; tripe: number }> };
 };
 // 외식업체 경영실태조사(2025) 한식 육류 요리 전문점 값. pipelines/build_gogi_krei.py가 만든 gogi_krei.json.
@@ -100,7 +102,7 @@ function hash(s: string): number {
 // 음료점 평균 연 13,759만원으로 나눈 값이 0.78 (카페 팀 지표 엑셀 시작 비용 시트). 서울 값이 아니라 전국 배율을 서울 평균에 옮긴 추정(등급 L).
 export const CAFE_MEDIAN = { ratio: 10740 / 13759, p25: 8000 / 10740, p75: 16000 / 10740 };
 export function guStat(name: string): GuStat {
-  const g = DATA?.[IND].gu[name];
+  const g = (DATA?.[IND] as Block | undefined)?.gu[name]; // lab:industry 새 업종 블록이 없으면 undefined
   let rent = Math.round(9 + hash(name + "r") * 20); // 월세 자료가 없을 때만 쓰는 예시값
   let rentLow = rent * 0.75, rentHigh = rent * 1.25, rentAll: number | null = null, rentAreas = 0;
   let rentSrc: RentSrc = "예시값";
@@ -130,19 +132,20 @@ export function guStat(name: string): GuStat {
   const area = { area: dg?.name ?? null, areaType: dg?.type ?? null, areaPork: dg?.pork ?? null, areaStores: dg?.stores ?? null };
   const gr = IND === "bbq" ? GROWTH?.gu[name] ?? null : null;
   // 카페는 2024년 구 매출이 없어 growth 자리에 '가게 수 흐름'(개업률−폐업률, %p)을 넣는다. 화면은 업종을 보고 문구를 바꾼다.
-  const flow = IND === "cafe" && g ? round1((g.opening_rate - g.closure_rate) * 100) : null;
+  // lab:industry 새 업종도 카페처럼 가게 수 흐름
+  const flow = IND !== "bbq" && g ? round1((g.opening_rate - g.closure_rate) * 100) : null;
   const grow = { growth: gr?.sales_growth ?? flow, netOpen: gr?.net_open ?? flow };
   if (!g) return { demand: 1, stores: 0, closure: 0, sales: 0, salesRange: null, salesHansik: 0, tx: 0, ticket: 0, ...rentPart, ...area, ...grow, pork: 0, opening: 0, dow: Array(7).fill(1 / 7), qidx: [1, 1, 1, 1] };
   const salesH = dg?.rel ? Math.round(g.sales_per_store_month * Math.min(2, Math.max(0.4, dg.rel))) : g.sales_per_store_month;
   // 고깃집: 한식 값 × 육류 전문점 배율. 카페: 카드 추정매출 × 서울 소상공인 카페 월매출로 맞춘 보정 배율(지표 엑셀, 1.538).
   // 카페는 평균이 아니라 중앙값을 대표값으로 쓴다(잘되는 가게 몇 곳이 평균을 끌어올리므로). 서울 소상공인 카페 월매출 평균(보정 후)에
   // 전국 독립 음료점의 '중앙값 ÷ 평균' 배율을 곱한 추정이다. 서울 중앙값은 공개 자료에 없다(CAFE_MEDIAN).
-  const sales = Math.round(salesH * (IND === "cafe" ? (DONGS?._meta.adj ?? 1.538) * CAFE_MEDIAN.ratio : meatUplift()));
+  const sales = Math.round(salesH * (IND === "cafe" ? (DONGS?._meta.adj ?? 1.538) * CAFE_MEDIAN.ratio : isLab(IND) ? 1 : meatUplift())); // lab:industry 새 업종은 카드 추정 그대로
   const salesRange: [number, number] | null = IND === "cafe" ? [Math.round(sales * CAFE_MEDIAN.p25), Math.round(sales * CAFE_MEDIAN.p75)] : null;
   return {
     demand: +(g.demand_index * (salesH / g.sales_per_store_month)).toFixed(2), stores: g.stores, closure: +(g.closure_rate * 100).toFixed(1),
     sales, salesRange, salesHansik: salesH, ...grow, tx: g.tx_per_store_day,
-    ticket: g.ticket, ...rentPart, ...area, pork: IND === "cafe" ? DONGS?._meta.gu_cafes?.[name] ?? g.stores : DATA?.pork?.gu[name]?.pork ?? 0, opening: g.opening_rate,
+    ticket: g.ticket, ...rentPart, ...area, pork: IND === "cafe" ? DONGS?._meta.gu_cafes?.[name] ?? g.stores : isLab(IND) ? Number((g as Record<string, unknown>).count ?? g.stores) : DATA?.pork?.gu[name]?.pork ?? 0, opening: g.opening_rate, // lab:industry pork = 새 업종 가게 수
     dow: dg?.dow ?? g.dow_share, qidx: dg?.qidx ?? g.quarter_index,
   };
 }
@@ -165,6 +168,7 @@ const METRICS_BY: Record<Industry, Record<Metric, MetricInfo>> = {
     pork: { label: "카페 수", fmt: gone, hint: "소상공인 상가정보의 카페, 구 전체 (프랜차이즈 포함)" },
     closure: { label: "1년 폐업률", fmt: (v) => `${v}%`, hint: "최근 4분기에 문 닫은 커피·음료 가게 비율" },
   },
+  ...(Object.fromEntries(LAB_IDS.map((i) => [i, labMetrics(i)])) as Record<LabIndustry, Record<Metric, MetricInfo>>), // lab:industry
 };
 export const METRICS: Record<Metric, MetricInfo> = { ...METRICS_BY.bbq };
 // 업종을 바꾼다. 화면이 읽기 전에 부른다(Mock.tsx).

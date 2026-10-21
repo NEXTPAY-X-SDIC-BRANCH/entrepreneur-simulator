@@ -149,3 +149,12 @@ def test_api_flow():
     assert client.post("/lab/industry/season/month", json={"state_token": tok}).status_code == 409
     rep = client.post("/lab/industry/season/report", json={"state_token": tok}).json()
     assert rep["months_played"] == 6 and rep["season_summary"]["industry"] == "bunsik"
+
+
+def test_default_layout_fits_every_size():
+    """기본 테이블 수면 10~40평 어디서나 3D 배치에 못 놓는 것(빨간 반투명)이 없다."""
+    for ind in IDS:
+        for py in range(10, 41, 3):
+            p = gm.preview({"industry": ind, "gu": "마포구", "pyeong": py})
+            assert p["room"] is not None and all(x["fits"] for x in p["layout"]), (ind, py)
+            assert p["seats"]["total"] == sum(1 for x in p["layout"] if x["type"] == "chair")

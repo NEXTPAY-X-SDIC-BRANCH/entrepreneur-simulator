@@ -220,7 +220,7 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
         "event": {"id": ev["id"], "title": ev["title"], "choice": choice, "choice_label": opt["label"], "downside": opt["downside"]},
         "random_events": rnd,
         "kpi": {"revenue_krw": round(r["revenue"]), "op_krw": round(r["op"]), "op_margin": round(r["op"] / r["revenue"], 3) if r["revenue"] else None,
-                "cash_krw": round(s["cash"]), "covers": round(r["covers"]), "walkaways": round(r["walkaways"]), "walkaway_share": round(r["walk_share"], 3),
+                "cash_krw": round(s["cash"]), "covers": round(r["covers"]), "hall_covers": round(r["hall"]), "walkaways": round(r["walkaways"]), "walkaway_share": round(r["walk_share"], 3),
                 "delivery_revenue_krw": round(r["delivery_revenue"]), "ticket_krw": round(r["ticket"]), "rating": round(s["rating"], 2),
                 "rating_delta": round(s["rating"] - rating_before, 2), "satisfaction": round(r["satisfaction"], 3),
                 "owner_pay_ref_krw": P.iv(cfg["industry"], "cost", "owner_pay_month_krw")},

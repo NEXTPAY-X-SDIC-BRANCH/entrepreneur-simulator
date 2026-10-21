@@ -25,12 +25,14 @@ GRADES = ("basic", "mid", "high")
 GRADE_KO = {"basic": "기본", "mid": "중급", "high": "고급"}
 HOURS_KO = {"short": "짧게", "standard": "기본", "long": "길게"}
 # 3D 가게: 카페 배치기(sim/cafe/layout.py)를 빌려 테이블과 카운터를 놓고, 카운터 위 조각을 업종 이름으로 읽는다
+# 카페 배치기의 카운터 칸(진열장, 오븐, 제빙기, 냉장고, 개수대)을 업종 설비 이름으로 읽는다. 진열장을 빼면 카페 배치기가 뒤쪽 줄
+# 마지막 칸을 못 놓는 경우가 있어(sim/cafe/layout.py 카운터 폭 계산) 모든 업종에 진열장 칸을 둔다.
 FURNITURE = {
-    "hansik": {"oven": 1, "showcase": 0, "labels": {"oven": "가스레인지·밥솥", "fridge": "반찬 냉장고", "sink": "개수대", "pos": "계산대", "ice_maker": "식기세척기"}},
-    "pub": {"oven": 1, "showcase": 0, "labels": {"oven": "튀김기·화구", "fridge": "맥주 냉장고", "sink": "개수대", "pos": "계산대", "ice_maker": "생맥주 디스펜서"}},
-    "bunsik": {"oven": 1, "showcase": 0, "labels": {"oven": "떡볶이 판·튀김기", "fridge": "재료 냉장고", "sink": "개수대", "pos": "계산대", "ice_maker": "김밥 작업대"}},
-    "bakery": {"oven": 1, "showcase": 1, "labels": {"oven": "제빵 오븐", "showcase": "빵 진열장", "fridge": "반죽 냉장고", "sink": "개수대", "pos": "계산대", "ice_maker": "발효기"}},
-    "chicken": {"oven": 1, "showcase": 0, "labels": {"oven": "튀김기", "fridge": "닭 냉장고", "sink": "개수대", "pos": "계산대·배달 주문", "ice_maker": "포장대"}},
+    "hansik": {"oven": 1, "showcase": 1, "labels": {"showcase": "반찬 진열대", "oven": "가스레인지", "ice_maker": "밥솥", "fridge": "반찬 냉장고", "sink": "개수대", "pos": "계산대"}},
+    "pub": {"oven": 1, "showcase": 1, "labels": {"showcase": "안주 냉장 진열대", "oven": "화구·튀김기", "ice_maker": "생맥주 디스펜서", "fridge": "맥주 냉장고", "sink": "개수대", "pos": "계산대"}},
+    "bunsik": {"oven": 1, "showcase": 1, "labels": {"showcase": "김밥 진열대", "oven": "떡볶이 판", "ice_maker": "튀김기", "fridge": "재료 냉장고", "sink": "개수대", "pos": "계산대"}},
+    "bakery": {"oven": 1, "showcase": 1, "labels": {"showcase": "빵 진열장", "oven": "제빵 오븐", "ice_maker": "발효기", "fridge": "반죽 냉장고", "sink": "개수대", "pos": "계산대"}},
+    "chicken": {"oven": 1, "showcase": 1, "labels": {"showcase": "포장 대기대", "oven": "튀김기", "ice_maker": "염지 작업대", "fridge": "닭 냉장고", "sink": "개수대", "pos": "계산대·배달 주문"}},
 }
 
 
@@ -282,7 +284,8 @@ def _layout(ctx: dict) -> dict:
         solved = cafe_layout.solve(lay_cfg)
     except Exception:   # 배치기가 바뀌어도 숫자 계산은 계속한다 (3D만 빈다)
         return {"room": None, "layout": [], "roster": [], "seats_placed": 0}
-    items = [x for x in solved["layout"] if x["type"] not in ("espresso", "grinder")]
+    # 에스프레소 머신은 빼고, 테이블에 못 붙은 의자(unassigned)도 뺀다 (좌석은 실제로 놓인 의자만 센다)
+    items = [x for x in solved["layout"] if x["type"] not in ("espresso", "grinder") and not x.get("unassigned")]
     for x in items:
         x["label_ko"] = fu["labels"].get(x["type"])
     room = solved["room"]
@@ -345,7 +348,8 @@ def preview(body: dict) -> dict:
                         "owner_pay_ref_krw": owner, "grade": "L",
                         "note_ko": "자리가 잡힌 달(개업 6개월째, 계절 평균, 사건 없음). 사장님 인건비는 비용에 넣지 않았어요."},
         "breakeven_units_day": round(breakeven_day, 1) if breakeven_day else None,
-        "benchmark": {"op_share_survey": P.iv(ind, "cost", "op_share_survey"), "owner_family_share_survey": P.iv(ind, "cost", "owner_family_share_survey"),
+        "benchmark": {"op_share_survey": P.iv(ind, "cost", "op_share_survey"), "rent_share_survey": P.iv(ind, "cost", "rent_share_survey"),
+                      "krei_label": k["krei_label"], "owner_family_share_survey": P.iv(ind, "cost", "owner_family_share_survey"),
                       "sales_p25_month_krw": round(P.iv(ind, "demand", "annual_sales_p25_man") * 1e4 / 12),
                       "sales_p75_month_krw": round(P.iv(ind, "demand", "annual_sales_p75_man") * 1e4 / 12),
                       "note_ko": f"경영실태조사 2025 {k['krei_label']} (전국): 영업이익 {P.iv(ind, 'cost', 'op_share_survey'):.1%}는 대표자·가족 인건비 "

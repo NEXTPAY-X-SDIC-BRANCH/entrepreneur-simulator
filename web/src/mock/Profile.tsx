@@ -1,6 +1,8 @@
 // Step 1. One question on screen at a time; the previous one fades out before the next fades in.
 import { useEffect, useRef, useState } from "react";
-import { krei, man, type Gu, type Profile } from "./model";
+import { krei, man, type Gu, type Industry, type Profile } from "./model";
+import { IndustryPicker, InvestRef } from "../lab/industry/IndustryPicker"; // lab:industry
+import { industryLabel } from "../lab/industry/industries"; // lab:industry
 
 const REASONS = ["사는 곳과 가까워서", "유동 인구가 많아서", "월세가 쌀 것 같아서", "잘 아는 동네라서", "아직 잘 모르겠어요"];
 const AGES = ["20대", "30대", "40대", "50대 이상"];
@@ -28,7 +30,7 @@ export default function ProfileStep({ profile, setProfile, gus, onDone }: {
   const invest = krei()?.micro.invest_total as { n: number; p25: number; p50: number; p75: number } | undefined;
 
   const answered: { label: string; at: number }[] = [
-    { label: profile.industry === "bbq" ? "고깃집" : "카페", at: 0 },
+    { label: industryLabel(profile.industry), at: 0 }, // lab:industry
     { label: profile.gu, at: 1 },
     { label: profile.reasons.length ? profile.reasons[0] : "이유 없음", at: 2 },
     { label: man(profile.capital), at: 3 },
@@ -52,15 +54,7 @@ export default function ProfileStep({ profile, setProfile, gus, onDone }: {
       )}
 
       <form className={`m-q ${leaving ? "is-leaving" : ""}`} key={q} onSubmit={(e) => { e.preventDefault(); if (valid) move(i + 1); }}>
-        {q === "industry" && (
-          <fieldset>
-            <legend>어떤 가게를 열고 싶으세요?</legend>
-            <div className="m-choices m-choices-big">
-              <label className="m-choice"><input type="radio" name="ind" checked={profile.industry === "bbq"} onChange={() => set({ industry: "bbq" })} /><span>고깃집<small>삼겹살, 목살 같은 돼지고기 구이 (자료는 한식 육류 요리 전문점 기준)</small></span></label>
-              <label className="m-choice"><input type="radio" name="ind" checked={profile.industry === "cafe"} onChange={() => set({ industry: "cafe" })} /><span>카페<small>커피, 음료, 디저트 (자료는 독립 카페 기준, 동네 분석부터 열려 있어요)</small></span></label>
-            </div>
-          </fieldset>
-        )}
+        {q === "industry" && <IndustryPicker value={profile.industry} onChange={(id) => set({ industry: id as Industry })} />} {/* lab:industry 일곱 업종 (안 B) */}
         {q === "gu" && (
           <fieldset>
             <legend>서울 어디에 열고 싶으세요?</legend>
@@ -109,6 +103,7 @@ export default function ProfileStep({ profile, setProfile, gus, onDone }: {
                 4분의 1은 {man(Math.round(invest.p75 / 100) * 100)} 위예요. 보증금과 권리금은 이 금액에 안 들어 있어요 (경영실태조사 2025, 전국, 응답 {invest.n}곳).
               </p>
             )}
+            <InvestRef industry={profile.industry} /> {/* lab:industry */}
             <div className="m-presets">
               {PRESETS.map((p) => <button type="button" key={p} onClick={() => set({ capital: p })}>{man(p)}</button>)}
             </div>

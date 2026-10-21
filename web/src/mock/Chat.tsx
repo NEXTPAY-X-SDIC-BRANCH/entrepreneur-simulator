@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { cashLeft, guStat, iga, man, openingCost, rankOf, storeStats, type Gu, type Levers, type Profile, type ShockId, type Store } from "./model";
 import { getEngineCtx } from "./chatContext";
 import { profileOf } from "./area";
+import { isLab } from "../lab/industry/industries"; // lab:industry
 import "./cite.css";
 
 type Cite = { id: string; title: string; publisher: string; year: string; type: string; url: string; note: string };
@@ -24,6 +25,7 @@ export default function Chat({ profile, store, levers, gus, onClose }: {
   // 서버에 함께 보내는 값: 지금 화면의 가게 입력과 시뮬레이션 결과
   const context = () => {
     const st = guStat(profile.gu);
+    if (isLab(profile.industry)) return { gu: profile.gu, dong: st.area ?? undefined, industry: profile.industry }; // lab:industry 새 업종은 고깃집 점포 값(돼지고기 구이 가게 수 등)을 보내지 않는다
     const s = storeStats(store);
     const cost = openingCost(store, profile.gu, profile.keyMoney ?? 0);
     const engine = getEngineCtx();
