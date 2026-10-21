@@ -472,12 +472,12 @@ reg_evening_share:
   source_id: S12
   reviewed_by: null
 reg_foot_traffic:
-  base: null
-  low: null
-  high: null
+  base: 3593343
+  low: 3443525
+  high: 3707419
   unit: 명/분기
   method: public
-  confidence: L
+  confidence: H
   source_id: S14
   reviewed_by: null
 reg_trade_area_facilities:
@@ -490,12 +490,12 @@ reg_trade_area_facilities:
   source_id: S17
   reviewed_by: null
 reg_worker_pop:
-  base: null
-  low: null
-  high: null
+  base: 2991
+  low: 2991
+  high: 2991
   unit: 명
   method: public
-  confidence: L
+  confidence: H
   source_id: S16
   reviewed_by: null
 reg_competitors:
@@ -535,13 +535,13 @@ cst_side_cost_ratio:
   source_id: null
   reviewed_by: null
 cst_employee_wage:
-  base: 2400000
+  base: 2840000
   low: 2156880
   high: 3000000
   unit: ₩/월
-  method: guesstimate
-  confidence: L
-  source_id: S36
+  method: public
+  confidence: M
+  source_id: S93;S36
   reviewed_by: null
 cst_owner_imputed_wage:
   base: 3000000
@@ -876,19 +876,19 @@ _pnl_base:
   c_banchan: 1179360.0
   food: 8221122.0
   l_pt: 3568656.0
-  l_emp: 2400000
+  l_emp: 2840000
   l_owner: 3000000
-  labor: 8968656.0
+  labor: 9408656.0
   rent: 4700000
   m_util: 1700000
   m_other: 1500000
   mgmt: 3200000
   fees: 221837.616
   other: 3421837.616
-  cost: 25311615.616
-  op: 1223984.384
-  owner_take: 4223984.384
+  cost: 25751615.616
+  op: 783984.384
+  owner_take: 3783984.384
   revpash: 3375.0
   rel_rev: 1.0293
   order_kg: 196.56
-  be_covers: 916.3126
+  be_covers: 940.2136

@@ -426,7 +426,7 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
     if "rent_hike" in keys:
         st["rent_mult"] = 1 + s("rent_hike_pct")
     viral = (s("viral_demand_mult") if "viral" in keys else 1.0) * (s("viral_carry_mult") if st["viral_last"] else 1.0)
-    f = {"season": s("seasonality_by_quarter")[(cal - 1) // 3 + 1], "rating": st["rating"],
+    f = {"season": s("seasonality_by_quarter")[(cal - 1) // 3 + 1] * s("month_in_quarter")[cal], "rating": st["rating"],
          "maturity": _maturity(st["regulars_idx"]), "price_level": st["price_level"], "hours": dec["hours"],
          "staff": dec["staff_policy"], "marketing_krw": dec["marketing_krw"], "dessert": dec["dessert"],
          "rival": st["rival"], "viral": viral, "breakdown": "breakdown" in keys, "rent_mult": st["rent_mult"],

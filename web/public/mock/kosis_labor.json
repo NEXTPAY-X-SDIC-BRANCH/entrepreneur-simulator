@@ -1,0 +1,293 @@
+{
+ "_meta": {
+  "source": "고용노동부 사업체노동력조사 (KOSIS DT_118N_MON066), 고용형태별근로실태조사 (KOSIS DT_118N_LCE305)",
+  "fetched_at": "2026-10-21T18:51:56",
+  "note": "이직: 음식점 및 주점업, 30인미만, 임시일용. 자발적 이직률 = 자발적 이직자 ÷ 근로자. 임금: 숙박 및 음식점업 대분류, 매년 6월 기준, 천원 단위는 _k"
+ },
+ "turnover": {
+  "window": [
+   "202509",
+   "202608"
+  ],
+  "voluntary_rate_mean": 0.048,
+  "voluntary_rate_min": 0.0312,
+  "voluntary_rate_max": 0.064,
+  "months": {
+   "202401": {
+    "separations": 93883.0,
+    "voluntary": 24048.0,
+    "workers": 382883.0,
+    "voluntary_rate": 0.0628
+   },
+   "202402": {
+    "separations": 79337.0,
+    "voluntary": 16575.0,
+    "workers": 378118.0,
+    "voluntary_rate": 0.0438
+   },
+   "202403": {
+    "separations": 85381.0,
+    "voluntary": 14860.0,
+    "workers": 387435.0,
+    "voluntary_rate": 0.0384
+   },
+   "202404": {
+    "separations": 91600.0,
+    "voluntary": 14994.0,
+    "workers": 387113.0,
+    "voluntary_rate": 0.0387
+   },
+   "202405": {
+    "separations": 96033.0,
+    "voluntary": 21171.0,
+    "workers": 386346.0,
+    "voluntary_rate": 0.0548
+   },
+   "202406": {
+    "separations": 89196.0,
+    "voluntary": 14367.0,
+    "workers": 387948.0,
+    "voluntary_rate": 0.037
+   },
+   "202407": {
+    "separations": 87539.0,
+    "voluntary": 13402.0,
+    "workers": 387082.0,
+    "voluntary_rate": 0.0346
+   },
+   "202408": {
+    "separations": 96353.0,
+    "voluntary": 20537.0,
+    "workers": 396974.0,
+    "voluntary_rate": 0.0517
+   },
+   "202409": {
+    "separations": 92803.0,
+    "voluntary": 15320.0,
+    "workers": 388730.0,
+    "voluntary_rate": 0.0394
+   },
+   "202410": {
+    "separations": 83719.0,
+    "voluntary": 13520.0,
+    "workers": 379975.0,
+    "voluntary_rate": 0.0356
+   },
+   "202411": {
+    "separations": 78072.0,
+    "voluntary": 11787.0,
+    "workers": 376047.0,
+    "voluntary_rate": 0.0313
+   },
+   "202412": {
+    "separations": 78319.0,
+    "voluntary": 15376.0,
+    "workers": 380511.0,
+    "voluntary_rate": 0.0404
+   },
+   "202501": {
+    "separations": 81862.0,
+    "voluntary": 20421.0,
+    "workers": 374932.0,
+    "voluntary_rate": 0.0545
+   },
+   "202502": {
+    "separations": 75988.0,
+    "voluntary": 17148.0,
+    "workers": 366147.0,
+    "voluntary_rate": 0.0468
+   },
+   "202503": {
+    "separations": 80457.0,
+    "voluntary": 21323.0,
+    "workers": 370072.0,
+    "voluntary_rate": 0.0576
+   },
+   "202504": {
+    "separations": 69541.0,
+    "voluntary": 13086.0,
+    "workers": 378629.0,
+    "voluntary_rate": 0.0346
+   },
+   "202505": {
+    "separations": 70504.0,
+    "voluntary": 13784.0,
+    "workers": 388910.0,
+    "voluntary_rate": 0.0354
+   },
+   "202506": {
+    "separations": 80734.0,
+    "voluntary": 18696.0,
+    "workers": 378119.0,
+    "voluntary_rate": 0.0494
+   },
+   "202507": {
+    "separations": 70346.0,
+    "voluntary": 15169.0,
+    "workers": 387993.0,
+    "voluntary_rate": 0.0391
+   },
+   "202508": {
+    "separations": 81298.0,
+    "voluntary": 19408.0,
+    "workers": 384715.0,
+    "voluntary_rate": 0.0504
+   },
+   "202509": {
+    "separations": 71882.0,
+    "voluntary": 14850.0,
+    "workers": 383023.0,
+    "voluntary_rate": 0.0388
+   },
+   "202510": {
+    "separations": 77059.0,
+    "voluntary": 16384.0,
+    "workers": 379005.0,
+    "voluntary_rate": 0.0432
+   },
+   "202511": {
+    "separations": 64646.0,
+    "voluntary": 12011.0,
+    "workers": 385299.0,
+    "voluntary_rate": 0.0312
+   },
+   "202512": {
+    "separations": 75903.0,
+    "voluntary": 15121.0,
+    "workers": 378402.0,
+    "voluntary_rate": 0.04
+   },
+   "202601": {
+    "separations": 63861.0,
+    "voluntary": 13825.0,
+    "workers": 366919.0,
+    "voluntary_rate": 0.0377
+   },
+   "202602": {
+    "separations": 78216.0,
+    "voluntary": 23420.0,
+    "workers": 365657.0,
+    "voluntary_rate": 0.064
+   },
+   "202603": {
+    "separations": 74475.0,
+    "voluntary": 21981.0,
+    "workers": 370343.0,
+    "voluntary_rate": 0.0594
+   },
+   "202604": {
+    "separations": 71086.0,
+    "voluntary": 23491.0,
+    "workers": 372211.0,
+    "voluntary_rate": 0.0631
+   },
+   "202605": {
+    "separations": 72105.0,
+    "voluntary": 12088.0,
+    "workers": 384928.0,
+    "voluntary_rate": 0.0314
+   },
+   "202606": {
+    "separations": 95680.0,
+    "voluntary": 21826.0,
+    "workers": 375557.0,
+    "voluntary_rate": 0.0581
+   },
+   "202607": {
+    "separations": 91856.0,
+    "voluntary": 21275.0,
+    "workers": 380464.0,
+    "voluntary_rate": 0.0559
+   },
+   "202608": {
+    "separations": 78594.0,
+    "voluntary": 20112.0,
+    "workers": 379706.0,
+    "voluntary_rate": 0.053
+   }
+  }
+ },
+ "wage": {
+  "latest": "2025",
+  "by_type": {
+   "all": {
+    "2022": {
+     "hours": 130.1,
+     "monthly_pay_k": 1681.0,
+     "monthly_total_k": 1707.0,
+     "hourly_total": 12811.0
+    },
+    "2023": {
+     "hours": 131.1,
+     "monthly_pay_k": 1766.0,
+     "monthly_total_k": 1792.0,
+     "hourly_total": 13119.0
+    },
+    "2024": {
+     "hours": 126.9,
+     "monthly_pay_k": 1830.0,
+     "monthly_total_k": 1857.0,
+     "hourly_total": 14227.0
+    },
+    "2025": {
+     "hours": 126.3,
+     "monthly_pay_k": 1893.0,
+     "monthly_total_k": 1920.0,
+     "hourly_total": 14670.0
+    }
+   },
+   "regular": {
+    "2022": {
+     "hours": 180.2,
+     "monthly_pay_k": 2436.0,
+     "monthly_total_k": 2487.0,
+     "hourly_total": 13959.0
+    },
+    "2023": {
+     "hours": 184.6,
+     "monthly_pay_k": 2609.0,
+     "monthly_total_k": 2663.0,
+     "hourly_total": 14566.0
+    },
+    "2024": {
+     "hours": 178.6,
+     "monthly_pay_k": 2703.0,
+     "monthly_total_k": 2757.0,
+     "hourly_total": 15675.0
+    },
+    "2025": {
+     "hours": 178.9,
+     "monthly_pay_k": 2840.0,
+     "monthly_total_k": 2894.0,
+     "hourly_total": 16417.0
+    }
+   },
+   "nonregular": {
+    "2022": {
+     "hours": 86.2,
+     "monthly_pay_k": 1020.0,
+     "monthly_total_k": 1024.0,
+     "hourly_total": 11805.0
+    },
+    "2023": {
+     "hours": 86.8,
+     "monthly_pay_k": 1067.0,
+     "monthly_total_k": 1071.0,
+     "hourly_total": 11920.0
+    },
+    "2024": {
+     "hours": 83.1,
+     "monthly_pay_k": 1091.0,
+     "monthly_total_k": 1095.0,
+     "hourly_total": 13002.0
+    },
+    "2025": {
+     "hours": 81.7,
+     "monthly_pay_k": 1090.0,
+     "monthly_total_k": 1094.0,
+     "hourly_total": 13191.0
+    }
+   }
+  }
+ }
+}

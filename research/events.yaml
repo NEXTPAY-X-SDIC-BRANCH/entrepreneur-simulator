@@ -121,8 +121,8 @@ staff_quit:
   group: 인력
   prob: {}       # driven by staff count and fatigue (season_params.fatigue.quit_*), not by the calendar
   effects: {resolve: quit}
-  mechanism: 이번 달 교대당 알바 한 명이 빠지고 남은 사람의 피로가 오른다. 확률 = 알바 한 명당 월 0.07 (전 산업 월 이직률 4.9%, 외식 4.3%보다 높게 가정), 피로가 높으면 더 오른다
-  tag: 가정
+  mechanism: 이번 달 교대당 알바 한 명이 빠지고 남은 사람의 피로가 오른다. 확률 = 알바 한 명당 월 0.048 (음식점 30인미만 임시일용 자발적 이직률, S92), 피로가 높으면 더 오른다
+  tag: S92
 owner_sick:
   label: 사장님 몸살
   group: 인력
@@ -258,7 +258,7 @@ _night_decisions:
     months: [1]
     clock_min: 0
     prompt_ko: "한파 주의보가 내려 주말 저녁 예약이 줄줄이 취소되고 있습니다."
-    monthly_count: {value: 8, tag: 가정, note: "한파로 영향받는 저녁이 한 달에 8번 있다고 가정"}
+    monthly_count: {value: 4.8, tag: S94, note: "서울(108) 1월 최저기온 영하 10도 이하인 날 비율 0.155 × 31일, 2016~2025 (web/public/mock/weather_seoul.json). 이 날 모두 예약 취소가 생긴다고 본다"}
     condition: always
     default: nothing
     options:

@@ -35,6 +35,8 @@ export const FIXTURES = 300, SIGN = 250; // 만원. 행거·진열대·거울·�
 const BASE_PYEONG = 13; // 가정: 면적 효과의 기준. 매출은 (평수 ÷ 13)^0.5 배
 const ELASTIC = 1.5;    // 가정: 할인율 10%면 팔리는 양 +15%
 const OLD_SHARE = 0.4;  // 가정: 시즌이 바뀔 때 재고의 40%가 철 지난 옷이 된다
+// 분기 안의 달 비율 (분기 평균 1): 통계청 소매판매액지수 의복 불변지수 월 합계, 2023~2025 평균 (KOSIS DT_1K41012 G21, kosis_monthly.json)
+const MONTH_IN_QUARTER: Record<number, number> = { 1: 0.946, 2: 0.911, 3: 1.143, 4: 1.024, 5: 1.039, 6: 0.937, 7: 1.038, 8: 0.904, 9: 1.058, 10: 1.008, 11: 1.032, 12: 0.961 };
 
 export const expectedSales = (gu: string, pyeong: number) => guStat(gu).sales * Math.sqrt(pyeong / BASE_PYEONG); // 만원/월, 자리 잡은 뒤
 
@@ -82,7 +84,7 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   const st = guStat(profile.gu);
   const fx = opt.fx;
   const q = Math.floor((month - 1) / 3);
-  const base = expectedSales(profile.gu, cfg.pyeong) * (st.qidx[q] ?? 1);
+  const base = expectedSales(profile.gu, cfg.pyeong) * (st.qidx[q] ?? 1) * MONTH_IN_QUARTER[month];
   const discount = Math.min(0.5, plan.discount + (fx.discount ?? 0));
   const demand = base * s.awareness * (ev.demand ?? 1) * (fx.demand ?? 1) * (1 + ELASTIC * discount); // 정가 기준 팔고 싶은 양 (만원)
   const capacity = KOSIS.perWorker * (1 + plan.staff);                                                      // 사장 + 알바

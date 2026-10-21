@@ -254,12 +254,12 @@ def test_rating_and_regulars_drift():
 
 
 def test_seasonality_follows_quarter_index():
-    q = v("season", "seasonality_by_quarter")
+    q, mq = v("season", "seasonality_by_quarter"), v("season", "month_in_quarter")
     for start in (1, 7):   # 한 시즌이 6개월이라 상반기·하반기를 따로 본다
         _, months = run_season(daily_customers=100, start_month=start)
         cal = [(start - 1 + i) % 12 + 1 for i in range(N)]
         assert [m["calendar_month"] for m in months] == cal
-        assert [m["drivers"]["season_index"] for m in months] == [q[(c - 1) // 3 + 1] for c in cal]
+        assert [m["drivers"]["season_index"] for m in months] == [q[(c - 1) // 3 + 1] * mq[c] for c in cal]
     assert load_params()["season"]["seasonality_by_quarter"]["grade"] == "H"
 
 
