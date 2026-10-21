@@ -44,6 +44,10 @@ class CafeIn(BaseModel):
     daily_customers: int | None = Field(None, ge=10, le=600)   # orders on the peak day; None = data default
     peak_day: Literal["weekday", "weekend"] | None = None              # None = the district's busier day type
     staff_peak: int | None = Field(None, ge=1, le=8)                   # people at the peak, 사장님 included; None = recommended
+    # lab:layout: room shape (가로 ÷ 세로) and the door (wall + 0..1 along it); None = the old default room
+    aspect: float | None = Field(None, ge=0.35, le=3.0)
+    door_wall: Literal["front", "back", "left", "right"] | None = None
+    door_pos: float | None = Field(None, ge=0.0, le=1.0)
 
 
 class SeasonIn(CafeIn):
