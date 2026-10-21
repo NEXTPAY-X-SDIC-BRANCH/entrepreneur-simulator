@@ -1,0 +1,219 @@
+# 업종별 '이달의 사건' (lab:industry). 한 달에 하나: 그 달(달력 월)에 맞는 업종 사건이 있으면 그것, 없으면 generic 중 하나(시드로 고름).
+# 계절 수요는 이미 분기 지수(서울시 상권분석서비스, H)에 들어 있어서, 사건은 '그 계절에 사장님이 고를 대응'으로만 효과를 준다
+# (기본 선택지는 원가 충격처럼 분기 지수에 없는 것만 가진다). 효과 크기는 모두 가정이고, 사건이 생기는 이유에 출처가 있으면 why에 적었다.
+# effect 키: demand (손님 배수), ticket (객단가 배수), food (식재료 원가 배수), labor (인건비 배수), cost_krw (그달 추가 비용),
+#   closed_days (문 닫는 날), satisfaction (만족도 더하기), extra_staff (그달만 더 쓰는 아르바이트 수), delivery_to_takeout (배달 매출 중 포장으로 옮기는 비율)
+grade: 가정
+source: "none (효과 크기), 사건의 배경은 항목별 why"
+
+industry:
+  hansik:
+    - id: vacation_lunch
+      months: [7, 8]
+      title: "휴가철 점심 손님"
+      prompt: "직장인 휴가철이라 점심 손님이 들쭉날쭉해요. 여름 메뉴를 넣거나 한 주 쉬어 갈 수 있어요."
+      why: "한식음식점 3분기 매출은 서울시 상권분석서비스 2025 분기 지수에 이미 들어 있음"
+      default: hold
+      options:
+        - {id: hold, label: "평소대로", hint: "메뉴와 영업일을 그대로 둬요", downside: "", effect: {}}
+        - {id: summer_menu, label: "콩국수·냉면 추가", hint: "여름 메뉴로 손님을 조금 더 불러요", downside: "재료와 손이 더 들어요", effect: {demand: 1.06, food: 1.02, labor: 1.05}}
+        - {id: close_week, label: "한 주 쉬기", hint: "사장님도 쉬고 인건비를 아껴요", downside: "그 주 매출이 없어요", effect: {closed_days: 6, labor: 0.8}}
+    - id: kimjang
+      months: [11, 12]
+      title: "김장철 배추·무 값 상승"
+      prompt: "김장철이라 배추와 무 값이 뛰었어요. 반찬 원가가 올라요."
+      why: "배추·무 도매가는 김장철에 오르는 계절성이 있음 (KAMIS 농산물 가격정보). 크기 8%는 가정"
+      default: absorb
+      options:
+        - {id: absorb, label: "그대로 버티기", hint: "가격과 반찬을 그대로 둬요", downside: "원가가 8% 올라요", effect: {food: 1.08}}
+        - {id: fewer_banchan, label: "반찬 한 가지 줄이기", hint: "원가 상승을 줄여요", downside: "손님 만족이 조금 떨어져요", effect: {food: 1.03, satisfaction: -0.05}}
+        - {id: price_up, label: "가격 500원 올리기", hint: "객단가를 올려 원가를 메워요", downside: "손님이 조금 줄어요", effect: {food: 1.08, ticket: 1.04, demand: 0.96}}
+    - id: holiday
+      months: [1, 2, 9, 10]
+      title: "명절 연휴"
+      prompt: "설·추석 연휴가 있는 달이에요. 연휴에 문을 열지 정해요."
+      why: "명절 연휴 3일 (관공서의 공휴일에 관한 규정)"
+      default: close
+      options:
+        - {id: close, label: "연휴에 쉬기", hint: "직원도 쉬어요", downside: "연휴 사흘 매출이 없어요", effect: {closed_days: 3}}
+        - {id: open, label: "연휴에도 열기", hint: "문 연 가게가 적어 찾아오는 손님이 있어요", downside: "휴일 수당이 나가요", effect: {labor: 1.06, demand: 0.99}}
+    - id: group_lunch
+      months: [3, 4, 5, 6]
+      title: "근처 회사의 단체 점심 제안"
+      prompt: "근처 회사에서 평일 점심 단체 식사를 맡아 달라고 해요. 대신 1인 가격을 깎아 달래요."
+      why: "한식 일반음식점 손님 중 2~5인과 단체가 많음 (경영실태조사 2025 주요 유입 고객)"
+      default: decline
+      options:
+        - {id: accept, label: "받기 (5% 할인)", hint: "점심 손님이 늘어요", downside: "1인 객단가가 낮아지고 점심이 바빠져요", effect: {demand: 1.1, ticket: 0.96, labor: 1.04}}
+        - {id: decline, label: "거절하기", hint: "지금 손님과 가격을 지켜요", downside: "", effect: {}}
+  pub:
+    - id: yearend
+      months: [11, 12]
+      title: "연말 회식 시즌"
+      prompt: "연말 단체 예약 문의가 많아요. 받을수록 바빠져요."
+      why: "호프-간이주점 4분기 매출은 분기 지수에 이미 들어 있음, 이 사건은 단체 예약을 얼마나 받을지"
+      default: normal
+      options:
+        - {id: groups, label: "단체 예약 적극 받기", hint: "손님이 늘어요", downside: "아르바이트 1명을 더 써야 해요", effect: {demand: 1.12, extra_staff: 1}}
+        - {id: normal, label: "평소대로", hint: "", downside: "좌석이 차면 돌아가는 손님이 생겨요", effect: {}}
+    - id: newyear_slump
+      months: [1, 2]
+      title: "연초 비수기"
+      prompt: "연초에는 술자리가 줄어요. 할인으로 손님을 부를지, 영업을 줄일지 정해요."
+      why: "1분기 매출이 연평균보다 낮음 (서울시 상권분석서비스 호프-간이주점 2025 분기 지수)"
+      default: hold
+      options:
+        - {id: happy_hour, label: "이른 시간 할인", hint: "손님을 불러요", downside: "객단가가 내려가요", effect: {demand: 1.08, ticket: 0.93}}
+        - {id: shorter, label: "평일 일찍 닫기", hint: "인건비를 줄여요", downside: "늦은 손님을 놓쳐요", effect: {labor: 0.88, demand: 0.95}}
+        - {id: hold, label: "평소대로", hint: "", downside: "", effect: {}}
+    - id: terrace
+      months: [5, 6, 7, 8]
+      title: "야외 테이블"
+      prompt: "날이 따뜻해져 가게 앞에 테이블을 내놓을 수 있어요."
+      why: "야외 영업은 구청 도로점용 허가가 필요해 민원 위험이 있음"
+      default: hold
+      options:
+        - {id: terrace, label: "야외 테이블 내놓기", hint: "좌석이 늘어 손님이 늘어요", downside: "탁자·허가 비용과 소음 민원 위험", effect: {demand: 1.08, cost_krw: 300000, satisfaction: -0.02}}
+        - {id: hold, label: "안 내놓기", hint: "", downside: "", effect: {}}
+    - id: liquor_price
+      months: [3, 4, 9, 10]
+      title: "맥주·소주 출고가 인상"
+      prompt: "주류 출고가가 올랐어요. 메뉴판 가격을 올릴지 정해요."
+      why: "주류 출고가 인상은 해마다 반복되는 뉴스. 크기 4%는 가정"
+      default: absorb
+      options:
+        - {id: absorb, label: "가격 그대로", hint: "손님은 그대로", downside: "원가가 4% 올라요", effect: {food: 1.04}}
+        - {id: price_up, label: "가격 올리기", hint: "원가를 메워요", downside: "손님이 조금 줄어요", effect: {food: 1.04, ticket: 1.05, demand: 0.96}}
+  bunsik:
+    - id: semester
+      months: [3, 9]
+      title: "개학 시즌"
+      prompt: "학생 손님이 돌아왔어요. 학생 세트를 만들지 정해요."
+      why: "분식전문점 매출 중 10~20대 비중이 다른 업종보다 높음 (서울시 상권분석서비스 연령대 매출)"
+      default: hold
+      options:
+        - {id: student_set, label: "학생 세트 만들기", hint: "손님이 늘어요", downside: "객단가가 내려가요", effect: {demand: 1.1, ticket: 0.95}}
+        - {id: hold, label: "평소대로", hint: "", downside: "", effect: {}}
+    - id: vacation
+      months: [1, 2, 7, 8]
+      title: "방학"
+      prompt: "방학이라 학생 손님이 줄었어요. 배달 광고를 늘릴지, 영업을 줄일지 정해요."
+      why: "방학 달 학교 앞 상권 매출 감소는 분기 지수에 일부 들어 있음"
+      default: hold
+      options:
+        - {id: delivery_ad, label: "배달 광고 늘리기", hint: "배달 주문을 늘려요", downside: "광고비 30만원", effect: {demand: 1.05, cost_krw: 300000}}
+        - {id: shorter, label: "영업 줄이기", hint: "인건비를 아껴요", downside: "손님이 더 줄어요", effect: {labor: 0.85, demand: 0.94}}
+        - {id: hold, label: "평소대로", hint: "", downside: "", effect: {}}
+    - id: flour_price
+      months: [4, 5, 6, 10, 11, 12]
+      title: "밀가루·떡 값 인상"
+      prompt: "밀가루와 떡 납품가가 올랐어요."
+      why: "가공식품 비중이 큰 업종이라 원가 인상이 바로 닿음 (경영실태조사 식재료 구성). 크기 6%는 가정"
+      default: absorb
+      options:
+        - {id: absorb, label: "그대로 버티기", hint: "", downside: "원가가 6% 올라요", effect: {food: 1.06}}
+        - {id: price_up, label: "메뉴 500원 올리기", hint: "원가를 메워요", downside: "객단가가 낮은 업종이라 손님이 꽤 줄어요", effect: {food: 1.06, ticket: 1.07, demand: 0.94}}
+        - {id: smaller, label: "양 조금 줄이기", hint: "원가를 덜 올려요", downside: "만족이 떨어져요", effect: {food: 1.02, satisfaction: -0.06}}
+  bakery:
+    - id: christmas
+      months: [12]
+      title: "크리스마스 케이크 예약"
+      prompt: "크리스마스 케이크 예약을 받을지 정해요. 받으면 밤새 구워야 해요."
+      why: "제과점 4분기 매출이 연중 가장 높음 (서울시 상권분석서비스 제과점 2025 분기 지수)"
+      default: hold
+      options:
+        - {id: preorder, label: "예약 받기", hint: "케이크 매출이 늘어요", downside: "아르바이트 1명과 재료가 더 들어요", effect: {demand: 1.15, food: 1.02, extra_staff: 1}}
+        - {id: hold, label: "진열 케이크만", hint: "", downside: "", effect: {}}
+    - id: butter_price
+      months: [1, 2, 3, 4]
+      title: "버터·밀가루 값 인상"
+      prompt: "버터와 밀가루 값이 올랐어요."
+      why: "제과점 식재료비 비중 39.7% (경영실태조사 2025). 인상 크기 6%는 가정"
+      default: absorb
+      options:
+        - {id: absorb, label: "가격 그대로", hint: "", downside: "원가가 6% 올라요", effect: {food: 1.06}}
+        - {id: price_up, label: "가격 올리기", hint: "원가를 메워요", downside: "손님이 조금 줄어요", effect: {food: 1.06, ticket: 1.05, demand: 0.96}}
+    - id: family_month
+      months: [5]
+      title: "가정의 달 선물 세트"
+      prompt: "어버이날·스승의 날 선물 세트를 만들지 정해요."
+      why: "5월 선물 수요 (가정)"
+      default: hold
+      options:
+        - {id: gift_set, label: "선물 세트 만들기", hint: "매출이 늘어요", downside: "포장재와 일손이 더 들어요", effect: {demand: 1.08, food: 1.02, labor: 1.05}}
+        - {id: hold, label: "평소대로", hint: "", downside: "", effect: {}}
+    - id: summer_waste
+      months: [6, 7, 8]
+      title: "더위에 빵이 덜 팔려요"
+      prompt: "더운 날에는 빵이 덜 나가 남는 빵이 늘어요."
+      why: "폐기 증가는 가정"
+      default: hold
+      options:
+        - {id: bake_less, label: "덜 굽기", hint: "폐기를 줄여요", downside: "저녁에 빵이 모자라 돌아가는 손님", effect: {demand: 0.97}}
+        - {id: evening_sale, label: "저녁 할인", hint: "남는 빵을 팔아요", downside: "객단가가 조금 내려가요", effect: {ticket: 0.97, food: 1.01}}
+        - {id: hold, label: "평소대로", hint: "", downside: "버리는 빵이 늘어요", effect: {food: 1.04}}
+    - id: trend
+      months: [9, 10, 11]
+      title: "SNS 유행 빵"
+      prompt: "SNS에서 유행하는 빵이 있어요. 따라 만들지 정해요."
+      why: "유행 메뉴의 효과와 지속 기간은 가정"
+      default: hold
+      options:
+        - {id: follow, label: "유행 빵 만들기", hint: "손님이 늘어요", downside: "새 재료와 연습 비용 20만원", effect: {demand: 1.08, food: 1.02, cost_krw: 200000}}
+        - {id: hold, label: "지금 메뉴 지키기", hint: "", downside: "", effect: {}}
+  chicken:
+    - id: worldcup
+      months: [6, 7]
+      title: "월드컵 경기 날 주문 폭주"
+      prompt: "2026 FIFA 월드컵 경기가 있는 날 저녁에 배달 주문이 몰려요."
+      why: "2026 FIFA 월드컵 6~7월 (북중미 개최). 주문 증가 크기는 가정"
+      default: hold
+      options:
+        - {id: extra_part, label: "아르바이트 1명 더 쓰기", hint: "몰리는 주문을 받아요", downside: "인건비가 늘어요", effect: {demand: 1.15, extra_staff: 1}}
+        - {id: hold, label: "지금 인원으로", hint: "", downside: "몰릴 때 못 받는 주문이 생겨요", effect: {demand: 1.15}}
+    - id: bird_flu
+      months: [11, 12, 1, 2]
+      title: "조류인플루엔자로 닭값 상승"
+      prompt: "겨울 조류인플루엔자로 닭고기 값이 올랐어요."
+      why: "고병원성 조류인플루엔자는 주로 겨울(10월~이듬해 3월)에 발생 (농림축산식품부). 원가 상승 크기 8%는 가정"
+      default: absorb
+      options:
+        - {id: absorb, label: "그대로 버티기", hint: "", downside: "원가가 8% 올라요", effect: {food: 1.08}}
+        - {id: price_up, label: "한 마리 1,000원 올리기", hint: "원가를 메워요", downside: "손님이 조금 줄어요", effect: {food: 1.08, ticket: 1.05, demand: 0.96}}
+        - {id: parts_menu, label: "부분육 메뉴로 바꾸기", hint: "싼 부위로 원가를 줄여요", downside: "만족이 조금 떨어져요", effect: {food: 1.03, satisfaction: -0.03}}
+    - id: delivery_app
+      months: [3, 4, 5, 8, 9, 10]
+      title: "배달앱 광고 제안"
+      prompt: "배달앱에서 광고 상품을 권해요. 포장 할인으로 배달 수수료를 피하는 방법도 있어요."
+      why: "치킨 전문점 매출의 40%가 배달 (경영실태조사 2025)"
+      default: hold
+      options:
+        - {id: ad, label: "광고 넣기 (30만원)", hint: "배달 주문이 늘어요", downside: "광고비가 나가요", effect: {demand: 1.05, cost_krw: 300000}}
+        - {id: takeout_discount, label: "포장 할인 2,000원", hint: "배달 손님 일부가 포장으로 와요", downside: "포장 객단가가 내려가요", effect: {delivery_to_takeout: 0.15, ticket: 0.98}}
+        - {id: hold, label: "그대로", hint: "", downside: "", effect: {}}
+
+generic:
+  - id: staff_quit
+    title: "직원이 그만둔대요"
+    prompt: "직원 한 명이 이번 달까지만 일한대요. 새로 뽑을지, 당분간 버틸지 정해요."
+    why: "외식업 구인난 응답 (경영실태조사 2025 경영 애로). 크기는 가정"
+    needs_staff: true
+    default: hire
+    options:
+      - {id: hire, label: "바로 새로 뽑기", hint: "인원을 지켜요", downside: "구인 광고와 교육 비용 30만원", effect: {cost_krw: 300000}}
+      - {id: wait, label: "한 달 버티기", hint: "인건비가 줄어요", downside: "바쁠 때 손님을 놓쳐요", effect: {extra_staff: -1}}
+  - id: bad_review
+    title: "나쁜 리뷰가 올라왔어요"
+    prompt: "배달앱과 지도에 '불친절하다'는 리뷰가 올라왔어요."
+    why: "리뷰가 별점과 손님에 주는 효과는 가정"
+    default: reply
+    options:
+      - {id: reply, label: "사과 답글과 서비스 쿠폰", hint: "만족을 지켜요", downside: "쿠폰 비용 10만원", effect: {cost_krw: 100000}}
+      - {id: ignore, label: "그냥 두기", hint: "", downside: "만족이 떨어져요", effect: {satisfaction: -0.08}}
+  - id: quiet
+    title: "조용한 달"
+    prompt: "이번 달은 큰일이 없어요. 운영 계획대로 가요."
+    why: ""
+    default: ok
+    options:
+      - {id: ok, label: "계획대로", hint: "", downside: "", effect: {}}

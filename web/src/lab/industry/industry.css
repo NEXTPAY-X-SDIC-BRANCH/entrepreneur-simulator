@@ -1,0 +1,61 @@
+/* lab:industry 새 업종 화면. mock.css의 토큰(--blue, --soft, --pencil ...)과 카드 모양을 그대로 쓴다. */
+
+/* 1단계 업종 고르기 (안 B) */
+.ip-grp { margin-block-start: 22px; }
+.ip-grp h3 { margin: 0 0 8px; font-size: 15px; font-weight: 600; color: var(--pencil); }
+.ip-grp .m-choices { margin-block-start: 0; }
+.ip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ip-grid .m-choice > span { block-size: 100%; padding: 18px 56px 18px 22px; font-size: 18px; }
+.ip-new { margin-inline-start: 8px; padding: 2px 8px; border-radius: 8px; background: var(--blue-wash); color: var(--blue-deep); font-style: normal; font-size: 13px; font-weight: 600; vertical-align: 2px; }
+.m-app :where(small).ip-data { margin-block-start: 4px; font-weight: 500; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.ip-src { margin-block-start: 20px; font-size: 14px; color: var(--pencil); }
+@media (max-width: 640px) { .ip-grid { grid-template-columns: 1fr; } }
+
+/* 2단계 동네 분석 */
+.ia-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 20px; padding: 20px max(20px, calc((100% - 1400px) / 2)) 48px; align-items: start; }
+.ia-card { padding: 22px 24px; border: 1px solid #edf0f4; border-radius: 20px; background: var(--bg); box-shadow: var(--card); }
+.ia-map { position: sticky; inset-block-start: 16px; }
+.ia-map h2 { margin: 0; font-size: 19px; }
+.ia-map p { margin: 4px 0 12px; color: var(--pencil); font-size: 15px; }
+.ia-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.ia-head h1 { margin: 0; font-size: 30px; letter-spacing: -0.02em; }
+.ia-head select { padding: 8px 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--bg); font-size: 16px; }
+.ia-eyebrow { font-size: 14px; color: var(--pencil); }
+.ia-lead { margin: 10px 0 0; font-size: 18px; }
+.ia-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-block-start: 18px; }
+.ia-kpi { display: grid; gap: 2px; padding: 14px 14px 12px; border-radius: 14px; background: var(--soft); }
+.ia-kpi span { font-size: 14px; color: var(--pencil); }
+.ia-kpi strong { font-size: 24px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.ia-kpi strong i { margin-inline-start: 2px; font-style: normal; font-size: 15px; font-weight: 500; color: var(--ink2); }
+.ia-kpi small { font-size: 13px; }
+.ia-rows { margin: 18px 0 0; display: grid; gap: 0; }
+.ia-rows > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 12px 0; border-block-end: 1px solid var(--rule); }
+.ia-rows dt { font-weight: 600; }
+.ia-rows dt small { font-weight: 400; }
+.ia-rows dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; text-align: end; white-space: nowrap; }
+.ia-sec { margin-block-start: 26px; }
+.ia-sec h2 { margin: 0 0 6px; font-size: 20px; }
+.ia-note { margin-block-start: 14px; font-size: 14px; color: var(--pencil); line-height: 1.6; }
+.ia-go { display: flex; flex-wrap: wrap; gap: 10px; margin-block-start: 22px; }
+.ia-warn { color: var(--weak-ink); }
+@media (max-width: 1000px) { .ia-wrap { grid-template-columns: 1fr; } .ia-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* 3단계 가게 꾸미기: CafeBuild의 m-stage / m-tray / m-checks 틀을 쓰고, 이 업종의 카운터 조각 이름만 더한다 */
+.ib-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; font-size: 14px; color: var(--ink2); }
+.ib-legend b { font-weight: 600; color: var(--ink); }
+.ib-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; }
+.ib-toggle input { inline-size: 18px; block-size: 18px; accent-color: var(--blue); }
+
+/* 4단계 시뮬레이션: SimulateEngine의 sx- 틀을 쓰고 사건 카드 한 장만 넓게 */
+.is-dp { grid-row: auto; display: grid; gap: 8px; grid-template-rows: none; }
+.is-dp .sx-dp-opts { display: grid; gap: 8px; }
+.is-levers { display: grid; gap: 8px; }
+.is-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.is-pick button { padding: 6px 12px; border: 1px solid #c3d0e2; border-radius: 10px; background: #fff; font-size: 14px; cursor: pointer; }
+.is-pick button[aria-pressed="true"] { background: #256abf; border-color: #256abf; color: #fff; }
+.is-row { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 4px 12px; align-items: center; padding: 10px 12px; border: 1px solid #dfe6f0; border-radius: 12px; background: #fff; }
+.is-row > span { font-weight: 600; font-size: 15px; }
+.is-row small { grid-column: 2; color: #5b6b82; font-size: 13px; }
+.is-row .m-stepper output { min-inline-size: 72px; text-align: center; font-variant-numeric: tabular-nums; }
+.is-own { font-size: 13px; color: #5b6b82; }
+.sx-pop-report .cs-chart { max-block-size: 220px; }

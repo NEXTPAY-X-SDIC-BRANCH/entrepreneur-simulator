@@ -40,8 +40,24 @@ FAMILIES: dict[str, tuple[str, ...]] = {
     "loan": ("ecos_", "live_loan"),       # 은행 대출 금리 (pipelines/fetch_ecos.py)
     "support": ("kstartup_",),            # 창업 지원사업 공고 (pipelines/fetch_kstartup.py)
     "delivery": ("delivery_",),           # 배달 시장·수수료 (pipelines/fetch_kosis_delivery.py, season_params.yaml delivery)
+    "industry": ("ind_",),                # lab:industry 새 업종 (facts_industry.json)
 }
+# lab:industry 새 업종 이름 -> id. '한식'·'닭'만으로는 고르지 않는다 (기존 한식음식점·닭고기 가격 질문을 지킨다)
+IND_Q: list[tuple[str, re.Pattern]] = [
+    ("hansik", re.compile(r"백반|밥집|국밥집|찌개집|한정식")), ("pub", re.compile(r"호프|주점|술집|생맥주|포차|이자카야|맥줏집|맥주집")),
+    ("bunsik", re.compile(r"분식|김밥|떡볶이")), ("bakery", re.compile(r"베이커리|빵집|빵 ?가게|제과")), ("chicken", re.compile(r"치킨|통닭|닭강정")),
+]
+
+
+def industries_of(q: str) -> list[str]:  # lab:industry 질문에 나온 새 업종 (여럿일 수 있다)
+    return [i for i, rx in IND_Q if rx.search(q)]
+
+
+IND_ONLY = {"industry", "sales", "competition", "cost"}  # lab:industry 이 주제들만이면 새 업종 근거로 답한다 (월세·대출·지원사업은 원래 근거)
+
+
 TOPIC_RE: list[tuple[str, re.Pattern]] = [
+    ("industry", re.compile("|".join(rx.pattern for _, rx in IND_Q))),  # lab:industry
     ("weather", re.compile(r"날씨|기온|장마|강수|소나기|비가|비 ?(오|와|온|올|내)|눈이|눈 ?(오|와|온)|더위|추위|한파|폭염")),
     ("holiday", re.compile(r"공휴일|휴일|연휴|명절|설날|추석|쉬는 ?날")),
     ("rent", re.compile(r"월세|임대|임차|보증금|권리금|평당")),
@@ -104,6 +120,7 @@ NONE_MESSAGE = ("죄송해요, 그 질문에 맞는 근거 자료를 찾지 못�
                 "• 월세, 보증금, 권리금 (지역별)\n"
                 "• 카페 창업 비용: 인테리어, 장비, 원두 구매량, 식재료비\n"
                 "• 카페·고깃집 경쟁: 지역별 가게 수, 폐업률, 매출\n"
+                "• 백반집·호프·분식집·베이커리·치킨집: 매출, 비용 구조, 배달 비중, 구별 가게 수\n"  # lab:industry
                 "• 동네 분석: 유동인구, 직장인구, 동네 유형\n"
                 "• 고기 가격: 돼지고기 소비자가격, 물가지수\n"
                 "• 채소·곡물 가격: 서울 소매가격 (상추, 양파, 대파, 마늘, 쌀 등)\n"
@@ -238,6 +255,9 @@ def static_facts() -> tuple[list[dict], dict]:
     sources.update(cafe_srcs)
     if f.get("sources"):
         sources.update(f["sources"])
+    ind = _load("facts_industry.json")  # lab:industry 새 업종 근거 (pipelines/build_industry_facts.py)
+    facts += ind.get("facts", [])  # lab:industry
+    sources.update(ind.get("sources", {}))  # lab:industry
 
     return facts, sources
 
@@ -611,8 +631,30 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
         if OWN.search(q):
             here = [f for f in pool if f["id"].startswith("live_")]
             pool = here or pool
+    ind_hits = industries_of(q)  # lab:industry 새 업종 질문
+    if ind_hits:
+        gq = GU.search(q)
+        def ours(f: dict) -> bool:
+            return f["id"].startswith(tuple(f"ind_{i}_" for i in ind_hits)) and ("_gu_" not in f["id"] or bool(gq and f.get("gu") == gq.group()))
+        if tps <= IND_ONLY:   # 매출·경쟁·비용 질문: 그 업종 문장만 (구를 말하면 그 구 문장 먼저)
+            mine = [f for f in pool if ours(f)]
+            if gq and tps & {"sales", "competition"}:
+                mine = [f for f in mine if f.get("gu") == gq.group()] or mine
+            pool = mine + [f for f in pool if f["id"].startswith("live_")] if mine else pool
+            if len(ind_hits) > 1 and mine:   # 두 업종을 견주는 질문: 업종마다 가장 맞는 문장 하나씩
+                best = [C._rank_facts(q, [f for f in mine if f["id"].startswith(f"ind_{i}_")])[0][1] for i in ind_hits
+                        if any(f["id"].startswith(f"ind_{i}_") for f in mine)]
+                cites = [{"id": sid, "title": sources[sid]["title"], "publisher": sources[sid]["publisher"], "year": sources[sid]["period"],
+                          "type": "공공 API", "url": sources[sid]["url"], "note": f"호출 식별자: {sources[sid]['api']}"}
+                         for sid in dict.fromkeys(x for f in best for x in f["sources"]) if sid in sources]
+                return {"answer": "\n".join(f"• {f['text']}" for f in best),
+                        "facts": [{"text": f["text"], "source_ids": f["sources"], "similarity": None} for f in best], "citations": cites}
+        else:                 # 월세·대출·지원사업·배달 같은 다른 주제: 원래 근거는 두고 다른 업종 문장만 뺀다
+            pool = [f for f in pool if not f["id"].startswith("ind_") or (ours(f) and "_gu_" not in f["id"])]
     cafe_q, meat_q = bool(CAFE_Q.search(q)), bool(MEAT_Q.search(q))
-    if cafe_q and not meat_q:
+    if ind_hits:  # lab:industry 새 업종 질문은 고깃집·카페 거르기를 하지 않는다
+        pass
+    elif cafe_q and not meat_q:
         pool = [f for f in pool if not MEAT_ID.match(f["id"]) and not MEAT_TEXT.search(f["text"])]
     elif meat_q and not cafe_q:
         pool = [f for f in pool if not CAFE_ID.match(f["id"])]
