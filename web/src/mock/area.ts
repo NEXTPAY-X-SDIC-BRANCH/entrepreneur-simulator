@@ -53,6 +53,19 @@ const DONG_METRICS_BY: Record<Industry, Record<DongMetric, DongMetricInfo>> = {
     compete: { label: "경쟁", hint: "옷가게 수 ÷ 동 면적", fmt: (v) => `${v}곳/㎢`, high: "옷가게가 많은 동네", low: "옷가게가 적은 동네" },
     cost, life,
   },
+  // 치킨·분식은 동네(행정동) 자료를 아직 만들지 않아 구 단위로만 본다 (Mock.tsx에서 동네 파일을 읽지 않음)
+  chicken: {
+    sales: { label: "매출", hint: "구 평균 대비 치킨집 점포당 매출", fmt: (v) => `구 평균의 ${Math.round(v * 100)}%`, high: "매출이 높은 동네", low: "매출이 낮은 동네" },
+    growth: { label: "흐름", hint: "연 개업률 − 연 폐업률", fmt: (v) => `${v > 0 ? "+" : ""}${v}%p`, high: "가게가 느는 동네", low: "가게가 주는 동네" },
+    compete: { label: "경쟁", hint: "치킨집 수 ÷ 동 면적", fmt: (v) => `${v}곳/㎢`, high: "치킨집이 많은 동네", low: "치킨집이 적은 동네" },
+    cost, life,
+  },
+  bunsik: {
+    sales: { label: "매출", hint: "구 평균 대비 분식집 점포당 매출", fmt: (v) => `구 평균의 ${Math.round(v * 100)}%`, high: "매출이 높은 동네", low: "매출이 낮은 동네" },
+    growth: { label: "흐름", hint: "연 개업률 − 연 폐업률", fmt: (v) => `${v > 0 ? "+" : ""}${v}%p`, high: "가게가 느는 동네", low: "가게가 주는 동네" },
+    compete: { label: "경쟁", hint: "분식집 수 ÷ 동 면적", fmt: (v) => `${v}곳/㎢`, high: "분식집이 많은 동네", low: "분식집이 적은 동네" },
+    cost, life,
+  },
 };
 export const DONG_METRICS: Record<DongMetric, DongMetricInfo> = { ...DONG_METRICS_BY.bbq };
 // 업종을 바꾼다 (모델의 지표 문구와 이 파일의 동네 지도 문구를 함께). 화면이 읽기 전에 부른다.

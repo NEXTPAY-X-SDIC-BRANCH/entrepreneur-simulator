@@ -1,6 +1,6 @@
 // Step 1. One question on screen at a time; the previous one fades out before the next fades in.
 import { useEffect, useRef, useState } from "react";
-import { krei, man, type Gu, type Profile } from "./model";
+import { TXT, krei, man, type Gu, type Profile } from "./model";
 
 const REASONS = ["사는 곳과 가까워서", "유동 인구가 많아서", "월세가 쌀 것 같아서", "잘 아는 동네라서", "아직 잘 모르겠어요"];
 const AGES = ["20대", "30대", "40대", "50대 이상"];
@@ -28,7 +28,7 @@ export default function ProfileStep({ profile, setProfile, gus, onDone }: {
   const invest = krei()?.micro.invest_total as { n: number; p25: number; p50: number; p75: number } | undefined;
 
   const answered: { label: string; at: number }[] = [
-    { label: profile.industry === "bbq" ? "고깃집" : profile.industry === "cafe" ? "카페" : "옷가게", at: 0 },
+    { label: TXT[profile.industry].shop, at: 0 },
     { label: profile.gu, at: 1 },
     { label: profile.reasons.length ? profile.reasons[0] : "이유 없음", at: 2 },
     { label: man(profile.capital), at: 3 },
@@ -59,6 +59,8 @@ export default function ProfileStep({ profile, setProfile, gus, onDone }: {
               <label className="m-choice"><input type="radio" name="ind" checked={profile.industry === "bbq"} onChange={() => set({ industry: "bbq" })} /><span>고깃집<small>삼겹살, 목살 같은 돼지고기 구이 (자료는 한식 육류 요리 전문점 기준)</small></span></label>
               <label className="m-choice"><input type="radio" name="ind" checked={profile.industry === "cafe"} onChange={() => set({ industry: "cafe" })} /><span>카페<small>커피, 음료, 디저트 (자료는 독립 카페 기준, 동네 분석부터 열려 있어요)</small></span></label>
               <label className="m-choice"><input type="radio" name="ind" checked={profile.industry === "apparel"} onChange={() => set({ industry: "apparel" })} /><span>옷가게<small>동네 의류 가게 (서울 소매업 중 가게 수와 매출이 가장 많은 일반의류 기준, 구 단위 분석)</small></span></label>
+              <label className="m-choice"><input type="radio" name="ind" checked={profile.industry === "chicken"} onChange={() => set({ industry: "chicken" })} /><span>치킨집<small>홀·포장·배달을 함께 하는 치킨전문점 (구 단위 분석, 비용은 외식업체 경영실태조사 전국 값)</small></span></label>
+              <label className="m-choice"><input type="radio" name="ind" checked={profile.industry === "bunsik"} onChange={() => set({ industry: "bunsik" })} /><span>분식집<small>김밥·떡볶이 같은 분식 (구 단위 분석, 비용은 외식업체 경영실태조사 전국 값)</small></span></label>
             </div>
           </fieldset>
         )}

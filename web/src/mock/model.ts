@@ -3,13 +3,21 @@
 // rent, which is still a placeholder. Store constants are borrowed from the 대학로 hero store (hero.json pnl) and the
 // shock sizes from research/shocks.yaml. Every input and its standing is listed on the #/sources page (sources.ts).
 
-export type Industry = "bbq" | "cafe" | "apparel";
+export type Industry = "bbq" | "cafe" | "apparel" | "chicken" | "bunsik";
+export const isQuickfood = (i: Industry): i is "chicken" | "bunsik" => i === "chicken" || i === "bunsik";
 // 화면 문구와 계산에서 업종마다 달라지는 말. 동네 분석은 setIndustry로 업종을 바꾸면 같은 코드가 카페용 자료로 돈다.
 export const TXT = {
   bbq: { shop: "고깃집", base: "한식음식점", kind: "돼지고기 구이 가게", cat: "한식 가게" },
   cafe: { shop: "카페", base: "커피·음료 가게", kind: "카페", cat: "커피·음료 가게" },
   apparel: { shop: "옷가게", base: "의류 가게", kind: "옷가게", cat: "의류 가게" },
+  chicken: { shop: "치킨집", base: "치킨전문점", kind: "치킨집", cat: "치킨 가게" },
+  bunsik: { shop: "분식집", base: "분식전문점", kind: "분식집", cat: "분식 가게" },
 } as const;
+// 치킨·분식: 서울시 상권분석서비스 카드 추정매출에는 배달앱 결제가 거의 안 잡혀서, 점포당 매출을 ÷ (1 − 배달 주문 비중)으로 보정한다.
+// 배달 주문 비중 = 하루 배달 ÷ (방문 + 배달 + 포장), 외식업체 경영실태조사 2025 (quickfood.ts가 파일을 읽으면 다시 맞춘다)
+const QF_DELIV: Record<string, number> = { chicken: 21.7 / (26.8 + 21.7 + 10.2), bunsik: 15.5 / (49.6 + 15.5 + 24.7) };
+export const setQfDelivery = (ind: "chicken" | "bunsik", share: number) => { QF_DELIV[ind] = share; };
+export const qfDeliveryShare = (ind: "chicken" | "bunsik") => QF_DELIV[ind];
 let IND: Industry = "bbq";
 export const industry = (): Industry => IND;
 export const T = () => TXT[IND];
@@ -44,7 +52,7 @@ type Row = Record<string, number> & { dow_share: number[]; quarter_index: number
 type Block = { service_name: string; seoul: Row; gu: Record<string, Row> };
 export type GuData = {
   _meta: { generated: string; year: number; quarters: string[]; sources: Record<string, string>; license: string; method: string; caveats: string[] };
-  bbq: Block; cafe: Block; apparel?: Block;
+  bbq: Block; cafe: Block; apparel?: Block; chicken?: Block; bunsik?: Block;
   pork?: { snapshot: string; source: string; codes: Record<string, string>; gu: Record<string, { hansik: number; pork: number; beef: number; tripe: number }> };
 };
 // 외식업체 경영실태조사(2025) 한식 육류 요리 전문점 값. pipelines/build_gogi_krei.py가 만든 gogi_krei.json.
@@ -139,12 +147,13 @@ export function guStat(name: string): GuStat {
   // 카페는 평균이 아니라 중앙값을 대표값으로 쓴다(잘되는 가게 몇 곳이 평균을 끌어올리므로). 서울 소상공인 카페 월매출 평균(보정 후)에
   // 전국 독립 음료점의 '중앙값 ÷ 평균' 배율을 곱한 추정이다. 서울 중앙값은 공개 자료에 없다(CAFE_MEDIAN).
   // 옷가게: 서울시 상권분석서비스 일반의류(CS300011) 카드 추정 점포당 매출을 그대로 쓴다 (보정 배율 없음)
-  const sales = Math.round(salesH * (IND === "cafe" ? (DONGS?._meta.adj ?? 1.538) * CAFE_MEDIAN.ratio : IND === "apparel" ? 1 : meatUplift()));
+  // 치킨·분식: 카드 추정 ÷ (1 − 배달 주문 비중) (QF_DELIV)
+  const sales = Math.round(salesH * (IND === "cafe" ? (DONGS?._meta.adj ?? 1.538) * CAFE_MEDIAN.ratio : IND === "apparel" ? 1 : isQuickfood(IND) ? 1 / (1 - QF_DELIV[IND]) : meatUplift()));
   const salesRange: [number, number] | null = IND === "cafe" ? [Math.round(sales * CAFE_MEDIAN.p25), Math.round(sales * CAFE_MEDIAN.p75)] : null;
   return {
     demand: +(g.demand_index * (salesH / g.sales_per_store_month)).toFixed(2), stores: g.stores, closure: +(g.closure_rate * 100).toFixed(1),
     sales, salesRange, salesHansik: salesH, ...grow, tx: g.tx_per_store_day,
-    ticket: g.ticket, ...rentPart, ...area, pork: IND === "cafe" ? DONGS?._meta.gu_cafes?.[name] ?? g.stores : IND === "apparel" ? g.stores : DATA?.pork?.gu[name]?.pork ?? 0, opening: g.opening_rate,
+    ticket: g.ticket, ...rentPart, ...area, pork: IND === "cafe" ? DONGS?._meta.gu_cafes?.[name] ?? g.stores : IND === "apparel" || isQuickfood(IND) ? g.stores : DATA?.pork?.gu[name]?.pork ?? 0, opening: g.opening_rate,
     dow: dg?.dow ?? g.dow_share, qidx: dg?.qidx ?? g.quarter_index,
   };
 }
@@ -172,6 +181,18 @@ const METRICS_BY: Record<Industry, Record<Metric, MetricInfo>> = {
     growth: { label: "가게 수 흐름", fmt: (v) => `${v > 0 ? "+" : ""}${v}%p`, hint: "연 개업률 − 연 폐업률 (2025년, 상권 안 일반의류 가게)" },
     pork: { label: "옷가게 수", fmt: gone, hint: "서울시 상권분석서비스 상권 안의 일반의류 가게 (구 전체가 아님)" },
     closure: { label: "1년 폐업률", fmt: (v) => `${v}%`, hint: "2025년에 문 닫은 일반의류 가게 비율" },
+  },
+  chicken: {
+    demand: { label: "매출 지수", fmt: (v) => v.toFixed(2), hint: "치킨전문점 한 곳의 월매출(카드 추정), 서울 평균이 1. 배달앱 결제는 거의 빠진 값이라 홀 손님이 많은 구가 높게 나와요" },
+    growth: { label: "가게 수 흐름", fmt: (v) => `${v > 0 ? "+" : ""}${v}%p`, hint: "연 개업률 − 연 폐업률 (2025년, 상권 안 치킨전문점)" },
+    pork: { label: "치킨집 수", fmt: gone, hint: "서울시 상권분석서비스 상권 안의 치킨전문점 (구 전체가 아님)" },
+    closure: { label: "1년 폐업률", fmt: (v) => `${v}%`, hint: "2025년에 문 닫은 치킨전문점 비율" },
+  },
+  bunsik: {
+    demand: { label: "매출 지수", fmt: (v) => v.toFixed(2), hint: "분식전문점 한 곳의 월매출(카드 추정), 서울 평균이 1" },
+    growth: { label: "가게 수 흐름", fmt: (v) => `${v > 0 ? "+" : ""}${v}%p`, hint: "연 개업률 − 연 폐업률 (2025년, 상권 안 분식전문점)" },
+    pork: { label: "분식집 수", fmt: gone, hint: "서울시 상권분석서비스 상권 안의 분식전문점 (구 전체가 아님)" },
+    closure: { label: "1년 폐업률", fmt: (v) => `${v}%`, hint: "2025년에 문 닫은 분식전문점 비율" },
   },
 };
 export const METRICS: Record<Metric, MetricInfo> = { ...METRICS_BY.bbq };
