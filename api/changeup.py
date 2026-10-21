@@ -114,6 +114,7 @@ def _slim(r: dict) -> dict:
         "owner_line": r.get("owner_line"),
         "state_after": {k: r["state_after"][k] for k in ("cash", "rating", "review_count", "awareness", "regular_share", "fatigue")},
         "closed": r["state_after"]["closed"], "closed_reason": r["state_after"]["closed_reason"],
+        **({"rent_card": r["rent_card"]} if r.get("rent_card") else {}),  # lab:finance 월세 카드 할부 (이번 달 할부금, 남은 할부)
     }
 
 
@@ -184,7 +185,7 @@ def season_run(body: dict[str, Any] = Body(default_factory=dict)) -> dict:
     start_cash = own + (float(loan["principal"]) if loan else 0.0) - sum(float(v) for v in invest.values())
     cash0 = body.get("operating_cash")  # 문 연 뒤 엔진이 쓰는 운영자금. 없으면 투자 후 남은 돈
     n = min(int(body.get("months", len(S.months()))), len(S.months()))
-    results, ops = [], []
+    results, ops, rents = [], [], []  # lab:finance rents
     with _LOCK:
         spec = body.get("store")
         patch = _apply_store(spec)
@@ -202,8 +203,9 @@ def season_run(body: dict[str, Any] = Body(default_factory=dict)) -> dict:
                 state["store_input"] = spec
             results.append(_slim(r))
             ops.append(float(r["draw"]["kpis"]["op"]))
+            rents.append(float(r["draw"]["kpis"]["rent"]))  # lab:finance
     ledger = venture_ledger(ops, invest, loan, own_capital=own, owner_draw=float(body.get("owner_draw", 0.0)),
-                            imputed_owner_wage=_owner_wage())
+                            imputed_owner_wage=_owner_wage(), rent_card=plan.get("rent_card"), monthly_rent=rents)  # lab:finance
     return {"months": results, "ledger": ledger, "state": state, "closed": state["closed"],
             "closed_reason": state["closed_reason"]}
 
@@ -215,4 +217,5 @@ def venture(body: dict[str, Any] = Body(...)) -> dict:
         raise HTTPException(422, "monthly_op 목록이 필요합니다")
     return venture_ledger([float(x) for x in ops], body.get("invest") or {}, body.get("loan"),
                           own_capital=float(body.get("own_capital", 0.0)), owner_draw=float(body.get("owner_draw", 0.0)),
-                          imputed_owner_wage=float(body.get("imputed_owner_wage", _owner_wage())))
+                          imputed_owner_wage=float(body.get("imputed_owner_wage", _owner_wage())),
+                          rent_card=body.get("rent_card"), monthly_rent=body.get("monthly_rent"))  # lab:finance

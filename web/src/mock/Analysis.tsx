@@ -9,7 +9,10 @@ import { BbqComp, CafeComp } from "./DongComp";
 import DongTrdar from "./DongTrdar";
 import DongFlow from "./DongFlow";
 import { DONG_METRICS, bandOf, dongMetricKeys, cuts, geoOf, guInsight, hasDongMap, insightOf, meatSalesNote, picksOf, profileOf, profilesOf, rankWord, type DongMetric, type KTab, type Line, type Tone } from "./area";
-import { BANKS, BANK_COMPARE_URL, BANK_GUARANTEE_URL, FUNDS, FUNDS_SRC, type Fund } from "./funds";
+import { FUNDS, FUNDS_SRC, type Fund } from "./funds";
+import BankRates from "../lab/finance/BankRates"; // lab:finance
+import RentCard from "../lab/finance/RentCard"; // lab:finance
+import { loanRateInfo, useFinance } from "../lab/finance/finance"; // lab:finance
 import KStartup from "./KStartup";
 import { CAFE_KEY_MONEY, cafeEstimate } from "./cafe";
 import { DEPOSIT_MONTHS, LOAN_RATE, METRICS, ecosRates, ymKo, RAMP, T, iga, dongsOf, guStat, krei, kreiMean, man, openingCost, rankOf, recommend, rentData, type Gu, type Metric, type Profile } from "./model";
@@ -22,7 +25,7 @@ const sign = (v: number) => (v > 0 ? "+" : "");
 // 정책자금 금리를 ECOS 은행 신규 중소기업대출 평균(LOAN_RATE)과 견준 한 줄. 변동금리는 지금 기준금리를 보여 준다.
 function rateVsBank(f: Fund): string {
   const ecos = ecosRates();
-  const bank = +(LOAN_RATE * 100).toFixed(2);
+  const bank = ecos?.loan_sme ? ecos.loan_sme.rate : +(LOAN_RATE * 100).toFixed(2); // lab:finance 고른 은행 금리가 아니라 평균과 견준다
   const when = ecos?.loan_sme ? ` (한국은행 ${ymKo(ecos.loan_sme.month)})` : " (가정)";
   if (f.floating) return ecos?.base_rate ? `기준금리에 따라 움직여요. 지금 기준금리는 연 ${ecos.base_rate.rate}%예요 (한국은행 ${ymKo(ecos.base_rate.month)}).` : "기준금리에 따라 움직여요.";
   const [lo, hi] = f.rate!;
@@ -52,6 +55,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
   profile: Profile; setProfile: (p: Profile) => void; gus: Gu[]; onNext: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("place");
+  useFinance(); // lab:finance 은행을 고르면 아래 '이 시뮬레이터의 대출 이자' 줄도 다시 그린다
   const [ktab, setKtab] = useState<KTab>("sales");
   const [recOpen, setRecOpen] = useState(false);
   const [metric, setMetric] = useState<Metric>("demand");
@@ -442,20 +446,8 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                   })}
                 </div>
                 {!young && <p className="m-aside">나이 조건(만 39세 이하)이 있는 청년 자금은 목록에서 뺐어요.</p>}
-                <div className="m-funds">
-                  <div>
-                    <h2 className="m-sub">은행에서 사업자 대출 알아보기</h2>
-                    <p>
-                      지역신용보증재단 보증서를 담보로 한 대출은 아래 은행 앱에서 방문 없이 신청할 수 있어요 (<a href={BANK_GUARANTEE_URL} target="_blank" rel="noreferrer">신용보증재단중앙회 안내</a>).
-                      지금 은행 중소기업대출 평균 금리는 연 {+(LOAN_RATE * 100).toFixed(2)}%예요.
-                    </p>
-                    <ul className="m-chips m-banks">
-                      {BANKS.map((b) => <li key={b.name} className="m-chip"><a href={b.url} target="_blank" rel="noreferrer">{b.name}</a></li>)}
-                    </ul>
-                    <small>은행마다 금리가 어떻게 다른지는 <a href={BANK_COMPARE_URL} target="_blank" rel="noreferrer">은행연합회 개인사업자 대출금리 비교</a>에서 볼 수 있어요. 이 화면은 은행을 추천하거나 신청을 받지 않아요.</small>
-                  </div>
-                </div>
-                <small className="m-src">{FUNDS_SRC}. 업계 글을 모은 표라 한도와 금리는 기관 공고 원문으로 확인해야 해요. 이 시뮬레이터의 대출 이자는 정책자금이 아니라 일반 은행 대출로 본 연 {+(LOAN_RATE * 100).toFixed(2)}%예요.</small>
+                <BankRates loanMan={gap} young={young} />{/* lab:finance 은행별 가상 금리 (링크만) */}
+                <small className="m-src">{FUNDS_SRC}. 업계 글을 모은 표라 한도와 금리는 기관 공고 원문으로 확인해야 해요. 이 시뮬레이터의 대출 이자는 연 {+(LOAN_RATE * 100).toFixed(2)}%로 계산해요 ({loanRateInfo().who}, {loanRateInfo().label}). {/* lab:finance */}</small>
               </>
             ) : (
               <>
@@ -463,6 +455,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                 <p>남는 돈은 장사가 자리 잡기 전까지 버티는 데 쓰여요. 한 달에 {man(MONTHLY_BURN)}쯤 줄어든다고 보면 {Math.floor(-gap / MONTHLY_BURN) + RUNWAY_MONTHS}개월을 버틸 수 있어요.</p>
               </>
             )}
+            <RentCard rentMan={st.rent * est.pyeong} />{/* lab:finance 월세 카드 할부 */}
             <KStartup young={young} gu={profile.gu} />
             <button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button>
           </div>

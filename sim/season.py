@@ -24,6 +24,7 @@ from agents.ko import man_won
 from sim.engine import simulate_month, simulate_night
 from sim import menu as menu_mod   # lab:menu
 from sim.params import ROOT, SEGMENTS, SIM_ASSUMPTIONS, clone, load_params, load_profile
+from sim import rent_card  # lab:finance
 
 RESEARCH = ROOT / "research"
 SEGMENT_KO = {"twenties": "20대 친구 모임", "office": "직장인 회식", "family": "동네 가족"}
@@ -1332,6 +1333,10 @@ def play_month(state: dict, plan: dict, events: list[str] | None = None, *, band
     s2 = copy.deepcopy(state)
     s2["flags"] = su["flags"]
     s2["cash"] = state["cash"] + draw["op"]
+    rc = rent_card.step(state.get("rent_card_queue"), plan.get("rent_card"), draw["rent"])  # lab:finance 월세 카드 할부
+    if rc is not None:  # lab:finance
+        s2["cash"] += rc["cash_delta"]
+        s2["rent_card_queue"] = rc["queue"]
     s2["negative_months"] = state["negative_months"] + 1 if s2["cash"] < 0 else 0
     low = draw["revenue"] <= v("closure.low_revenue_share") * _baseline()["revenue"]
     s2["low_revenue_months"] = state.get("low_revenue_months", 0) + 1 if low else 0
@@ -1414,6 +1419,8 @@ def play_month(state: dict, plan: dict, events: list[str] | None = None, *, band
         "labels": _labels(su, events),
         "season_end": season_value(s2) if s2.get("season_over") or s2["closed"] else None,
     }
+    if rc is not None:  # lab:finance
+        result["rent_card"] = {k: rc[k] for k in ("paid", "charged", "fee", "balance", "months", "fee_rate", "cash_delta")}
     return _round(result)
 
 

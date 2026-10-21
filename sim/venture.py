@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from math import ceil
 
+from sim import rent_card as _rent_card  # lab:finance
+
 # 문 닫을 때 돌려받는 돈 (회수 계산에서 '묶인 돈'과 '쓴 돈'을 구분한다)
 REFUNDABLE = ("deposit",)
 HORIZON_MONTHS = 120  # 회수 외삽의 한계 (10년). 그 안에 못 되찾으면 None
@@ -43,7 +45,8 @@ def loan_schedule(loan: dict | None, months: int) -> list[dict]:
 
 
 def venture_ledger(monthly_op: list[float], invest: dict, loan: dict | None = None, *, own_capital: float,
-                   owner_draw: float = 0.0, imputed_owner_wage: float = 0.0, horizon: int = HORIZON_MONTHS) -> dict:
+                   owner_draw: float = 0.0, imputed_owner_wage: float = 0.0, horizon: int = HORIZON_MONTHS,
+                   rent_card: dict | None = None, monthly_rent: list[float] | None = None) -> dict:
     """월별 현금 장부와 투자금 회수 시점.
 
     monthly_op        엔진이 낸 월 영업이익 (대표자 가상 임금을 뺀 값)
@@ -52,7 +55,11 @@ def venture_ledger(monthly_op: list[float], invest: dict, loan: dict | None = No
     own_capital       가진 돈
     owner_draw        사장이 실제로 가져가는 월 생활비 (현금 유출)
     imputed_owner_wage 엔진이 영업이익에서 뺀 대표자 가상 임금. 현금 흐름에서는 되돌려 놓고 owner_draw만 뺀다
+    rent_card         lab:finance 월세 카드 할부 {months, fee_rate} (sim.rent_card). monthly_rent(월세, 원)와 같이 준다.
+                      현금은 할부 일정대로 움직이고, 수수료는 회수 계산에서 비용으로 뺀다. 남은 할부는 card_balance로 돌려준다
     """
+    rents = [float(x) for x in monthly_rent if isinstance(x, (int, float))] if isinstance(monthly_rent, list) else []
+    rc_rows = _rent_card.schedule(rents, rent_card) if rents else []  # lab:finance
     spent = sum(v for k, v in invest.items() if k not in REFUNDABLE)
     deposit = sum(invest.get(k, 0.0) for k in REFUNDABLE)
     total_out = spent + deposit
@@ -64,13 +71,16 @@ def venture_ledger(monthly_op: list[float], invest: dict, loan: dict | None = No
     for i, op in enumerate(monthly_op):
         cash_op = op + imputed_owner_wage - owner_draw           # 사장 생활비까지 뺀 영업 현금
         debt = sched[i]["interest"] + sched[i]["principal"]
-        net = cash_op - debt
+        rc = rc_rows[i] if i < len(rc_rows) else None                 # lab:finance 월세 카드 할부
+        net = cash_op - debt + (rc["cash_delta"] if rc else 0.0)
         cash += net
-        cum_cash_op += cash_op - sched[i]["interest"]            # 이자는 장사 비용, 원금 상환은 회수와 무관
+        cum_cash_op += cash_op - sched[i]["interest"] - (rc["fee"] if rc else 0.0)  # 이자·카드 수수료는 장사 비용
         if cash < low_cash:
             low_cash, low_month = cash, i + 1
         rows.append({"month": i + 1, "op": op, "cash_op": cash_op, "interest": sched[i]["interest"],
-                     "principal": sched[i]["principal"], "net": net, "cash": cash, "cum_recovered": cum_cash_op})
+                     "principal": sched[i]["principal"], "net": net, "cash": cash, "cum_recovered": cum_cash_op,
+                     **({"rent_card_paid": rc["paid"], "rent_card_charged": rc["charged"], "rent_card_fee": rc["fee"],
+                         "card_balance": rc["balance"]} if rc else {})})
 
     payback = {"month": None, "estimated": True, "run_rate": None, "within_engine": False, "reason": ""}
     if spent <= 0:
@@ -80,7 +90,7 @@ def venture_ledger(monthly_op: list[float], invest: dict, loan: dict | None = No
         if hit is not None:
             payback.update(month=hit, estimated=False, within_engine=True)
         else:
-            tail = [r["cash_op"] - r["interest"] for r in rows[-3:]] or [0.0]
+            tail = [r["cash_op"] - r["interest"] - r.get("rent_card_fee", 0.0) for r in rows[-3:]] or [0.0]
             run = sum(tail) / len(tail)
             payback["run_rate"] = run
             if run <= 0:
@@ -99,5 +109,8 @@ def venture_ledger(monthly_op: list[float], invest: dict, loan: dict | None = No
         "end_cash": rows[-1]["cash"] if rows else own_capital + principal_in - total_out,
         "lowest_cash": low_cash, "lowest_month": low_month,
         "payback": payback,
+        **({"rent_card": {**_rent_card.normalize(rent_card), "fee_total": sum(r["fee"] for r in rc_rows[:n]),
+                          "card_balance": rc_rows[min(n, len(rc_rows)) - 1]["balance"] if rc_rows and n else 0.0}}
+           if rc_rows else {}),  # lab:finance
         "note": "회수 시점은 엔진이 계산한 개월 뒤를 마지막 3개월 평균으로 이어 붙인 추정이다" if payback["estimated"] else "",
     }

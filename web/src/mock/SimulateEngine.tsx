@@ -14,6 +14,8 @@ import "./simulate-engine.css";
 import CostStack from "../lab/cost/CostStack"; // lab:cost
 import { VAT_NOTE, bbqStack, prorate, type BbqKpis } from "../lab/cost/stackModel"; // lab:cost
 import { setEngineCtx } from "./chatContext";
+import CardMonthLine, { type CardMonth } from "../lab/finance/CardMonthLine"; // lab:finance
+import { rentCardPlan } from "../lab/finance/finance"; // lab:finance
 import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, roomSize, storeStats, type Levers, type Profile, type Store } from "./model";
 import MenuEditor, { MenuSummary } from "../lab/menu/MenuEditor"; // lab:menu
 import { fetchTemplate, recompute, toEngine, type EngineMenuItem, type MenuDoc } from "../lab/menu/api"; // lab:menu
@@ -39,6 +41,7 @@ type MonthResult = {
   nights: Night[]; reviews: { stars: number }[]; owner_line: { text?: string } | null;
   state_after: { cash: number; rating: number; review_count: number; awareness: number; regular_share: number; fatigue: number };
   closed: boolean; closed_reason: string | null;
+  rent_card?: CardMonth; // lab:finance 월세 카드 할부 (원)
   base_plan: Plan; shadow: { revenue: number; op: number; covers: number }; waterfall: { driver: string; delta: number }[];
 };
 type Tick = { label: string; amount: number }; // 원
@@ -47,9 +50,10 @@ type Done = { result: MonthResult; plan: Plan; days: Day[]; cashStart: number; c
 // 고르지 않은 대응을 골랐다면: 같은 달을 그 대응으로 한 번 더 계산한 결과 (고른 뒤에만 계산한다)
 type Alt = { label: string; month_op: number; op_gap: number; revenue: number; night_revenue: number; night_covers: number };
 type Ledger = {
-  rows: { month: number; op: number; cash_op: number; interest: number; net: number; cash: number; cum_recovered: number }[];
+  rows: { month: number; op: number; cash_op: number; interest: number; net: number; cash: number; cum_recovered: number; rent_card_paid?: number; card_balance?: number }[]; // lab:finance rent_card_*
   start_cash: number; end_cash: number; lowest_cash: number; lowest_month: number; spent: number; deposit: number;
   payback: { month: number | null; estimated: boolean; within_engine: boolean; reason: string }; note: string;
+  rent_card?: { months: number; fee_rate: number; fee_total: number; card_balance: number }; // lab:finance
 };
 type View = "intro" | "plan" | "menu" | "scenario" | "settle" | "report" | null; // lab:menu "menu"
 
@@ -201,7 +205,8 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
       ticks.push({ label: "매장 운영비", amount: -k.mgmt / nOpen }); // lab:cost
     }
     if (i === 0) {
-      ticks.push({ label: "월세", amount: -k.rent });
+      if (r.rent_card && r.rent_card.charged > 0) notes.push(`월세 ${Math.round(r.rent_card.charged / 1e4).toLocaleString("ko-KR")}만원은 카드 ${r.rent_card.months}개월 할부로 냈어요`); // lab:finance
+      else ticks.push({ label: "월세", amount: -k.rent });
       if (!nights.length) { // lab:cost — 문 연 날이 없는 달: 하루치로 나눌 수 없어 첫날에 한 번에
         if (laborCash > 0) ticks.push({ label: "인건비 (알바)", amount: -laborCash });
         if (ctx.draw > 0) ticks.push({ label: "사장 생활비", amount: -ctx.draw });
@@ -210,6 +215,7 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
       if (ctx.interest > 0) ticks.push({ label: "대출 이자", amount: -ctx.interest });
       for (const e of r.events) notes.push(`일어난 일 · ${e.label}`);
     }
+    if (i === 13 && r.rent_card && r.rent_card.paid > 0) ticks.push({ label: "카드 할부 대금 (월세, 결제일 14일 가정)", amount: -r.rent_card.paid }); // lab:finance
     if (dt.getDate() === firstSat) {
       for (const d of r.decisions) notes.push(`${d.clock} ${d.title} · ${d.chosen_label}`);
     }
@@ -486,6 +492,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     flow: flowShape(dongCode, profile.gu), // 동네의 요일·시간대·연령 비율 (없으면 엔진이 기준 상권 값을 씀)
   });
 
+  const withCard = (p: Plan) => { const rc = rentCardPlan(); return rc ? { ...p, rent_card: rc } : p; }; // lab:finance 월세 카드 할부
   const post = async (path: string, body: unknown) => {
     const r = await fetch(`${API}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 200)}`);
@@ -513,7 +520,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     if (!engineState) return;
     setErr(""); setBusy(true);
     try {
-      const s = await post("/season/start", { state: engineState, plan, store: spec() });
+      const s = await post("/season/start", { state: engineState, plan: withCard(plan), store: spec() }); // lab:finance
       const points: Dp[] = s.decision_points ?? [];
       setDps({ events: s.events ?? [], points, note: s.note ?? null });
       setChoices(Object.fromEntries(points.map((p) => [p.id, p.default])));
@@ -531,7 +538,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     const key = `${dp}:${opt}`;
     setAltBusy(true); setErr("");
     try {
-      const out = await post("/season/play", { state: pre, plan: cur.plan, store: spec(), night: true, night_choices: { ...cur.picked, [dp]: opt }, band_runs: 20 });
+      const out = await post("/season/play", { state: pre, plan: withCard(cur.plan), store: spec(), night: true, night_choices: { ...cur.picked, [dp]: opt }, band_runs: 20 }); // lab:finance
       const d: Decision | undefined = out.result.decisions.find((x: Decision) => x.id === dp);
       if (!d) throw new Error("선택한 대응의 결과가 없어요");
       const r: MonthResult = out.result;
@@ -547,7 +554,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     if (!engineState) return;
     setErr(""); setBusy(true);
     try {
-      const out = await post("/season/play", { state: engineState, plan, store: spec(), night: true, night_choices: picked, band_runs: 20 });
+      const out = await post("/season/play", { state: engineState, plan: withCard(plan), store: spec(), night: true, night_choices: picked, band_runs: 20 }); // lab:finance
       const result: MonthResult = out.result;
       const idx = done.length;
       const cs = cashAtStart.current[idx];
@@ -584,6 +591,8 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
         const L: Ledger = await post("/venture", {
           monthly_op: ops, invest, own_capital: profile.capital * 1e4, owner_draw: draw, imputed_owner_wage: imputed,
           loan: store.loan > 0 ? { principal: store.loan * 1e4, annual_rate: LOAN_RATE, term_months: 60, grace_months: 60 } : null,
+          // lab:finance 장부는 같은 plan으로 할부를 다시 계산한다. 시뮬레이션 화면이 열린 뒤에는 할부 선택이 바뀌지 않아 달마다의 result.rent_card와 같다
+          rent_card: rentCardPlan(), monthly_rent: done.map((m) => m.result.kpis.rent),
         });
         setLedger(L);
       } catch (e) { setErr(String(e)); }
@@ -933,6 +942,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                         <h2>정산표</h2>
                         <SettleTable m={r} imputed={imputed} />
                         <small>월말 현금은 영업이익에서 사장 생활비 {man(won(draw))}와 이자를 빼고, 사장 가상 급여는 되돌린 값이에요.</small>
+                        <CardMonthLine rc={r.rent_card} />{/* lab:finance */}
                       </section>
                       <section className="sx-sec">
                         <h2>이번 달 사건</h2>
@@ -1005,11 +1015,12 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       <section className="sx-sec">
                         <h2>월별 현금</h2>
                         <table className="sx-table">
-                          <thead><tr><th>달</th><th>영업이익</th><th>이자</th><th>생활비 반영 현금 변화</th><th>월말 현금</th></tr></thead>
+                          <thead><tr><th>달</th><th>영업이익</th><th>이자</th>{ledger.rent_card && <th>카드 할부 (월세)</th>}<th>생활비 반영 현금 변화</th><th>월말 현금</th></tr></thead>
                           <tbody>{ledger.rows.map((x) => (
-                            <tr key={x.month}><td>{monthSeq[x.month - 1]}월</td><td>{signed(won(x.op))}</td><td>−{man(won(x.interest))}</td><td>{signed(won(x.net))}</td><td>{man(won(x.cash))}</td></tr>
+                            <tr key={x.month}><td>{monthSeq[x.month - 1]}월</td><td>{signed(won(x.op))}</td><td>−{man(won(x.interest))}</td>{ledger.rent_card && <td>{x.rent_card_paid ? `−${man(won(x.rent_card_paid))}` : "0"}</td>}<td>{signed(won(x.net))}</td><td>{man(won(x.cash))}</td></tr>
                           ))}</tbody>
                         </table>
+                        {ledger.rent_card && <small>월세를 카드 {ledger.rent_card.months}개월 할부로 냈어요. 수수료는 모두 {man(won(ledger.rent_card.fee_total))}이고, 남은 할부 {man(won(ledger.rent_card.card_balance))}은 시즌이 끝난 뒤에도 갚아야 할 돈이에요. 월말 현금에는 아직 빠지지 않았어요. {/* lab:finance */}</small>}
                       </section>
                       <section className="sx-sec">
                         <h2>달마다의 정산표</h2>

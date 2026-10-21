@@ -55,6 +55,11 @@ class MenuItemIn(BaseModel):   # lab:menu  메뉴판 한 줄 (sim/menu.py). 화�
     mix: float = Field(0, ge=0, le=1000)
 
 
+class RentCardIn(BaseModel):  # lab:finance sim/rent_card.py
+    months: Literal[0, 2, 3, 6] = 0
+    fee_rate: float | None = Field(None, ge=0, le=0.2)
+
+
 class SeasonIn(CafeIn):
     menu: list[MenuItemIn] | None = Field(None, max_length=30)   # lab:menu  None = 예전 그대로 (상권 객단가, 업계 원가율)
 
@@ -69,6 +74,8 @@ class SeasonIn(CafeIn):
     start_month: int | None = Field(None, ge=1, le=12)                 # None = params season.start_month
     extra_loan_krw: int | None = Field(None, ge=0, le=500_000_000)     # 운전자금 on top of the CAPEX gap; None = enough
                                                                        # to open with 3 months of fixed costs in cash
+    loan_rate: float | None = Field(None, ge=0, le=0.2)               # lab:finance 고른 은행·정책자금 금리 (연, 0.0438 = 4.38%)
+    rent_card: RentCardIn | None = None                                # lab:finance 월세 카드 할부; None = 현금
 
 
 class MonthIn(BaseModel):
