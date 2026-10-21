@@ -34,7 +34,7 @@ EXCLUDE_MARKERS = (                                 # only a summary, snippet or
 app = FastAPI(title="출처 검색 (목업 챗봇)")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:5174", "http://localhost:5174"],
+    allow_origin_regex=r"http://(127\.0\.0\.1|localhost):\d+",
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )

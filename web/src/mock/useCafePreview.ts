@@ -4,7 +4,7 @@ import { cafeDistrictCode } from "./cafe";
 import { engineBody, type CafeCfg } from "./cafeChecks";
 import type { Profile } from "./model";
 
-export const ENGINE = "http://127.0.0.1:8010";
+export const ENGINE = (import.meta.env.VITE_ENGINE_API as string | undefined) ?? "http://127.0.0.1:8010";
 export type Preview = {
   room: { width_m: number; depth_m: number; door: { x: number; w: number } };
   layout: { id: string; type: string; x: number; z: number; rot_deg: number; fits: boolean; w: number; d: number; unassigned?: boolean }[];
