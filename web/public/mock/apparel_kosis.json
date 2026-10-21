@@ -1,0 +1,125 @@
+{
+ "_meta": {
+  "source": "통계청 도소매업조사 DT_3KB9003 (서울, 의복 소매업 4741, 2024년) / 기업생멸행정통계 DT_6BD1109 (서울 도매 및 소매업, 2023년)",
+  "fetched_at": "2026-10-20T23:22:18",
+  "note": "비율은 매출 대비. 시뮬레이터는 서울 상권분석 점포당 매출(연 1억~5억)에 맞는 '100~500 백만원 미만' 구간을 쓴다"
+ },
+ "bands": [
+  {
+   "band": "총계",
+   "stores": 19204,
+   "workers_per_store": 2.02,
+   "sales_per_store_month_man": 4011,
+   "cogs_ratio": 0.392,
+   "labor_ratio": 0.0973,
+   "rent_ratio": 0.0479,
+   "other_ratio": 0.338,
+   "op_ratio": 0.1249
+  },
+  {
+   "band": "50 백만원 미만",
+   "stores": 4800,
+   "workers_per_store": 0.92,
+   "sales_per_store_month_man": 65,
+   "cogs_ratio": 0.2412,
+   "labor_ratio": 0.224,
+   "rent_ratio": 0.2321,
+   "other_ratio": 0.3581,
+   "op_ratio": -0.0553
+  },
+  {
+   "band": "50~100 백만원 미만",
+   "stores": 3987,
+   "workers_per_store": 1.11,
+   "sales_per_store_month_man": 186,
+   "cogs_ratio": 0.2703,
+   "labor_ratio": 0.1152,
+   "rent_ratio": 0.0435,
+   "other_ratio": 0.3797,
+   "op_ratio": 0.1913
+  },
+  {
+   "band": "100~500 백만원 미만",
+   "stores": 4210,
+   "workers_per_store": 1.65,
+   "sales_per_store_month_man": 531,
+   "cogs_ratio": 0.2903,
+   "labor_ratio": 0.1998,
+   "rent_ratio": 0.0354,
+   "other_ratio": 0.3358,
+   "op_ratio": 0.1387
+  },
+  {
+   "band": "500~1000 백만원 미만",
+   "stores": 1236,
+   "workers_per_store": 2.02,
+   "sales_per_store_month_man": 1955,
+   "cogs_ratio": 0.3942,
+   "labor_ratio": 0.1808,
+   "rent_ratio": 0.0832,
+   "other_ratio": 0.3267,
+   "op_ratio": 0.0151
+  },
+  {
+   "band": "1000~5000 백만원 미만",
+   "stores": 4321,
+   "workers_per_store": 2.67,
+   "sales_per_store_month_man": 5845,
+   "cogs_ratio": 0.3687,
+   "labor_ratio": 0.1061,
+   "rent_ratio": 0.0557,
+   "other_ratio": 0.3782,
+   "op_ratio": 0.0914
+  },
+  {
+   "band": "5000~10000 백만원 미만",
+   "stores": 556,
+   "workers_per_store": 7.23,
+   "sales_per_store_month_man": 31364,
+   "cogs_ratio": 0.4175,
+   "labor_ratio": 0.0958,
+   "rent_ratio": 0.0478,
+   "other_ratio": 0.3374,
+   "op_ratio": 0.1015
+  },
+  {
+   "band": "10000~20000 백만원 미만",
+   "stores": 48,
+   "workers_per_store": 36.81,
+   "sales_per_store_month_man": 122568,
+   "cogs_ratio": 0.4167,
+   "labor_ratio": 0.0945,
+   "rent_ratio": 0.0548,
+   "other_ratio": 0.3137,
+   "op_ratio": 0.1204
+  },
+  {
+   "band": "20000~30000 백만원 미만",
+   "stores": 13,
+   "workers_per_store": 60.92,
+   "sales_per_store_month_man": 202639,
+   "cogs_ratio": 0.3562,
+   "labor_ratio": 0.085,
+   "rent_ratio": 0.0527,
+   "other_ratio": 0.3098,
+   "op_ratio": 0.1963
+  },
+  {
+   "band": "30000 백만원 이상",
+   "stores": 33,
+   "workers_per_store": 71.7,
+   "sales_per_store_month_man": 609121,
+   "cogs_ratio": 0.4144,
+   "labor_ratio": 0.0659,
+   "rent_ratio": 0.0298,
+   "other_ratio": 0.2987,
+   "op_ratio": 0.1912
+  }
+ ],
+ "survival_seoul_retail_2023": {
+  "1년 생존율": 55.0,
+  "2년 생존율": 44.5,
+  "3년 생존율": 39.1,
+  "5년 생존율": 32.7
+ }
+}

@@ -1,0 +1,3638 @@
+{
+ "_meta": {
+  "source": "공정거래위원회 가맹정보 (data.go.kr 15125467 브랜드 목록, 15125479 가맹점 인테리어 비용)",
+  "year": "2024",
+  "fetched_at": "2026-10-21T20:41:54",
+  "note": "정보공개서 값(범위의 가운데). 단위면적은 평(3.3㎡), 금액은 원으로 바꿈. 실제 지출보다 낮게 적힌 사례가 있다"
+ },
+ "summary": {
+  "cafe": {
+   "n": 263,
+   "p25": 1950000,
+   "median": 2150000,
+   "p75": 2750000
+  },
+  "bbq": {
+   "n": 175,
+   "p25": 1600000,
+   "median": 1950000,
+   "p75": 2150000
+  },
+  "apparel": {
+   "n": 9,
+   "p25": 817500,
+   "median": 1600000,
+   "p75": 1900000
+  }
+ },
+ "brands": [
+  {
+   "group": "bbq",
+   "brand": "일근이네",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 37000000
+  },
+  {
+   "group": "cafe",
+   "brand": "공짜커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "동두천솥뚜껑삼겹살 ",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 35000000
+  },
+  {
+   "group": "cafe",
+   "brand": "쿼드커피(QUAD COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 29500000
+  },
+  {
+   "group": "bbq",
+   "brand": "야끼니꾸 테짱",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "cafe",
+   "brand": "만랩커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "잇피티",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 4750000,
+   "total_won": 47500000
+  },
+  {
+   "group": "cafe",
+   "brand": "더바움(the BAUM)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2550000,
+   "total_won": 25500000
+  },
+  {
+   "group": "apparel",
+   "brand": "앙팡프리슈",
+   "induty": "의류 / 패션",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "더바른식당",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 49500000
+  },
+  {
+   "group": "bbq",
+   "brand": "숙성돼지",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 110000000
+  },
+  {
+   "group": "cafe",
+   "brand": "육츠커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "남영댁 커피24",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 19500000
+  },
+  {
+   "group": "cafe",
+   "brand": "심재",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2550000,
+   "total_won": 38000000
+  },
+  {
+   "group": "bbq",
+   "brand": "고품석갈비",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "이티커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2450000,
+   "total_won": 24500000
+  },
+  {
+   "group": "cafe",
+   "brand": "ESLOW COFFEE",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2450000,
+   "total_won": 24500000
+  },
+  {
+   "group": "bbq",
+   "brand": "무쏘",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 40000000
+  },
+  {
+   "group": "cafe",
+   "brand": "SOS커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1100000,
+   "total_won": 11000000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피스토어",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피베이",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 35000000
+  },
+  {
+   "group": "bbq",
+   "brand": "소통애",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "cafe",
+   "brand": "매머드익스프레스(Mammoth Express)",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 2950000,
+   "total_won": 23500000
+  },
+  {
+   "group": "cafe",
+   "brand": "당빙뗑",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1100000,
+   "total_won": 11000000
+  },
+  {
+   "group": "bbq",
+   "brand": "마장돈백갈비",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2000000,
+   "total_won": 81000000
+  },
+  {
+   "group": "bbq",
+   "brand": "봉고기",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 82500000
+  },
+  {
+   "group": "cafe",
+   "brand": "디저트 참 잘하는 집",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 20500000
+  },
+  {
+   "group": "bbq",
+   "brand": "새마을식당",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 39500000
+  },
+  {
+   "group": "bbq",
+   "brand": "산장삼겹",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "욤카페",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피팡",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "부추삼겹살",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1100000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페 우드진",
+   "induty": "커피",
+   "area_pyeong": 13.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 24500000
+  },
+  {
+   "group": "bbq",
+   "brand": "순정한우 정육식당",
+   "induty": "한식",
+   "area_pyeong": 45.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 94000000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피왕",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2450000,
+   "total_won": 24500000
+  },
+  {
+   "group": "cafe",
+   "brand": "서울바나나커피",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "진짜무쇠삼겹",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "bbq",
+   "brand": "띵동 제주대패랑 옛날갈비",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1800000,
+   "total_won": 54000000
+  },
+  {
+   "group": "cafe",
+   "brand": "Frausong(프라우송)",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 56000000
+  },
+  {
+   "group": "cafe",
+   "brand": "이구아나",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "한끼맛있다",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "옐로우캔",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1100000,
+   "total_won": 16000000
+  },
+  {
+   "group": "cafe",
+   "brand": "22그램",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "온담",
+   "induty": "한식",
+   "area_pyeong": 35.0,
+   "per_pyeong_won": 2000000,
+   "total_won": 70500000
+  },
+  {
+   "group": "cafe",
+   "brand": "국민우유집",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "심돈",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 110000000
+  },
+  {
+   "group": "cafe",
+   "brand": "올선데이",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 62500000
+  },
+  {
+   "group": "cafe",
+   "brand": "에스이커피(SE COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 16.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "육식사관학교",
+   "induty": "한식",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 585000,
+   "total_won": 8750000
+  },
+  {
+   "group": "bbq",
+   "brand": "목구멍",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "베르체",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "cafe",
+   "brand": "업텐션커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "드롭탑(DROPTOP)",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 33000000
+  },
+  {
+   "group": "cafe",
+   "brand": "듀먼카페",
+   "induty": "커피",
+   "area_pyeong": 35.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 59500000
+  },
+  {
+   "group": "cafe",
+   "brand": "박슨커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "삼겹본능",
+   "induty": "한식",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1800000,
+   "total_won": 18000000
+  },
+  {
+   "group": "bbq",
+   "brand": "고고장",
+   "induty": "한식",
+   "area_pyeong": 18.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 29500000
+  },
+  {
+   "group": "cafe",
+   "brand": "탭플레이(TAPLAY)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "cafe",
+   "brand": "이브릭스",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 39500000
+  },
+  {
+   "group": "bbq",
+   "brand": "머시기쪽갈비",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "트로피티아일랜드",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 29500000
+  },
+  {
+   "group": "bbq",
+   "brand": "돈",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1200000,
+   "total_won": 24500000
+  },
+  {
+   "group": "cafe",
+   "brand": "풋풋",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "숙성의 달인",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "bbq",
+   "brand": "꿈의농장정육식당",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 41000000
+  },
+  {
+   "group": "cafe",
+   "brand": "바이러닉 에스프레소 바",
+   "induty": "커피",
+   "area_pyeong": 12.0,
+   "per_pyeong_won": 4350000,
+   "total_won": 52500000
+  },
+  {
+   "group": "bbq",
+   "brand": "품육년백 참숯소갈비살",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 56000000
+  },
+  {
+   "group": "cafe",
+   "brand": "포시즌베리",
+   "induty": "커피",
+   "area_pyeong": 60.0,
+   "per_pyeong_won": 5500000,
+   "total_won": 330000000
+  },
+  {
+   "group": "bbq",
+   "brand": "흑풍대패삼겹",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "88로타리집",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "버니문",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 3000000,
+   "total_won": 44500000
+  },
+  {
+   "group": "cafe",
+   "brand": "온선데이커피",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 49500000
+  },
+  {
+   "group": "bbq",
+   "brand": "최원석의 돼지 한판",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 56000000
+  },
+  {
+   "group": "cafe",
+   "brand": "더벤티",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 17000000
+  },
+  {
+   "group": "cafe",
+   "brand": "스카이맨 크레페",
+   "induty": "커피",
+   "area_pyeong": 5.0,
+   "per_pyeong_won": 1000000,
+   "total_won": 5000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페프리헷",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 2850000,
+   "total_won": 22500000
+  },
+  {
+   "group": "cafe",
+   "brand": "떼루와",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "바나타이거",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 19500000
+  },
+  {
+   "group": "cafe",
+   "brand": "라바게트",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 19500000
+  },
+  {
+   "group": "cafe",
+   "brand": "디키",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "오가무쇠철판삼겹",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 42500000
+  },
+  {
+   "group": "cafe",
+   "brand": "왓커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 18500000
+  },
+  {
+   "group": "bbq",
+   "brand": "압구정 화로구이",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 18500000,
+   "total_won": 560000000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피리스트",
+   "induty": "커피",
+   "area_pyeong": 1980.0,
+   "per_pyeong_won": 10000,
+   "total_won": 19500000
+  },
+  {
+   "group": "cafe",
+   "brand": "INEAT(인잇)",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "과일욤",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "bbq",
+   "brand": "돈도꽃길",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 72000000
+  },
+  {
+   "group": "cafe",
+   "brand": "오픈커피",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 4000000,
+   "total_won": 60000000
+  },
+  {
+   "group": "apparel",
+   "brand": "스프링데이",
+   "induty": "의류 / 패션",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "bbq",
+   "brand": "청담숯불구이",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 56000000
+  },
+  {
+   "group": "cafe",
+   "brand": "비엔스(BIENS)",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 55000000
+  },
+  {
+   "group": "bbq",
+   "brand": "토가돈",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 56000000
+  },
+  {
+   "group": "bbq",
+   "brand": "더 잡수 소",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2000000,
+   "total_won": 40000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페인중독",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 2250000,
+   "total_won": 18000000
+  },
+  {
+   "group": "cafe",
+   "brand": "스윗앤샷",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페브루빈(cafe BREWBEAN)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "공차",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 50000000
+  },
+  {
+   "group": "cafe",
+   "brand": "셀렉커피랩(SELECT)",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 2450000,
+   "total_won": 19500000
+  },
+  {
+   "group": "bbq",
+   "brand": "넙딱집",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 26500000
+  },
+  {
+   "group": "bbq",
+   "brand": "아!이맛이야 철판산성",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 52500000
+  },
+  {
+   "group": "cafe",
+   "brand": "유니컵 커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "bbq",
+   "brand": "왕표연탄구이",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "cafe",
+   "brand": "오늘도빙수",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "cafe",
+   "brand": "오드문",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 160000,
+   "total_won": 3300000
+  },
+  {
+   "group": "bbq",
+   "brand": "60판왕뚜껑삼겹살",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 48000000
+  },
+  {
+   "group": "bbq",
+   "brand": "낭만소갈비",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "더블업",
+   "induty": "커피",
+   "area_pyeong": 5.0,
+   "per_pyeong_won": 4350000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "콜프로스터스",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1800000,
+   "total_won": 36000000
+  },
+  {
+   "group": "bbq",
+   "brand": "금대솔정육생고기",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1100000,
+   "total_won": 33000000
+  },
+  {
+   "group": "cafe",
+   "brand": "슈퍼브커피로스터스",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 29500000
+  },
+  {
+   "group": "bbq",
+   "brand": "구이대장쪽갈비",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 37000000
+  },
+  {
+   "group": "cafe",
+   "brand": "아쿠아가든(AQUAGARDEN)",
+   "induty": "커피",
+   "area_pyeong": 100.0,
+   "per_pyeong_won": 9500000000,
+   "total_won": 950000000000
+  },
+  {
+   "group": "bbq",
+   "brand": "쌍팔련도",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 82500000
+  },
+  {
+   "group": "bbq",
+   "brand": "그날이후 불타는삼겹살",
+   "induty": "한식",
+   "area_pyeong": 100.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 160000000
+  },
+  {
+   "group": "cafe",
+   "brand": "텐퍼센트스페셜티커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "cafe",
+   "brand": "동백다방",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 35000000
+  },
+  {
+   "group": "cafe",
+   "brand": "홍콩디저트 그린티(GREEN TEA)",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 4350000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "구테로이테",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 3700000,
+   "total_won": 55000000
+  },
+  {
+   "group": "cafe",
+   "brand": "헤리턴스Cafe",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "bbq",
+   "brand": "소금창고",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1800000,
+   "total_won": 53500000
+  },
+  {
+   "group": "bbq",
+   "brand": "갈비고",
+   "induty": "한식",
+   "area_pyeong": 12.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 20500000
+  },
+  {
+   "group": "bbq",
+   "brand": "우마주",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 49500000
+  },
+  {
+   "group": "bbq",
+   "brand": "야한대패",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 49500000
+  },
+  {
+   "group": "cafe",
+   "brand": "셀렉커피랩(SELECT)",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 2450000,
+   "total_won": 19500000
+  },
+  {
+   "group": "apparel",
+   "brand": "롤리팝",
+   "induty": "의류 / 패션",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 300000,
+   "total_won": 6000000
+  },
+  {
+   "group": "cafe",
+   "brand": "매머드커피(Mammoth coffee)",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 2950000,
+   "total_won": 23500000
+  },
+  {
+   "group": "cafe",
+   "brand": "더드림커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "차얌",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "박수암 덕산뒷고기",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 49500000
+  },
+  {
+   "group": "bbq",
+   "brand": "동네맛집고깃집",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 56000000
+  },
+  {
+   "group": "cafe",
+   "brand": "천씨씨커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "랭스터디카페",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "더원커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페수르",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1500000,
+   "total_won": 15000000
+  },
+  {
+   "group": "bbq",
+   "brand": "마포육곳간",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 32000000
+  },
+  {
+   "group": "bbq",
+   "brand": "육대빵",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피에반하다 스마트카페",
+   "induty": "커피",
+   "area_pyeong": 7.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 17000000
+  },
+  {
+   "group": "cafe",
+   "brand": "무무커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "apparel",
+   "brand": "옷을 입다",
+   "induty": "의류 / 패션",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1200000,
+   "total_won": 12000000
+  },
+  {
+   "group": "cafe",
+   "brand": "벨라빈스커피",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2950000,
+   "total_won": 89000000
+  },
+  {
+   "group": "bbq",
+   "brand": "만만축산",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 87500000
+  },
+  {
+   "group": "cafe",
+   "brand": "마을카페남동풍",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 37000000
+  },
+  {
+   "group": "cafe",
+   "brand": "빽다방",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1650000,
+   "total_won": 16500000
+  },
+  {
+   "group": "bbq",
+   "brand": "뭉텅",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": null,
+   "total_won": null
+  },
+  {
+   "group": "cafe",
+   "brand": "맨션5(MANSION5)",
+   "induty": "커피",
+   "area_pyeong": 50.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 99000000
+  },
+  {
+   "group": "cafe",
+   "brand": "셀렉토커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 20500000
+  },
+  {
+   "group": "bbq",
+   "brand": "현방오백소한판",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "cafe",
+   "brand": "오가다",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "cafe",
+   "brand": "옵션스페셜티커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "cafe",
+   "brand": "갈바트 카페",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "더블업",
+   "induty": "커피",
+   "area_pyeong": 5.0,
+   "per_pyeong_won": 4350000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "두시커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "쪽집",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 41500000
+  },
+  {
+   "group": "cafe",
+   "brand": "The 대단한커피 ",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 17000000
+  },
+  {
+   "group": "bbq",
+   "brand": "두마족의 시대",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 49500000
+  },
+  {
+   "group": "cafe",
+   "brand": "짹슨커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2000000,
+   "total_won": 20000000
+  },
+  {
+   "group": "cafe",
+   "brand": "스윗다이노",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "아사(ASA)커피랩",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 19500000
+  },
+  {
+   "group": "cafe",
+   "brand": "더카페",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 20500000
+  },
+  {
+   "group": "bbq",
+   "brand": "청춘연가",
+   "induty": "한식",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "댄싱컵(DANCINGCUP)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "타래커피1998",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 41500000
+  },
+  {
+   "group": "cafe",
+   "brand": "만랩커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "apparel",
+   "brand": "풀레브(PULEV)",
+   "induty": "의류 / 패션",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 49500000
+  },
+  {
+   "group": "bbq",
+   "brand": "?난돼지",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 49500000
+  },
+  {
+   "group": "bbq",
+   "brand": "황토화로정육식당",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 43500000
+  },
+  {
+   "group": "bbq",
+   "brand": "김숙성",
+   "induty": "한식",
+   "area_pyeong": 12.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "온담",
+   "induty": "한식",
+   "area_pyeong": 35.0,
+   "per_pyeong_won": 2000000,
+   "total_won": 70500000
+  },
+  {
+   "group": "bbq",
+   "brand": "봉고기",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 82500000
+  },
+  {
+   "group": "bbq",
+   "brand": "악동삼겹",
+   "induty": "한식",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 19500000
+  },
+  {
+   "group": "bbq",
+   "brand": "신깡통뒷고기",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 33000000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피홀(coffee hole)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 20500000
+  },
+  {
+   "group": "bbq",
+   "brand": "못생긴뚱돼지",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "이구아나",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "사람없는 커피어때",
+   "induty": "커피",
+   "area_pyeong": 7.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 19000000
+  },
+  {
+   "group": "cafe",
+   "brand": "TESTER COFFEE(테스터커피)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 24500000
+  },
+  {
+   "group": "cafe",
+   "brand": "부스트릿(BOOSTREET)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "밀탄",
+   "induty": "한식",
+   "area_pyeong": 60.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 160000000
+  },
+  {
+   "group": "bbq",
+   "brand": "신사우 물갈비",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 39500000
+  },
+  {
+   "group": "cafe",
+   "brand": "북앤카페",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 55000000
+  },
+  {
+   "group": "cafe",
+   "brand": "이공커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3800000,
+   "total_won": 38000000
+  },
+  {
+   "group": "cafe",
+   "brand": "화채업자",
+   "induty": "커피",
+   "area_pyeong": 0.0,
+   "per_pyeong_won": null,
+   "total_won": null
+  },
+  {
+   "group": "cafe",
+   "brand": "카페일분",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2000000,
+   "total_won": 20000000
+  },
+  {
+   "group": "cafe",
+   "brand": "COFFEE ROMAN(커피로만) ",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "단막",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2550000,
+   "total_won": 76000000
+  },
+  {
+   "group": "cafe",
+   "brand": "THE BLUE COFFEE",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 3400000,
+   "total_won": 27500000
+  },
+  {
+   "group": "apparel",
+   "brand": "봄나무",
+   "induty": "의류 / 패션",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 33000000
+  },
+  {
+   "group": "cafe",
+   "brand": "WAKEY(웨이키) ",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3950000,
+   "total_won": 39500000
+  },
+  {
+   "group": "bbq",
+   "brand": "싹쓰리무한대패",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 1100000,
+   "total_won": 43500000
+  },
+  {
+   "group": "bbq",
+   "brand": "동래정 백탄직화",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2650000,
+   "total_won": 80500000
+  },
+  {
+   "group": "cafe",
+   "brand": "오프커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "cafe",
+   "brand": "이디야커피",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 41500000
+  },
+  {
+   "group": "cafe",
+   "brand": "그레이핍플커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "동양찻집",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 48000000
+  },
+  {
+   "group": "bbq",
+   "brand": "양심소",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1400000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "드링크림커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "bbq",
+   "brand": "고기극찬",
+   "induty": "한식",
+   "area_pyeong": 12.0,
+   "per_pyeong_won": null,
+   "total_won": null
+  },
+  {
+   "group": "cafe",
+   "brand": "낫배드커피 (NOT BAD COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "더가우",
+   "induty": "한식",
+   "area_pyeong": 200.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 350000000
+  },
+  {
+   "group": "cafe",
+   "brand": "하이테이블",
+   "induty": "커피",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 130000000
+  },
+  {
+   "group": "bbq",
+   "brand": "돈꽃필무렵",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 41000000
+  },
+  {
+   "group": "cafe",
+   "brand": "메타킹 커피(METAKING COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 26500000
+  },
+  {
+   "group": "cafe",
+   "brand": "탐앤탐스커피(TOMNTOMS COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2250000,
+   "total_won": 67500000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피왕",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2450000,
+   "total_won": 24500000
+  },
+  {
+   "group": "cafe",
+   "brand": "컴포즈커피(COMPOSE COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "cafe",
+   "brand": "베민트 커피",
+   "induty": "커피",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 55000000
+  },
+  {
+   "group": "cafe",
+   "brand": "프롬하츠(FROM HEARTS)",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2000000,
+   "total_won": 40000000
+  },
+  {
+   "group": "bbq",
+   "brand": "육국",
+   "induty": "한식",
+   "area_pyeong": 50.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 99000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페보스(CAFE BOSS)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 18500000
+  },
+  {
+   "group": "cafe",
+   "brand": "백억커피",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "소장각",
+   "induty": "한식",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 29500000
+  },
+  {
+   "group": "bbq",
+   "brand": "화적돈",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "cafe",
+   "brand": "스트렝스커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3800000,
+   "total_won": 38000000
+  },
+  {
+   "group": "bbq",
+   "brand": "소소한숯불갈비",
+   "induty": "한식",
+   "area_pyeong": 50.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 82500000
+  },
+  {
+   "group": "cafe",
+   "brand": "크레이저커피(C.Razer Coffee)",
+   "induty": "커피",
+   "area_pyeong": 2420.0,
+   "per_pyeong_won": 10000,
+   "total_won": 23500000
+  },
+  {
+   "group": "bbq",
+   "brand": "대부솥뚜껑삼겹살",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 62500000
+  },
+  {
+   "group": "bbq",
+   "brand": "솥고집",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "bbq",
+   "brand": "뒷돈상회",
+   "induty": "한식",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 31000000
+  },
+  {
+   "group": "bbq",
+   "brand": "무등소갈비",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1500000,
+   "total_won": 44500000
+  },
+  {
+   "group": "cafe",
+   "brand": "우지커피(OOZYCOFFEE)",
+   "induty": "커피",
+   "area_pyeong": 12.0,
+   "per_pyeong_won": 2300000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "TSG한판집",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피바이브",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "오페라빈 에스프레소바",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 19500000
+  },
+  {
+   "group": "cafe",
+   "brand": "포시즌베리",
+   "induty": "커피",
+   "area_pyeong": 60.0,
+   "per_pyeong_won": 5500000,
+   "total_won": 330000000
+  },
+  {
+   "group": "bbq",
+   "brand": "삼삼오오",
+   "induty": "한식",
+   "area_pyeong": 0.0,
+   "per_pyeong_won": null,
+   "total_won": null
+  },
+  {
+   "group": "cafe",
+   "brand": "봉명읍미쓰리",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 245000,
+   "total_won": 5000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페텅(Cafe Tung)",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "박돼장",
+   "induty": "한식",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2300000,
+   "total_won": 35000000
+  },
+  {
+   "group": "cafe",
+   "brand": "힙피커피(heap.p coffee)",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 3050000,
+   "total_won": 24500000
+  },
+  {
+   "group": "cafe",
+   "brand": "커슐랭",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "요거트홀릭",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 20500000
+  },
+  {
+   "group": "cafe",
+   "brand": "브이요거트",
+   "induty": "커피",
+   "area_pyeong": 5.0,
+   "per_pyeong_won": 2250000,
+   "total_won": 11000000
+  },
+  {
+   "group": "bbq",
+   "brand": "봉급날",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 55000000
+  },
+  {
+   "group": "cafe",
+   "brand": "모어덴투데이 (MORE THAN TODAY)",
+   "induty": "커피",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 46500000
+  },
+  {
+   "group": "cafe",
+   "brand": "키팜",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2250000,
+   "total_won": 22500000
+  },
+  {
+   "group": "cafe",
+   "brand": "구움씨",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 29500000
+  },
+  {
+   "group": "bbq",
+   "brand": "일품대패",
+   "induty": "한식",
+   "area_pyeong": 50.0,
+   "per_pyeong_won": 1400000,
+   "total_won": 71000000
+  },
+  {
+   "group": "cafe",
+   "brand": "더원커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "냉삼회관",
+   "induty": "한식",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "꽃뚜껑",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 49500000
+  },
+  {
+   "group": "cafe",
+   "brand": "NiceCaffeinClub(NCC)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "cafe",
+   "brand": "45초 커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 4150000,
+   "total_won": 41500000
+  },
+  {
+   "group": "cafe",
+   "brand": "더커피(The coffee)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 41000000
+  },
+  {
+   "group": "cafe",
+   "brand": "달콤.엔(Dal.Komm.N)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 19000000
+  },
+  {
+   "group": "cafe",
+   "brand": "남토하우스",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 41000000
+  },
+  {
+   "group": "cafe",
+   "brand": "오크레페(OH!CREPE)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 33000000
+  },
+  {
+   "group": "cafe",
+   "brand": "이안코",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 49500000
+  },
+  {
+   "group": "bbq",
+   "brand": "우산화로",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 49500000
+  },
+  {
+   "group": "bbq",
+   "brand": "들안길한우",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1800000,
+   "total_won": 54000000
+  },
+  {
+   "group": "bbq",
+   "brand": "더갈비",
+   "induty": "한식",
+   "area_pyeong": 80.0,
+   "per_pyeong_won": 2450000,
+   "total_won": 190000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페오를리",
+   "induty": "커피",
+   "area_pyeong": 9.0,
+   "per_pyeong_won": 2100000,
+   "total_won": 19000000
+  },
+  {
+   "group": "cafe",
+   "brand": "맑은365",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1400000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "주디마리",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "나히차",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "본디",
+   "induty": "한식",
+   "area_pyeong": 35.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 96000000
+  },
+  {
+   "group": "cafe",
+   "brand": "요거티",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1400000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "꿈의농장정육식당",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 41000000
+  },
+  {
+   "group": "cafe",
+   "brand": "에이에스커피(AS COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1650000,
+   "total_won": 16500000
+  },
+  {
+   "group": "cafe",
+   "brand": "킹사이즈커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 20500000
+  },
+  {
+   "group": "bbq",
+   "brand": "거북이동네",
+   "induty": "한식",
+   "area_pyeong": 50.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 82500000
+  },
+  {
+   "group": "bbq",
+   "brand": "번양집",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 43500000
+  },
+  {
+   "group": "bbq",
+   "brand": "녹지",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2850000,
+   "total_won": 57000000
+  },
+  {
+   "group": "cafe",
+   "brand": "홍단커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페그란데",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 19500000
+  },
+  {
+   "group": "bbq",
+   "brand": "육미향(肉味香)",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1400000,
+   "total_won": 42500000
+  },
+  {
+   "group": "bbq",
+   "brand": "산울림삼겹살",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 87500000
+  },
+  {
+   "group": "cafe",
+   "brand": "고망고",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2850000,
+   "total_won": 28500000
+  },
+  {
+   "group": "bbq",
+   "brand": "노랑한상정육식점",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "연탄해",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "요거트에브리띵",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1800000,
+   "total_won": 26500000
+  },
+  {
+   "group": "bbq",
+   "brand": "조선대패",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1900000,
+   "total_won": 57000000
+  },
+  {
+   "group": "cafe",
+   "brand": "킨크커피",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 2550000,
+   "total_won": 20000000
+  },
+  {
+   "group": "cafe",
+   "brand": "스트릿팬케이크카페",
+   "induty": "커피",
+   "area_pyeong": 5.0,
+   "per_pyeong_won": 1000000,
+   "total_won": 5000000
+  },
+  {
+   "group": "cafe",
+   "brand": "이십센치",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1800000,
+   "total_won": 18000000
+  },
+  {
+   "group": "cafe",
+   "brand": "COFFLIX(커플릭스)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "꼬들대패",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1500000,
+   "total_won": 38000000
+  },
+  {
+   "group": "bbq",
+   "brand": "쭈꾸밍",
+   "induty": "한식",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1500000,
+   "total_won": 15000000
+  },
+  {
+   "group": "cafe",
+   "brand": "그린머그",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페포코",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 19500000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피홀(coffee hole)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 20500000
+  },
+  {
+   "group": "cafe",
+   "brand": "봉명동내커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "하마고기",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "cafe",
+   "brand": "디디커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 13000000
+  },
+  {
+   "group": "bbq",
+   "brand": "발산껍데기",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 55000000
+  },
+  {
+   "group": "cafe",
+   "brand": "이수페",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "헤이키 커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "인생극장",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 49500000
+  },
+  {
+   "group": "cafe",
+   "brand": "바로커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 20500000
+  },
+  {
+   "group": "cafe",
+   "brand": "트러스트 스페셜티 커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "아마떼",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "cafe",
+   "brand": "요거 커피",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 33000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페몬스터",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "꽃삼뚜껑",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "bbq",
+   "brand": "반지하",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 55000000
+  },
+  {
+   "group": "bbq",
+   "brand": "먹보소갈비살",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 1900000,
+   "total_won": 78000000
+  },
+  {
+   "group": "bbq",
+   "brand": "벽화마을 수암골쪽갈비",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "필메이트",
+   "induty": "커피",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 85500000
+  },
+  {
+   "group": "apparel",
+   "brand": "그라운드덕",
+   "induty": "의류 / 패션",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1200000,
+   "total_won": 12000000
+  },
+  {
+   "group": "cafe",
+   "brand": "킹프레소",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "에이티익스프레스",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 19500000
+  },
+  {
+   "group": "bbq",
+   "brand": "제주옥탑",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "cafe",
+   "brand": "고아트커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "cafe",
+   "brand": "디저트39",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 3500000,
+   "total_won": 70000000
+  },
+  {
+   "group": "bbq",
+   "brand": "백종원의원조쌈밥집",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 52000000
+  },
+  {
+   "group": "cafe",
+   "brand": "와드커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1500000,
+   "total_won": 15000000
+  },
+  {
+   "group": "bbq",
+   "brand": "본가",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 51000000
+  },
+  {
+   "group": "cafe",
+   "brand": "이지브루잉커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "아사(ASA)커피랩",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 19500000
+  },
+  {
+   "group": "bbq",
+   "brand": "백운축산소한마리정육식당",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 87500000
+  },
+  {
+   "group": "cafe",
+   "brand": "오슬로우(OHSLOW)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "bbq",
+   "brand": "그리던",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 110000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페 베리타스",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1400000,
+   "total_won": 14000000
+  },
+  {
+   "group": "bbq",
+   "brand": "딱돼지돼지갈비후라이드",
+   "induty": "한식",
+   "area_pyeong": 5.0,
+   "per_pyeong_won": 2450000,
+   "total_won": 12000000
+  },
+  {
+   "group": "bbq",
+   "brand": "무쇠김치삼겹",
+   "induty": "한식",
+   "area_pyeong": 18.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 29500000
+  },
+  {
+   "group": "bbq",
+   "brand": "일차3.5숙성고기",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "bbq",
+   "brand": "도담갈비선생",
+   "induty": "한식",
+   "area_pyeong": 45.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 74000000
+  },
+  {
+   "group": "bbq",
+   "brand": "알쭈",
+   "induty": "한식",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 13000000
+  },
+  {
+   "group": "bbq",
+   "brand": "백억하누",
+   "induty": "한식",
+   "area_pyeong": 50.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 110000000
+  },
+  {
+   "group": "bbq",
+   "brand": "오복솥뚜껑",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1900000,
+   "total_won": 48000000
+  },
+  {
+   "group": "cafe",
+   "brand": "투썸플레이스",
+   "induty": "커피",
+   "area_pyeong": 45.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 98000000
+  },
+  {
+   "group": "cafe",
+   "brand": "포르스 포레스트",
+   "induty": "커피",
+   "area_pyeong": 50.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 160000000
+  },
+  {
+   "group": "cafe",
+   "brand": "푸푸커피(fufu coffee) ",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 15000000,
+   "total_won": 15000000
+  },
+  {
+   "group": "cafe",
+   "brand": "모캄보",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 62500000
+  },
+  {
+   "group": "bbq",
+   "brand": "고기굽는방앗간",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "bbq",
+   "brand": "문어물갈비",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 72000000
+  },
+  {
+   "group": "cafe",
+   "brand": "무휼",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 17000000
+  },
+  {
+   "group": "cafe",
+   "brand": "스윗앤샷",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "코지스낵랩",
+   "induty": "커피",
+   "area_pyeong": 13.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 28500000
+  },
+  {
+   "group": "cafe",
+   "brand": "스템 커피(STEM COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 2550000,
+   "total_won": 63000000
+  },
+  {
+   "group": "bbq",
+   "brand": "갈비꽃",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 110000000
+  },
+  {
+   "group": "bbq",
+   "brand": "갱상도파절이대패삼겹",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 655000,
+   "total_won": 19500000
+  },
+  {
+   "group": "bbq",
+   "brand": "?난돼지",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 49500000
+  },
+  {
+   "group": "cafe",
+   "brand": "밸리온(Valleyon)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "기똥찬구이집",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 51000000
+  },
+  {
+   "group": "cafe",
+   "brand": "로우냅커피하우스(RAW NAP COFFEE HAUS)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "우미당",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 82500000
+  },
+  {
+   "group": "cafe",
+   "brand": "쥬스킹(JUICE KING)",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "픽업커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "하이즈커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "비엔나커피하우스",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 70500000
+  },
+  {
+   "group": "bbq",
+   "brand": "준삼겹프리미엄돈육",
+   "induty": "한식",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1100000,
+   "total_won": 11000000
+  },
+  {
+   "group": "cafe",
+   "brand": "사이드커피(SIDE COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 19500000
+  },
+  {
+   "group": "cafe",
+   "brand": "샐러리아 SALARIA",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 30000000,
+   "total_won": 30000000
+  },
+  {
+   "group": "bbq",
+   "brand": "모퉁이돌판한우",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 3700000,
+   "total_won": 73500000
+  },
+  {
+   "group": "cafe",
+   "brand": "레프트뱅크",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 20500000
+  },
+  {
+   "group": "cafe",
+   "brand": "빈타이(BEAN TIE)",
+   "induty": "커피",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 4100000,
+   "total_won": 160000000
+  },
+  {
+   "group": "cafe",
+   "brand": "번개커피(VOLTBEEN COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "김통",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 48000000
+  },
+  {
+   "group": "bbq",
+   "brand": "솥돈",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "쥬청과",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "커스텀커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 4350000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "디저트 참 잘하는 집",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 20500000
+  },
+  {
+   "group": "cafe",
+   "brand": "테이블스",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3000000,
+   "total_won": 30000000
+  },
+  {
+   "group": "bbq",
+   "brand": "품육년백 참숯소갈비살",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 56000000
+  },
+  {
+   "group": "bbq",
+   "brand": "양인환대(羊人歡待)",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 4150000,
+   "total_won": 83500000
+  },
+  {
+   "group": "cafe",
+   "brand": "하우스오브테디",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2250000,
+   "total_won": 44500000
+  },
+  {
+   "group": "bbq",
+   "brand": "샘골로",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "COFFEE PUCK",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3600000,
+   "total_won": 36000000
+  },
+  {
+   "group": "cafe",
+   "brand": "달리는커피",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 16000000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피기업",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 36000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페띠아모",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "꾸꾸삼겹",
+   "induty": "한식",
+   "area_pyeong": 12.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 19500000
+  },
+  {
+   "group": "cafe",
+   "brand": "블루폴라",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2900000,
+   "total_won": 29000000
+  },
+  {
+   "group": "cafe",
+   "brand": "쥬씨(JUICY)",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "bbq",
+   "brand": "땅코참숯구이",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2550000,
+   "total_won": 100000000
+  },
+  {
+   "group": "cafe",
+   "brand": "레인커피(RAIN COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3500000,
+   "total_won": 35000000
+  },
+  {
+   "group": "bbq",
+   "brand": "꿈에그린 그로서란트",
+   "induty": "한식",
+   "area_pyeong": 80.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 170000000
+  },
+  {
+   "group": "cafe",
+   "brand": "민정커피(MINJUNG COFFEE)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 49500000
+  },
+  {
+   "group": "cafe",
+   "brand": "스몰굿",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "cafe",
+   "brand": "히든오아시스(HIDDENOASIS)",
+   "induty": "커피",
+   "area_pyeong": 7.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 11000000
+  },
+  {
+   "group": "cafe",
+   "brand": "욤카페",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "cafe",
+   "brand": "그릭박스",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 32000000
+  },
+  {
+   "group": "cafe",
+   "brand": "올선데이",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2050000,
+   "total_won": 62500000
+  },
+  {
+   "group": "bbq",
+   "brand": "박대박 왕소금구이",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1650000,
+   "total_won": 50000000
+  },
+  {
+   "group": "bbq",
+   "brand": "생활생돈",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2250000,
+   "total_won": 69000000
+  },
+  {
+   "group": "cafe",
+   "brand": "빙프레소 요거트베이커리",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 2200.0,
+   "per_pyeong_won": 20000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "파리익스프레스 1986",
+   "induty": "커피",
+   "area_pyeong": 2200.0,
+   "per_pyeong_won": 20000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "루크커피브루어스(LEWK COFFEE BREWERS)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "bbq",
+   "brand": "윤호네 노포갈비",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 40000000
+  },
+  {
+   "group": "cafe",
+   "brand": "넌테이블(non table)",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 3000000,
+   "total_won": 60000000
+  },
+  {
+   "group": "bbq",
+   "brand": "놀부항아리갈비",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 70000000
+  },
+  {
+   "group": "cafe",
+   "brand": "스톤크",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2450000,
+   "total_won": 24500000
+  },
+  {
+   "group": "bbq",
+   "brand": "futting star club 5",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 4350000,
+   "total_won": 110000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페인24",
+   "induty": "커피",
+   "area_pyeong": 8.0,
+   "per_pyeong_won": 2650000,
+   "total_won": 21000000
+  },
+  {
+   "group": "cafe",
+   "brand": "하이즈커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 27500000
+  },
+  {
+   "group": "cafe",
+   "brand": "제주스",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1900000,
+   "total_won": 38000000
+  },
+  {
+   "group": "bbq",
+   "brand": "낭만소갈비",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "이안코",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 3300000,
+   "total_won": 49500000
+  },
+  {
+   "group": "cafe",
+   "brand": "더커피(The coffee)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 41000000
+  },
+  {
+   "group": "apparel",
+   "brand": "옐로베베",
+   "induty": "의류 / 패션",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 435000,
+   "total_won": 6550000
+  },
+  {
+   "group": "cafe",
+   "brand": "쥬씨프레소",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 24500000
+  },
+  {
+   "group": "bbq",
+   "brand": "국가대표 고기집",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1250000,
+   "total_won": 38000000
+  },
+  {
+   "group": "bbq",
+   "brand": "청년고기장수",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 1800000,
+   "total_won": 72000000
+  },
+  {
+   "group": "bbq",
+   "brand": "지글대패삼겹살",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "cafe",
+   "brand": "앤센스커피",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 41000000
+  },
+  {
+   "group": "bbq",
+   "brand": "돈미품 프리미엄숙성삼겹",
+   "induty": "한식",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1100000,
+   "total_won": 11000000
+  },
+  {
+   "group": "bbq",
+   "brand": "진원 소우",
+   "induty": "한식",
+   "area_pyeong": 90.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 150000000
+  },
+  {
+   "group": "cafe",
+   "brand": "노배드바이브스",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 33000000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페봄봄",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3050000,
+   "total_won": 30500000
+  },
+  {
+   "group": "bbq",
+   "brand": "마포냉면 숯불구이",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 82500000
+  },
+  {
+   "group": "bbq",
+   "brand": "제주덕구",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 59000000
+  },
+  {
+   "group": "bbq",
+   "brand": "홍:이집",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1400000,
+   "total_won": 42500000
+  },
+  {
+   "group": "bbq",
+   "brand": "강남랭겹",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 49500000
+  },
+  {
+   "group": "bbq",
+   "brand": "낭만소갈비",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "페이브커피",
+   "induty": "커피",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 55000000
+  },
+  {
+   "group": "cafe",
+   "brand": "크피숍 (KFFEESHOP)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2550000,
+   "total_won": 25500000
+  },
+  {
+   "group": "cafe",
+   "brand": "PLUS 82(플러스 82)",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 16000000
+  },
+  {
+   "group": "bbq",
+   "brand": "조선부뚜막",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 82500000
+  },
+  {
+   "group": "cafe",
+   "brand": "망고홀릭",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 72000000
+  },
+  {
+   "group": "cafe",
+   "brand": "망고루",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 72000000
+  },
+  {
+   "group": "bbq",
+   "brand": "김숙성",
+   "induty": "한식",
+   "area_pyeong": 12.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 33000000
+  },
+  {
+   "group": "cafe",
+   "brand": "HayCOFFEE",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 26500000
+  },
+  {
+   "group": "bbq",
+   "brand": "명월회관",
+   "induty": "한식",
+   "area_pyeong": 60.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 130000000
+  },
+  {
+   "group": "bbq",
+   "brand": "한양화로",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "bbq",
+   "brand": "한양역",
+   "induty": "한식",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "bbq",
+   "brand": "꾸석지",
+   "induty": "한식",
+   "area_pyeong": 25.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 49500000
+  },
+  {
+   "group": "cafe",
+   "brand": "아이캔커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 13000000
+  },
+  {
+   "group": "cafe",
+   "brand": "조선다방",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 18500000
+  },
+  {
+   "group": "cafe",
+   "brand": "코지리틀",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2550000,
+   "total_won": 38000000
+  },
+  {
+   "group": "bbq",
+   "brand": "생활생돈",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2250000,
+   "total_won": 69000000
+  },
+  {
+   "group": "bbq",
+   "brand": "육식사관학교",
+   "induty": "한식",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 585000,
+   "total_won": 8750000
+  },
+  {
+   "group": "bbq",
+   "brand": "대패싸롱",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 1100000,
+   "total_won": 43500000
+  },
+  {
+   "group": "cafe",
+   "brand": "VANADA COFFEE",
+   "induty": "커피",
+   "area_pyeong": 7.0,
+   "per_pyeong_won": 2750000,
+   "total_won": 19000000
+  },
+  {
+   "group": "bbq",
+   "brand": "중랑등갈비",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 43500000
+  },
+  {
+   "group": "bbq",
+   "brand": "할매솥뚜껑삼겹살",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 33000000
+  },
+  {
+   "group": "bbq",
+   "brand": "담산",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 33000000
+  },
+  {
+   "group": "apparel",
+   "brand": "공장1188",
+   "induty": "의류 / 패션",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 27500000
+  },
+  {
+   "group": "bbq",
+   "brand": "육식본부",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1800000,
+   "total_won": 55000000
+  },
+  {
+   "group": "bbq",
+   "brand": "아양돈",
+   "induty": "한식",
+   "area_pyeong": 60.0,
+   "per_pyeong_won": 14000000,
+   "total_won": 835000000
+  },
+  {
+   "group": "cafe",
+   "brand": "페이브(fave)",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "카페폴",
+   "induty": "커피",
+   "area_pyeong": 1650.0,
+   "per_pyeong_won": 60000,
+   "total_won": 99000000
+  },
+  {
+   "group": "bbq",
+   "brand": "육고봉",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 65500000
+  },
+  {
+   "group": "cafe",
+   "brand": "지즈",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1700000,
+   "total_won": 26500000
+  },
+  {
+   "group": "cafe",
+   "brand": "나랑하",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3000000,
+   "total_won": 30000000
+  },
+  {
+   "group": "bbq",
+   "brand": "엉터리 무한대패",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1600000,
+   "total_won": 49500000
+  },
+  {
+   "group": "cafe",
+   "brand": "커피에반하다",
+   "induty": "커피",
+   "area_pyeong": 7.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 14000000
+  },
+  {
+   "group": "cafe",
+   "brand": "PRESENT(프레전트)",
+   "induty": "커피",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 1300000,
+   "total_won": 26500000
+  },
+  {
+   "group": "cafe",
+   "brand": "리초야",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 33000000
+  },
+  {
+   "group": "cafe",
+   "brand": "크로앤피 크로플&amp;커피",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 1900000,
+   "total_won": 19000000
+  },
+  {
+   "group": "cafe",
+   "brand": "유로스커피 로스터스",
+   "induty": "커피",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 2450000,
+   "total_won": 75000000
+  },
+  {
+   "group": "cafe",
+   "brand": "배터리스튜디오",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 23500000
+  },
+  {
+   "group": "cafe",
+   "brand": "빙고래",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "프롬프트",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3050000,
+   "total_won": 30500000
+  },
+  {
+   "group": "bbq",
+   "brand": "양인환대(羊人歡待)",
+   "induty": "한식",
+   "area_pyeong": 20.0,
+   "per_pyeong_won": 4150000,
+   "total_won": 83500000
+  },
+  {
+   "group": "bbq",
+   "brand": "바른암소한우",
+   "induty": "한식",
+   "area_pyeong": 30.0,
+   "per_pyeong_won": 1850000,
+   "total_won": 56000000
+  },
+  {
+   "group": "cafe",
+   "brand": "포트캔커피 PORT CAN COFFEE",
+   "induty": "커피",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 21500000
+  },
+  {
+   "group": "cafe",
+   "brand": "인사동곱돌쌍화차",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2350000,
+   "total_won": 96500000
+  },
+  {
+   "group": "bbq",
+   "brand": "갈속집",
+   "induty": "한식",
+   "area_pyeong": 40.0,
+   "per_pyeong_won": 2150000,
+   "total_won": 87500000
+  },
+  {
+   "group": "bbq",
+   "brand": "육공간",
+   "induty": "한식",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 2300000,
+   "total_won": 35000000
+  },
+  {
+   "group": "cafe",
+   "brand": "홍닝차",
+   "induty": "음료 (커피 외)",
+   "area_pyeong": 10.0,
+   "per_pyeong_won": 3800000,
+   "total_won": 38000000
+  },
+  {
+   "group": "cafe",
+   "brand": "Every Coffee(에브리커피)",
+   "induty": "커피",
+   "area_pyeong": 15.0,
+   "per_pyeong_won": 1950000,
+   "total_won": 29500000
+  }
+ ]
+}

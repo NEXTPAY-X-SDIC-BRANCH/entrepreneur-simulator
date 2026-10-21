@@ -1,0 +1,82 @@
+{
+ "_meta": {
+  "source": "외식업체 경영실태조사 (농림축산식품부, KOSIS orgId 114, DT_114054_*)",
+  "survey_year": "2025",
+  "basis": "전년도 실적, 전국",
+  "fetched_at": "2026-10-21T23:03:15",
+  "method": "pipelines/fetch_krei_quickfood.py",
+  "caveat": [
+   "전국 값 (서울 세분류 값 없음)",
+   "분식 = 김밥 및 기타 간이 음식점업",
+   "방문(명)과 배달·포장(인분)을 같은 단위로 보고 주문 비중을 냄 (가정)"
+  ]
+ },
+ "chicken": {
+  "name": "치킨전문점",
+  "sales_month_man": 1476.5,
+  "op_margin": 0.092,
+  "food_labor_ratio": 0.708,
+  "sales_per_worker_year_man": 11188.0,
+  "sales_per_pyeong_year_man": 2056.0,
+  "ticket_krw": 16487.0,
+  "visit_per_day": 26.8,
+  "delivery_per_day": 21.7,
+  "takeout_per_day": 10.2,
+  "delivery_app_use": 74.5,
+  "delivery_app_fee_month_krw": 555376.2,
+  "delivery_agency_use": 69.8,
+  "delivery_agency_fee_month_krw": 860806.1,
+  "interior_total_man": 2590.7,
+  "area_m2": 54.3,
+  "hours_per_day": 10.4,
+  "open_days": 28.5,
+  "workers": 2.56,
+  "family_unpaid": 0.51,
+  "wage_month_man": 214.3,
+  "food_mix_pct": {
+   "쌀": 3.5,
+   "곡류(쌀 제외)": 3.5,
+   "채소": 7.0,
+   "축산물": 52.4,
+   "수산물": 0.8,
+   "가공식품(공산품)": 16.9,
+   "기타": 3.3,
+   "과일": 0.6,
+   "주류/음료": 12.0
+  }
+ },
+ "bunsik": {
+  "name": "김밥 및 기타 간이 음식점업",
+  "sales_month_man": 920.6,
+  "op_margin": 0.09300000000000001,
+  "food_labor_ratio": 0.71,
+  "sales_per_worker_year_man": 7614.0,
+  "sales_per_pyeong_year_man": 1748.0,
+  "ticket_krw": 6700.5,
+  "visit_per_day": 49.6,
+  "delivery_per_day": 15.5,
+  "takeout_per_day": 24.7,
+  "delivery_app_use": 48.5,
+  "delivery_app_fee_month_krw": 259535.9,
+  "delivery_agency_use": 48.5,
+  "delivery_agency_fee_month_krw": 986515.2,
+  "interior_total_man": 2176.6,
+  "area_m2": 44.0,
+  "hours_per_day": 11.6,
+  "open_days": 27.5,
+  "workers": 2.64,
+  "family_unpaid": 0.53,
+  "wage_month_man": 191.3,
+  "food_mix_pct": {
+   "쌀": 16.2,
+   "곡류(쌀 제외)": 5.7,
+   "채소": 13.1,
+   "축산물": 13.2,
+   "수산물": 5.6,
+   "가공식품(공산품)": 32.4,
+   "기타": 6.2,
+   "과일": 0.4,
+   "주류/음료": 7.3
+  }
+ }
+}

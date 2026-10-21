@@ -215,3 +215,128 @@
 .sx-left .sx-kpis div { padding: 8px 10px; }
 .sx-left .sx-kpis dd { font-size: 15px; }
 .sx-left .sx-kpis .main dd { font-size: 17px; }
+
+/* 영수증: 지급일에 나가는 고정비의 오늘 몫 (현금에는 지급일에 반영) */
+.sx-r-acc { margin: 4px 0 0; font-size: 12px; color: #6f6b5e; }
+.sx-r-day li.acc span, .sx-r-day li.acc b { color: #8a8678; font-weight: 400; }
+.sx-r-day li.acc-sum { border-top: 1px dotted #d6d2c2; padding-top: 1px; font-size: 13px; }
+.sx-r-day li.acc-sum span { color: #6f6b5e; }
+
+/* 시작 화면: 쉬운 모드 / 자세히 모드 */
+.sx-mode { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.sx-mode legend { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.sx-mode label { display: flex; gap: 10px; padding: 12px 14px; border: 1px solid #dfe6f0; border-radius: 12px; cursor: pointer; align-items: flex-start; }
+.sx-mode label:hover { border-color: #9fb9de; }
+.sx-mode label.on { border-color: #256abf; background: #f0f5fe; box-shadow: 0 0 0 1px #256abf; }
+.sx-mode span { display: grid; gap: 2px; }
+.sx-mode small { color: #5b6b82; font-size: 13px; }
+
+/* 자세히 모드: 메뉴 등록 */
+.sx-menu { display: grid; gap: 8px; margin-bottom: 14px; padding: 12px; border: 1px solid #dfe6f0; border-radius: 12px; }
+.sx-menu h3 { margin: 0; font-size: 15px; }
+.sx-menu table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.sx-menu th { text-align: left; font-weight: 600; color: #5b6b82; font-size: 12px; padding: 0 4px 4px; }
+.sx-menu td { padding: 2px 4px; white-space: nowrap; }
+.sx-menu input { width: 76px; padding: 5px 6px; border: 1px solid #c3d0e2; border-radius: 6px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.sx-menu td:first-child input { width: 96px; }
+.sx-menu .sx-note { margin: 0; }
+
+/* 6개월 성적표 (Scorecard.tsx) */
+.sc-card { display: grid; gap: 12px; }
+.sc-card h2 { margin: 8px 0 0; font-size: 17px; }
+.sc-head { display: flex; gap: 18px; align-items: center; }
+.sc-score { display: flex; align-items: baseline; gap: 4px; }
+.sc-score b { font-size: 52px; line-height: 1; color: #184f95; font-variant-numeric: tabular-nums; }
+.sc-score span { color: #5b6b82; font-size: 15px; }
+.sc-grade { margin: 0; font-size: 22px; font-weight: 700; }
+.sc-areas { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sc-areas li { display: grid; grid-template-columns: 80px 1fr 56px; gap: 4px 10px; align-items: center; }
+.sc-areas small { grid-column: 1 / -1; color: #5b6b82; font-size: 13px; }
+.sc-label { font-weight: 600; }
+.sc-bar { height: 10px; background: #e7edf6; border-radius: 99px; overflow: hidden; }
+.sc-bar i { display: block; height: 100%; background: #256abf; border-radius: 99px; }
+.sc-pts { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.sc-fix { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.sc-fix li { display: grid; gap: 2px; }
+.sc-fix b { color: #b3261e; }
+.sc-up { color: #1a7f37; }
+.sc-down { color: #b3261e; }
+.sc-diff { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 12px; }
+.sc-diff li { display: flex; gap: 4px; }
+.sc-save { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.sc-save label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
+.sc-save input { padding: 8px 10px; border: 1px solid #c3d0e2; border-radius: 8px; font-size: 15px; width: 140px; }
+.sc-rank tr.me td { background: #f0f5fe; font-weight: 700; }
+.sx-table .sub th, .sx-table .sub td { font-weight: 600; border-top: 1px solid #c3cddb; }
+
+/* 쉬운 모드: 달마다 방향 카드 */
+.sx-strats { display: grid; gap: 10px; }
+.sx-strats label { display: flex; gap: 10px; padding: 14px; border: 1px solid #dfe6f0; border-radius: 12px; cursor: pointer; align-items: flex-start; }
+.sx-strats label:hover { border-color: #9fb9de; }
+.sx-strats label.on { border-color: #256abf; background: #f0f5fe; box-shadow: 0 0 0 1px #256abf; }
+.sx-strat { display: grid; gap: 3px; }
+.sx-strat b { font-size: 16px; }
+.sx-strat small { color: #5b6b82; font-size: 13px; }
+.sx-strat-chg { font-size: 13px; color: #184f95; }
+
+/* 이달의 사건이 하나일 때: 카드를 가로로 넓게, 선택지를 나란히 */
+.sx-dps.is-single { grid-template-columns: 1fr; }
+.sx-dps.is-single .sx-dp { grid-row: auto; grid-template-rows: none; }
+.sx-dps.is-single .sx-dp-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.sx-dps.is-single .sx-dp-opts label { flex-direction: column; gap: 8px; padding: 16px; }
+.sx-dps.is-single .sx-dp-h h3 { font-size: 19px; }
+
+/* 결과 배너 (Scorecard.tsx) */
+.sc-hero { display: grid; gap: 6px; padding: 18px 20px; border-radius: 16px; color: #fff; background: linear-gradient(135deg, #1d4f91, #2f6fc1); }
+.sc-hero.is-bad { background: linear-gradient(135deg, #8a2a22, #c0453a); }
+.sc-hero.is-mid { background: linear-gradient(135deg, #8a5a12, #c98a2a); }
+.sc-hero h2 { margin: 0; font-size: 24px; color: #fff; }
+.sc-hero p { margin: 0; font-size: 15px; opacity: .95; }
+.sc-badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sc-badges li { display: grid; gap: 1px; padding: 8px 12px; border-radius: 12px; background: #f2f5fa; min-width: 120px; }
+.sc-badges small { color: #5b6b82; font-size: 12px; }
+.sc-badges b { font-size: 16px; font-variant-numeric: tabular-nums; }
+
+/* 옷가게 시뮬레이션 (ApparelSim.tsx): 3D 없이 위 지표 줄 + 가운데 카드 */
+.ap-sim { display: grid; gap: 14px; justify-items: center; padding: 20px 16px 40px; }
+.ap-hud { width: min(1000px, 100%); }
+.ap-hud small { display: block; font-size: 11px; color: #8a5a12; font-weight: 500; }
+.ap-card { max-height: none; box-shadow: 0 12px 40px rgba(20, 40, 80, .08); border: 1px solid #e3e9f2; }
+.ap-bars { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; align-items: end; height: 150px; }
+.ap-bar { display: grid; grid-template-rows: 1fr auto auto; height: 100%; text-align: center; gap: 2px; font-size: 12px; }
+.ap-bar span { align-self: end; width: 70%; justify-self: center; background: #256abf; border-radius: 6px 6px 0 0; min-height: 2px; }
+.ap-bar span.neg { background: #c0453a; }
+.ap-bar small { color: #5b6b82; }
+.ap-bar b { font-variant-numeric: tabular-nums; font-size: 12px; }
+
+/* 옷가게: 가게 평면이 화면 전체 (고깃집의 3D 자리) */
+.sx-canvas.ap-stage { display: grid; place-items: center; background: #f1ece3; }
+.sx-canvas.ap-stage .ap-plan { width: min(70vw, 900px); max-height: 80%; }
+.ap-person { fill: #e0735a; opacity: .85; }
+
+/* 버튼 묶음 간격을 12px로 통일 (팝업 아래 버튼, 재생 막대, 랭킹 저장) */
+.sx-foot, .sx-bar, .sc-save { gap: 12px; }
+.sx-bar button { min-width: 72px; }
+/* 평면이 왼쪽 패널(360px)·오른쪽 영수증(300px) 사이에 들어가게 */
+.sx-canvas.ap-stage .ap-plan { width: clamp(320px, calc(100vw - 760px), 820px); max-height: 70%; }
+/* 재료 시세 대시보드 (PriceTrend.tsx) */
+.pt { margin-top: 12px; display: grid; gap: 8px; }
+.pt-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.pt-fig { margin: 0; padding: 10px; border: 1px solid #d5deea; border-radius: 10px; background: #fff; display: grid; gap: 4px; }
+.pt-fig figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; font-size: 13px; }
+.pt-fig figcaption span { color: #5b6b82; }
+.pt-fig svg { width: 100%; height: auto; display: block; }
+.pt-fig text { font-size: 10px; fill: #5b6b82; }
+.pt-fig .pt-cur { fill: #14233a; font-weight: 700; }
+.pt-fig small { font-size: 12px; color: #5b6b82; line-height: 1.5; }
+.pt-grid { stroke: #e8edf5; }
+.pt-one { stroke: #9fb0c8; stroke-dasharray: 3 3; }
+.pt-band { fill: #256abf; opacity: .12; }
+.pt-season { fill: none; stroke: #8aa4c8; stroke-width: 1; opacity: .7; }
+.pt-mean { fill: none; stroke: #256abf; stroke-width: 2.5; }
+.pt-now { fill: #b3261e; stroke: #fff; stroke-width: 1.5; }
+/* 가격 비교 배지 (priceCompare.ts) */
+.sx-price { margin-top: 10px; }
+.sx-badge.pos { background: #e6f0fb; color: #1d5aa6; }
+.sx-badge.neg { background: #fdf1e1; color: #8a5200; }
+.ap-rider { fill: #256abf; }

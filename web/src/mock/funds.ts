@@ -3,6 +3,7 @@
 // 한도·금리·접수 시기는 기관 공고가 기준이고, 자료마다 다르게 적힌 값은 그대로 두었다. 신청 전에 공고 원문을 확인하세요.
 export type Fund = {
   name: string; org: string; who: string; pre: "가능" | "등록 후" | "조건부"; youth?: boolean; // youth: 만 39세 이하 조건
+  program?: boolean; // 대출이 아니라 교육·선발 프로그램 (모자란 돈 탭에서 대출과 따로 보여 준다)
   limit: string; terms: string; where: string; note: string;
   rate?: [number, number]; // 연 금리 % 범위 (terms 문장에 적힌 값). 화면에서 ECOS 은행 평균과 견준다
   floating?: boolean; // 기준금리 연동 변동금리
@@ -13,10 +14,10 @@ export const FUNDS: Fund[] = [
   { name: "청년전용창업자금", rate: [2, 3.9], url: "https://www.kosmes.or.kr/nsh/SH/SBI/SHSBI004M0.do", org: "중소벤처기업진흥공단", who: "만 39세 이하 예비창업자 또는 업력 3년 미만", pre: "가능", youth: true,
     limit: "최대 1억원 (제조업 등 우대 업종은 2억원)", terms: "연 2~3%대, 6년 (거치 3년 + 상환 3년). 자료마다 금리가 달라요.", where: "중진공 온라인 신청 (kosmes.or.kr), 서울 지역본부",
     note: "상시 접수, 예산이 떨어지면 마감. 사업계획서와 사업성 평가가 있어요." },
-  { name: "프렙 아카데미", url: "https://www.seoul.go.kr/policy/view.do?id=77&lan=KO", org: "서울시 · 서울신용보증재단", who: "서울 거주 만 19~39세 외식업 예비창업 청년", pre: "가능", youth: true,
+  { name: "프렙 아카데미", program: true, url: "https://www.seoul.go.kr/policy/view.do?id=77&lan=KO", org: "서울시 · 서울신용보증재단", who: "서울 거주 만 19~39세 외식업 예비창업 청년", pre: "가능", youth: true,
     limit: "교육 12주 뒤 서울신보 연계 최대 7,000만원 융자", terms: "장기·저리 (세부 금리 미확인)", where: "서울시 소상공인 종합지원 포털",
     note: "서류와 면접으로 뽑아요. 차기 기수 일정은 아직 확인되지 않았어요." },
-  { name: "모두의 창업 프로젝트 로컬트랙", url: "https://www.modoo.or.kr/", org: "중소벤처기업부", who: "예비창업자 (사업자등록이 없어야 해요)", pre: "가능",
+  { name: "모두의 창업 프로젝트 로컬트랙", program: true, url: "https://www.modoo.or.kr/", org: "중소벤처기업부", who: "예비창업자 (사업자등록이 없어야 해요)", pre: "가능",
     limit: "1라운드 활동자금 200만원, 최종 우승 상금 최대 1억원", terms: "대출이 아니에요 (교육·멘토링 포함)", where: "modoo.or.kr",
     note: "수도권 선발 비중이 약 10%라 서울은 경쟁이 센 편이에요." },
   { name: "예비창업가육성보증", url: "https://www.kodit.co.kr/", org: "신용보증기금", who: "창업 전 6개월 이내 예비창업가", pre: "조건부",
@@ -38,14 +39,19 @@ export const FUNDS: Fund[] = [
 export const FUNDS_SRC = "예비창업 정책자금 정리표 (기관 안내와 업계 글 포함, 원문 확인 필요)";
 
 // 지역신용보증재단 보증서 대출을 방문 없이 앱으로 신청할 수 있는 은행 (신용보증재단중앙회 '비대면 보증' 안내, 2026-10-20 확인).
-// 링크는 각 은행의 기업·개인사업자 뱅킹 첫 화면이다. 대출 중개로 보이지 않게 은행을 추천하거나 순서를 매기지 않는다 (가나다순).
-export const BANKS: { name: string; url: string; icon: string }[] = [
-  { name: "KB국민은행", url: "https://obiz.kbstar.com/", icon: "kb.png" },
-  { name: "IBK기업은행", url: "https://kiup.ibk.co.kr/", icon: "ibk.png" },
-  { name: "NH농협은행", url: "https://banking.nonghyup.com/", icon: "nh.png" },
-  { name: "신한은행", url: "https://bizbank.shinhan.com/", icon: "shinhan.png" },
-  { name: "우리은행", url: "https://nbi.wooribank.com/", icon: "woori.png" },
-  { name: "하나은행", url: "https://biz.kebhana.com/", icon: "hana.png" },
+// 링크: 보안 프로그램 설치 없이 열리는 개인사업자 대출 상품 페이지가 있으면 그 페이지, 없으면 그 은행 앱의 Google Play 안내.
+// 2026-10-22 실제 브라우저(Playwright)로 열어 확인: KB 상품 안내·우리 개인사업자대출 목록은 설치 요구 없음.
+// IBK 상품 상세는 "보안프로그램을 설치하셔야 이용이 가능" 창이 뜨고, 하나 상품 상세는 2019년 금리가 그대로라 앱으로 둔다.
+// 신한·NH는 로그인 없이 볼 수 있는 상품 페이지를 찾지 못했다 (NH 대출 메뉴는 로그인·설치 요구).
+// 대출 중개로 보이지 않게 은행을 추천하거나 순서를 매기지 않는다 (가나다순).
+const PLAY = (id: string) => `https://play.google.com/store/apps/details?id=${id}&hl=ko`;
+export const BANKS: { name: string; app: string; url: string; kind: "상품" | "앱"; icon: string }[] = [
+  { name: "KB국민은행", app: "KB소상공인 신용대출 안내", url: "https://obank.kbstar.com/products/kb-soho-credit-loan-guide.html", kind: "상품", icon: "kb.png" },
+  { name: "IBK기업은행", app: "i-ONE Bank", url: PLAY("com.ibk.android.ionebank"), kind: "앱", icon: "ibk.png" },
+  { name: "NH농협은행", app: "NH올원뱅크", url: PLAY("com.nonghyup.nhallonebank"), kind: "앱", icon: "nh.png" },
+  { name: "신한은행", app: "신한 슈퍼SOL", url: PLAY("com.shinhan.sbanking"), kind: "앱", icon: "shinhan.png" },
+  { name: "우리은행", app: "개인사업자대출 목록", url: "https://spot.wooribank.com/pot/Dream?withyou=POLON0063", kind: "상품", icon: "woori.png" },
+  { name: "하나은행", app: "하나원큐", url: PLAY("com.hanabank.oqf"), kind: "앱", icon: "hana.png" },
 ];
 export const BANK_GUARANTEE_URL = "https://www.koreg.or.kr/adit/onTact/onTact_01.html";
 // 은행연합회 소비자포털: 은행별 중소기업(개인사업자) 운전자금 대출금리 비교공시 (보증서담보·신용·마이너스)

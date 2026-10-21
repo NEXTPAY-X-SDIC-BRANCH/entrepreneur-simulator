@@ -12,6 +12,8 @@ import { DONG_METRICS, bandOf, dongMetricKeys, cuts, geoOf, guInsight, hasDongMa
 import { BANKS, BANK_COMPARE_URL, BANK_GUARANTEE_URL, FUNDS, FUNDS_SRC, type Fund } from "./funds";
 import KStartup from "./KStartup";
 import { CAFE_KEY_MONEY, cafeEstimate } from "./cafe";
+import { apparelEstimate } from "./apparel";
+import { QF_NAME, derived as qfDerived, qfEstimate } from "./quickfood";
 import { DEPOSIT_MONTHS, LOAN_RATE, METRICS, ecosRates, ymKo, RAMP, T, iga, dongsOf, guStat, krei, kreiMean, man, openingCost, rankOf, recommend, rentData, type Gu, type Metric, type Profile } from "./model";
 
 type Tab = "place" | "budget" | "fund";
@@ -71,8 +73,8 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
   const all = names.map(guStat);
   const span = (k: Metric) => { const v = all.map((a) => a[k]).filter((x): x is number => x != null); return { lo: Math.min(...v), hi: Math.max(...v) }; };
   // 드는 돈 견적은 사용자가 아직 꾸미지 않았을 수 있어서, 이 돈과 동네에 맞춘 추천 구성으로 낸다 (가게 꾸미기의 '추천 배치'와 같다)
-  const est = useMemo(() => profile.industry === "cafe" ? { pyeong: cafeEstimate(profile, RUNWAY_MONTHS * MONTHLY_BURN).pyeong } : recommend(profile).store, [profile.industry, profile.gu, profile.capital, profile.keyMoney, profile.rent, profile.dong, profile.age]); // eslint-disable-line react-hooks/exhaustive-deps
-  const cost = profile.industry === "cafe" ? cafeEstimate(profile, RUNWAY_MONTHS * MONTHLY_BURN).cost : openingCost(est as ReturnType<typeof recommend>["store"], profile.gu, profile.keyMoney ?? 0);
+  const est = useMemo(() => profile.industry === "cafe" ? { pyeong: cafeEstimate(profile, RUNWAY_MONTHS * MONTHLY_BURN).pyeong } : profile.industry === "apparel" ? { pyeong: apparelEstimate(profile).pyeong } : profile.industry === "chicken" || profile.industry === "bunsik" ? { pyeong: qfEstimate(profile, profile.industry).pyeong } : recommend(profile).store, [profile.industry, profile.gu, profile.capital, profile.keyMoney, profile.rent, profile.dong, profile.age]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cost = profile.industry === "cafe" ? cafeEstimate(profile, RUNWAY_MONTHS * MONTHLY_BURN).cost : profile.industry === "apparel" ? apparelEstimate(profile).cost : profile.industry === "chicken" || profile.industry === "bunsik" ? qfEstimate(profile, profile.industry).cost : openingCost(est as ReturnType<typeof recommend>["store"], profile.gu, profile.keyMoney ?? 0);
   const need = cost.total + RUNWAY_MONTHS * MONTHLY_BURN;
   const gap = need - profile.capital;
   const young = profile.age === "20대" || profile.age === "30대";
@@ -109,7 +111,9 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
   const scope = st.area ?? profile.gu;
   const summary = ins && dp ? ins.summary : gi.summary;
   const gMap = lowHigh()[metric];
-  const S = T().shop, B = T().base, cafe = S === "카페";
+  const S = T().shop, B = T().base, cafe = S === "카페", apparel = S === "옷가게";
+  const qfInd = profile.industry === "chicken" || profile.industry === "bunsik" ? profile.industry : null;
+  const lite = apparel || qfInd != null; // 구 단위만 있는 업종 (동네 매출·성장률 없음)
   const dMap = DONG_METRICS[dmetric];
   const n = names.length;
   const lines = [...summary.warn, ...summary.good];
@@ -125,11 +129,12 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
     {
       key: "sales", name: "매출", ...tagOf("sales", "평균 범위"), value: n0(st.sales), unit: "만원",
       sub: cafe ? (st.salesRange ? `4분의 1~4분의 3: ${n0(st.salesRange[0])}~${n0(st.salesRange[1])}만원` : "점포당 월매출 중앙값")
+        : lite ? `한 번에 평균 ${n0(st.ticket)}원 결제${qfInd ? " (매장 카드 결제)" : ""}`
         : growth != null ? `${growth >= 0 ? "▲" : "▼"} ${Math.abs(growth)}% 전년 대비 (${st.area ? "동 전체 한식 매출" : "한식"})` : "전년 자료 없음",
-      subTone: !cafe && growth != null ? (growth >= 0 ? "up" : "down") : undefined,
-      basis: cafe ? `카페 점포당 월매출 중앙값 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}` : `고깃집 점포당 월매출 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}`,
+      subTone: !cafe && !lite && growth != null ? (growth >= 0 ? "up" : "down") : undefined,
+      basis: cafe ? `카페 점포당 월매출 중앙값 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}` : apparel ? `옷가게 점포당 월매출 (카드 추정)${st.area ? ", 구 값 × 동네 위치" : ""}` : qfInd ? `${S} 점포당 월매출 (카드 추정 ÷ (1 − 배달 비중))` : `고깃집 점포당 월매출 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}`,
       rows: [
-        { title: "하루 결제 건수", sub: cafe ? "한 곳당 하루 평균 카드 결제" : "한 곳당 하루 평균, 1건은 보통 한 팀", scope: guArea, value: `${st.tx}건` },
+        { title: "하루 결제 건수", sub: cafe || lite ? "한 곳당 하루 평균 카드 결제" : "한 곳당 하루 평균, 1건은 보통 한 팀", scope: guArea, value: `${st.tx}건` },
         { title: "매출 지수", sub: "서울 평균을 1로 놓았을 때", scope: st.area ? `${B} · 동 (구 값 × 동네 위치)` : guArea, value: st.demand.toFixed(2) },
         ...(dp?.apt_price != null ? [{ title: "아파트 평균 시가", sub: "동네 소득 수준을 가늠하는 값", scope: "아파트 · 동", value: `${(Math.round(dp.apt_price / 1e7) / 10).toFixed(1)}억원` }] : []),
       ],
@@ -142,6 +147,10 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
         // 고깃집은 한식음식점 값과 섞지 않고 고깃집 수만 따로 보인다
         cafe
           ? { title: `${B} 수`, sub: "카페를 포함한 커피·음료 가게 전체", scope: st.area ? `${B} · 동` : guArea, value: `${n0(st.area ? st.areaStores ?? 0 : st.stores)}곳` }
+          : qfInd ? { title: `${S} 수`, sub: `상권 안 ${B} · ${rankWord(rankOf(profile.gu, "pork", names), n, "많음", "적음")}`, scope: guArea, value: `${n0(st.stores)}곳` }
+          : apparel ? (st.area
+            ? { title: "옷가게 수", sub: `${st.area} 안의 남성·여성·기타 의류 소매점 (소상공인 상가정보)`, scope: "옷가게 · 동", value: `${n0(st.areaPork ?? 0)}곳` }
+            : { title: "옷가게 수", sub: `상권 안 일반의류 가게 · ${rankWord(rankOf(profile.gu, "pork", names), n, "많음", "적음")}`, scope: guArea, value: `${n0(st.stores)}곳` })
           : { title: "고깃집 수", sub: st.area ? `${st.area} 안의 돼지고기 구이/찜 가게` : `돼지고기 구이/찜 가게 · ${rankWord(rankOf(profile.gu, "pork", names), n, "많음", "적음")}`, scope: st.area ? "고깃집 · 동" : "고깃집 · 구 전체", value: `${n0(count)}곳` },
         ...(dp?.pop_per_pork != null ? [{ title: `${S} 1곳당 인구`, sub: "주민 + 직장인", scope: `${S} · 동`, value: `${n0(dp.pop_per_pork)}명` }] : []),
       ],
@@ -369,7 +378,17 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
 
             <details className="m-srcnote"><summary>숫자의 출처와 한계</summary>
               <p className="m-src">
-                {cafe ? (
+                {qfInd ? (
+                  <>
+                    매출과 가게 수, 폐업률·개업률은 서울시 상권분석서비스 2025년 {B}({qfInd === "chicken" ? "CS100007" : "CS100008"}) 상권 값을 구로 모은 거예요. 카드사 추정 매출에는 배달앱 결제가 거의 빠져 있어, 외식업체 경영실태조사 2025의 배달 주문 비중({Math.round(qfDerived(qfInd).share.delivery * 100)}%)만큼 나눠 보정했어요.
+                    식재료비율·배달 수수료·인건비·인테리어비는 같은 조사의 전국 {qfInd === "chicken" ? "치킨전문점" : "김밥 및 기타 간이 음식점업"} 값이에요. 동네(행정동) 자료는 아직 없어 구 단위로만 봐요.
+                  </>
+                ) : apparel ? (
+                  <>
+                    매출과 가게 수, 폐업률·개업률은 서울시 상권분석서비스 2025년 일반의류(CS300011) 상권 값을 구로 모은 거예요. 매출은 카드사 추정이고 현금·온라인 매출은 빠져 있어요.
+                    원가와 경비 비율은 통계청 도소매업조사 2024년 서울 의복 소매업 중 연매출 1억~5억 사업체 값이에요. 동네를 고르면 서울시 상권분석서비스 행정동 일반의류 매출과 소상공인 상가정보(2026년 6월) 남성·여성·기타 의류 소매점 수로 구 안의 위치를 맞춰요. 동네 가게 수는 상권 밖 가게까지 센 값이라 구 전체의 상권 안 가게 수와 기준이 달라요.
+                  </>
+                ) : cafe ? (
                   <>
                     매출 규모는 서울시 상권분석서비스 2025년 커피-음료 카드 추정매출에 서울 소상공인 카페 월매출(외식업체 경영실태조사 2025, 응답 63곳)로 맞춘 배율 1.54를 곱했어요. 카드 추정은 실제보다 낮게 잡혀서 배율로 보정한 값이에요. 화면의 대표값은 평균이 아니라 중앙값이에요. 잘되는 가게 몇 곳이 평균을 끌어올리기 때문이고, 전국 독립 카페의 중앙값÷평균 배율(0.78)과 4분의 1·4분의 3 분위(중앙값의 0.75배·1.49배)를 서울 값에 옮긴 추정이라 서울 실제 분포와는 다를 수 있어요.
                     카페 수는 소상공인 상가정보 2026년 6월 기준이고 프랜차이즈가 섞여 있어요. 카페는 동네별 2024년 매출이 없어 성장률 대신 개업률에서 폐업률을 뺀 '가게 수 흐름'을 보여 줘요. 가게가 버틴 기간과 상권 변화 유형은 서울시 상권분석서비스 상권변화지표(2026년 2분기)이고, 카페만의 값이 아니라 그 동네 모든 업종의 값이에요. 이름·키워드·제안은 숫자에서 규칙으로 뽑은 분류이고 현장 조사가 아니에요.
@@ -390,9 +409,9 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
 
         {tab === "budget" && (
           <div className="m-finding" key="budget">
-            <h1>{profile.gu}에 {est.pyeong}평 {S}{cafe ? "를" : "을"} 열려면 <mark>{man(need)}</mark>쯤 필요해요.</h1>
+            <h1>{profile.gu}에 {est.pyeong}평 {S}{cafe || apparel ? "를" : "을"} 열려면 <mark>{man(need)}</mark>쯤 필요해요.</h1>
             <table className="m-quote">
-              <caption>{cafe ? `독립 카페 면적 중앙값(20평)에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 값은 외식업체 경영실태조사 2025 원자료의 25%·50%·75% 분위수를 기본·중급·고급으로 놓은 거예요.` : "이 돈에 맞춘 추천 구성으로 낸 견적이에요. 다음 단계에서 직접 꾸미거나 '추천 배치'를 누르면 이 구성이 놓여요."}</caption>
+              <caption>{qfInd ? `조사한 ${QF_NAME[qfInd]} 평균 면적(${Math.round(qfDerived(qfInd).areaPy)}평)에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 인테리어는 외식업체 경영실태조사 평균, 설비비는 가정이에요.` : apparel ? "13평에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 첫 재고는 이 구 옷가게의 한 달 매출 1.5개월치를 원가(29%)로 들인다고 봤어요. 인테리어 단가는 공정위 정보공개서 의류 가맹 9개 브랜드 값이라 표본이 적어요." : cafe ? `독립 카페 면적 중앙값(20평)에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 값은 외식업체 경영실태조사 2025 원자료의 25%·50%·75% 분위수를 기본·중급·고급으로 놓은 거예요.` : "이 돈에 맞춘 추천 구성으로 낸 견적이에요. 다음 단계에서 직접 꾸미거나 '추천 배치'를 누르면 이 구성이 놓여요."}</caption>
               <tbody>
                 {cost.lines.filter((l: { amount: number }) => l.amount > 0).map((l) => (
                   <tr key={l.key}><th scope="row">{l.label}<small>{l.basis}</small></th><td>{man(l.amount)}</td></tr>
@@ -413,7 +432,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                 <span>만원</span>
                 {profile.keyMoney ? <button type="button" className="m-link" onClick={() => setProfile({ ...profile, keyMoney: undefined })}>지우기</button> : null}
               </div>
-              <small>{cafe
+              <small>{qfInd ? `${S} 권리금은 아직 정리하지 못했어요. 위 견적에는 넣지 않았어요.` : apparel ? "옷가게 권리금은 공개 통계를 아직 찾지 못했어요. 위 견적에는 넣지 않았어요." : cafe
                 ? `권리금을 낸 독립 카페의 중앙값은 ${man(CAFE_KEY_MONEY.base)}이고, 4분의 1은 ${man(CAFE_KEY_MONEY.low)} 아래, 4분의 1은 ${man(CAFE_KEY_MONEY.high)} 위예요. 위 견적에는 넣지 않았어요 (경영실태조사 2025 원자료, 카페 팀 지표 엑셀 정리, 전국).`
                 : kk && keyN
                 ? `한식 육류 요리 전문점 중 가게를 빌려 쓰는 곳의 절반쯤이 권리금을 냈고(응답 ${keyN}곳), 낸 곳의 중앙값은 ${man(Math.round(kk.key_money.p50 / 100) * 100)}, 평균은 ${man(Math.round(kreiMean("key_money")!))}이에요. 위 견적에는 넣지 않았어요 (경영실태조사 2025, 전국).`

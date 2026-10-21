@@ -8,6 +8,8 @@ import { areaFx, engineBody, type CafeCfg } from "./cafeChecks";
 import CafeRoom3D from "./CafeRoom3D";
 import { ENGINE, type Preview } from "./useCafePreview";
 import { guStat, man, type Profile } from "./model";
+import Assume from "./Assume";
+import { CAFE_REF, cafeBand } from "./priceCompare";
 import { IconBattery, IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "./SimulateEngine";
 import "./simulate-engine.css";
 import "./cafe-sim.css";
@@ -379,6 +381,12 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                       {cur && recs.some((r) => r.change) && (
                         <button type="button" className="sx-ghost" onClick={() => setPlan(recs.reduce((p, r) => (r.change ? { ...p, [planKey(r.lever)]: r.next[planKey(r.lever)] } : p), plan))}>추천대로 적용</button>
                       )}
+                      {(() => {
+                        // 개업 때 커피 가격 = 조사 중앙값 4,000원. 가격 조정은 이 값에 누적 배수로 붙는다
+                        const level = (cur?.decisions.price_level ?? 1) * (1 + plan.price_change_pct / 100);
+                        const b = cafeBand(Math.round((CAFE_REF.mid * level) / 100) * 100);
+                        return <p className="sx-note sx-price">가격 비교 <span className={`sx-badge ${b.tone}`}>{b.band}</span> {b.text}{plan.price_change_pct ? " (이번 달 조정 포함)" : ""}<Assume what={`비교 기준: ${CAFE_REF.src}. 개업 가격을 중앙값 4,000원으로 봤어요. 동네 단위 메뉴 가격 자료는 없어요`} /></p>;
+                      })()}
                     </section>
                     <section className="sx-right" aria-label="이번 달 운영 계획">
                       <h2>{nextMonth}월에 이렇게 할게요</h2>

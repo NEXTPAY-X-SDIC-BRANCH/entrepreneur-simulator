@@ -3,14 +3,22 @@
 # Round 4 (research/sourcing_round4_v2.md §8): monthly index vs the annual mean = Oct 1.068, Nov 1.068, Dec 1.183,
 # Jan 0.955, Feb 0.955, Mar 1.016. Anchors: quarter level from 3120012 한식 card sales (S12, 2023-25: Q1 0.975,
 # Q4 1.106), Dec = 1.108 × Nov (S86, national 외식 card sales), break months = 0.94 × term months (round 2 §8).
-# The within-quarter split is 가정. Divided by October's 1.068 so the base month stays the calibration anchor.
+# 2026-10-21: the within-quarter split (was 가정) now comes from the national 한식 음식점업 service production index,
+# per day, 2023-25 (S96, web/public/mock/kosis_monthly.json): Oct 0.984, Nov 0.991, Jan 0.970, Feb 1.007, Mar 1.022.
+# month = quarter level (S12) × split, divided by October's so the base month stays the calibration anchor.
+# Dec keeps the S86 rule (1.108 × Nov). The national index has no 대학로 방학; that stays in segment_mult.
 # 설 is inside the Q1 index (not separated), so February keeps the normal open days.
 # segment_mult scales the card-sales age share that feeds each customer segment (가정).
 # terrace_availability and rain_nights_share: October keeps the base month's values (weather is already folded
 # into the base 야장 가용률); other months are 가정 except where a source is given.
+# 2026-10-21: cost_index = this month's ingredient price vs October of the same season, mean of past seasons
+# (pipelines/fetch_cost_index.py -> web/public/mock/cost_index.json). meat: KOSIS 생활물가지수 돼지고기 서울특별시, 2021/22~2025/26
+# (S100); veg: KAMIS 서울 중도매인 상추·깻잎·풋고추·양파·대파 같은 비중, 2020/21~2025/26 (S101). cost_range = the cheapest and
+# dearest season seen (not a forecast). October is the engine's cost anchor, so it is 1.0. Months 4~9 stay 1.0 (가정).
 _meta:
   source_quarter_index: S12
-  month_split: 가정
+  month_split: S96
+  cost_index: S100;S101
   start_month: 10
   months: [10, 11, 12, 1, 2, 3]
 
@@ -22,50 +30,62 @@ _meta:
   terrace_availability: 0.4
   rain_nights_share: 0.0
   group_bookings: 4
-  tags: {demand_index: "S12 (분기) + 가정 (월 분할; round 4 §8)", weather: "기준 달과 같음"}
+  cost_index: {meat: 1.0, veg: 1.0}
+  cost_range: {meat: [1.0, 1.0], veg: [1.0, 1.0]}
+  tags: {demand_index: "S12 (분기) + S96 (월 분할)", weather: "기준 달과 같음"}
 11:
   label: 11월
   note: 특별한 일이 없는 평범한 달, 쌀쌀해지며 야장 손님이 준다
-  demand_index: 1.000
+  demand_index: 1.007
   segment_mult: {twenties: 1.0, office: 1.05, family: 1.0}
   terrace_availability: 0.25
   rain_nights_share: 0.0
   group_bookings: 8
-  tags: {demand_index: "S12 (분기) + 가정 (월 분할; round 4 §8)", weather: 가정}
+  cost_index: {meat: 0.967, veg: 0.784}
+  cost_range: {meat: [0.945, 0.982], veg: [0.622, 0.956]}
+  tags: {demand_index: "S12 (분기) + S96 (월 분할)", weather: 가정}
 12:
   label: 12월
   note: 연말 회식 시즌, 기말고사
-  demand_index: 1.108
+  demand_index: 1.116
   segment_mult: {twenties: 0.9, office: 1.35, family: 1.05}
   terrace_availability: 0.0
   rain_nights_share: 0.0
   group_bookings: 30         # 12월 손님의 약 25%가 단체 예약 (round 4 §7 base 0.25, low 0.10 high 0.40) ÷ 8명
-  tags: {demand_index: "S12 (분기) + S86 (12월 = 11월 × 1.108) + 가정 (월 분할)", weather: 가정, group_bookings: 가정}
+  cost_index: {meat: 0.974, veg: 0.768}
+  cost_range: {meat: [0.954, 1.003], veg: [0.539, 1.018]}
+  tags: {demand_index: "S12 (분기) + S86 (12월 = 11월 × 1.108)", weather: 가정, group_bookings: 가정}
 1:
   label: 1월
   note: 겨울방학, 한파
-  demand_index: 0.894
+  demand_index: 0.869
   segment_mult: {twenties: 0.7, office: 1.0, family: 1.05}
   terrace_availability: 0.0
   rain_nights_share: 0.0
   group_bookings: 4
-  min_wage_change: 0.03      # 다음 해 최저임금 인상 반영 (가정; 2026년 인상률 2.9%, S36)
-  tags: {demand_index: "S12 (분기) + 가정 (월 분할; round 4 §8)", weather: 가정, min_wage_change: "가정 (S36 참고)"}
+  cost_index: {meat: 0.955, veg: 0.972}
+  cost_range: {meat: [0.93, 0.969], veg: [0.622, 1.441]}
+  min_wage_change: 0.037     # 2027년 최저임금 인상률 3.7% (₩10,320 → ₩10,700, 2026-08-05 고시, S95)
+  tags: {demand_index: "S12 (분기) + S96 (월 분할)", weather: 가정, min_wage_change: S95}
 2:
   label: 2월
   note: 방학과 설 연휴
-  demand_index: 0.894
+  demand_index: 0.902
   segment_mult: {twenties: 0.7, office: 0.95, family: 1.15}
   terrace_availability: 0.0
   rain_nights_share: 0.0
   group_bookings: 2
-  tags: {demand_index: "S12 (분기) + 가정 (월 분할, 설 포함)", weather: 가정}
+  cost_index: {meat: 0.93, veg: 0.974}
+  cost_range: {meat: [0.906, 0.961], veg: [0.659, 1.569]}
+  tags: {demand_index: "S12 (분기) + S96 (월 분할, 설 포함)", weather: 가정}
 3:
   label: 3월
   note: 개강, 새 학기 모임
-  demand_index: 0.951
+  demand_index: 0.916
   segment_mult: {twenties: 1.15, office: 1.0, family: 0.95}
   terrace_availability: 0.15
   rain_nights_share: 0.0
   group_bookings: 6
-  tags: {demand_index: "S12 (분기) + 가정 (월 분할; round 4 §8)", weather: 가정}
+  cost_index: {meat: 0.915, veg: 0.89}
+  cost_range: {meat: [0.899, 0.933], veg: [0.513, 1.361]}
+  tags: {demand_index: "S12 (분기) + S96 (월 분할)", weather: 가정}
