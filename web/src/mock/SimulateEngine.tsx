@@ -155,6 +155,7 @@ function recommend(last: Done | undefined, plan: Plan): Rec[] {
     n = { ...lp, meat_grade: GRADES[gi - 1] };
     rec("meat_grade", n, `재료비가 매출의 ${Math.round((k.cogs / k.revenue) * 100)}%예요. 한 단계 낮춰 원가를 줄여 보세요.`);
   } else rec("meat_grade", lp, "바꿀 신호가 없어요. 바꾸면 단골이 조금 빠져요.");
+  for (const lv of LEVERS) if (!out.some((r) => r.lever.key === lv.key)) rec(lv.key, lp, ""); // lab:finance bugfix: 배달 추천이 없어 2달째 계획 화면이 멈췄다 (main에도 있음)
   return LEVERS.map((l) => out.find((r) => r.lever.key === l.key)!);
 }
 
@@ -413,6 +414,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   // lab:menu  메뉴판: 처음에 업종 기본 메뉴(원가 = 오늘 시세)를 받아 계획에 넣는다. 원육 등급을 바꾸면 고기 원가를 다시 계산
   const [menuDoc, setMenuDoc] = useState<MenuDoc | null>(null);
   const menuGrade = useRef<string | null>(null);
+  const menuSeq = useRef(0);
   const applyMenu = (d: MenuDoc) => { setMenuDoc(d); setPlan((p) => ({ ...p, menu: toEngine(d.items), table_cost: d.table_setting?.cost })); };
   const gfx = useGfx();
   const [view, setView] = useState<View>("intro");
@@ -462,8 +464,15 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     if (menuGrade.current === g) return;
     const first = menuGrade.current === null;
     menuGrade.current = g;
-    (first || !menuDoc ? fetchTemplate(API, "bbq", g) : recompute(API, "bbq", g, menuDoc.items, { table: menuDoc.table_setting }))
-      .then((d) => { if (mounted.current) applyMenu(d); }).catch((e) => setErr(`메뉴판: ${String(e.message ?? e)}`));
+    const n = ++menuSeq.current; // 등급을 빨리 여러 번 바꾸면 마지막 요청만 쓴다
+    // 처음에는 가게 꾸미기에서 정한 삼겹살 가격(levers.price)만큼 고기 가격을 맞춘다
+    const k = levers.price / 19000;
+    const load = first || !menuDoc
+      ? fetchTemplate(API, "bbq", g).then((d) => (Math.abs(k - 1) < 1e-6 ? d : recompute(API, "bbq", g,
+        d.items.map((x) => (x.kind === "main" ? { ...x, price: Math.round((x.price * k) / 100) * 100 } : x)), { table: d.table_setting })))
+      : recompute(API, "bbq", g, menuDoc.items, { table: menuDoc.table_setting });
+    load.then((d) => { if (mounted.current && n === menuSeq.current) applyMenu(d); })
+      .catch((e) => n === menuSeq.current && setErr(`메뉴판: ${String(e.message ?? e)}`));
   }, [health, plan.meat_grade]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dongCode = profile.dong && profile.dong.gu === profile.gu ? profileOf(profile.gu, profile.dong.name)?.code : undefined;
@@ -597,8 +606,8 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const cashNow = view === null || view === "settle" || view === "report" ? curDay?.cash ?? startCash : (cashAtStart.current[done.length] ?? startCash);
   const planMonth = monthSeq[Math.min(idx, TURNS - 1)];
   const filled = curDay && curDay.open ? Math.min(stats.seats, Math.round((curDay.covers / Math.max(1, stats.seats * 1.5)) * stats.seats)) : 0;
-  // lab:menu  가격 추천은 메뉴판에서. filter(Boolean): recommend()는 배달(delivery) 레버의 추천을 만들지 않아 한 달 뒤 undefined가 섞인다 (원래 있던 버그)
-  const recs = useMemo(() => recommend(cur, plan).filter(Boolean).map((r) => (r.lever.key === "meat_price" && plan.menu
+  // lab:menu  메뉴판이 있으면 가격 추천은 메뉴판에서
+  const recs = useMemo(() => recommend(cur, plan).map((r) => (r.lever.key === "meat_price" && plan.menu
     ? { ...r, change: false, last: `메뉴 ${plan.menu.length}개`, why: "메뉴판이 있어서 가격은 메뉴판에서 고쳐요." } : r)), [cur, plan]);
 
   // 챗봇이 "내 가게는 몇 달째부터 남아요?"에 답할 수 있도록 지금까지의 결과를 넘긴다

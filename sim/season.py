@@ -233,9 +233,14 @@ def _validate(plan: dict) -> dict:
     if "menu" in p:   # lab:menu  메뉴판이 있으면 가격 수준을 삼겹살·소주 기준으로 환산 (sim/menu.py). 없으면 예전 그대로
         p["menu"] = menu_mod.clean(p["menu"], "bbq")
         if p["menu"]:
+            menu_mod.check_levels(p["menu"], "bbq")   # 가격 수준이 엔진 범위 밖이면 오류 (아래 가격 clamp를 우회하지 않게)
+            g_ = data()["P"]["meat_grade"].get(p["meat_grade"], data()["P"]["meat_grade"]["domestic"])
+            menu_mod.check_grade_cost(p["menu"], GRADE_KO.get(p["meat_grade"], "국내산"), g_["cost"])
             p["meat_price"], p["soju_price"] = menu_mod.bbq_plan_prices(p["menu"], base_plan()["meat_price"], base_plan()["soju_price"])
             if p.get("table_cost") is not None:   # 기본 상차림 원가 (원/손님, 반찬 5가지 기준)
-                p["table_cost"] = float(min(max(float(p["table_cost"]), 0.0), 20000.0))
+                p["table_cost"] = float(p["table_cost"])
+                if not 500 <= p["table_cost"] <= 20000:
+                    raise ValueError("기본 상차림 원가는 손님 1명당 500원 ~ 2만원이어야 합니다")
         else:
             del p["menu"]
     p["meat_price"] = int(min(max(p["meat_price"], 12000), 30000))

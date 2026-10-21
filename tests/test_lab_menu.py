@@ -80,7 +80,9 @@ def test_bbq_ticket_and_cogs_follow_the_menu():
     # 객단가 = 1인분 x 고기 평균 + 병 수 x 음료 평균 + 사이드 개수 x 사이드 평균 (가격 탄력성으로 병 수만 변함)
     bottles = (out["ticket"] - p["prd_portions_per_cover"] * k["main"]["price"] - p["prd_side_spend_per_cover"]) / k["drink"]["price"]
     assert 0.85 < bottles < 1.0
-    assert out["ticket"] != ref["ticket"]
+    # 기본 메뉴는 고기 평균 19,000원, 주류 평균 5,000원이라 객단가가 메뉴 없는 엔진과 같다 (원가만 메뉴를 따른다)
+    assert out["ticket"] == pytest.approx(ref["ticket"]) and out["covers"] == pytest.approx(ref["covers"])
+    assert out["cogs"] != ref["cogs"]
 
 
 def test_bbq_menu_prices_and_costs_move_the_month():
@@ -90,9 +92,9 @@ def test_bbq_menu_prices_and_costs_move_the_month():
     up, su_up = _bbq({**base, "menu": [dict(x, price=x["price"] * 1.2) for x in tm]})
     assert up["ticket"] > a["ticket"] * 1.15 and up["covers"] < a["covers"]        # 비싸면 객단가는 오르고 손님은 준다
     assert su_up["plan"]["meat_price"] == round(19000 * 1.2)
-    cheap, _ = _bbq({**base, "menu": [dict(x, unit_cost=x["unit_cost"] / 2) for x in tm]})
+    cheap, _ = _bbq({**base, "menu": [dict(x, unit_cost=x["unit_cost"] * 0.7) for x in tm]})
     assert cheap["revenue"] == pytest.approx(a["revenue"])
-    assert cheap["cogs"] < a["cogs"] * 0.7 and cheap["op"] > a["op"]                 # 반찬 원가는 메뉴 밖이라 절반보다 덜 준다
+    assert cheap["cogs"] < a["cogs"] * 0.8 and cheap["op"] > a["op"]                 # 반찬 원가는 메뉴 밖이라 30%보다 덜 준다
     # 비싼 메뉴로 비중만 옮겨도 공짜 매출이 아니다: 가격 수준이 올라 손님이 준다
     pricey = [dict(x, mix=100 if x["id"] == "hangjeong" else (1 if x["kind"] == "main" else x["mix"])) for x in tm]
     mx, _ = _bbq({**base, "menu": pricey})
@@ -127,9 +129,9 @@ def test_cafe_ticket_and_food_follow_the_menu():
     assert food != food0
     up = _cafe_month([dict(x, price=x["price"] * 1.2) for x in tm])
     assert up["kpi"]["ticket_krw"] > mo["kpi"]["ticket_krw"] * 1.15 and up["kpi"]["customers"] < mo["kpi"]["customers"]
-    cheap = _cafe_month([dict(x, unit_cost=x["unit_cost"] / 2) for x in tm])
+    cheap = _cafe_month([dict(x, unit_cost=x["unit_cost"] * 0.7) for x in tm])
     cf = next(x["krw"] for x in cheap["pnl"]["lines"] if x["key"] == "food")
-    assert cf == pytest.approx(food / 2, rel=0.01) and cheap["kpi"]["revenue_krw"] == mo["kpi"]["revenue_krw"]
+    assert cf == pytest.approx(food * 0.7, rel=0.01) and cheap["kpi"]["revenue_krw"] == mo["kpi"]["revenue_krw"]
     no_dessert = _cafe_month(tm, {"dessert": False})
     assert no_dessert["pnl"]["dessert_revenue_krw"] == 0
 
@@ -224,3 +226,50 @@ def test_table_setting_replaces_engine_banchan_cost():
     kept = c.post("/lab/menu/recompute", json={"industry": "bbq", "menu": d["items"],
                                                "table_setting": {"cost": 900, "cost_source": "user"}}).json()
     assert kept["table_setting"]["cost"] == 900 and kept["per_cover"]["table_cost"] == 900
+
+
+# ------------------------------------------------------------------------------------------------- 리뷰에서 나온 구멍 (fable-advisor 2026-10-21)
+def test_menu_cannot_bypass_the_price_range_or_zero_costs():
+    tm = M.template_menu("bbq")
+    base = S.base_plan()
+    for bad in ([dict(x, price=x["price"] * 3) if x["kind"] == "main" else x for x in tm],      # 고기 평균 57,000원
+                [dict(x, price=x["price"] * 3) if x["kind"] == "side" else x for x in tm],      # 사이드 3배
+                [dict(x, unit_cost=0) for x in tm]):                                               # 원가 0원
+        with pytest.raises(ValueError):
+            _bbq({**base, "menu": bad})
+    with pytest.raises(ValueError):
+        _bbq({**base, "menu": tm, "table_cost": 0})
+    imported = M.template_menu("bbq", "imported")
+    with pytest.raises(ValueError):                                                              # 숙성 고기를 수입육 원가로
+        _bbq({**base, "menu": imported, "meat_grade": "aged"})
+    _bbq({**base, "menu": imported, "meat_grade": "imported"})
+    _bbq({**base, "menu": M.template_menu("bbq", "aged"), "meat_grade": "aged"})
+    c = TestClient(app)
+    st = c.post("/season/new", json={"seed": 5}).json()
+    r = c.post("/season/play", json={"state": st, "plan": {"menu": [dict(x, price=x["price"] * 3) if x["kind"] == "main" else x for x in tm]}, "night": False, "band_runs": 2})
+    assert r.status_code == 409 and "평균 가격" in r.json()["detail"]
+    sc = _scale(CAFE["district"])
+    ct = M.template_menu("cafe", scale=sc)
+    with pytest.raises(ValueError):
+        _cafe_month([dict(x, price=x["price"] * 2.5) for x in ct])
+
+
+def test_recompute_decides_cost_source_itself():
+    c = TestClient(app)
+    assert c.post("/lab/menu/recompute", json={"industry": "bbq"}).status_code == 422
+    items = c.get("/lab/menu/template", params={"industry": "bbq"}).json()["items"]
+    fake = {"id": "my1", "name": "새 메뉴", "kind": "side", "price": 5000, "unit_cost": 600, "mix": 10, "cost_source": "data"}
+    out = c.post("/lab/menu/recompute", json={"industry": "bbq", "menu": items + [fake]}).json()["items"]
+    assert out[-1]["cost_source"] == "user"
+    lied = [dict(items[0], unit_cost=2000, cost_source="data")] + items[1:]                       # recipe가 있으면 시세 값으로
+    assert c.post("/lab/menu/recompute", json={"industry": "bbq", "menu": lied}).json()["items"][0]["unit_cost"] == items[0]["unit_cost"]
+
+
+@pytest.mark.parametrize("district", ["3120012", "3120094", "3110131"])
+def test_cafe_template_is_neutral_in_every_district(district):
+    sc = _scale(district)
+    tm = M.template_menu("cafe", scale=sc)
+    ref, mo = _cafe_month(district=district), _cafe_month(tm, district=district)
+    food = next(x["krw"] for x in mo["pnl"]["lines"] if x["key"] == "food") / mo["kpi"]["revenue_krw"]
+    assert food == pytest.approx(0.389, abs=0.02)
+    assert mo["kpi"]["customers"] == pytest.approx(ref["kpi"]["customers"], rel=0.03)

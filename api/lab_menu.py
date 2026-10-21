@@ -82,16 +82,19 @@ def menu_recompute(body: dict[str, Any] = Body(...)) -> dict:
     if industry not in ("bbq", "cafe") or grade not in GRADES:
         raise HTTPException(422, "industry는 bbq|cafe, grade는 imported|domestic|aged")
     menu = body.get("menu")
+    if not isinstance(menu, list) or not menu:
+        raise HTTPException(422, "menu 목록이 필요합니다")
+    sc = _scale(industry, body.get("district"))
     try:
-        M.clean(menu, industry)   # 형식 검사 (recipe 같은 화면용 값은 그대로 둔다)
+        M.check_levels(M.clean(menu, industry), industry, sc)   # 형식·가격 수준 검사 (recipe 같은 화면용 값은 그대로 둔다)
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
-    keep = ("id", "name", "kind", "price", "unit_cost", "mix", "recipe", "alt_recipe", "portion", "cost_source")
+    keep = ("id", "name", "kind", "price", "unit_cost", "mix", "recipe", "alt_recipe", "portion")
     items = [{k: x[k] for k in keep if k in x} for x in menu]
-    if body.get("force"):   # '오늘 시세로 다시 계산': 직접 고친 원가도 recipe가 있으면 시세 값으로 되돌린다
-        for x in items:
-            x.pop("cost_source", None)
-    sc = _scale(industry, body.get("district"))
+    for x, src in zip(items, menu):
+        # 출처 꼬리표는 서버가 정한다: 직접 고친 값(user)만 받아들이고, 재료 내역이 없는 메뉴는 늘 직접 입력
+        if (src.get("cost_source") == "user" and not body.get("force")) or not x.get("recipe"):
+            x["cost_source"] = "user"
     table = M.table_setting(industry)
     sent = body.get("table_setting") or {}
     if table and sent.get("cost_source") == "user" and not body.get("force"):   # 직접 고친 상차림 원가는 그대로
@@ -102,4 +105,4 @@ def menu_recompute(body: dict[str, Any] = Body(...)) -> dict:
         if not 0 <= cost <= 20000:
             raise HTTPException(422, "기본 상차림 원가는 0 ~ 2만원이어야 합니다")
         table = {**table, "cost": cost, "cost_source": "user"}
-    return _out(industry, M.with_costs(items, industry, grade), sc, table)
+    return _out(industry, M.with_costs(items, industry, grade, sc), sc, table)

@@ -28,6 +28,13 @@ MENUS = ROOT / "research" / "menus"
 SNAPSHOT = ROOT / "web" / "public" / "mock" / "ingredients_today.json"
 KINDS = ("main", "side", "drink")
 MAX_ITEMS = 30
+# 원가 하한 (판매가 대비, 가정): 원가 0원 같은 공짜 이익을 막는다. 고기는 수입 냉동 목살이 약 6%라 5%로 두고, 원육 등급별 하한은
+# check_grade_cost가 따로 본다. 사이드·음료는 기본 메뉴에서 가장 낮은 공기밥이 약 17%
+MIN_COST_SHARE = {"main": 0.05, "side": 0.10, "drink": 0.10}
+# 가격 수준 허용 범위 (기본 메뉴 = 1). 고깃집 고기는 엔진의 삼겹살 가격 범위 12,000~30,000원 ÷ 19,000원, 주류는 3,000~9,000원 ÷ 5,000원
+LEVEL_RANGE = {"bbq": {"main": (12000 / 19000, 30000 / 19000), "drink": (0.6, 1.8), "side": (0.5, 1.6)},
+               "cafe": {"drink": (0.5, 1.8), "side": (0.5, 1.8)}}
+KIND_KO = {"bbq": {"main": "고기", "side": "식사·사이드", "drink": "주류·음료"}, "cafe": {"main": "푸드", "side": "디저트·푸드", "drink": "음료"}}
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 
 
@@ -99,8 +106,9 @@ def clean(menu, industry: str | None = None) -> list[dict] | None:
             raise ValueError(f"menu[{i}]의 price, unit_cost, mix는 숫자여야 합니다") from e
         if not (100 <= price <= 300_000):
             raise ValueError(f"menu[{i}].price는 100원 ~ 30만원이어야 합니다")
-        if not (0 <= cost <= price * 3):
-            raise ValueError(f"menu[{i}].unit_cost는 0 ~ 판매가의 3배여야 합니다")
+        floor = MIN_COST_SHARE[kind]
+        if not (price * floor <= cost <= price * 3):
+            raise ValueError(f"'{x.get('name') or mid}'의 원가는 판매가의 {round(floor * 100)}% ~ 3배여야 합니다")
         if not (0 <= mix <= 1000):
             raise ValueError(f"menu[{i}].mix는 0 ~ 1000이어야 합니다")
         name = str(x.get("name") or mid)[:24]
@@ -126,6 +134,23 @@ def kind_stats(menu: list[dict], industry: str, scale: float = 1.0) -> dict[str,
         ref = refs.get(k, price) * scale
         out[k] = {"price": price, "cost": cost, "ref": ref, "ratio": price / ref, "n": len(xs)}
     return out
+
+
+def check_levels(menu: list[dict], industry: str, scale: float = 1.0) -> None:
+    """종류별 가격 수준이 엔진이 맞춰진 범위를 벗어나면 ValueError (가격을 크게 올려 손님이 거의 안 줄어드는 구간을 막는다)."""
+    for k, v in kind_stats(menu, industry, scale).items():
+        lo, hi = LEVEL_RANGE[industry].get(k, (0.5, 1.8))
+        if not lo - 1e-9 <= v["ratio"] <= hi + 1e-9:
+            raise ValueError(f"{KIND_KO[industry][k]} 평균 가격이 기본 메뉴의 {round(v['ratio'] * 100)}%예요. "
+                             f"{round(lo * 100)}~{round(hi * 100)}% 안에서 정해 주세요")
+
+
+def check_grade_cost(menu: list[dict], grade_label: str, grade_cost: float) -> None:
+    """원육 등급에 비해 고기 원가가 너무 낮으면 ValueError (숙성 고기를 수입육 원가로 파는 것을 막는다). 하한 = 등급 원가의 60% (가정)."""
+    m = kind_stats(menu, "bbq")["main"]
+    if m["cost"] < 0.6 * grade_cost:
+        raise ValueError(f"{grade_label} 고기인데 1인분 평균 원가가 {round(m['cost']):,}원이에요. "
+                         f"{round(0.6 * grade_cost):,}원 이상이어야 해요 (원가를 오늘 시세로 다시 계산해 보세요)")
 
 
 # ------------------------------------------------------------------------------------------------- 고깃집 엔진 (sim/season.py)
@@ -175,6 +200,7 @@ def cafe_ctx(menu: list[dict] | None, ticket: float, dessert_share: float, cups_
     if not menu:
         return None
     scale = cafe_scale(ticket, dessert_share, cups_per_tx)
+    check_levels(menu, "cafe", scale)
     k = kind_stats(menu, "cafe", scale)
     food = [x for x in menu if x["kind"] in ("main", "side") and x["mix"] > 0]   # 카페는 main도 푸드로 센다
     f = None
@@ -207,6 +233,33 @@ def cafe_money(mc: dict, ds_eff: float, served: float, price_mult: float) -> tup
 
 
 # ------------------------------------------------------------------------------------------------- 원가 계산 (오늘 시세)
+def cafe_drink_overhead(scale: float, snap: dict | None = None) -> dict:
+    """카페 음료의 손실·부자재 몫 (가정): 이 상권의 기본 메뉴가 업계 평균 식재료비율(38.9%)이 되게 맞춘다. 판매가는 상권을 따라
+    늘고 줄지만 재료값은 그대로라, 같은 비율로 두면 싼 동네는 원가율이 80%, 비싼 동네는 14%가 된다 (기본 메뉴가 중립이 아님)."""
+    t = template("cafe")
+    snap = snap or snapshot()
+    ds = 0.185   # 디저트 매출 비중 (research/cafe/params.yaml season.dessert_share)
+    try:
+        from sim.cafe.params import v as cv
+        ds = cv("season", "dessert_share")
+    except Exception:   # noqa: BLE001  params를 못 읽어도 기본값으로 계산
+        pass
+    drinks = [x for x in t["items"] if x["kind"] == "drink" and x["mix"] > 0]
+    food = [x for x in t["items"] if x["kind"] != "drink" and x["mix"] > 0]
+    raw = lambda x: item_cost(x, "cafe", "domestic", snap, overhead={"value": 0.0})["raw"]   # noqa: E731
+    w_d, w_f = sum(x["mix"] for x in drinks), sum(x["mix"] for x in food)
+    raw_d = sum(raw(x) * x["mix"] for x in drinks) / w_d
+    p_d = sum(x["price"] * x["mix"] for x in drinks) / w_d * scale
+    oh_f = t["overhead"]["side"]["value"]
+    cr_f = (sum(raw(x) * x["mix"] for x in food) / w_f * (1 + oh_f)) / (sum(x["price"] * x["mix"] for x in food) / w_f * scale)
+    target = (t["benchmark"]["cost_ratio"] - ds * cr_f) / (1 - ds)
+    val = min(3.0, max(0.10, target * p_d / raw_d - 1))
+    base = t["overhead"]["drink"]
+    return {**base, "value": round(val, 3),
+            "note": f"이 상권의 기본 메뉴가 업계 평균 식재료비율 {t['benchmark']['cost_ratio'] * 100:.1f}%가 되게 맞춘 값 (가정). "
+                    "레시피에 없는 손실·시럽·얼음·직원 음료·테스트 추출 몫"}
+
+
 def item_cost(item: dict, industry: str, grade: str = "domestic", snap: dict | None = None, overhead: dict | None = None) -> dict:
     """recipe → 원가 내역. 재료 단가는 ingredients_today.json, 없는 재료는 missing. 손실(overhead)은 가정."""
     snap = snap or snapshot()
@@ -242,14 +295,15 @@ def table_setting(industry: str = "bbq", snap: dict | None = None) -> dict | Non
             "cost_detail": c}
 
 
-def with_costs(menu: list[dict], industry: str, grade: str = "domestic") -> list[dict]:
-    """recipe가 있고 직접 고치지 않은(cost_source != user) 메뉴의 unit_cost를 오늘 시세로 다시 계산한다."""
+def with_costs(menu: list[dict], industry: str, grade: str = "domestic", scale: float = 1.0) -> list[dict]:
+    """recipe가 있고 직접 고치지 않은(cost_source != user) 메뉴의 unit_cost를 오늘 시세로 다시 계산한다. scale = 카페 상권 배율."""
     snap = snapshot()
+    oh_drink = cafe_drink_overhead(scale, snap) if industry == "cafe" else None
     out = []
     for x in menu:
         y = dict(x)
         if y.get("recipe"):
-            c = item_cost(y, industry, grade, snap)
+            c = item_cost(y, industry, grade, snap, overhead=oh_drink if y.get("kind") == "drink" else None)
             if y.get("cost_source") != "user" and not c["missing"]:   # 직접 고친 원가는 그대로, 내역만 붙인다
                 y["unit_cost"] = c["unit_cost"]
                 y["cost_source"] = "data" if c["assumed_share"] < 0.5 else "가정"
@@ -270,7 +324,7 @@ def template_menu(industry: str, grade: str = "domestic", scale: float = 1.0) ->
         y["price"] = int(round(x["price"] * scale, -2))
         y["unit_cost"] = 0
         items.append(y)
-    return with_costs(items, industry, grade)
+    return with_costs(items, industry, grade, scale)
 
 
 def summary(menu: list[dict], industry: str, scale: float = 1.0) -> dict:

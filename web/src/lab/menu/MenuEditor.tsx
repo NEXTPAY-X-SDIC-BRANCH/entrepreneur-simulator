@@ -27,6 +27,14 @@ function costTag(cs: string | undefined, c: CostDetail | undefined, sources: Sou
   return { text: `${SRC_SHORT[top.source] ?? top.source} · ${shortDate(top.date)}`, title: full, assumed: false };
 }
 
+// 이 메뉴판이 실제로 쓰는 시세의 기준일 범위 (고기 도매는 월평균이라 소매 시세보다 이르다)
+export function basisRange(doc: MenuDoc): string {
+  const ds = [...doc.items.flatMap((x) => x.cost_detail?.lines ?? []), ...(doc.table_setting?.cost_detail.lines ?? [])]
+    .map((l) => l.date).filter((d): d is string => !!d).sort();
+  if (!ds.length) return doc.snapshot.basis_date ?? "자료 없음";
+  return ds[0] === ds[ds.length - 1] ? ds[0] : `${ds[0]} ~ ${ds[ds.length - 1]}`;
+}
+
 const STATUS: Record<string, string> = {
   ok: "오늘 받음", cached: "저장된 값", snapshot: "저장 자료", not_connected: "유통업체 제휴 시 연결", missing: "없음",
 };
@@ -111,7 +119,7 @@ export default function MenuEditor({ api, industry, grade, district, doc, onSave
               <span key={k}>{kindLabel(k)} {Math.round(draft.levels[k].level * 100)}</span>
             ))}</b>
           </div>
-          <div><small>식자재 시세 기준일</small><b>{draft.snapshot.basis_date ?? "자료 없음"}</b></div>
+          <div><small>식자재 시세 기준일</small><b>{basisRange(draft)}</b></div>
         </div>
         {bench && pc.cost_ratio < bench.cost_ratio - 0.03 && (
           <p className="mn-gap">이 메뉴판의 원가율 {pct(pc.cost_ratio)}는 {bench.label} {pct(bench.cost_ratio)}보다 낮아요. 실제 가게에는 폐기, 서비스로 나가는 음식, 메뉴에 없는 양념이 더 들어가요.</p>
@@ -227,7 +235,7 @@ export function MenuSummary({ doc, onEdit, locked }: { doc: MenuDoc | null; onEd
     <div className="mn-row">
       <div className="mn-row-t">
         <span className="mn-row-l">메뉴판 {doc.items.length}개</span>
-        <small>{doc.industry === "cafe" ? "결제 1건" : "손님 1명"} 약 {fmt(pc.ticket)}원 · 원가율 {pct(pc.cost_ratio)}{doc.benchmark ? ` (업종 평균 ${pct(doc.benchmark.cost_ratio)})` : ""} · 시세 {doc.snapshot.basis_date ?? "-"}</small>
+        <small>{doc.industry === "cafe" ? "결제 1건" : "손님 1명"} 약 {fmt(pc.ticket)}원 · 원가율 {pct(pc.cost_ratio)}{doc.benchmark ? ` (업종 평균 ${pct(doc.benchmark.cost_ratio)})` : ""} · 시세 {basisRange(doc)}</small>
         {locked && <small>{locked}</small>}
       </div>
       {!locked && <button type="button" className="sx-ghost" onClick={onEdit}>메뉴판 고치기</button>}
