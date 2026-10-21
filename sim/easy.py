@@ -554,7 +554,9 @@ def _cafe_cash(run: dict, months: list[dict], mult: dict[str, float]) -> dict:
         lines = {x["key"]: x["krw"] for x in m["pnl"]["lines"]}
         op = m["kpi"]["op_krw"] - sum(lines.get(k, 0) * (f - 1) for k, f in mult.items())
         c = m["cash"]
-        cash = cash + op + c["depreciation_addback_krw"] - c["loan_interest_krw"] - c["loan_principal_krw"] + c["vat_refund_krw"]
+        cash = (cash + op + c["depreciation_addback_krw"] + c.get("owner_pay_addback_krw", 0)  # integrate: lab:cost 사장 가상 급여는 현금 아님
+                - c["loan_interest_krw"] - c["loan_principal_krw"] + c["vat_refund_krw"]
+                + (c.get("rent_card") or {}).get("cash_delta", 0))  # integrate: lab:finance 월세 카드 할부
         low = min(low, cash)
         ops.append(round(op))
         rev += m["kpi"]["revenue_krw"]
