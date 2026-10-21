@@ -10,6 +10,7 @@ import CafeSim from "./CafeSim";
 import type { CafeCfg } from "./cafeChecks";
 import "./mock.css";
 import "./analysis.css";
+import PorkEntry from "../lab/pork/PorkEntry"; // lab:pork
 
 const Builder = lazy(() => import("./Builder"));
 const Simulate = lazy(() => import("./SimulateEngine"));
@@ -82,6 +83,7 @@ export default function Mock() {
             ))}
           </ol>
         </nav>
+        {ind === "bbq" && idx >= 1 && <PorkEntry />} {/* lab:pork 돼지고기 시세 대시보드 */}
         {idx >= 1 && (
           <button type="button" className="m-chatbtn" aria-expanded={chat} onClick={() => setChat((c) => !c)}>
             {chat ? "질문 창 닫기" : "궁금한 것 물어보기"}

@@ -1,0 +1,4 @@
+/* lab:pork 진입 버튼. .m-chatbtn 옆에 놓인다 */
+.m-porkbtn { padding: 8px 16px; border: 0; border-radius: 12px; background: #eef2fe; color: #2f4fc4; font-weight: 600; }
+@media (hover: hover) { .m-porkbtn:hover { background: #dfe7fd; } }
+.m-pork-loading { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: #fff; color: #6b7684; }
