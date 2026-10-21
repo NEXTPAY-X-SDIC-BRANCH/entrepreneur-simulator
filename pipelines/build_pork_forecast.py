@@ -22,6 +22,8 @@
   (n) 기준: 마지막 달 값이 그대로 간다 (비교용)
 백테스트: 최근 24개월(그리고 12개월) 각 달을 1~12개월 앞에서 맞혀 본 MAPE. 더 낮은 (a)/(b)를 보여 준다.
 범위: 고른 방법의 백테스트 오차(실제 ÷ 예측의 로그) 10~90% 분위 → 80% 범위.
+주의: 방법은 오차를 잰 그 24개월로 고른다(화면에 표시). 생활물가지수 t월은 t월 경락가가 닫힌 며칠 뒤 공표되므로,
+      기준 달 다음 달 초에 돌리면 미래 정보 없이 같은 계산이 된다.
 """
 from __future__ import annotations
 
@@ -67,8 +69,8 @@ EVENTS = [
      "note": "돼지 농장 발생은 아님. 전국 우제류 일시이동중지 48시간",
      "source": {"title": "4년 만에 한우 구제역 발생", "publisher": "서울신문 (2023.05.11)",
                 "url": "https://m.seoul.co.kr/news/2023/05/11/20230511500173"}},
-    {"date": "2025-01-20", "kind": "ASF", "species": "돼지", "label": "아프리카돼지열병 양돈농장 발생 (경기 양주, 1~3월 3건)",
-     "note": "2025년 양돈농장 ASF 6건 중 첫 건",
+    {"date": "2025-01-28", "kind": "ASF", "species": "돼지", "label": "아프리카돼지열병 양돈농장 발생 (경기 양주)",
+     "note": "2025년 1~3월 양주에서 양돈농장 발생이 이어짐",
      "source": {"title": "경기 양주 양돈농장 아프리카돼지열병 발생", "publisher": "농림축산식품부 (2025.01.28)",
                 "url": "https://mafra.go.kr/bbs/FMD-AI2/425/573127/artclView.do"}},
     {"date": "2025-03-14", "kind": "FMD", "species": "한우", "label": "구제역 발생 (전남 영암 한우농장, 1년 10개월 만)",
@@ -233,12 +235,12 @@ def forecast_band(points: list[tuple[str, float]], method: str, logres: dict[int
     return out
 
 
-def evaluate(points: list[tuple[str, float]], cpi_yoy: dict[str, float] | None) -> dict:
+def evaluate(points: list[tuple[str, float]], cpi_yoy: dict[str, float] | None, force: str | None = None) -> dict:
     cpi_yoy = cpi_yoy or {}
     res = {m: backtest(points, m, cpi_yoy=cpi_yoy) for m in ("ceo", "ceo_cpi", "seasonal", "naive")}
     cands = [m for m in CANDIDATES if m in res and res[m]["mape_1_6"] is not None
              and (m != "ceo_cpi" or cpi_yoy.get(points[-1][0]) is not None)]
-    pick = min(cands, key=lambda m: res[m]["mape_1_6"])
+    pick = force if force in cands else min(cands, key=lambda m: res[m]["mape_1_6"])
     band = forecast_band(points, pick, res[pick]["_logres"], cpi_yoy)
     vals = [p[1] for p in points]
     months = [int(p[0][5:7]) for p in points]
@@ -325,7 +327,9 @@ def build() -> dict:
     basis = belly[-1][0]
 
     ev_b = evaluate(belly, cpi)
-    ev_c = evaluate(carcass, cpi)
+    ev_c = evaluate(carcass, cpi, force=ev_b["pick"])   # 화면에는 방법 하나만: 지육도 삼겹에서 고른 방법으로
+    latest = raw.get("latest") or {}
+    mtd = latest.get("carcass_mtd") if (latest.get("carcass_mtd") or {}).get("exj_ex_out") else None
 
     # 시기: 계절지수 (삼겹 도매, 지육)
     s_b = seasonal_index([p[1] for p in belly], [int(p[0][5:7]) for p in belly])
@@ -436,10 +440,8 @@ def build() -> dict:
          "evidence": (_weather_text(weather_ev) if weather_ev else "날씨 자료가 없어 계산하지 못했어요."),
          "data": weather_ev, "basis": "재분석 기상자료 + 공공 통계에서 계산",
          "sources": [SRC["open_meteo"], SRC["kape_auction"]]},
-        {"kind": "supply", "label": ("공급: 출하(경락) 마릿수가 많은 달은 값이 조금 내려가요" if (supply_r or 0) <= -0.2
-                                     else "공급: 출하 마릿수와 값의 관련이 약해요"),
-         "summary": (f"출하 마릿수가 평소보다 많은 달은 지육가가 조금 낮았어요 (r = {supply_r}, {_strength(supply_r)})."
-                     if (supply_r or 0) <= -0.2 else f"출하 마릿수와 지육가의 관련은 약해요 (r = {supply_r})."),
+        {"kind": "supply", "label": f"공급: 출하 마릿수와 값, 관련이 {'약해요' if abs(supply_r or 0) < 0.3 else '조금 있어요'}",
+         "summary": f"출하 마릿수가 평소보다 많은 달은 지육가가 조금 낮았지만 관련은 약해요 (r = {supply_r}).",
          "evidence": (f"계절·추세를 뺀 경락 마릿수와 지육가의 상관계수 r = {supply_r} (같은 달, {len(common)}개월, "
                       f"{_strength(supply_r)}). "
                       f"{herd.get('pig_national_change_q1_q2', '')}"),
@@ -448,15 +450,16 @@ def build() -> dict:
          "sources": [SRC["kape_auction"], SRC["pig_herd"]]},
     ]
     if kmta_fc:
-        drivers.append({"kind": "outlook", "label": "업계 전망과 비교",
-                        "summary": f"10월 지육: 협회 전망 {KMTA_OCT[0]:,}~{KMTA_OCT[1]:,}원, 이 화면 예측 {won(c[oct_key]['mid'])}. {_vs(c[oct_key], KMTA_OCT)}.",
-                        "evidence": (f"협회 10월 지육 전망은 {KMTA_OCT[0]:,}~{KMTA_OCT[1]:,}원/kg이에요. "
-                                     f"같은 지육 기준 이 화면의 10월 예측은 {won(c[oct_key]['mid'])} "
-                                     f"(80% 범위 {won(c[oct_key]['lo'])}~{won(c[oct_key]['hi'])})로 "
-                                     f"{_vs(c[oct_key], KMTA_OCT)}. "
-                                     f"{kmta.get('kmta_pork_2026_forecast', {}).get('text', '')}"),
-                        "data": {"kmta_oct": kmta_fc["text"], "ours_oct": c.get(oct_key)},
-                        "basis": "업계 자료", "sources": [{**SRC["kmta"], "page": kmta_fc.get("page")}]})
+        drivers.append({"kind": "outlook", "label": "업계 전망·이번 달 실제와 비교",
+                        "summary": _outlook_summary(c[oct_key], mtd, oct_key),
+                        "evidence": (f"같은 지육 기준(전국, 제주·등외 제외), 같은 방법({PICK_LABEL[ev_b['pick']]})으로 낸 10월 예측은 "
+                                     f"{won(c[oct_key]['mid'])} (80% 범위 {won(c[oct_key]['lo'])}~{won(c[oct_key]['hi'])})예요. "
+                                     f"협회 자료: {kmta_fc['text']} "
+                                     + (f"이번 달 실제({mtd['from'][5:].replace('-', '.')}~{mtd['to'][5:].replace('-', '.')}) 평균은 {won(mtd['exj_ex_out'])}이에요. " if mtd else "")
+                                     + f"{kmta.get('kmta_pork_2026_forecast', {}).get('text', '')}"),
+                        "data": {"kmta_oct": kmta_fc["text"], "ours_oct": c.get(oct_key), "carcass_mtd": mtd},
+                        "basis": "업계 자료 + 공공 통계",
+                        "sources": [{**SRC["kmta"], "page": kmta_fc.get("page")}, SRC["kape_auction"]]})
 
     return {
         "_meta": {
@@ -487,7 +490,11 @@ def build() -> dict:
         "parts": parts_out,
         "parts_source": SRC["kape_part"],
         "cost_mult": {"base_month": basis, "base_value": round(base), "by_month": mult,
-                      "note": "엔진 국산 삼겹 1인분 원가(4,500원/200g = 22,500원/kg)는 기준 달 도매가와 같은 수준이라 비율을 그대로 곱한다"},
+                      "next6_mean": round(st.mean(f["mid"] for f in ev_b["forecast"].values() if f["h"] <= SHOW) / base, 3),
+                      "last_year_next6_mean": _last_year_ratio(dict(belly), basis),
+                      "note": ("가정: 엔진의 국산 삼겹 1인분 원가(4,500원/200g = 22,500원/kg)를 기준 달 도매가와 같은 수준으로 보고 비율을 곱한다. "
+                               "기준 달(9월)은 연중 비싼 달이라 켜면 다음 6개월 고기 원가가 평균적으로 낮아진다")},
+        "latest": _latest_block(latest, ev_b["forecast"]),
         "drivers": drivers,
     }
 
@@ -500,16 +507,50 @@ PICK_LABEL = {"ceo": "대표님 방식 변형 (작년 같은 달 × 도매가 �
 KMTA_OCT = (5900, 6100)   # kmta_2026_10.json kmta_pork_carcass_forecast_oct (p.57)
 
 
+def _last_year_ratio(series: dict[str, float], basis: str) -> float | None:
+    """작년 같은 기준 달 대비 그 뒤 6개월 실제 평균 (켰을 때 원가가 낮아지는 폭이 과거에도 있었는지 보는 근거)."""
+    b = ym_add(basis, -12)
+    nxt = [series.get(ym_add(b, h)) for h in range(1, SHOW + 1)]
+    if b not in series or any(v is None for v in nxt):
+        return None
+    return round(st.mean(nxt) / series[b], 3)
+
+
+def _latest_block(latest: dict, fc: dict[str, dict]) -> dict:
+    """가장 최근 주의 삼겹 도매 실제 값과, 그 주가 속한 달 예측 범위의 비교. 화면 '최근 실제' 줄."""
+    weeks = latest.get("belly_weeks") or []
+    out: dict = {"fetched": latest.get("fetched"), "belly_weeks": weeks, "carcass_mtd": latest.get("carcass_mtd")}
+    if weeks:
+        w = weeks[0]
+        # 주 범위 끝 날짜의 달 (예: "9/28 ~ 10/4" → 10월)
+        end_m = int(w["range"].split("~")[-1].strip().split("/")[0]) if "~" in w["range"] else None
+        key = next((k for k in fc if end_m and int(k[4:]) == end_m), None)
+        if key:
+            f = fc[key]
+            out["belly_vs"] = {"month": key, "lo": f["lo"], "hi": f["hi"], "mid": f["mid"],
+                               "where": "in" if f["lo"] <= w["belly"] <= f["hi"] else ("above" if w["belly"] > f["hi"] else "below")}
+    return out
+
+
 def _vs(f: dict, rng: tuple[int, int]) -> str:
     if f["hi"] < rng[0]:
-        return "협회 전망보다 낮아요. 협회는 정부 출하지원 사업이 끝나는 영향을 반영했어요"
+        return "협회 전망보다 낮아요"
     if f["lo"] > rng[1]:
         return "협회 전망보다 높아요"
     if f["mid"] < rng[0]:
-        return "가운데 값은 협회 전망보다 낮지만 범위가 겹쳐요"
+        return "가운데 값은 협회 전망보다 낮고 범위는 겹쳐요"
     if f["mid"] > rng[1]:
-        return "가운데 값은 협회 전망보다 높지만 범위가 겹쳐요"
+        return "가운데 값은 협회 전망보다 높고 범위는 겹쳐요"
     return "협회 전망 범위 안이에요"
+
+
+def _outlook_summary(f: dict, mtd: dict | None, key: str) -> str:
+    s = f"10월 지육: 협회 전망 {KMTA_OCT[0]:,}~{KMTA_OCT[1]:,}원, 이 화면 예측 {won(f['mid'])}({_vs(f, KMTA_OCT)})."
+    if mtd and mtd["month"].replace("-", "") == key:
+        a = mtd["exj_ex_out"]
+        where = "예측 범위 안" if f["lo"] <= a <= f["hi"] else ("예측 범위보다 높아요" if a > f["hi"] else "예측 범위보다 낮아요")
+        s += f" 10월 1~{int(mtd['to'][8:])}일 실제는 {won(a)}으로 {where}{'' if where.endswith('요') else '이에요'}."
+    return s
 
 
 def _strength(r: float | None) -> str:
@@ -522,9 +563,9 @@ def _weather_label(w: dict | None) -> str:
         return "날씨: 자료 없음"
     h = w["hot_days_next_month_corr"]["r"] or 0
     t = max(abs(v["r"] or 0) for v in w["temp_anom_corr"].values())
-    if h >= 0.3:
-        return "날씨: 폭염이 길었던 여름 다음 달에 조금 비싸요"
-    return "날씨: 관련이 약해요" if t < 0.3 else "날씨: 기온과 조금 관련 있어요"
+    if t < 0.3 and h >= 0.3:
+        return "날씨: 관련이 약해요 (폭염 다음 달만 조금)"
+    return "날씨: 관련이 약해요" if max(t, abs(h)) < 0.3 else "날씨: 기온과 조금 관련 있어요"
 
 
 def _weather_summary(w: dict | None) -> str:

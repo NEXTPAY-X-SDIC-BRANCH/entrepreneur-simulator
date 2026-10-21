@@ -153,3 +153,11 @@ def test_api_routes():
     j = r.json()
     assert j["basis_date"] == DOC["_meta"]["basis_date"] and len(j["by_month"]) == 12
     assert c.get("/lab/pork/forecast").json()["_meta"]["method_key"] == DOC["_meta"]["method_key"]
+
+
+def test_carcass_comparison_uses_the_same_method_and_latest_is_labelled():
+    assert DOC["carcass"]["method_key"] == DOC["_meta"]["method_key"]
+    lt = DOC.get("latest") or {}
+    if lt.get("belly_vs"):
+        v = lt["belly_vs"]; w = lt["belly_weeks"][0]["belly"]
+        assert v["where"] == ("in" if v["lo"] <= w <= v["hi"] else "above" if w > v["hi"] else "below")

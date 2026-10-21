@@ -63,6 +63,7 @@ function Body({ d }: { d: PorkForecast }) {
             <div><dt>{mon(f1k)} 예측 <Tag kind="est" /></dt><dd>{won(f1.mid)}원</dd><dd className="pk-sub">80% 범위 {won(f1.lo)}~{won(f1.hi)}</dd></div>
             <div><dt>{mon(f6k)} 예측 <Tag kind="est" /></dt><dd>{won(f6.mid)}원</dd><dd className="pk-sub">80% 범위 {won(f6.lo)}~{won(f6.hi)}</dd></div>
           </dl>
+          {d.latest?.belly_weeks?.[0] && <Latest d={d} />}
           <PriceChart history={d.history} forecast={d.forecast} events={events} />
         </section>
 
@@ -102,8 +103,12 @@ function Body({ d }: { d: PorkForecast }) {
         <ul className="pk-notes">
           <li>물가 상승률 = KOSIS 돼지고기 생활물가지수 최근 12개월 평균 ÷ 그 전 12개월 평균. 도매가 상승률 = 같은 식을 도매가로</li>
           <li>{d._meta.selection_note}</li>
-          <li>범위: {d._meta.interval}. 질병·날씨 같은 사건은 넣지 않았어요</li>
-          <li>시뮬레이션 엔진은 이 예측을 달마다 고기 원가에 반영할 수 있어요 (지금은 꺼져 있음). 켜면 {ym(d.cost_mult.base_month.replace("-", ""))} {won(d.cost_mult.base_value)}원 대비 예측 비율만큼 1인분 원가가 바뀌어요 <Tag kind="assume" /></li>
+          <li>범위: 지난 24개월 예측 오차(앞을 내다본 개월 수마다 24개)의 10~90% 구간이에요. 표본이 작아서 실제로 80%를 정확히 맞춘다고 보장하지는 않아요. 질병·날씨 같은 사건은 넣지 않았어요</li>
+          <li>
+            시뮬레이션 엔진은 이 예측을 달마다 고기 원가에 반영할 수 있어요 (지금은 꺼져 있음). 켜면 {ym(d.cost_mult.base_month.replace("-", ""))} {won(d.cost_mult.base_value)}원 대비 예측 비율만큼 1인분 원가가 바뀌어요.
+            엔진의 1인분 원가(4,500원/200g)를 이 달 도매가 수준으로 본 것은 가정이에요 <Tag kind="assume" />.
+            9월은 연중 비싼 달이라 다음 6개월 원가가 평균 {Math.round((1 - d.cost_mult.next6_mean) * 100)}% 낮아지는데{d.cost_mult.last_year_next6_mean != null && <>, 작년에도 9월 뒤 6개월 실제 평균이 {Math.round((1 - d.cost_mult.last_year_next6_mean) * 100)}% 낮았어요 <Tag kind="data" /></>}
+          </li>
         </ul>
       </section>
 
@@ -112,7 +117,7 @@ function Body({ d }: { d: PorkForecast }) {
         <div className="pk-col">{d.drivers.filter((x) => x.kind !== "disease").map((x, i) => <DriverCard key={x.kind + i} x={x} />)}</div>
         <div className="pk-col">{d.drivers.filter((x) => x.kind === "disease").map((x, i) => <DriverCard key={x.kind + i} x={x} />)}</div>
       </div>
-      <p className="pk-foot">돼지고기 가격은 질병, 시기, 날씨, 공급에 민감해요. 이 화면의 근거는 공공 통계와 정부 발표이고, 근거가 없는 설명은 '가정'으로 표시했어요.</p>
+      <p className="pk-foot">이 자료에서 확인된 것: 시기(계절)에 따라 값이 크게 움직여요. 날씨와 출하 마릿수는 관련이 약했고, 질병은 언제 올지 알 수 없어 기록만 보여 줘요. 근거는 공공 통계와 정부 발표이고, 근거가 없는 설명은 '가정'으로 표시했어요.</p>
     </main>
   );
 }
@@ -146,6 +151,18 @@ function DriverCard({ x }: { x: Driver }) {
       </details>
       <p className="pk-src"><Tag kind={x.basis.includes("업계") ? "industry" : "data"} label={x.basis} /> {x.kind !== "disease" && <>· {dedupe(x.sources).map((s, i) => <span key={i}>{i > 0 && ", "}<SrcLink s={s} /></span>)}</>}</p>
     </section>
+  );
+}
+
+function Latest({ d }: { d: PorkForecast }) {
+  const w = d.latest!.belly_weeks[0];
+  const vs = d.latest!.belly_vs;
+  const where = vs ? { in: "예측 범위 안이에요", above: "예측 범위보다 높아요", below: "예측 범위보다 낮아요" }[vs.where] : null;
+  return (
+    <p className={`pk-latest${vs && vs.where !== "in" ? " is-out" : ""}`}>
+      최근 실제: {w.week.replace("2026년 ", "")}({w.range}) 삼겹 도매 {won(w.belly)}원/kg <Tag kind="data" />
+      {vs && where && <> · {mon(vs.month)} 예측 범위 {won(vs.lo)}~{won(vs.hi)}원과 비교하면 {where} (주간 값이라 달 평균과 다를 수 있어요)</>}
+    </p>
   );
 }
 

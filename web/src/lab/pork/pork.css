@@ -39,6 +39,8 @@
 .pk-mini dd { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .pk-mini dd.pk-sub { font-size: 13px; font-weight: 400; color: var(--pencil); }
 
+.pk-latest { grid-column: 1 / -1; margin-block-start: 10px; padding: 8px 12px; border-radius: 10px; background: var(--soft); font-size: 14px; color: var(--ink2); }
+.pk-latest.is-out { background: #fff4e0; color: #5c3d00; }
 .pk-chart { position: relative; margin-block-start: 14px; }
 .pk-chart svg { display: block; inline-size: 100%; block-size: auto; touch-action: pan-y; }
 .pk-grid { stroke: #eceff3; stroke-width: 1; }

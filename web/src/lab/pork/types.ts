@@ -23,7 +23,13 @@ export type PorkForecast = {
   carcass: { series: string; history: Record<string, number>; forecast: Record<string, Band>; method_key: string; backtest: Record<string, Backtest> };
   parts: Record<string, Part>;
   parts_source: Source;
-  cost_mult: { base_month: string; base_value: number; by_month: Record<string, number>; note: string };
+  cost_mult: { base_month: string; base_value: number; by_month: Record<string, number>; note: string; next6_mean: number; last_year_next6_mean: number | null };
+  latest?: {
+    fetched?: string;
+    belly_weeks: { week: string; range: string; belly: number }[];
+    carcass_mtd?: { month: string; from: string; to: string; exj_ex_out: number } | null;
+    belly_vs?: { month: string; lo: number; hi: number; mid: number; where: "in" | "above" | "below" };
+  };
   drivers: Driver[];
 };
 

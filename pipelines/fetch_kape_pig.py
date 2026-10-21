@@ -51,16 +51,20 @@ def parse(html: str) -> dict:
     if not tables:
         return {}
     out: dict = {}
-    for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", tables[0], flags=re.S):
+    trs = re.findall(r"<tr[^>]*>(.*?)</tr>", tables[0], flags=re.S)
+    head = _cells(trs[0]) if trs else []
+    if len(head) < 3 or head[1].replace(" ", "") != "전국(제주제외)" or head[-1].replace(" ", "") != "전국":
+        raise SystemExit(f"경락가 표 머리글이 바뀌었어요: {head[:3]} … {head[-1:]} (열 순서를 다시 확인해 주세요)")
+    for tr in trs[1:]:
         c = _cells(tr)
         if c and c[0] in ROWS and len(c) >= 3:
             out[ROWS[c[0]]] = {"exj": _val(c[1]), "nat": _val(c[-1])}
     return out
 
 
-def fetch_month(y: int, m: int) -> dict:
-    last = calendar.monthrange(y, m)[1]
-    q = urllib.parse.urlencode({"searchStartDate": f"{y}-{m:02d}-01", "searchEndDate": f"{y}-{m:02d}-{last}",
+def fetch_month(y: int, m: int, end_day: int | None = None) -> dict:
+    last = end_day or calendar.monthrange(y, m)[1]
+    q = urllib.parse.urlencode({"searchStartDate": f"{y}-{m:02d}-01", "searchEndDate": f"{y}-{m:02d}-{last:02d}",
                                 "searchCondition": "2", "searchCondition1": "", "searchCondition2": "1"})
     err = None
     for attempt in range(4):
@@ -103,14 +107,46 @@ def fetch_parts(start: str, end: str) -> dict[str, dict[str, int]]:
     return {k: dict(sorted(v.items())) for k, v in out.items()}
 
 
+def fetch_latest(today: date) -> dict:
+    """진행 중인 달의 지육 경락가(1일~어제)와 삼겹 도매 최근 주별 값. 화면의 '최근 실제' 줄에 쓴다."""
+    y, m, d = today.year, today.month, today.day - 1
+    out: dict = {"fetched": today.isoformat()}
+    if d >= 1:
+        rows = fetch_month(y, m, end_day=d)
+        ex = rows.get("ex_out", {}).get("exj", (None, 0))
+        out["carcass_mtd"] = {"month": f"{y}-{m:02d}", "from": f"{y}-{m:02d}-01", "to": f"{y}-{m:02d}-{d:02d}",
+                              "exj_ex_out": ex[0], "exj_ex_out_n": ex[1]}
+    q = urllib.parse.urlencode({"searchType": "week", "searchStartDate": f"{y if m > 2 else y - 1}-{(m - 2 - 1) % 12 + 1:02d}",
+                                "searchEndDate": f"{y}-{m:02d}"})
+    req = urllib.request.Request(f"{PART_URL}?{q}", headers={"User-Agent": "Mozilla/5.0 (changeup-lab research)"})
+    html = urllib.request.urlopen(req, timeout=120).read().decode("utf-8", errors="ignore")
+    i = html.find("var chartData")
+    weeks = []
+    for block in re.findall(r"\{(.*?)\}", html[i:html.find("];", i)], flags=re.S):
+        t = re.search(r'Time:\s*"([^"]+)"', block)
+        rng = re.search(r'dispStYmd:\s*"([^"]*)"', block)
+        v = re.search(r'part27\s*:\s*"(\d+)"', block)
+        if t and v and int(v.group(1)) > 0:
+            weeks.append({"week": t.group(1), "range": rng.group(1) if rng else "", "belly": int(v.group(1))})
+    out["belly_weeks"] = weeks[:6]
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--from", dest="start", default="2016-01")
     ap.add_argument("--to", dest="end", default=None, help="마지막 달 (기본: 지난달)")
     ap.add_argument("--parts-only", action="store_true", help="경락가는 저장된 것을 두고 부위별 도매만 다시 받기")
+    ap.add_argument("--latest-only", action="store_true", help="저장된 월별 값은 두고 진행 중인 달(지육)·최근 주(삼겹)만 다시 받기")
     a = ap.parse_args()
     today = date.today()
     ey, em = map(int, a.end.split("-")) if a.end else ((today.year, today.month - 1) if today.month > 1 else (today.year - 1, 12))
+    if a.latest_only:
+        doc = json.loads(OUT.read_text(encoding="utf-8"))
+        doc["latest"] = fetch_latest(today)
+        OUT.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(doc["latest"])
+        return
     if a.parts_only:
         doc = json.loads(OUT.read_text(encoding="utf-8"))
         doc["parts"] = fetch_parts("2018-01", f"{ey}-{em:02d}")
@@ -140,7 +176,8 @@ def main() -> None:
                                 "ex_out": "등외제외", "g1p": "1+등급", "g1": "1등급", "g2": "2등급", "out": "등외", "sow": "모돈"},
                      "parts_url": PART_URL + "?searchType=month", "parts_unit": "원/kg, 도매 식육포장 전국 평균"},
            "series": series,
-           "parts": fetch_parts("2018-01", f"{ey}-{em:02d}")}
+           "parts": fetch_parts("2018-01", f"{ey}-{em:02d}"),
+           "latest": fetch_latest(today)}
     OUT.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"{len(series)}개월 → {OUT}")
 

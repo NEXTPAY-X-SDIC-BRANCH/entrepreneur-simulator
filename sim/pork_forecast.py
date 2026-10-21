@@ -7,6 +7,9 @@
 한 번씩만 나오므로 달 번호만으로 찾는다. 파일이 없거나 그 달 값이 없으면 1.0 (엔진은 지금과 같게 돈다).
 
 엔진은 계획에 use_pork_forecast: true가 있을 때만 이 배수를 쓴다 (sim/season.py _setup, 기본은 끔).
+켜도 엔진의 돼지고기 도매가 상승·하락 사건(research/events.yaml pork_up/pork_down)은 그대로 뽑힌다:
+예측은 '예상 경로', 사건은 그 경로 위의 뜻밖의 흔들림으로 본다 (겹쳐 세는 것이 아님).
+기준 달(마지막 실제 달)과 엔진 원가 4,500원/200g이 같은 수준이라는 것은 가정이다 (cost_mult.note).
 """
 from __future__ import annotations
 
