@@ -81,7 +81,7 @@ PORK_PRICE = re.compile(r"^pork_(retail|import|wholesale|margin|stock)")
 RULEQ = re.compile(r"어떻게 ?(나눠|분류|정해|구분|나누)|분류 ?(기준|방법)|기준이 ?뭐|규칙")
 SNOW = re.compile(r"눈 ?(이|도)? ?(오|와|온|올|내)|폭설|적설")
 GU = re.compile(r"[가-힣]{1,3}구(?![가-힣])")
-PER_GU = re.compile(r"^(hansik_(?!seoul)|cafe_(?!seoul)|pork_(?!top|retail|import|wholesale|margin|stock)|chicken_gu_|bunsik_gu_)")
+PER_GU = re.compile(r"^(hansik_(?!seoul)|cafe_(?!seoul)|pork_(?!top|retail|import|wholesale|margin|stock)|chicken_gu_|bunsik_gu_|delivery_gu_)")
 EFFECT = re.compile(r"줄어|늘어|영향|효과|떨어|오르면|내리면|올리면|때문에|손님이 ?(줄|늘)")
 
 # 가격을 물을 수 있는 품목. 질문에 품목이 나오면 그 품목 이름이 들어간 근거만 답에 쓴다 (다른 품목으로 대신하지 않는다).

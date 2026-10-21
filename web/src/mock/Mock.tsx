@@ -12,7 +12,7 @@ import CafeSim from "./CafeSim";
 import ApparelBuild from "./ApparelBuild";
 import ApparelSim from "./ApparelSim";
 import { DEFAULT_APPAREL, setApparelKosis, setFashionMarket, type ApparelCfg } from "./apparel";
-import { defaultQf, setDeliveryMarket, setFoodCost, setQuickfoodKrei, type QfCfg } from "./quickfood";
+import { defaultQf, setDeliveryGu, setDeliveryMarket, setFoodCost, setQuickfoodKrei, type QfCfg } from "./quickfood";
 import QuickFoodBuild from "./QuickFoodBuild";
 import QuickFoodSim from "./QuickFoodSim";
 import type { CafeCfg } from "./cafeChecks";
@@ -70,6 +70,7 @@ export default function Mock() {
       get("quickfood_krei.json").then(setQuickfoodKrei).catch(() => null);  // 없으면 quickfood.ts의 같은 값으로 계산
       get("delivery_market.json").then(setDeliveryMarket).catch(() => null);
       get("food_cost.json").then(setFoodCost).catch(() => null);   // 없으면 식재료 시세 배수 1
+      get("delivery_gu.json").then(setDeliveryGu).catch(() => null); // 없으면 구별 배달 지수 1
       setQfCfg((c) => (c.ind === ind ? c : defaultQf(ind)));
     }
     if (apparel) get("apparel_kosis.json").then(setApparelKosis).catch(() => null);

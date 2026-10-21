@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "web" / "public" / "mock" / "quickfood_krei.json"
 URL = "https://kosis.kr/openapi/Param/statisticsParameterData.do"
 META = "https://kosis.kr/openapi/statisticsData.do"
-CODES = {"chicken": "A02020303", "bunsik": "A02020304"}
+CODES = {"chicken": "A02020303", "bunsik": "A02020304", "cafe": "A020205"}  # cafe: 비알코올 음료점업 (배달 비중·수수료만 쓴다)
 TABLES = ["004", "009", "012", "016", "022", "023", "024", "029", "030", "031"]
 
 

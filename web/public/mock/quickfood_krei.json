@@ -3,7 +3,7 @@
   "source": "외식업체 경영실태조사 (농림축산식품부, KOSIS orgId 114, DT_114054_*)",
   "survey_year": "2025",
   "basis": "전년도 실적, 전국",
-  "fetched_at": "2026-10-21T23:03:15",
+  "fetched_at": "2026-10-22T00:46:28",
   "method": "pipelines/fetch_krei_quickfood.py",
   "caveat": [
    "전국 값 (서울 세분류 값 없음)",
@@ -77,6 +77,40 @@
    "기타": 6.2,
    "과일": 0.4,
    "주류/음료": 7.3
+  }
+ },
+ "cafe": {
+  "name": "비알코올 음료점업",
+  "sales_month_man": 1258.4,
+  "op_margin": 0.091,
+  "food_labor_ratio": 0.7070000000000001,
+  "sales_per_worker_year_man": 7389.0,
+  "sales_per_pyeong_year_man": 1143.0,
+  "ticket_krw": 5856.0,
+  "visit_per_day": 62.6,
+  "delivery_per_day": 9.3,
+  "takeout_per_day": 26.5,
+  "delivery_app_use": 31.2,
+  "delivery_app_fee_month_krw": 214963.3,
+  "delivery_agency_use": 31.2,
+  "delivery_agency_fee_month_krw": 957302.2,
+  "interior_total_man": 4490.1,
+  "area_m2": 77.8,
+  "hours_per_day": 11.3,
+  "open_days": 28.0,
+  "workers": 2.9,
+  "family_unpaid": 0.19,
+  "wage_month_man": 178.3,
+  "food_mix_pct": {
+   "쌀": 4.2,
+   "곡류(쌀 제외)": 1.5,
+   "채소": 1.4,
+   "축산물": 1.2,
+   "수산물": 0.8,
+   "가공식품(공산품)": 61.7,
+   "기타": 9.1,
+   "과일": 7.0,
+   "주류/음료": 13.1
   }
  }
 }

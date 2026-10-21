@@ -20,16 +20,16 @@ type Krei = {
   sales_month_man: number; op_margin: number; food_labor_ratio: number; sales_per_worker_year_man: number; ticket_krw: number;
   visit_per_day: number; delivery_per_day: number; takeout_per_day: number; delivery_app_fee_month_krw: number; delivery_agency_fee_month_krw: number;
   interior_total_man: number; area_m2: number; open_days: number; workers: number; family_unpaid: number; wage_month_man: number;
-  food_mix_pct?: Record<string, number>;
+  food_mix_pct?: Record<string, number>; delivery_app_use?: number; delivery_agency_use?: number;
 };
 // 파일이 없을 때 쓰는 값도 같은 조사의 같은 값이다 (2026-10-21 받은 값)
 const FALLBACK: Record<QfInd, Krei> = {
   chicken: { sales_month_man: 1476.5, op_margin: 0.092, food_labor_ratio: 0.708, sales_per_worker_year_man: 11188, ticket_krw: 16487, visit_per_day: 26.8, delivery_per_day: 21.7, takeout_per_day: 10.2,
     delivery_app_fee_month_krw: 555376, delivery_agency_fee_month_krw: 860806, interior_total_man: 2590.7, area_m2: 54.3, open_days: 28.5, workers: 2.56, family_unpaid: 0.51, wage_month_man: 214.3,
-    food_mix_pct: { "쌀": 3.5, "축산물": 52.4, "가공식품(공산품)": 16.9 } },
+    food_mix_pct: { "쌀": 3.5, "축산물": 52.4, "가공식품(공산품)": 16.9 }, delivery_app_use: 74.5, delivery_agency_use: 69.8 },
   bunsik: { sales_month_man: 920.6, op_margin: 0.093, food_labor_ratio: 0.71, sales_per_worker_year_man: 7614, ticket_krw: 6700.5, visit_per_day: 49.6, delivery_per_day: 15.5, takeout_per_day: 24.7,
     delivery_app_fee_month_krw: 259536, delivery_agency_fee_month_krw: 986515, interior_total_man: 2176.6, area_m2: 44, open_days: 27.5, workers: 2.64, family_unpaid: 0.53, wage_month_man: 191.3,
-    food_mix_pct: { "쌀": 16.2, "축산물": 13.2, "가공식품(공산품)": 32.4 } },
+    food_mix_pct: { "쌀": 16.2, "축산물": 13.2, "가공식품(공산품)": 32.4 }, delivery_app_use: 48.5, delivery_agency_use: 48.5 },
 };
 let K: Record<QfInd, Krei> = FALLBACK;
 let LOADED = false;
@@ -42,6 +42,11 @@ export function setQuickfoodKrei(d: Partial<Record<QfInd, Partial<Krei>>> | null
 export const quickfoodLoaded = () => LOADED;
 // 통계청 음식서비스 거래액의 달별 배율 (그해 월평균 = 1). 배달 손님에만 곱한다
 let DELIVERY_MONTH: Record<number, number> = { 1: 0.978, 2: 0.904, 3: 0.959, 4: 0.927, 5: 0.988, 6: 0.98, 7: 1.044, 8: 1.082, 9: 0.987, 10: 1.022, 11: 1.005, 12: 1.125 };
+// 구별 배달·포장 수요 지수 (서울 = 1): 서울서베이 2022 연령·가구형태별 주당 배달·포장 식사 × 구 상주인구 연령·가구형태 (delivery_gu.json)
+let DELIVERY_GU: Record<string, { index: number; single_share: number | null }> = {};
+export function setDeliveryGu(d: { gu?: Record<string, { index: number; single_share: number | null }> } | null) { DELIVERY_GU = d?.gu ?? {}; }
+export const deliveryGu = (gu: string) => DELIVERY_GU[gu]?.index ?? 1;
+export const deliveryGuInfo = (gu: string) => DELIVERY_GU[gu] ?? null;
 export function setDeliveryMarket(d: { month_index?: Record<string, number> } | null) {
   if (d?.month_index) DELIVERY_MONTH = Object.fromEntries(Object.entries(d.month_index).map(([k, v]) => [Number(k), v]));
 }
@@ -79,7 +84,9 @@ export function foodMult(ind: QfInd, month: number): { mult: number; parts: Food
 export function derived(ind: QfInd) {
   const k = K[ind];
   const orders = k.visit_per_day + k.delivery_per_day + k.takeout_per_day;          // 방문(명)과 배달·포장(인분)을 같은 단위로 본다 (가정)
-  const deliveryOrders = k.delivery_per_day * k.open_days;                           // 한 달 배달 주문
+  // 하루 배달 건수(023)는 배달 안 하는 가게까지 넣은 평균이고, 배달앱·대행 비용(016)은 이용하는 가게의 평균이다.
+  // 그래서 건당 비용 = 이용 가게 비용 ÷ (전체 평균 배달 ÷ 이용 비율 × 영업일)
+  const usersOrders = (use?: number) => (k.delivery_per_day / Math.max(0.05, (use ?? 100) / 100)) * k.open_days;
   const hired = Math.max(0, k.workers - 1 - k.family_unpaid);                         // 대표·무급 가족을 뺀 고용 인원
   const laborRatio = (hired * k.wage_month_man) / k.sales_month_man;
   // 조사의 '식재료 및 인건비 비율'에는 대표자 인건비도 들어 있다 (같은 조사 사업실적표 DT_114054_028, 기타 음식점업: 식재료 41.8%,
@@ -89,8 +96,8 @@ export function derived(ind: QfInd) {
   return {
     share: { visit: k.visit_per_day / orders, takeout: k.takeout_per_day / orders, delivery: k.delivery_per_day / orders },
     // 배달 한 건마다 가게가 내는 돈 (만원): 배달앱 월평균 사용료 ÷ 배달 주문, 배달대행 월평균 비용 ÷ 배달 주문 (이용 가게 평균)
-    appFee: k.delivery_app_fee_month_krw / 1e4 / deliveryOrders,
-    agencyFee: k.delivery_agency_fee_month_krw / 1e4 / deliveryOrders,
+    appFee: k.delivery_app_fee_month_krw / 1e4 / usersOrders(k.delivery_app_use),
+    agencyFee: k.delivery_agency_fee_month_krw / 1e4 / usersOrders(k.delivery_agency_use),
     foodRatio: k.food_labor_ratio - laborWithOwner,                                   // 식재료비율 = (식재료+인건비 비율) − (대표 + 고용) 인건비 비율
     laborRatio, hired,
     wage: k.wage_month_man,                                                           // 고용 1명 월 인건비 (만원)
@@ -165,7 +172,7 @@ export function playMonth(profile: Profile, cfg: QfCfg, s: QfState, month: numbe
   const want: Channel = {
     visit: base * d.share.visit * (ev.fx?.visit ?? 1) * (fx.visit ?? 1),
     takeout: base * d.share.takeout * (ev.fx?.takeout ?? 1) * (fx.takeout ?? 1),
-    delivery: base * d.share.delivery * DELIVERY_MONTH[month] * AD_BOOST[plan.ad] * (ev.fx?.delivery ?? 1) * (fx.delivery ?? 1),
+    delivery: base * d.share.delivery * DELIVERY_MONTH[month] * deliveryGu(profile.gu) * AD_BOOST[plan.ad] * (ev.fx?.delivery ?? 1) * (fx.delivery ?? 1),
   };
   const need = want.visit + want.takeout + want.delivery;
   const capacity = d.perWorker * HEADROOM * (1 + plan.staff + (fx.extraWorker ?? 0));

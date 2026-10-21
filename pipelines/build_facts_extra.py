@@ -35,6 +35,10 @@ SOURCES = {
                           "url": "https://www.kofoti.or.kr", "period": "2026년 1~7월"},
     "ftc_interior": {"publisher": "공정거래위원회", "title": "가맹정보 브랜드 가맹점 인테리어 비용 (2024 정보공개서)", "api": "data.go.kr 15125479",
                      "url": "https://www.data.go.kr/data/15125479/openapi.do", "period": "2024년"},
+    "seoul_survey_delivery": {"publisher": "서울특별시", "title": "서울서베이 2022 최근 일주일간 배달 또는 포장 음식을 이용한 식사", "api": "서울 열린데이터광장",
+                              "url": "https://data.seoul.go.kr", "period": "2022년"},
+    "kosis_household": {"publisher": "국가데이터처 (KOSIS)", "title": "세대구성별 가구 및 가구원 (시군구)", "api": "KOSIS DT_1JC1515",
+                        "url": "https://kosis.kr", "period": "2025년"},
     "jang2001": {"publisher": "장은영 (복식 51(2))", "title": "국내 의류업체의 재고처리 및 재고감축실태 연구 (의류 브랜드 92곳)", "api": "논문",
                  "url": "https://www.koreascience.kr", "period": "2000년 조사"},
 }
@@ -84,7 +88,7 @@ def build() -> list[dict]:
 
     # 치킨·분식: 경영실태조사
     q = load("quickfood_krei.json")
-    for ind, name, word in (("chicken", "치킨집", "치킨"), ("bunsik", "분식집", "분식")):
+    for ind, name, word in (("chicken", "치킨집", "치킨"), ("bunsik", "분식집", "분식"), ("cafe", "카페", "카페")):
         v = q.get(ind)
         if not v:
             continue
@@ -93,10 +97,11 @@ def build() -> list[dict]:
             f"전국 {name}({v['name']})은 한 달에 평균 {man(v['sales_month_man'])}을 팔고 영업이익률은 {v['op_margin'] * 100:.1f}%예요(사장 인건비를 뺀 뒤). "
             f"객단가는 {round(v['ticket_krw']):,}원, 하루 방문 {v['visit_per_day']}명·배달 {v['delivery_per_day']}인분·포장 {v['takeout_per_day']}인분으로 주문의 {v['delivery_per_day'] / orders * 100:.0f}%가 배달이에요.",
             ["krei_survey"])
-        deliv_orders = v["delivery_per_day"] * v["open_days"]
+        # 비용은 이용 가게 평균, 하루 배달 건수는 전체 평균이라 이용 비율로 나눠 이용 가게의 건수로 바꾼다
+        per = lambda fee, use: fee / (v["delivery_per_day"] / max(0.05, use / 100) * v["open_days"])  # noqa: E731
         add(f"{ind}_delivery_fee", [name, word, "배달", "수수료", "배달앱", "배달대행"],
-            f"{name}은 배달앱에 한 달 평균 {round(v['delivery_app_fee_month_krw'] / 1e4):,}만원, 배달대행에 {round(v['delivery_agency_fee_month_krw'] / 1e4):,}만원을 내요(이용하는 가게 평균). "
-            f"배달 한 건으로 나누면 배달앱 {round(v['delivery_app_fee_month_krw'] / deliv_orders):,}원, 배달대행 {round(v['delivery_agency_fee_month_krw'] / deliv_orders):,}원이에요.",
+            f"{name} 중 배달앱을 쓰는 곳은 {v['delivery_app_use']:.0f}%이고, 쓰는 가게는 배달앱에 한 달 평균 {round(v['delivery_app_fee_month_krw'] / 1e4):,}만원, 배달대행에 {round(v['delivery_agency_fee_month_krw'] / 1e4):,}만원을 내요. "
+            f"배달 한 건으로 나누면 배달앱 {round(per(v['delivery_app_fee_month_krw'], v['delivery_app_use'])):,}원, 배달대행 {round(per(v['delivery_agency_fee_month_krw'], v['delivery_agency_use'])):,}원이에요.",
             ["krei_survey"])
         add(f"{ind}_cost", [name, word, "원가", "식재료", "인건비", "인테리어", "면적"],
             f"{name}의 식재료비와 인건비(사장 포함)를 합치면 매출의 {v['food_labor_ratio'] * 100:.1f}%예요. 평균 {v['area_m2']:.0f}㎡({v['area_m2'] / 3.3058:.0f}평)에 "
@@ -114,6 +119,18 @@ def build() -> list[dict]:
             add(f"{ind}_gu_{gu}", [gu, name, "매출", "가게 수", "폐업"],
                 f"{gu} {name}은 상권 안에 {r['stores']:,}곳, 한 곳당 카드 매출이 한 달 {r['sales_per_store_month']:,}만원(서울 평균의 {r['demand_index']}배), 1년 폐업률 {r['closure_rate'] * 100:.1f}%예요.",
                 ["seoul_sales"])
+
+    # 구별 배달·포장 수요
+    dg = load("delivery_gu.json")
+    if dg:
+        m = dg["_meta"]
+        add("delivery_seoul_weekly", ["배달", "포장", "서울", "1인 가구", "연령"],
+            f"서울 사람은 일주일에 집에서 배달·포장 음식을 평균 {m['seoul_survey_avg']}번 먹어요. 30대가 {m['weekly_by_age']['30대']}번으로 가장 많고, "
+            f"1인 가구는 {m['household']['1인 가구']}번, 부부 가구는 {m['household']['부부 가구']}번이에요 (서울서베이 2022).", ["seoul_survey_delivery"])
+        for gu, r in dg["gu"].items():
+            add(f"delivery_gu_{gu}", [gu, "배달", "포장", "수요", "1인 가구"],
+                f"{gu} 주민은 배달·포장 음식을 서울 평균의 {r['index']:.2f}배 먹을 것으로 보여요 (주민의 1인 가구원 {round((r['single_share'] or 0) * 100)}%, 연령 구성 반영). "
+                "치킨·분식 시뮬레이션의 배달 주문에 이 배수를 곱해요.", ["seoul_survey_delivery", "kosis_household"])
 
     # 옷가게 시장
     fm = load("fashion_market.json")

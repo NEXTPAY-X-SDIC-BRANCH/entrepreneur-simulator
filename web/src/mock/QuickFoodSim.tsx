@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Assume from "./Assume";
 import { LOAN_RATE, guStat, man, type Profile } from "./model";
 import {
-  DEFAULT_PLAN, PLAN_TEXT, QF_NAME, derived, eventOf, foodMult, playMonth, qfOpeningCost, qfStrategies, startState,
+  DEFAULT_PLAN, PLAN_TEXT, QF_NAME, deliveryGuInfo, derived, eventOf, foodMult, playMonth, qfOpeningCost, qfStrategies, startState,
   type QfCfg, type QfMonth, type QfPlan, type QfState, type QfStratId,
 } from "./quickfood";
 import { QfFloorPlan } from "./QuickFoodBuild";
@@ -270,6 +270,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                     </ol>
                     <p className="sx-note"><b>{name}은 배달이 매출을 늘리지만 한 건마다 수수료가 빠져요.</b> 조사한 가게는 주문의 {Math.round(dv.share.delivery * 100)}%가 배달이고,
                       배달 한 건에 배달앱 {n0(dv.appFee * 1e4)}원과 배달대행 {n0(dv.agencyFee * 1e4)}원을 가게가 내요. 손님이 몰리는 달에 일손이 모자라면 주문을 놓쳐요.
+                      {deliveryGuInfo(profile.gu) && ` ${profile.gu} 주민은 배달·포장 음식을 서울 평균의 ${deliveryGuInfo(profile.gu)!.index.toFixed(2)}배 먹어요 (1인 가구원 ${Math.round((deliveryGuInfo(profile.gu)!.single_share ?? 0) * 100)}%, 서울서베이 2022 × 주민 연령·가구 구성).`}
                       {" "}{profile.gu} {cfg.ind === "chicken" ? "치킨전문점" : "분식전문점"}은 1년에 10곳 중 {(st.closure / 10).toFixed(1)}곳이 문을 닫아요 (2025년).</p>
                   </section>
                   <fieldset className="sx-mode">
