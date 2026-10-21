@@ -130,7 +130,7 @@ export default function MenuEditor({ api, industry, grade, district, doc, onSave
 
         <div className="mn-grid">
           <table className="mn-table">
-            <caption className="mn-cap">판매가와 주문 비중은 내가 정하는 값이에요 (기본값은 가정). 원가는 오늘 시세로 계산하고, 직접 고칠 수도 있어요.</caption>
+            <caption className="mn-cap">판매가와 주문 비중은 내가 정하는 값이에요 (기본값은 가정). 원가는 최근 시세(기준일은 아래에 표시, 매일 바뀌지 않음)로 계산하고, 직접 고칠 수도 있어요.</caption>
             <colgroup><col className="c-name" /><col className="c-num" /><col className="c-num" /><col className="c-pct" /><col className="c-mix" /><col className="c-src" /><col className="c-x" /></colgroup>
             <thead><tr><th scope="col">메뉴</th><th scope="col">판매가 (원)</th><th scope="col">원가 (원)</th><th scope="col">원가율</th><th scope="col">주문 비중</th><th scope="col">원가 출처</th><th scope="col"><span className="mn-sr">빼기</span></th></tr></thead>
             {ORDER[industry].map((k) => {
@@ -178,7 +178,7 @@ export default function MenuEditor({ api, industry, grade, district, doc, onSave
             {detail && (
               <div className="mn-slip">
                 <p className="mn-slip-h">{detail.title}<small>{detail.unit} 원가 내역</small></p>
-                {detail.user && <p className="mn-slip-note">직접 고친 원가예요 (가정). 아래 재료 내역은 오늘 시세로 계산한 값이에요.</p>}
+                {detail.user && <p className="mn-slip-note">직접 고친 원가예요 (가정). 아래 재료 내역은 최근 시세로 계산한 값이에요.</p>}
                 {detail.c && detail.c.lines.length > 0 ? (
                   <ul>
                     {detail.c.lines.map((l) => (
@@ -193,14 +193,14 @@ export default function MenuEditor({ api, industry, grade, district, doc, onSave
                       <li title={detail.c.overhead.note}><span>{detail.c.overhead.label ?? detail.c.overhead.note} {pct(detail.c.overhead.value)}<small>{detail.c.overhead.tag}</small></span>
                         <b>{fmt(detail.c.unit_cost - detail.c.raw * detail.c.aged_mult)}원</b></li>
                     )}
-                    <li className="mn-slip-sum"><span>오늘 시세 원가</span><b>{fmt(detail.c.unit_cost)}원</b></li>
+                    <li className="mn-slip-sum"><span>최근 시세 원가</span><b>{fmt(detail.c.unit_cost)}원</b></li>
                     {detail.user && <li className="mn-slip-sum"><span>쓰는 원가 (직접 입력)</span><b>{fmt(detail.cost)}원</b></li>}
                   </ul>
                 ) : <p className="mn-slip-note">재료 내역이 없는 메뉴예요. 원가 {fmt(detail.cost)}원은 직접 넣은 값이에요 (가정).</p>}
               </div>
             )}
             <button type="button" className="sx-ghost mn-refresh" disabled={busy} onClick={() => sync(draft, true, 0)}>
-              {busy ? "계산하는 중이에요" : "오늘 시세로 원가 다시 계산"}
+              {busy ? "계산하는 중이에요" : "최근 시세로 원가 다시 계산"}
             </button>
             <p className="mn-hint">직접 고친 원가도 재료 내역이 있으면 시세 값으로 돌아가요.</p>
             <details className="mn-src">

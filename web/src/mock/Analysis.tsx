@@ -430,7 +430,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                     if (!list.length) return null;
                     return (
                       <div key={k}>
-                        <h2 className="m-sub">{k === "가능" ? "사업자등록 전에 받을 수 있어요" : k === "조건부" ? "조건이 맞으면 받을 수 있어요" : "가게를 연 뒤에 받아요"}</h2>
+                        <h2 className="m-sub">{k === "가능" ? "사업자등록 전에 신청할 수 있는 자금" : k === "조건부" ? "조건이 맞으면 신청할 수 있는 자금" : "가게를 연 뒤 신청하는 자금"}</h2>
                         <ul>
                           {list.map((f) => (
                             <li key={f.name}>

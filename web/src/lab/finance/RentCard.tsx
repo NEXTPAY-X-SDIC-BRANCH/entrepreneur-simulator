@@ -20,8 +20,8 @@ export default function RentCard({ rentMan, months = 6 }: { rentMan: number; mon
     <section className="lf-card" aria-labelledby="lf-card-h">
       <h2 className="m-sub" id="lf-card-h">월세를 카드로 내면</h2>
       <p className="lf-frame">
-        임대료 카드 결제 서비스를 쓰면 사장님은 월세를 카드로 내고 할부로 나눠 갚고, 건물주는 현금으로 받아요. 그동안 쓸 수 있는 현금이 늘어나요.
-        아래 숫자는 업계 자료와 가정으로 계산한 예시예요.
+        월세를 카드로 내면 이번 달 현금은 덜 나가지만, 수수료가 붙고 할부금은 다음 달부터 나눠 갚아야 해요.
+        아래 숫자는 업계 공개 자료와 가정으로 계산한 예시예요.
       </p>
       <div className="lf-choose">
         <div className="m-seg" role="group" aria-label="월세 내는 방법">

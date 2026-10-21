@@ -79,7 +79,7 @@ export default function IndustryArea({ profile, setProfile, gus, onNext }: { pro
           <div><dt>가게 수 흐름<small>연 개업률 − 연 폐업률, 0보다 작으면 가게가 줄어드는 중</small></dt><dd>{st.netOpen != null ? `${st.netOpen > 0 ? "+" : ""}${st.netOpen}%p` : "-"}</dd></div>
           {d?.open_rate != null && d.close_rate != null && <div><dt>이 동네 개업률과 폐업률<small>{st.area}, 2025년 (상권분석서비스 행정동)</small></dt><dd>{pct(d.open_rate, 1)} / {pct(d.close_rate, 1)}</dd></div>}
           {g?.franchise != null && <div><dt>프랜차이즈 비중<small>구 안 상권의 {t.base} 중 가맹점</small></dt><dd>{pct(g.franchise)}</dd></div>}
-          {p && <div><dt>같은 업종 한 달 매출 (전국)<small>경영실태조사 2025: 평균 {wman(p.benchmark.sales_mean_month_krw)}, 4분의 1~4분의 3은 {wman(p.benchmark.sales_p25_month_krw)}~{wman(p.benchmark.sales_p75_month_krw)}. 엔진은 평균을 서울과 이 동네로 옮겨요</small></dt><dd>중앙값 {wman(p.benchmark.sales_p50_month_krw)}</dd></div>}
+          {p && <div><dt>같은 업종 한 달 매출 (전국)<small>경영실태조사 2025: 평균 {wman(p.benchmark.sales_mean_month_krw)}, 4분의 1~4분의 3은 {wman(p.benchmark.sales_p25_month_krw)}~{wman(p.benchmark.sales_p75_month_krw)}. 엔진은 중앙값 가게를 서울과 이 동네로 옮겨요</small></dt><dd>중앙값 {wman(p.benchmark.sales_p50_month_krw)}</dd></div>}
           {p && <div><dt>객단가<small>경영실태조사 2025 {t.shop} 1인 평균 (전국)</small></dt><dd>{p.demand.ticket_krw.toLocaleString("ko-KR")}원</dd></div>}
           {p && <div><dt>홀 / 배달 / 포장<small>매출 비중 (경영실태조사 2025, 전국)</small></dt><dd>{pct(p.demand.channels.hall)} / {pct(p.demand.channels.delivery)} / {pct(p.demand.channels.takeout)}</dd></div>}
         </dl>

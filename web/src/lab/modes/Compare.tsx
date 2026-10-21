@@ -20,7 +20,7 @@ export function ScoreRow({ prev, cur }: { prev?: Attempt; cur: Attempt }) {
       <div className="lm-delta">
         {prev && <b className={d > 0 ? "is-up" : d < 0 ? "is-down" : ""}>{d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : "같음"}{d !== 0 && "점"}</b>}
         <small>
-          6개월 영업이익{cur.summary.industry === "bbq" ? "" : "(사장님 몫 빼기 전)"} {prev ? `${signedMan(cumOp(prev.summary))} → ` : ""}{signedMan(cumOp(cur.summary))}
+          6개월 영업이익{cur.summary.industry === "bbq" || cur.summary.industry === "cafe" ? "" : "(사장님 몫 빼기 전)"} {prev ? `${signedMan(cumOp(prev.summary))} → ` : ""}{signedMan(cumOp(cur.summary))}
           {cur.summary.closed ? `, ${cur.summary.months.length}개월째 폐업` : ", 6개월 버팀"}
         </small>
         {cur.scored.stub && <small className="lm-stub">임시 점수: 성적표 기능이 붙기 전까지 쓰는 규칙이에요 (가정)</small>}

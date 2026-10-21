@@ -105,7 +105,7 @@ function Body({ d }: { d: PorkForecast }) {
           <li>{d._meta.selection_note}</li>
           <li>범위: 지난 24개월 예측 오차(앞을 내다본 개월 수마다 24개)의 10~90% 구간이에요. 표본이 작아서 실제로 80%를 정확히 맞춘다고 보장하지는 않아요. 질병·날씨 같은 사건은 넣지 않았어요</li>
           <li>
-            시뮬레이션 엔진은 이 예측을 달마다 고기 원가에 반영할 수 있어요 (지금은 꺼져 있음). 켜면 {ym(d.cost_mult.base_month.replace("-", ""))} {won(d.cost_mult.base_value)}원 대비 예측 비율만큼 1인분 원가가 바뀌어요.
+            시뮬레이션 엔진은 이 예측을 달마다 고기 원가에 반영할 수 있어요 (고깃집 운영 계획에서 켜요, 기본은 꺼짐). 켜면 {ym(d.cost_mult.base_month.replace("-", ""))} {won(d.cost_mult.base_value)}원 대비 예측 비율만큼 1인분 원가가 바뀌어요.
             엔진의 1인분 원가(4,500원/200g)를 이 달 도매가 수준으로 본 것은 가정이에요 <Tag kind="assume" />.
             9월은 연중 비싼 달이라 다음 6개월 원가가 평균 {Math.round((1 - d.cost_mult.next6_mean) * 100)}% 낮아지는데{d.cost_mult.last_year_next6_mean != null && <>, 작년에도 9월 뒤 6개월 실제 평균이 {Math.round((1 - d.cost_mult.last_year_next6_mean) * 100)}% 낮았어요 <Tag kind="data" /></>}
           </li>

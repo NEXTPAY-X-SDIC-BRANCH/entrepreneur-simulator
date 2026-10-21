@@ -68,15 +68,17 @@ def test_fixes_point_at_real_levers():
     assert next(f for f in cafe["fixes"] if f["key"] == "labor")["lever"] in ("staff_policy", "hours")
 
 
-def test_cafe_owner_wage_is_subtracted():
-    # 카페 엔진은 사장 노동이 무급이라 대표자 인건비 중앙값을 빼고 업계 이익률과 비교한다
+def test_cafe_owner_wage_is_not_subtracted_twice():
+    # 카페 엔진 영업이익은 이미 사장 가상 급여(월 211만원)를 뺀 값이다 (test_cost.test_cafe_op_is_after_owner_pay). 점수에서 또 빼면 안 된다
     F = SC.facts(summary("cafe"))
-    assert F["op_adj"] == pytest.approx(F["op"] - 6 * SC.BENCH["cafe"]["owner_wage_month"])
+    assert F["op_adj"] == pytest.approx(F["op"]) and F["owner_wage_month"] == 0
+    why = SC.score(summary("cafe"))["parts"][0]["why"]
+    assert "211만원" in why and "넣지 않아서" not in why
 
 
 def test_unknown_industry_uses_labelled_default():
-    out = SC.score(summary("chicken"))
-    assert "가정" in out["parts"][0]["why"]
+    out = SC.score(summary("sushi"))   # 기준이 없는 업종 (새 업종 5개는 이제 업종별 기준이 있다)
+    assert "업종 기준 없음, 가정" in out["parts"][0]["why"]
 
 
 def test_empty_months_rejected():

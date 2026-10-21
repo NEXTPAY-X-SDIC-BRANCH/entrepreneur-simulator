@@ -150,7 +150,7 @@ def check_grade_cost(menu: list[dict], grade_label: str, grade_cost: float) -> N
     m = kind_stats(menu, "bbq")["main"]
     if m["cost"] < 0.6 * grade_cost:
         raise ValueError(f"{grade_label} 고기인데 1인분 평균 원가가 {round(m['cost']):,}원이에요. "
-                         f"{round(0.6 * grade_cost):,}원 이상이어야 해요 (원가를 오늘 시세로 다시 계산해 보세요)")
+                         f"{round(0.6 * grade_cost):,}원 이상이어야 해요 (원가를 최근 시세로 다시 계산해 보세요)")
 
 
 # ------------------------------------------------------------------------------------------------- 고깃집 엔진 (sim/season.py)
