@@ -93,3 +93,18 @@ def test_layout_changes_flow_into_seats_through_the_api():
     assert b["room"]["frame"]["wall"] == "front" and b["room"]["width_m"] < a["room"]["width_m"]
     bad = client.post("/cafe/preview", json={**SAMPLE, "door_wall": "roof"})
     assert bad.status_code == 422
+
+
+@pytest.mark.parametrize("showcase", [0, 1])
+@pytest.mark.parametrize("oven", [0, 1])
+@pytest.mark.parametrize("groups", [1, 2, 3, 4])
+@pytest.mark.parametrize("pos", [1, 2, 3])
+def test_back_counter_never_drops_an_item_in_a_roomy_store(showcase, oven, groups, pos):
+    """Regression (found by the industry lane): without a showcase the back line (sink, ice maker, fridge, oven)
+    set the counter width but the fill started 5 cm off the wall, so the last back item fell off (fits False)."""
+    for wall, dpos in (("front", None), ("back", 0.2), ("left", 0.5)):
+        r = lay.solve({**BASE, "size_pyeong": 30, "showcase": showcase, "oven": oven, "espresso_groups": groups, "pos": pos,
+                       "door_wall": wall, "door_pos": dpos})
+        line = [i for i in r["layout"] if i["type"] in ("sink", "ice_maker", "fridge", "oven", "pos", "espresso", "grinder", "showcase")]
+        assert all(i["fits"] for i in line), [i["id"] for i in line if not i["fits"]]
+        assert sum(i["type"] == "fridge" for i in line) == 1 and sum(i["type"] == "oven" for i in line) == oven
