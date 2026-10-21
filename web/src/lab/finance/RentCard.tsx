@@ -20,7 +20,7 @@ export default function RentCard({ rentMan, months = 6 }: { rentMan: number; mon
     <section className="lf-card" aria-labelledby="lf-card-h">
       <h2 className="m-sub" id="lf-card-h">월세를 카드로 내면</h2>
       <p className="lf-frame">
-        부대표님이 준비 중인 임대료 카드 결제 서비스와 연결할 자리예요. 사장님은 월세를 카드로 내고 할부로 나눠 갚고, 건물주는 현금으로 받아요.
+        임대료 카드 결제 서비스를 쓰면 사장님은 월세를 카드로 내고 할부로 나눠 갚고, 건물주는 현금으로 받아요. 그동안 쓸 수 있는 현금이 늘어나요.
         아래 숫자는 업계 자료와 가정으로 계산한 예시예요.
       </p>
       <div className="lf-choose">

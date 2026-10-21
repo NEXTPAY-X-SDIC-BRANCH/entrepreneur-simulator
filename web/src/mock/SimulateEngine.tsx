@@ -20,6 +20,8 @@ import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, storeStats, type Lever
 import MenuEditor, { MenuSummary } from "../lab/menu/MenuEditor"; // lab:menu
 import { fetchTemplate, recompute, toEngine, type EngineMenuItem, type MenuDoc } from "../lab/menu/api"; // lab:menu
 import { roomDims, shapeOf } from "../lab/layout/plan"; // lab:layout
+import ScoreCard from "../lab/score/ScoreCard"; // lab:score
+import { bbqSummary } from "../lab/score/summary"; // lab:score
 
 const API = (import.meta.env.VITE_ENGINE_API as string | undefined) ?? "http://127.0.0.1:8010";
 const SHIRTS = ["#e0735a", "#43648a", "#d4a032", "#5679a3", "#ec8a4f", "#35614a"];
@@ -493,7 +495,8 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     flow: flowShape(dongCode, profile.gu), // 동네의 요일·시간대·연령 비율 (없으면 엔진이 기준 상권 값을 씀)
   });
 
-  const withCard = (p: Plan) => { const rc = rentCardPlan(); return rc ? { ...p, rent_card: rc } : p; }; // lab:finance 월세 카드 할부
+  const [porkFc, setPorkFc] = useState(false); // integrate: lab:pork 돼지고기 도매가 예측을 원가에 반영 (기본 끔)
+  const withCard = (p: Plan) => { const rc = rentCardPlan(); const q = porkFc ? { ...p, use_pork_forecast: true } : p; return rc ? { ...q, rent_card: rc } : q; }; // lab:finance 월세 카드 할부 + lab:pork
   const post = async (path: string, body: unknown) => {
     const r = await fetch(`${API}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 200)}`);
@@ -621,6 +624,10 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   // lab:menu  메뉴판이 있으면 가격 추천은 메뉴판에서
   const recs = useMemo(() => recommend(cur, plan).map((r) => (r.lever.key === "meat_price" && plan.menu
     ? { ...r, change: false, last: `메뉴 ${plan.menu.length}개`, why: "메뉴판이 있어서 가격은 메뉴판에서 고쳐요." } : r)), [cur, plan]);
+  const scoreSummary = useMemo(() => (view === "report" && done.length ? bbqSummary(done, { // lab:score
+    startCash, openingCost: cost.total * 1e4, loan: store.loan * 1e4, loanRate: LOAN_RATE,
+    inputs: { gu: profile.gu, dong: profile.dong?.name ?? null, pyeong: store.pyeong, tables: stats.tables, seats: stats.seats, capital: profile.capital * 1e4, start_month: startMonth, owner_wage_month: imputed },
+  }) : null), [view, done]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 챗봇이 "내 가게는 몇 달째부터 남아요?"에 답할 수 있도록 지금까지의 결과를 넘긴다
   useEffect(() => {
@@ -859,6 +866,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                         {LEVERS.filter((lv) => !(plan.menu && lv.key === "meat_price")).map((lv) => <Stepper key={lv.key} lv={lv} plan={plan} prev={cur?.plan} set={setPlan} />)}
                       </div>
                       <p className="sx-note">가격이나 고기를 바꾸면 그달 단골이 조금 빠져요.</p>
+                      <label className="sx-note"><input type="checkbox" checked={porkFc} onChange={(e) => setPorkFc(e.target.checked)} /> 고깃값을 돼지고기 도매가 예측대로 바꾸기 (축산물품질평가원 시세로 만든 추정, 상단 '돼지고기 시세'에서 근거 확인)</label>{/* integrate: lab:pork */}
                     </section>
                   </div>
                   {err && <p className="se-err" role="alert">{err}</p>}
@@ -993,6 +1001,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
             {view === "report" && (
               <>
                 <div className="sx-scroll">
+                  {scoreSummary && <ScoreCard summary={scoreSummary} />}{/* lab:score */}
                   <h1>{done.length}개월 결과</h1>
                   {!ledger ? <p>계산 중이에요.</p> : (
                     <>
