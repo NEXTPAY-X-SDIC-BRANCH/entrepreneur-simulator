@@ -348,7 +348,7 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
         add("closed", "가게를 닫게 된 달의 대응부터 다시 (다시 해보기)", "retry",
             f"{F['months']}개월째 폐업. 같은 조건에서 다른 대응을 고르면 결과가 달라져요", lost["survival"])
     if not out:
-        weakest = max(parts, key=lambda p: p["max"] - p["score"])
+        weakest = min(parts, key=lambda p: p["score"] / p["max"])   # AI 진단의 "가장 약한 부분"과 같은 기준 (배점 대비 비율)
         add("keep", f"가장 약한 부분은 '{weakest['label']}'이에요. 한 가지만 바꿔 다시 해 보세요", "retry",
             f"{weakest['label']} {weakest['score']}/{weakest['max']}점", 0)
     out.sort(key=lambda x: -x["_w"])

@@ -331,3 +331,12 @@ def test_coach_busy_returns_rule(monkeypatch):
 def test_biggest_cost_gap_is_never_cut_from_fixes():
     s = summary("cafe", rev=10_000_000, rent=0.85, labor=0.40, cogs=0.48, cash=1_000_000)
     assert "rent" in [f["key"] for f in SC.score(s)["fixes"]]
+
+
+def test_coach_keeps_causes_when_no_valid_next_id():
+    s = trap_summary()
+    _, _, cands, fixes = C.build(s)
+    reply = _llm_reply(cands, fixes)
+    reply["next"] = [{"id": "not_a_fix", "how": "엉뚱한 칸"}]
+    out = C.coach(s, call=lambda _: reply)
+    assert out["source"] == "llm" and all(n["how"] == "" for n in out["next"]) and len(out["next"]) == len(fixes[:3])
