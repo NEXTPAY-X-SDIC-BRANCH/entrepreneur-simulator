@@ -41,7 +41,7 @@ type MonthResult = {
   base_plan: Plan; shadow: { revenue: number; op: number; covers: number }; waterfall: { driver: string; delta: number }[];
 };
 type Tick = { label: string; amount: number }; // 원
-type Day = { n: number; date: Date; open: boolean; covers: number; rain: boolean; revenue: number; ticks: Tick[]; notes: string[]; net: number; cash: number; fixedShare: number };
+type Day = { n: number; date: Date; open: boolean; covers: number; rain: boolean; revenue: number; ticks: Tick[]; notes: string[]; net: number; cash: number; fixedShare: number; cum: number };
 type Done = { result: MonthResult; plan: Plan; days: Day[]; cashStart: number; cashEnd: number; year: number; picked: Record<string, string> };
 // 고르지 않은 대응을 골랐다면: 같은 달을 그 대응으로 한 번 더 계산한 결과 (고른 뒤에만 계산한다)
 type Alt = { label: string; month_op: number; op_gap: number; revenue: number; night_revenue: number; night_covers: number };
@@ -183,6 +183,7 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
   const fixedShare = (k.rent + k.mgmt + laborCash + ctx.draw + ctx.interest) / Math.max(1, byDate.size);
   const firstSat = all.find((d) => d.getDay() === 6)?.getDate();
   let cash = cashStart;
+  let cum = 0; // 이달 1일부터 오늘까지 (매출 - 재료비 - 수수료 - 오늘 몫 고정비)의 합
   return all.map((dt, i) => {
     const nt = byDate.get(dt.getDate());
     const revenue = nt ? (k.revenue * nt.revenue) / sumRev : 0;
@@ -208,7 +209,8 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
     }
     const net = ticks.reduce((a, t) => a + t.amount, 0);
     cash += net;
-    return { n: i + 1, date: dt, open: !!nt, covers: nt?.covers ?? 0, rain: !!nt?.rain, revenue, ticks, notes, net, cash, fixedShare: nt ? fixedShare : 0 };
+    if (nt) cum += revenue - food - fee - fixedShare;
+    return { n: i + 1, date: dt, open: !!nt, covers: nt?.covers ?? 0, rain: !!nt?.rain, revenue, ticks, notes, net, cash, fixedShare: nt ? fixedShare : 0, cum };
   });
 }
 
@@ -788,7 +790,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
           <div className="sx-paper">
             <p className="sx-r-title">현금 흐름 영수증</p>
             <p className="sx-r-sub">{profile.gu}{st.area ? ` ${st.area}` : ""} · 시작 현금 {man(won(cashAtStart.current[0] ?? startCash))}</p>
-            <p className="sx-r-acc">회색 줄은 월세·관리비·급여·생활비·이자를 영업일로 나눈 오늘 몫이에요. 실제 돈은 지급일에 한꺼번에 나가요.</p>
+            <p className="sx-r-acc">회색 줄은 월세·관리비·급여·생활비·이자를 영업일로 나눈 오늘 몫이에요. 실제 돈은 지급일에 한꺼번에 나가요. 이달 누적은 1일부터 오늘까지 고정비 몫까지 뺀 합이에요.</p>
             {receiptDays.length === 0 && <p className="sx-r-empty">아직 찍힌 내역이 없어요. 첫 달이 시작되면 하루씩 쌓여요.</p>}
             {receiptDays.map((x, i) => (
               <section key={`${x.mi}-${x.n}`} className="sx-r-day">
@@ -802,6 +804,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                     return <>
                       <li className="acc"><span>오늘 몫 고정비</span><b>{signed(won(-x.fixedShare))}</b></li>
                       <li className={`acc-sum ${day - x.fixedShare >= 0 ? "in" : "out"}`}><span>고정비까지 빼면</span><b>{signed(won(day - x.fixedShare))}</b></li>
+                      <li className={`acc-sum ${x.cum >= 0 ? "in" : "out"}`}><span>이달 누적</span><b>{signed(won(x.cum))}</b></li>
                     </>;
                   })()}
                 </ul>
