@@ -14,6 +14,7 @@ import "./simulate-engine.css";
 import { setEngineCtx } from "./chatContext";
 import Assume from "./Assume";
 import PriceTrend from "./PriceTrend";
+import { BBQ_REF, bbqBand } from "./priceCompare";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, roomSize, storeStats, type Levers, type Profile, type Store } from "./model";
 
@@ -498,6 +499,7 @@ function MenuEditor({ plan, set }: { plan: Plan; set: (p: Plan) => void }) {
       <p className={`sx-note ${bad ? "se-err" : ""}`}>
         {bad ? "가격은 3,000원 이상, 원가는 가격보다 작아야 해요. 맞지 않는 줄은 계산에서 빠져요. " : ""}
         손님이 보는 평균 가격 <b>{fmt(avg.price)}원</b>, 평균 원가 <b>{fmt(avg.cost)}원</b>, 원가율 <b>{Math.round(avg.ratio * 100)}%</b>.
+        {" "}{avg.price > 0 && bbqBand(avg.price).text}.
         비중은 합이 100이 아니어도 비율로 맞춰요. 고기 등급은 맛 평가에만 쓰고 원가는 이 표를 써요.
       </p>
     </div>
@@ -957,6 +959,10 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       {mode === "hard" && cur && recs.some((r) => r.change) && (
                         <button type="button" className="sx-ghost" onClick={() => setPlan(recs.reduce((p, r) => (r.change ? { ...p, [r.lever.key]: r.next[r.lever.key] } : p), plan))}>추천대로 적용</button>
                       )}
+                      {(() => {
+                        const b = bbqBand(plan.menu?.length ? menuAvg(plan.menu).price : plan.meat_price);
+                        return <p className="sx-note sx-price">가격 비교 <span className={`sx-badge ${b.tone}`}>{b.band}</span> {b.text}<Assume what={`비교 기준: ${BBQ_REF.src}. 동네 단위 메뉴 가격 자료가 없어 서울 평균과 비교해요. ±5% 안을 '비슷'으로 봐요 (가정)`} /></p>;
+                      })()}
                       <PriceTrend month={planMonth} />
                     </section>
                     {mode === "easy" ? (

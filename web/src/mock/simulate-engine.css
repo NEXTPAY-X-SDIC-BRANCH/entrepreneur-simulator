@@ -335,3 +335,7 @@
 .pt-season { fill: none; stroke: #8aa4c8; stroke-width: 1; opacity: .7; }
 .pt-mean { fill: none; stroke: #256abf; stroke-width: 2.5; }
 .pt-now { fill: #b3261e; stroke: #fff; stroke-width: 1.5; }
+/* 가격 비교 배지 (priceCompare.ts) */
+.sx-price { margin-top: 10px; }
+.sx-badge.pos { background: #e6f0fb; color: #1d5aa6; }
+.sx-badge.neg { background: #fdf1e1; color: #8a5200; }
