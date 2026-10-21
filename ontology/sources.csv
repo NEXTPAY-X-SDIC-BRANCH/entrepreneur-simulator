@@ -83,3 +83,6 @@ S96,서비스업생산지수 (DT_1KC2020; 한식 음식점업 I5611 / 커피 등
 S97,생산자물가지수 품목별 (DT_404Y016; 플라스틱 포대·봉투 / 뚜껑 / 식품용 종이용기 / 폴리스티렌 발포 / 필름·시트),한국은행 (KOSIS),2026,https://kosis.kr/statHtml/statHtml.do?orgId=301&tblId=DT_404Y016,statistics,"Official monthly price index; 단가(원)가 아니라 1년 변화율 근거. pipelines/fetch_kosis_monthly.py"
 S98,배민상회 포장재 쿠폰가 (탕용기·소스컵·쌈채소봉투·비닐봉투·수저·아이스컵·뚜껑·빨대·홀더·캐리어),배민상회 (mart.baemin.com),2026,https://mart.baemin.com,retail,"2026-10-21 조회, 쿠폰가를 묶음 수량으로 나눈 개당 값. 행사가라 바뀔 수 있음"
 S99,2023년 서울시 상가임대차 실태조사 최종보고서 (145개 주요 상권 1층 12531개 점포; 통상임대료·보증금·월세·초기투자비·월평균 매출 /㎡),서울특별시 (리서치앤리서치),2023,https://data.seoul.go.kr,survey,"Official city survey; 2023년 6~12월 1:1 면접. 서울 평균 보증금 95.61만원/㎡, 월세 6.24만원/㎡"
+S100,생활물가지수 품목별 (DT_1J22005; 돼지고기 전국 2020=100) 월별,통계청 (KOSIS),2026,https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1J22005,statistics,"Official monthly CPI; 소매가라 음식점 매입가보다 덜 출렁인다. 시즌마다 10월=1로 나눈 평균을 cost_index.meat로 쓴다 (pipelines/fetch_cost_index.py)"
+S101,KAMIS 월별 도·소매가격 (monthlySalesList; 서울 중도매인 판매가 상추 적·청 / 깻잎 / 풋고추 / 양파 / 대파),한국농수산식품유통공사 (KAMIS),2026,https://www.kamis.or.kr,statistics,"Official monthly; 2020~2026. 6품목 같은 비중(가정). cost_index.veg와 쌈채소 사건 확률"
+S102,축산물 경락가격 (제주 지육 월평균 ₩/kg 2023-01~2026-09),축산물품질평가원,2026,https://www.ekapepia.com,statistics,"Official auction; 제주만이라 전국 도매와 다를 수 있다. 3시즌뿐. 돼지 시세 사건 확률과 크기 (pipelines/fetch_jeju_pork.py)"

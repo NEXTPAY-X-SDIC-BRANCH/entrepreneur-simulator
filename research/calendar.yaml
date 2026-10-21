@@ -11,9 +11,14 @@
 # segment_mult scales the card-sales age share that feeds each customer segment (가정).
 # terrace_availability and rain_nights_share: October keeps the base month's values (weather is already folded
 # into the base 야장 가용률); other months are 가정 except where a source is given.
+# 2026-10-21: cost_index = this month's ingredient price vs October of the same season, mean of past seasons
+# (pipelines/fetch_cost_index.py -> web/public/mock/cost_index.json). meat: KOSIS 생활물가지수 돼지고기 전국, 2021/22~2025/26
+# (S100); veg: KAMIS 서울 중도매인 상추·깻잎·풋고추·양파·대파 같은 비중, 2020/21~2025/26 (S101). cost_range = the cheapest and
+# dearest season seen (not a forecast). October is the engine's cost anchor, so it is 1.0. Months 4~9 stay 1.0 (가정).
 _meta:
   source_quarter_index: S12
   month_split: S96
+  cost_index: S100;S101
   start_month: 10
   months: [10, 11, 12, 1, 2, 3]
 
@@ -25,6 +30,8 @@ _meta:
   terrace_availability: 0.4
   rain_nights_share: 0.0
   group_bookings: 4
+  cost_index: {meat: 1.0, veg: 1.0}
+  cost_range: {meat: [1.0, 1.0], veg: [1.0, 1.0]}
   tags: {demand_index: "S12 (분기) + S96 (월 분할)", weather: "기준 달과 같음"}
 11:
   label: 11월
@@ -34,6 +41,8 @@ _meta:
   terrace_availability: 0.25
   rain_nights_share: 0.0
   group_bookings: 8
+  cost_index: {meat: 0.961, veg: 0.784}
+  cost_range: {meat: [0.948, 0.97], veg: [0.622, 0.956]}
   tags: {demand_index: "S12 (분기) + S96 (월 분할)", weather: 가정}
 12:
   label: 12월
@@ -43,6 +52,8 @@ _meta:
   terrace_availability: 0.0
   rain_nights_share: 0.0
   group_bookings: 30         # 12월 손님의 약 25%가 단체 예약 (round 4 §7 base 0.25, low 0.10 high 0.40) ÷ 8명
+  cost_index: {meat: 0.969, veg: 0.768}
+  cost_range: {meat: [0.949, 1.013], veg: [0.539, 1.018]}
   tags: {demand_index: "S12 (분기) + S86 (12월 = 11월 × 1.108)", weather: 가정, group_bookings: 가정}
 1:
   label: 1월
@@ -52,6 +63,8 @@ _meta:
   terrace_availability: 0.0
   rain_nights_share: 0.0
   group_bookings: 4
+  cost_index: {meat: 0.947, veg: 0.972}
+  cost_range: {meat: [0.928, 0.962], veg: [0.622, 1.441]}
   min_wage_change: 0.037     # 2027년 최저임금 인상률 3.7% (₩10,320 → ₩10,700, 2026-08-05 고시, S95)
   tags: {demand_index: "S12 (분기) + S96 (월 분할)", weather: 가정, min_wage_change: S95}
 2:
@@ -62,6 +75,8 @@ _meta:
   terrace_availability: 0.0
   rain_nights_share: 0.0
   group_bookings: 2
+  cost_index: {meat: 0.925, veg: 0.974}
+  cost_range: {meat: [0.905, 0.941], veg: [0.659, 1.569]}
   tags: {demand_index: "S12 (분기) + S96 (월 분할, 설 포함)", weather: 가정}
 3:
   label: 3월
@@ -71,4 +86,6 @@ _meta:
   terrace_availability: 0.15
   rain_nights_share: 0.0
   group_bookings: 6
+  cost_index: {meat: 0.908, veg: 0.89}
+  cost_range: {meat: [0.894, 0.921], veg: [0.513, 1.361]}
   tags: {demand_index: "S12 (분기) + S96 (월 분할)", weather: 가정}

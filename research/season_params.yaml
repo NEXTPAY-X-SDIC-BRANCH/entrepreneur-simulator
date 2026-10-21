@@ -55,6 +55,7 @@ menu_extras:   # each extra: 인지도와 20대 호감 up / 원가, 서비스 �
 banchan:
   cost_per_item: {value: 240, tag: 가정, note: "5가지 = ₩1,200/인 (hero_base)"}
   satisfaction_per_item: {value: 0.02, tag: 가정}
+  veg_share: {value: 0.5, tag: 가정, note: "반찬·쌈 원가 중 상추·깻잎·고추·양파·파 몫. 채소값 지수(calendar cost_index.veg)와 쌈채소 사건은 이 몫에만 곱한다"}
 
 staff_grilling:
   dwell_factor: {value: 0.90, tag: 가정, note: "직원이 구우면 굽는 속도가 일정해 체류가 짧아진다 (low 0.85, high 1.0; 인터뷰 Q18로 확인). 직원 시간 +10분/테이블은 SIM_ASSUMPTIONS"}

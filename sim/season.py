@@ -302,7 +302,9 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
     perceived = plan["meat_price"] / (1 + v("meat_grade.door_weight") * g["tolerance"])
     p["_price_index"] = (w_meat * perceived / base["prd_meat_price"] + w_alc * plan["soju_price"] / base["prd_alcohol_price"]
                          + (1 - w_meat - w_alc))
-    pork = op_mult.get("cst_meat_cost_per_portion", 1.0)
+    # 달별 원가 지수 (calendar.yaml cost_index, 같은 시즌 10월 = 1): 시세 사건 배율과 곱한다
+    cidx = cal.get("cost_index") or {}
+    pork = op_mult.get("cst_meat_cost_per_portion", 1.0) * cidx.get("meat", 1.0)
     if plan["meat_grade"] == "imported":
         pork = (1 + (pork - 1) * v("meat_grade.pork_event_strength_imported")) * op_mult.get("import_meat_cost_mult", 1.0)
     elif plan["meat_grade"] == "aged":
@@ -311,7 +313,9 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
     if plan["menu"]:   # 메뉴를 직접 등록했으면 등급 원가 대신 메뉴 원가의 비중 가중 평균 (도매가 사건 배율은 그대로 곱한다)
         p["cst_meat_cost_per_portion"] = sum(x["cost"] * x["share"] for x in plan["menu"]) * pork
     extras =[P["menu_extras"][x] for x in plan["menu_extras"]]
-    p["cst_banchan_cost_per_cover"] = (plan["banchan"] * v("banchan.cost_per_item") * op_mult.get("cst_banchan_cost_per_cover", 1.0)
+    # 채소값(달별 지수 × 쌈채소 사건)은 반찬 원가 중 채소 몫에만 실린다
+    veg = cidx.get("veg", 1.0) * op_mult.get("cst_banchan_cost_per_cover", 1.0)
+    p["cst_banchan_cost_per_cover"] = (plan["banchan"] * v("banchan.cost_per_item") * (1 + v("banchan.veg_share") * (veg - 1))
                                        + sum(x["cost_per_cover"] for x in extras))
     a["svc_extra_per_party_min"] = v("staff.table_tasks_min") + sum(x["service_min"] for x in extras)
     a["reorder_patience_min"] = v("staff.reorder_patience_min")
@@ -1382,6 +1386,7 @@ def play_month(state: dict, plan: dict, events: list[str] | None = None, *, band
         "engine": "sim.season v2",
         "month": su["month"], "month_index": state["month_index"], "state_seed": state["seed"],
         "calendar": {"label": su["cal"]["label"], "note": su["cal"]["note"], "demand_index": su["cal"]["demand_index"],
+                     "cost_index": su["cal"].get("cost_index"), "cost_range": su["cal"].get("cost_range"),
                      "tags": su["cal"]["tags"]},
         "events": [{"id": e, "label": data()["EV"][e]["label"], "group": data()["EV"][e]["group"],
                     "mechanism": data()["EV"][e]["mechanism"], "tag": data()["EV"][e]["tag"],

@@ -34,6 +34,7 @@ type Decision = Dp & {
 };
 type MonthResult = {
   month: number; month_index: number; label: string; note: string | null; demand_index: number; events: Ev[]; decisions: Decision[];
+  cost_index?: { meat: number; veg: number } | null; cost_range?: { meat: [number, number]; veg: [number, number] } | null;
   kpis: Record<string, number>; p10: { revenue: number; op: number }; p50: { revenue: number; op: number }; p90: { revenue: number; op: number };
   nights: Night[]; reviews: { stars: number }[]; owner_line: { text?: string } | null;
   state_after: { cash: number; rating: number; review_count: number; awareness: number; regular_share: number; fatigue: number };
@@ -344,6 +345,13 @@ function SettleTable({ m, imputed, dep, interest, rent }: { m: MonthResult; impu
       <tbody>
         <tr><th>매출</th><td>{man(won(k.revenue))}</td><td>손님 {fmt(Math.round(k.covers))}명, 객단가 {fmt(Math.round(k.ticket))}원</td></tr>
         <tr><th>재료비 (매출원가)</th><td>−{man(won(k.cogs))}</td><td>매출의 {Math.round((k.cogs / k.revenue) * 100)}%, 남는 재료 폐기 포함</td></tr>
+        {m.cost_index && m.cost_range && m.month !== 10 && (
+          <tr className="sub"><th>이달 시세 (10월 = 1)</th><td></td><td>
+            돼지고기 {m.cost_index.meat.toFixed(2)}배 (지난 시즌 {m.cost_range.meat[0].toFixed(2)}~{m.cost_range.meat[1].toFixed(2)}),
+            채소 {m.cost_index.veg.toFixed(2)}배 ({m.cost_range.veg[0].toFixed(2)}~{m.cost_range.veg[1].toFixed(2)}). 예측이 아니라 과거 같은 달 값이에요
+            (통계청 생활물가지수, KAMIS 서울 도매가)
+          </td></tr>
+        )}
         <tr className="sub"><th>매출총이익</th><td>{signed(won(k.revenue - k.cogs))}</td><td>매출의 {Math.round(((k.revenue - k.cogs) / k.revenue) * 100)}%</td></tr>
         <tr><th>인건비</th><td>−{man(won(k.labor))}</td><td>알바(주휴수당 포함)·직원 급여 {man(won(k.labor - imputed))}, 사장 가상 급여 {man(won(imputed))}</td></tr>
         <tr><th>월세</th><td>−{man(won(k.rent))}</td><td>{rent?.n ? <>카드 {rent.n}개월 할부로 냈어요. 이번 달 현금으로 나간 몫 {man(won(rent.paid - rent.fee))}, 남은 할부금 {man(won(rent.left))}<Assume what={`할부 수수료 ${+(RENT_PAY[rent.n].fee * 100).toFixed(1)}% (카드 임대료 결제 서비스 이용료와 할부 수수료를 합친 가정)`} /></> : null}</td></tr>

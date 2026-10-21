@@ -97,6 +97,7 @@ def _slim(r: dict) -> dict:
         "waterfall": [{"driver": w["driver"], "delta": w["delta"]} for w in r.get("waterfall", []) if w.get("kind") == "step" and w.get("delta")],
         "month": r["month"], "month_index": r["month_index"], "label": r["calendar"]["label"],
         "demand_index": r["calendar"]["demand_index"],
+        "cost_index": r["calendar"].get("cost_index"), "cost_range": r["calendar"].get("cost_range"),
         "events": [{"id": e["id"], "label": e["label"].replace("대학로", "대학가"), "group": e["group"],
                     "mechanism": (e.get("mechanism") or "").replace("대학로", "대학가") or None, "outcome": e.get("outcome")}
                    for e in r["events"]],
