@@ -13,6 +13,8 @@ import "./simulate-engine.css";
 import "./cafe-sim.css";
 import CostStack from "../lab/cost/CostStack"; // lab:cost
 import { VAT_NOTE, cafeStack, prorate, type CafeLine } from "../lab/cost/stackModel"; // lab:cost
+import MenuEditor, { MenuSummary } from "../lab/menu/MenuEditor"; // lab:menu
+import { fetchTemplate, toEngine, type MenuDoc } from "../lab/menu/api"; // lab:menu
 
 const wman = (krw: number) => man(krw / 10000);
 const sgn = (krw: number) => `${krw >= 0 ? "+" : "−"}${man(Math.abs(krw / 10000))}`;
@@ -65,7 +67,7 @@ type Rec = { lever: Lever; last: string; next: Dec; nextText: string; change: bo
 type Alt = { label: string; op: number; opGap: number; revenue: number; customers: number };
 type Hist = { token: string; plan: Dec; picked: Record<string, string> }; // 그 달을 시작하기 전 상태
 type Row = { hour: number; orders: number; staff: number; need: number; short: boolean };
-type View = "intro" | "plan" | "scenario" | "settle" | "report" | null; // null = 영업 장면 재생 중
+type View = "intro" | "plan" | "menu" | "scenario" | "settle" | "report" | null; // null = 영업 장면 재생 중, menu = 메뉴판 (lab:menu)
 
 // 규칙으로 만든 추천이다. 지난달 결과의 숫자만 보고, 엔진의 계산을 다시 돌리지는 않는다.
 function recommend(last: Month | undefined, plan: Dec): Rec[] {
@@ -151,6 +153,14 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const daily = useRef<number | null>(null);
+  // lab:menu  메뉴판: 상권 가격에 맞춘 기본 메뉴 (원가 = 오늘 시세). 카페 엔진은 시즌 시작 때 메뉴를 받아서, 첫 달 전에만 고친다
+  const [menuDoc, setMenuDoc] = useState<MenuDoc | null>(null);
+  useEffect(() => {
+    if (!body) return;
+    let alive = true;
+    fetchTemplate(ENGINE, "cafe", "domestic", String(body.district)).then((d) => { if (alive) setMenuDoc(d); }).catch(() => alive && setMenuDoc(null));
+    return () => { alive = false; };
+  }, [body]);
 
   useLayoutEffect(() => {
     const measure = () => { const n = document.querySelector(".m-mocknote") ?? document.querySelector(".m-top"); setTop(Math.round(n ? n.getBoundingClientRect().bottom : 108)); };
@@ -194,7 +204,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const begin = () => {
     if (!body || daily.current == null) return;
     setBusy(true); setErr("");
-    post("/cafe/season", { ...body, daily_customers: daily.current, start_month: startMonth })
+    post("/cafe/season", { ...body, daily_customers: daily.current, start_month: startMonth, menu: menuDoc ? toEngine(menuDoc.items) : undefined }) // lab:menu
       .then((s) => { hist.current = []; setAlts({}); setAltPick({}); setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setPlan({ price_change_pct: 0, hours: s.decisions.hours, staff_policy: s.decisions.staff_policy, marketing_krw: 0, dessert: true }); setView("plan"); })
       .catch((e) => setErr(netErr(e))).finally(() => setBusy(false));
   };
@@ -397,7 +407,10 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                     </section>
                     <section className="sx-right" aria-label="이번 달 운영 계획">
                       <h2>{nextMonth}월에 이렇게 할게요</h2>
-                      <div className="sx-steps">{LEVERS.map((lv) => <Stepper key={lv.key} lv={lv} plan={plan} prev={cur ? { ...plan, ...cur.decisions, price_change_pct: 0 } : undefined} set={setPlan} />)}</div>
+                      <div className="sx-steps">
+                        <MenuSummary doc={menuDoc} onEdit={() => setView("menu")} locked={months.length ? "메뉴판은 첫 달을 시작하기 전에 정해요. 가격은 아래 가격 조정으로 바꿔요" : undefined} />{/* lab:menu */}
+                        {LEVERS.map((lv) => <Stepper key={lv.key} lv={lv} plan={plan} prev={cur ? { ...plan, ...cur.decisions, price_change_pct: 0 } : undefined} set={setPlan} />)}
+                      </div>
                       <p className="sx-note">가격은 이번 달에 한 번 바꾸는 폭이고, 나머지는 바꾸기 전까지 이어져요.</p>
                     </section>
                   </div>
@@ -407,6 +420,17 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                   <button type="button" className="se-btn" onClick={askScenario} disabled={busy}>{busy ? "엔진이 계산 중이에요" : `${nextMonth}월 시작`}</button>
                 </footer>
               </>
+            )}
+
+            {view === "menu" && menuDoc && body && ( // lab:menu  첫 달 전이라 고친 메뉴로 시즌을 새로 시작한다 (같은 시드)
+              <MenuEditor api={ENGINE} industry="cafe" grade="domestic" district={String(body.district)} doc={menuDoc}
+                onCancel={() => setView("plan")} note="카페는 첫 달 전에 메뉴판을 정해요. 시즌 중에는 가격 조정으로 바꿔요."
+                onSave={(d) => {
+                  setMenuDoc(d); setBusy(true); setErr("");
+                  post("/cafe/season", { ...body, daily_customers: daily.current, start_month: startMonth, menu: toEngine(d.items) })
+                    .then((s) => { setStart(s); setToken(s.state_token); setView("plan"); })
+                    .catch((e) => { setErr(netErr(e)); setView("plan"); }).finally(() => setBusy(false));
+                }} />
             )}
 
             {view === "scenario" && dps && (
