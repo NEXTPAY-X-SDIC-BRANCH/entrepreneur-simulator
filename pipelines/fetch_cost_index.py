@@ -79,7 +79,10 @@ def season_path(series: dict[str, float]) -> dict:
 
 
 def main() -> None:
-    pork = next(iter(json.loads((MOCK / "kosis_pork.json").read_text(encoding="utf-8"))["series"].values()))
+    # 서울 돼지고기 생활물가지수 (fetch_food_cost.py가 만든 food_cost.json). 없으면 예전 전국 값 (kosis_pork.json)
+    fc = MOCK / "food_cost.json"
+    pork = (json.loads(fc.read_text(encoding="utf-8"))["items"]["pork"]["cpi"] if fc.exists()
+            else next(iter(json.loads((MOCK / "kosis_pork.json").read_text(encoding="utf-8"))["series"].values())))
     jeju = {x["month"].replace("-", ""): x["won_per_kg"]
             for x in json.loads((MOCK / "jeju_pork.json").read_text(encoding="utf-8"))["series"]}
     k, cid = key("KAMIS_API_KEY", fallback=None), key("KAMIS_CERT_ID", fallback=None)
@@ -96,7 +99,7 @@ def main() -> None:
     out = {
         "_meta": {"built_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
                   "method": "pipelines/fetch_cost_index.py. 시즌마다 10월 = 1. index는 지난 시즌 평균, low/high는 가장 낮은·높은 해",
-                  "pork_source": "KOSIS 생활물가지수 돼지고기 전국 (DT_1J22005, S100)",
+                  "pork_source": "KOSIS 생활물가지수 돼지고기 서울특별시 (DT_1J22005, S100)",
                   "veg_source": "KAMIS 서울 중도매인 판매가격 월평균 (S101). 품목: " + ", ".join(VEG) + " (같은 비중, 가정)",
                   "wholesale_reference": "축산물품질평가원 제주 지육 경락가 (jeju_pork.json). 도매는 소매보다 더 크게 출렁인다",
                   "shock": f"평균 경로에서 ±{SHOCK:.0%} 넘게 벗어난 시즌·달의 비율 (11~3월)"},

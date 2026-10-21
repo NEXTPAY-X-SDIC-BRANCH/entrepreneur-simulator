@@ -5,7 +5,8 @@
 키: KOSIS_API_KEY (생활물가지수), KAMIS_API_KEY·KAMIS_CERT_ID (서울 소매가). 키는 출력하지 않는다.
 출력: web/public/mock/food_cost.json
 자료
-  - KOSIS 생활물가지수 품목별 (DT_1J22005, 전국, 2020=100), 2021.01~최신 월. 몇 년치 흐름을 본다.
+  - KOSIS 생활물가지수 품목별 (DT_1J22005, 서울특별시 T11, 2020=100), 2021.01~최신 월. 몇 년치 흐름을 본다.
+    이 시뮬레이터는 서울 기준이라 서울 값을 쓴다 (전국 값은 --region T10).
   - KAMIS 기간별 품목별 가격 (periodProductList, 서울 소매가, 최근 1년 일자료 → 월평균). 지금 가격(원)을 본다.
     KAMIS 기간 조회는 오늘부터 1년 전까지만 준다 (시작일을 더 앞으로 넣으면 1년 전으로 잘린다).
 계산 (품목마다)
@@ -16,6 +17,7 @@
 """
 from __future__ import annotations
 
+import argparse
 import json
 import statistics as st
 import time
@@ -42,9 +44,9 @@ KAMIS_ITEMS = {"pork": ("500", "4304", "27", "", "삼겹살 100g"), "chicken": (
                "rice": ("100", "111", "01", "", "쌀 20kg")}
 
 
-def kosis(k: str) -> dict[str, dict[str, float]]:
+def kosis(k: str, region: str = "T11") -> dict[str, dict[str, float]]:
     p = {"method": "getList", "apiKey": k, "format": "json", "jsonVD": "Y", "orgId": "101", "tblId": "DT_1J22005", "itmId": "ALL",
-         "objL1": "T10", "objL2": "+".join(c for _, c in CPI.values()) + "+", "prdSe": "M", "startPrdDe": "202101",
+         "objL1": region, "objL2": "+".join(c for _, c in CPI.values()) + "+", "prdSe": "M", "startPrdDe": "202101",
          "endPrdDe": date.today().strftime("%Y%m")}
     with urllib.request.urlopen(f"{KOSIS}?{urllib.parse.urlencode(p)}", timeout=180) as r:
         d = json.loads(r.read().decode("utf-8"))
@@ -98,10 +100,13 @@ def summarize(s: dict[str, float]) -> dict:
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--region", default="T11", help="T11 서울특별시 (기본), T10 전국")
+    region = ap.parse_args().region
     kk = key("KOSIS_API_KEY", fallback=None)
-    series = kosis(kk)
+    series = kosis(kk, region)
     out: dict = {"_meta": {"built_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "method": "pipelines/fetch_food_cost.py",
-                           "cpi_source": "KOSIS 생활물가지수 품목별 (DT_1J22005, 전국, 2020=100)",
+                           "cpi_source": f"KOSIS 생활물가지수 품목별 (DT_1J22005, {'서울특별시' if region == 'T11' else region}, 2020=100)", "region": region,
                            "kamis_source": "KAMIS 기간별 품목별 소매가격 (서울, 최근 1년 → 월평균)",
                            "note": "month_index: 그해 평균=1, 2021~2025 평균. level_vs_2024: 최근 12개월 평균 ÷ 2024년 평균"},
                  "items": {}}

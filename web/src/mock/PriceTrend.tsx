@@ -51,7 +51,7 @@ export default function PriceTrend({ month }: { month: number }) {
         <>
           <p className="sx-note">10월 값을 1로 놓고 지난 시즌마다 그린 선이에요. 굵은 선이 평균이고 색칠한 띠가 가장 싼 해~가장 비싼 해예요. <b>예측이 아니라</b> 과거 같은 시기에 이만큼 움직였다는 뜻이에요. 엔진은 평균값을 이달 원가에 곱해요.</p>
           <div className="pt-grid2">
-            <Chart title="돼지고기" path={d.pork} month={month} lo={plo} hi={phi} note={`통계청 생활물가지수 돼지고기 전국, ${d.pork.seasons[0]}~${d.pork.seasons.at(-1)} 시즌. 10월부터 3월까지 꾸준히 싸져요`} />
+            <Chart title="돼지고기" path={d.pork} month={month} lo={plo} hi={phi} note={`통계청 생활물가지수 돼지고기 서울, ${d.pork.seasons[0]}~${d.pork.seasons.at(-1)} 시즌. 10월부터 3월까지 꾸준히 싸져요`} />
             <Chart title="쌈채소·양념 채소" path={d.veg} month={month} lo={vlo} hi={vhi} note={`KAMIS 서울 도매가 상추·깻잎·풋고추·양파·대파 평균, ${d.veg.seasons[0]}~${d.veg.seasons.at(-1)} 시즌. 해마다 차이가 커요`} />
           </div>
         </>
