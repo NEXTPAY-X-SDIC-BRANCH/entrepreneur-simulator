@@ -13,6 +13,11 @@ import random
 from . import model as m
 from .ko import won
 from .params import g, load_districts, load_params, v, weakest
+from ..opex import cafe_month_line   # lab:cost
+
+
+def o_shares() -> dict:   # lab:cost — 수선 소모품 기본 마케팅 줄을 나눌 비율 (params.yaml opex)
+    return {k: v("opex", f"{k}_share") for k in ("repairs", "supplies", "marketing")}
 
 HOURS_KO = {"short": "짧게", "standard": "기본", "long": "길게"}
 STAFF_KO = {"lean": "빠듯하게", "standard": "기본", "generous": "넉넉하게"}
@@ -215,6 +220,8 @@ def evaluate(ctx: dict, f: dict) -> dict:
         ("rent", "임대료", ctx["rent"] * f["rent_mult"],
          load_params()["district_meta"][cfg["district"]]["rent_per_pyeong_krw"]["grade"], "R-ONE 환산 임대료"),
         ("labor", "인건비", labor, "L", f"유급 {paid_h}시간, 사장님 하루 {o('owner_hours_per_day')}시간 무급"),
+        ("owner", "사장 가상 급여", o("owner_pay_krw"), g("opex", "owner_pay_krw"),   # lab:cost
+         "커피 전문점 대표자 인건비 평균 (농경연 2025). 조사의 영업이익은 이 값을 뺀 뒤라 같은 기준으로 뺌"),
         ("utilities", "전기 관리비 수도 통신", elec + ctx["maint"] + ctx["water_gas"] + ctx["misc"], "가정",
          "전기는 영업시간에 비례"),
         ("scenario", "이번 달 대응 비용", scn["cost_krw"], "가정", "고른 대응에 드는 돈"),
@@ -470,6 +477,7 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
                       "scenario": scn},
         "scenario_ko": [{"title": p["title"], "choice": o["label"]} for p in scenario_points(cal) for o in p["options"]
                         if o["id"] == scn[p["id"]]],
+        "month_line": cafe_month_line(e, ctx, o_shares()),   # lab:cost — SeasonSummary.MonthLine (opex_detail)
         "kpi": {"revenue_krw": e["revenue_krw"], "op_krw": e["op_krw"],
                 "op_margin": round(e["op_krw"] / e["revenue_krw"], 3) if e["revenue_krw"] else 0.0,
                 "cash_krw": st["cash"], "customers": e["customers"], "walkaways": e["walkaways"],

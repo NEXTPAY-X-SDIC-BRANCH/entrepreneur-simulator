@@ -20,6 +20,7 @@ from fastapi import Body, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from sim import season as S
+from sim.opex import bbq_detail as bbq_opex_detail  # lab:cost
 from sim.params import load_params
 from sim.store_input import from_changeup
 from sim.venture import venture_ledger
@@ -59,6 +60,12 @@ def _apply_store(spec: dict | None) -> dict:
     return plan
 
 
+def _cost_kpis(k: dict) -> dict:
+    """lab:cost — 인건비를 알바·직원과 사장 가상 급여로, 매장 운영비를 줄별로 (SeasonSummary.MonthLine.opex_detail)."""
+    owner = float(k.get("labor_owner", _owner_wage()))
+    return {"labor_owner": owner, "labor_hired": float(k.get("labor") or 0.0) - owner, "opex_detail": bbq_opex_detail(k)}
+
+
 def _owner_wage() -> float:
     return float(load_params()["cst_owner_imputed_wage"])
 
@@ -96,7 +103,7 @@ def _slim(r: dict) -> dict:
                     "mechanism": (e.get("mechanism") or "").replace("대학로", "대학가") or None, "outcome": e.get("outcome")}
                    for e in r["events"]],
         "note": r["calendar"].get("note"),
-        "kpis": {k: d["kpis"].get(k) for k in KPI},
+        "kpis": {**{k: d["kpis"].get(k) for k in KPI}, **_cost_kpis(d["kpis"])},   # lab:cost
         "p10": {k: d["p10"].get(k) for k in ("revenue", "op")}, "p50": {k: d["p50"].get(k) for k in ("revenue", "op")},
         "p90": {k: d["p90"].get(k) for k in ("revenue", "op")},
         "demand_factors": r["demand_factors"],

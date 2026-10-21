@@ -357,7 +357,7 @@ def test_cost_lines_and_benchmark_graded():
     assert all(x["grade"] in GRADES and x["krw"] > 0 for x in rm["lines"])
     b = rm["benchmark"]
     assert b["industry_op_margin"] == 0.098 and b["grade"] == "M" and "농경연" in b["source"]
-    assert b["model_op_margin"] == rm["op_margin"] and b["model_op_margin_with_owner_pay"] < b["model_op_margin"]
+    assert b["model_op_margin"] == rm["op_margin"] and b["model_op_margin_with_owner_pay"] == b["model_op_margin"]  # lab:cost: OP is after 사장 가상 급여 (survey basis)
     assert "참고용" in b["gap_note_ko"]
     elec = next(x for x in r["monthly_fixed"]["lines"] if x["item_ko"] == "전기")
     more = next(x for x in preview(cfg(daily_customers=250, espresso_groups=4, oven=1, showcase=1))["monthly_fixed"]["lines"]

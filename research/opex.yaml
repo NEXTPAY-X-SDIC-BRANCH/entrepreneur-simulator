@@ -1,0 +1,60 @@
+# 매장 운영비 내역과 업종 평균 비용 구조 (cost lane, 2026-10-21)
+#
+# 쓰는 곳: sim/opex.py (월별 opex_detail, 화면의 비용 쌓기 패널), web/src/lab/cost/*
+# 등급: 조사 = 공공 통계 (외식업체 경영실태조사), 업계 = 업계 자료, 가정 = 출처 없는 가정 (화면에 '가정'으로 표시)
+#
+# 원칙
+# - 엔진의 매장 운영비 총액(고깃집: cst_utilities + cst_other_opex + 마케팅, 카페: 비용 줄들)은 바꾸지 않는다.
+#   아래 비율은 그 총액을 화면에서 줄별로 나누는 데만 쓴다. 총액이 조사 평균과 맞는지는 survey 블록과 비교한다.
+# - 줄별 비율은 모두 가정이다. 조사에는 '세금'과 '기타' 두 줄만 있고 그 안의 내역은 없다.
+
+_meta:
+  updated: "2026-10-21"
+  owner: cost lane (lab/cost)
+  survey_source: "농림축산식품부·한국농촌경제연구원 「2025 외식업체 경영실태조사」 (조사 2025.8~10, 2024년 실적). 한식 육류 요리 전문점 값은 web/public/mock/gogi_krei.json (통계보고서 표), 일반음식점업·서울권 값은 web/public/mock/kosis_food.json (KOSIS DT_114054_028), 독립 커피 전문점 중앙값은 web/public/mock/cafe_cost.json (원자료 가공)"
+
+# 업종 평균 비용 구조: 매출 대비 비율. 영업이익은 대표자 인건비를 비용으로 뺀 뒤의 값이다 (조사 정의).
+survey:
+  bbq_meat:
+    label: "한식 육류 요리 전문점 (전국 평균, 표본 전체)"
+    grade: 조사
+    sales_man_year: 34414.2
+    shares: {food: 0.420, labor_hired: 0.137, labor_family: 0.034, labor_owner: 0.137, rent: 0.064, tax: 0.061, other: 0.056, op: 0.093}
+    note: "만원/년 평균에서 계산 (식재료 14,440.8 / 고용인 4,703.0 / 가족 1,158.1 / 대표자 4,716.6 / 임차 2,193.3 / 세금 2,083.4 / 기타 1,916.1 / 영업이익 3,202.9). 5인 이상 점포 포함, 서울만 뽑은 표 없음"
+  restaurant_seoul:
+    label: "일반음식점 서울권 평균"
+    grade: 조사
+    sales_man_year: 31063
+    shares: {food: 0.393, labor_hired: 0.147, labor_family: 0.038, labor_owner: 0.137, rent: 0.085, tax: 0.066, other: 0.065, op: 0.070}
+    note: "KOSIS DT_114054_028 2025, 서울권 열"
+  cafe_indep:
+    label: "독립 커피 전문점·음료점 (전국 중앙값)"
+    grade: 조사
+    sales_man_year: 10740
+    shares: {food: 0.40, labor_hired: 0.11, labor_owner: 0.17, rent: 0.10, tax: 0.05, other: 0.06, op: 0.10}
+    note: "줄마다 중앙값이라 더해서 100%가 되지 않음. 영업이익률 25~75% 범위 5~14%. 대표자 인건비 중앙값 월 158만원, 평균 211만원"
+
+# 고깃집: 엔진의 공과금(cst_utilities, 평수·영업시간·점심 영업에 비례)을 나누는 비율. 가정.
+bbq_utilities:
+  - {key: electricity, label: "전기", share: 0.45, grade: 가정, note: "환기 후드, 냉장·냉동, 조명, 냉난방"}
+  - {key: gas, label: "가스 (불판·주방)", share: 0.40, grade: 가정, note: "가스 불판 기준. 숯불이면 숯값이 소모품에 더 들어감"}
+  - {key: water, label: "수도", share: 0.15, grade: 가정, note: "불판·식기 세척"}
+
+# 고깃집: 엔진의 기타 운영비(cst_other_opex, 월 150만원, 출처 S31 KREI 2020 육류구이 비용 구조)를 나누는 비율. 가정.
+bbq_other_opex:
+  - {key: supplies, label: "소모품 (숯·불판 세척·물티슈·앞치마)", share: 0.30, grade: 가정}
+  - {key: repairs, label: "수선·설비 관리 (후드 청소 등)", share: 0.15, grade: 가정}
+  - {key: waste, label: "음식물 쓰레기·방역", share: 0.10, grade: 가정}
+  - {key: accounting, label: "세무 기장", share: 0.10, grade: 가정, note: "개인 음식점 기장 대행 월 10~20만원대 (가정, 원문 미확인)"}
+  - {key: insurance, label: "보험 (화재·영업배상)", share: 0.07, grade: 가정}
+  - {key: telecom_pos, label: "통신·POS·카드 단말", share: 0.07, grade: 가정}
+  - {key: taxes_dues, label: "세금과 공과 (면허세·협회비 등)", share: 0.06, grade: 가정, note: "부가세와 종합소득세는 들어 있지 않음"}
+  - {key: misc, label: "그 밖의 운영비", share: 0.15, grade: 가정}
+
+# 카페: 엔진 비용 줄(sim/cafe/season.py evaluate)의 '수선 소모품 기본 마케팅'은 params.yaml의 세 비율로 나누고,
+# '전기 관리비 수도 통신'은 엔진이 이미 따로 계산한 값(전기, 관리비, 수도 가스, 통신 보험 세무)으로 나눈다. 새 가정 없음.
+
+# 부가세: 두 엔진 모두 메뉴 가격(부가세 포함)을 매출로 쓰고, 매달 내는 부가세는 비용에 없다.
+# 조사의 '세금' 줄(매출의 5~7%)에 들어 있을 가능성이 커서, 엔진의 운영비 총액이 조사의 세금 + 기타보다 큰 지금은
+# 따로 더하지 않는다 (더하면 두 번 셀 수 있음). 화면에는 "부가세 신고는 아직 반영하지 않았어요"로 밝힌다.
+vat_note: "매출은 부가세가 들어 있는 금액이에요. 분기마다 내는 부가세는 이 계산에 아직 없어요 (가정)."

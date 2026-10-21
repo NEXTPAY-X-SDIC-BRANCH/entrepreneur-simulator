@@ -312,13 +312,14 @@ def _monthly_fixed(cfg: dict, labor: dict, area_m2: float) -> dict:
         {"item_ko": "수도 가스", "krw": v("opex", "water_gas_krw"), "in_total": True, "grade": "가정"},
         {"item_ko": "통신 보험 세무", "krw": v("opex", "misc_krw"), "in_total": True, "grade": "가정"},
         {"item_ko": "사장님 인건비 (참고)", "krw": labor["owner_ref_krw"], "in_total": False, "grade": g("opex", "owner_pay_krw"),
-         "note_ko": f"커피 전문점 대표자 인건비 평균 (농경연 2025), 사장님은 월 {labor['owner_hours_month']:g}시간 일함, 합계와 영업이익에 미포함"},
+         "note_ko": f"커피 전문점 대표자 인건비 평균 (농경연 2025), 사장님은 월 {labor['owner_hours_month']:g}시간 일함. "
+                    "월 고정비 합계에는 빼고, 영업이익에서는 '사장 가상 급여'로 뺌"},   # lab:cost
     ]
     grade = weakest(meta["rent_per_pyeong_krw"]["grade"], g("opex", "min_wage"), g("opex", "open_hour"),
                     g("opex", "electricity_krw_per_kwh"), g("opex", "misc_krw"))
     return {"rent_krw": rent, "labor_krw": lab, "other_krw": other, "total_krw": rent + lab + other,
             "owner_ref_krw": labor["owner_ref_krw"], "lines": lines, "grade": grade,
-            "note_ko": f"사장님 인건비 제외 (참고 {won(labor['owner_ref_krw'])}), 인건비는 시간대별 필요 인원 기준"}
+            "note_ko": f"사장님 인건비 제외 (영업이익에서 따로 {won(labor['owner_ref_krw'])}), 인건비는 시간대별 필요 인원 기준"}   # lab:cost
 
 
 def _capex(cfg: dict, solved: dict) -> dict:
@@ -477,7 +478,7 @@ def card_fee_rate(annual_sales_krw: float) -> float:
 
 
 def _rough_month(cfg: dict, dem: dict, revenue: int, served: float, monthly: dict, capex: dict) -> dict:
-    """Monthly P&L with every cost line graded; OP excludes the owner's pay (shown as 참고 in monthly_fixed)."""
+    """Monthly P&L with every cost line graded; OP is after the owner's pay (사장 가상 급여, as the survey's OP is)."""
     o = lambda k: v("opex", k)   # noqa: E731
     orders = dem["avg_day_customers"] * DAYS_PER_MONTH_DATA * served
     takeout_cups = orders * v("demand", "cups_per_tx") * o("takeout_share")
@@ -496,6 +497,8 @@ def _rough_month(cfg: dict, dem: dict, revenue: int, served: float, monthly: dic
         ("수선 소모품 마케팅", revenue * (o("repairs_share") + o("supplies_share") + o("marketing_share")), "가정",
          f"매출의 {pct(o('repairs_share') + o('supplies_share') + o('marketing_share'))}"),
         ("월 고정비", monthly["total_krw"], monthly["grade"], "임대료 인건비 전기 관리비 등, 사장님 인건비 제외"),
+        ("사장 가상 급여", monthly["owner_ref_krw"], g("opex", "owner_pay_krw"),   # lab:cost
+         "커피 전문점 대표자 인건비 평균 (농경연 2025), 조사의 영업이익과 같은 기준"),
         ("감가상각", dep_krw, g("opex", "depreciation_years_equipment"),
          f"설비 가구 인테리어 {won(sum(dep.values()))} ÷ 5년, 권리금 보증금 부가세 제외"),
     ]
@@ -504,14 +507,14 @@ def _rough_month(cfg: dict, dem: dict, revenue: int, served: float, monthly: dic
     op = op_before_dep - dep_krw
     margin = op / revenue if revenue else 0.0
     bench = o("industry_op_margin")
-    margin_owner = (op - monthly["owner_ref_krw"]) / revenue if revenue else 0.0
+    margin_owner = margin   # lab:cost — OP already has the owner's pay taken out
     gap = (margin - bench) * 100
     scale = revenue * 12 / o("industry_avg_sales_krw")   # the benchmark margin belongs to a ~₩190M/yr store
     if abs(gap) <= 5:
         verdict = "업계 평균과 비슷"
     elif gap > 0:
         why = (f"매출이 업계 평균 점포의 {scale:.1f}배라 고정비 비중이 작음" if scale >= 1.5
-               else "사장님 인건비 제외와 최저임금 인건비 영향이 큼")
+               else "최저임금 인건비와 비용 가정 영향이 큼")   # lab:cost
         verdict = f"업계 평균보다 {gap:.0f}%p 높음, {why}"
     else:
         why = (f"매출이 업계 평균 점포의 {scale:.1f}배라 임대료 인건비 부담이 큼" if scale < 1
@@ -521,7 +524,7 @@ def _rough_month(cfg: dict, dem: dict, revenue: int, served: float, monthly: dic
         "revenue_krw": revenue, "op_before_depreciation_krw": op_before_dep, "depreciation_krw": dep_krw,
         "op_krw": op, "op_margin": round(margin, 3), "card_fee_rate": rate, "lines": cost_lines, "grade": "L",
         "note_ko": (f"빠른 추정, 하루 손님 {dem['daily_customers']}명({'주말' if dem['peak_day'] == 'weekend' else '주중'} 기준)"
-                    f" x 객단가 {won(load_districts()[cfg['district']]['ticket_krw']['value'])}, 사장님 인건비 제외"),
+                    f" x 객단가 {won(load_districts()[cfg['district']]['ticket_krw']['value'])}, 사장 가상 급여 포함"),   # lab:cost
         "benchmark": {
             "industry_op_margin": bench, "model_op_margin": round(margin, 3),
             "model_op_margin_with_owner_pay": round(margin_owner, 3),
