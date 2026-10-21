@@ -398,6 +398,10 @@ def _pnl(month: dict, su: dict, rng: np.random.Generator | None, n_reviews: floa
         out["cogs"] += out["group_revenue"] * food_ratio
     if off["review_event"]:
         out["mgmt"] += v("marketing.review_event_fixed") + v("marketing.review_event_cost_per_review") * n_reviews
+    # lab:cost — parts of mgmt and labor for the cost-stack panel (sim/opex.py splits them; mgmt total unchanged)
+    out["opex_util"], out["opex_other"] = p["cst_utilities"], p["cst_other_opex"]
+    out["opex_mkt"] = out["mgmt"] - month["mgmt"]
+    out["labor_owner"] = p["cst_owner_imputed_wage"]
     rev = revenue + out["lunch_revenue"] + out["group_revenue"]
     out["fees"] = rev * p["cst_card_share"] * p["cst_card_fee_rate"]
     out["delivery_revenue"] = out["delivery_fee"] = out["delivery_orders"] = 0.0
@@ -719,7 +723,8 @@ def _waterfall(base: dict, draw: dict, plan: dict | None = None, events: list[st
 
 KPI_KEYS = ["revenue", "op", "op_margin", "covers", "dinner_covers", "ticket", "walkaways", "avg_wait_min",
             "table_utilization", "staff_load", "alcohol_share", "cogs", "labor", "rent", "mgmt", "fees",
-            "lunch_revenue", "group_revenue", "groups", "delivery_revenue", "delivery_fee", "delivery_orders"]
+            "lunch_revenue", "group_revenue", "groups", "delivery_revenue", "delivery_fee", "delivery_orders",
+            "opex_util", "opex_other", "opex_mkt", "labor_owner"]   # lab:cost
 
 
 def _round(x):

@@ -11,6 +11,8 @@ import { guStat, man, type Profile } from "./model";
 import { IconBattery, IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "./SimulateEngine";
 import "./simulate-engine.css";
 import "./cafe-sim.css";
+import CostStack from "../lab/cost/CostStack"; // lab:cost
+import { VAT_NOTE, cafeStack, prorate, type CafeLine } from "../lab/cost/stackModel"; // lab:cost
 
 const wman = (krw: number) => man(krw / 10000);
 const sgn = (krw: number) => `${krw >= 0 ? "+" : "−"}${man(Math.abs(krw / 10000))}`;
@@ -48,7 +50,8 @@ type Month = {
   drivers?: { maturity: number; peak_util: number; bottleneck_label_ko: string };
   kpi: { revenue_krw: number; op_krw: number; cash_krw: number; customers: number; walkaways: number; walkaway_share: number; rating: number; regulars: number };
   pnl: { revenue_krw: number; lines: { key: string; item_ko: string; krw: number }[]; op_krw: number };
-  cash: { start_krw: number; op_krw: number; depreciation_addback_krw: number; loan_interest_krw: number; loan_principal_krw: number; vat_refund_krw: number; end_krw: number };
+  month_line?: CafeLine; // lab:cost
+  cash: { start_krw: number; op_krw: number; depreciation_addback_krw: number; owner_pay_addback_krw?: number; loan_interest_krw: number; loan_principal_krw: number; vat_refund_krw: number; end_krw: number }; // lab:cost
   events: { key: string; label_ko: string; effect_ko: string }[];
   waterfall: { steps: { key: string; label_ko: string; krw: number }[] };
   closure: { closed: boolean; reason_ko: string };
@@ -304,6 +307,18 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
         )}
       </div>
 
+      {view === null && cur?.month_line && sched[hourIdx] && (() => { // lab:cost — 하루 손익: 한 달 값을 28일로 나눈 하루, 지난 시간만큼
+        const all = sched.reduce((a, r) => a + r.orders, 0) || 1;
+        const now = sched.slice(0, hourIdx + 1).reduce((a, r) => a + r.orders, 0);
+        const day = prorate(cafeStack(cur.month_line), now / all / 28, (hourIdx + 1) / sched.length / 28);
+        return (
+          <div className="cst-live cst-float">
+            <CostStack compact stack={day} head={<>{cur.calendar_month}월 어느 하루, {sched[hourIdx].hour}시까지</>}
+              headValue={<b className={day.op >= 0 ? "pos" : "neg"}>{sgn(day.op)}</b>}
+              foot="한 달 값을 28일로 나눈 하루예요. 인건비(사장 가상 급여 포함)·임차료·운영비는 지난 시간만큼 뺐어요." />
+          </div>
+        );
+      })()}
       {view === null && cur && sched[hourIdx] && (
         <div className="sx-bar" role="toolbar" aria-label="재생 조작">
           <button type="button" onClick={() => setPlaying((p) => !p)}>{playing ? "멈춤" : "재생"}</button>
@@ -495,15 +510,21 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                   {cur.events.length > 0 && <p className="sx-note"><b>이달의 사건:</b> {cur.events.map((e) => `${e.label_ko} (${e.effect_ko})`).join(", ")}</p>}
                   <div className="sx-split">
                     <section className="sx-sec"><h2>손익</h2>
+                      {cur.month_line ? ( // lab:cost — 비용 쌓기: 인건비는 알바와 사장 가상 급여, 매장 운영비는 내역까지
+                        <CostStack className="cst-settle" stack={cafeStack(cur.month_line)}
+                          head={<>매출 (손님 {Math.round(cur.kpi.customers).toLocaleString("ko-KR")}명, 객단가 {Math.round(cur.kpi.revenue_krw / Math.max(1, cur.kpi.customers)).toLocaleString("ko-KR")}원)</>}
+                          foot={VAT_NOTE} />
+                      ) : (
                       <table className="sx-table"><tbody>
                         <tr><th>매출</th><td>{wman(cur.pnl.revenue_krw)}</td></tr>
                         {cur.pnl.lines.filter((l) => l.krw !== 0).map((l) => <tr key={l.key}><th>{l.item_ko}</th><td>{l.krw < 0 ? "+" : "−"}{wman(Math.abs(l.krw))}</td></tr>)}
                         <tr><th>영업이익</th><td className={tone(cur.pnl.op_krw)}>{sgn(cur.pnl.op_krw)}</td></tr>
                       </tbody></table>
+                      )}
                     </section>
                     <section className="sx-sec"><h2>지난달과 달라진 이유</h2>
                       <ul className="sx-wf">{cur.waterfall.steps.filter((s) => Math.abs(s.krw) >= 10000).map((s) => <li key={s.key}><span>{s.label_ko}</span><b className={tone(s.krw)}>{sgn(s.krw)}</b></li>)}</ul>
-                      <p className="sx-note">현금 변화: 영업이익 {sgn(cur.cash.op_krw)}, 감가상각 되돌림 +{wman(cur.cash.depreciation_addback_krw)}, 대출 이자 −{wman(cur.cash.loan_interest_krw)}, 원금 −{wman(cur.cash.loan_principal_krw)}{cur.cash.vat_refund_krw ? `, 부가세 환급 +${wman(cur.cash.vat_refund_krw)}` : ""}.</p>
+                      <p className="sx-note">현금 변화: 영업이익 {sgn(cur.cash.op_krw)}, 감가상각 되돌림 +{wman(cur.cash.depreciation_addback_krw)},{cur.cash.owner_pay_addback_krw ? ` 사장 가상 급여 되돌림 +${wman(cur.cash.owner_pay_addback_krw)},` : ""} 대출 이자 −{wman(cur.cash.loan_interest_krw)}, 원금 −{wman(cur.cash.loan_principal_krw)}{cur.cash.vat_refund_krw ? `, 부가세 환급 +${wman(cur.cash.vat_refund_krw)}` : ""}.</p>
                     </section>
                   </div>
                   {cur.closure.closed && <p className="se-err">가게를 닫았어요. {cur.closure.reason_ko}</p>}

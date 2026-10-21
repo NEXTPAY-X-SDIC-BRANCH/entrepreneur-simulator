@@ -94,7 +94,8 @@ def test_cash_identity_and_loan_line():
     prev_bal = run["start"]["loan_krw"]
     for mo in months:
         c = mo["cash"]
-        assert c["end_krw"] == (c["start_krw"] + c["op_krw"] + c["depreciation_addback_krw"] - c["loan_interest_krw"]
+        assert c["end_krw"] == (c["start_krw"] + c["op_krw"] + c["owner_pay_addback_krw"]   # lab:cost
+                                + c["depreciation_addback_krw"] - c["loan_interest_krw"]
                                 - c["loan_principal_krw"] + c["vat_refund_krw"])
         assert c["loan_balance_krw"] == prev_bal - c["loan_principal_krw"] and c["loan_interest_krw"] > 0
         assert mo["kpi"]["loan_payment_krw"] == c["loan_interest_krw"] + c["loan_principal_krw"]
