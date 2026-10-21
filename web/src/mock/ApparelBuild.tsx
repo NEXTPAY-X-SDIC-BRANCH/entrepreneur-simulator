@@ -1,6 +1,6 @@
 // 옷가게 가게 꾸미기: 평수·마감·첫 재고·알바·대출을 정하고, 여는 돈과 한 달 예상, 열기 전 점검을 본다 (apparel.ts).
 // 카페·고깃집과 같은 틀(m-build)을 쓰고, 3D 대신 평면 그림을 그린다.
-import { DEFAULT_PLAN, KOSIS, STAFF_PAY, apparelOpeningCost, expectedSales, type ApparelCfg } from "./apparel";
+import { BUY_MODES, BUY_MODE_ASSUME, DEFAULT_PLAN, KOSIS, STAFF_PAY, apparelOpeningCost, expectedSales, type ApparelCfg, type BuyMode } from "./apparel";
 import { Mark } from "./Checks";
 import Assume from "./Assume";
 import { GRADES, OWNER_DRAW, STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
@@ -84,7 +84,12 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
             <output aria-labelledby="ap-staff">{cfg.staff}명</output>
             <button type="button" aria-label="알바 1명 늘리기" disabled={cfg.staff >= 2} onClick={() => set({ staff: cfg.staff + 1 })}>+</button>
           </div>
-          <p>첫 재고는 팔 옷을 미리 사 두는 돈이에요. 많을수록 물건이 안 떨어지지만 현금이 선반에 묶여요.</p>
+          <div className="m-seg" role="group" aria-label="매입 방식">
+            {(Object.keys(BUY_MODES) as BuyMode[]).map((b) => (
+              <button type="button" key={b} aria-pressed={cfg.buyMode === b} onClick={() => set({ buyMode: b })}>{BUY_MODES[b].label}</button>
+            ))}
+          </div>
+          <p>{BUY_MODES[cfg.buyMode].desc}.<Assume what={BUY_MODE_ASSUME} /> 첫 재고는 팔 옷을 미리 들여놓는 양이에요. 많을수록 사이즈가 덜 빠지지만{cfg.buyMode === "consign" ? " 원가가 비싼 옷이 선반에 쌓여요." : " 현금이 선반에 묶여요."}</p>
         </div>
         <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>
           <p><span>{left < 0 ? "모자란 현금" : "현금"}</span><strong>{man(Math.abs(left))}</strong></p>
