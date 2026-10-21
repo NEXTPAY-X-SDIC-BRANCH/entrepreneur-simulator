@@ -8,10 +8,13 @@ API (공공데이터포털, 공정거래위원회 1130000)
   인테리어 비용 15125479 FftcBrandFrcsIntInfo2_Service/getbrandFrcsBzmnIntrrctinfo
                 요청 jngBizCrtraYr(기준년도), brandMnno(브랜드관리번호)
                 응답 unitArIntrrAmtScopeVal(단위면적 인테리어 금액 범위), intrrAmtScopeVal(인테리어 금액 범위), storCrtraAr(점포 기준면적)
-업종: 커피(카페), 한식 중 육류·고기(고깃집), 의류·패션(옷가게). 업종 중분류 이름에 아래 낱말이 들어가면 고른다.
+업종: 커피(카페), 의류·패션(옷가게)은 업종 이름으로 고른다. 고깃집은 업종 분류에 따로 없어서(한식에 섞여 있다)
+한식 브랜드 중 브랜드명이나 주요 상품(majrGdsNm)에 고기 낱말이 들어간 곳을 고른다.
 읽기 전에
   - 정보공개서 값이라 실제 지출보다 낮게 적힌 사례가 있다 (서울시 2017 점검: 가맹점주 20%가 실제가 더 많았다고 답함).
-  - 범위 값은 숫자 두 개의 가운데를 쓴다. 금액 단위는 crrncyUnitCdNm(보통 천원)을 따른다.
+  - 범위 값("2000~2300")은 두 숫자의 가운데를 쓴다. 금액은 천원, 점포 기준면적(storCrtraAr)과 단위면적은 평(3.3㎡)이다
+    (정보공개서 "단위면적(3.3㎡)당 인테리어 비용"). 예: 기준점포 10평, 평당 2,000~2,300천원, 총 20,000~23,000천원.
+  - 금액을 공개하지 않은 브랜드는 응답이 비어 있다.
 """
 from __future__ import annotations
 
@@ -30,9 +33,10 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "web" / "public" / "mock" / "ftc_interior.json"
 BRANDS = "https://apis.data.go.kr/1130000/FftcBrandRlsInfo2_Service/getBrandinfo"
 INTERIOR = "https://apis.data.go.kr/1130000/FftcBrandFrcsIntInfo2_Service/getbrandFrcsBzmnIntrrctinfo"
-PYEONG = 3.3058
-GROUPS = {"cafe": ["커피", "카페"], "bbq": ["육류", "고기", "갈비", "삼겹"], "apparel": ["의류", "패션", "의복"]}
-UNIT = {"천원": 1_000, "만원": 10_000, "원": 1}
+# 구워 먹는 고깃집이 아닌 한식(생선·조개구이, 닭·오리, 국밥·찌개, 도시락)은 뺀다
+NOT_BBQ = ["생선", "조개", "닭", "오리", "국밥", "찌개", "도시락", "덮밥", "찜", "해장", "볶음", "탕", "샤브", "떡갈비"]
+GROUPS = {"cafe": ["커피", "카페"], "bbq": ["삼겹", "목살", "돼지고기", "소고기", "숯불", "정육", "차돌", "껍데기", "갈비"], "apparel": ["의류", "패션", "의복"]}
+UNIT = 1_000  # 천원
 
 
 def get(url: str, params: dict) -> dict:
@@ -58,15 +62,20 @@ def items(d: dict) -> list[dict]:
     return [it] if isinstance(it, dict) else list(it)
 
 
-def mid(v: str | None) -> float | None:
+def mid(v) -> float | None:
+    if isinstance(v, (int, float)):
+        return float(v)
     nums = [float(x.replace(",", "")) for x in re.findall(r"\d[\d,]*\.?\d*", v or "")]
     return sum(nums[:2]) / len(nums[:2]) if nums else None
 
 
 def group_of(row: dict) -> str | None:
     name = f"{row.get('indutyLclasNm', '')} {row.get('indutyMlsfcNm', '')}"
-    for g, words in GROUPS.items():
-        if any(w in name for w in words):
+    if "한식" in name:
+        menu = f"{row.get('brandNm', '')} {row.get('majrGdsNm', '')}"
+        return "bbq" if any(w in menu for w in GROUPS["bbq"]) and not any(w in menu for w in NOT_BBQ) else None
+    for g in ("cafe", "apparel"):
+        if any(w in name for w in GROUPS[g]):
             return g
     return None
 
@@ -92,12 +101,12 @@ def main() -> None:
     rows: list[dict] = []
     for b, g in picked:
         for r in items(get(INTERIOR, {"serviceKey": ik, "jngBizCrtraYr": args.year, "brandMnno": b["brandMnno"]})):
-            unit = UNIT.get(r.get("crrncyUnitCdNm", "천원"), 1_000)
-            per_m2 = mid(r.get("unitArIntrrAmtScopeVal"))
+            per_py = mid(r.get("unitArIntrrAmtScopeVal"))
+            total = mid(r.get("intrrAmtScopeVal"))
             rows.append({"group": g, "brand": r.get("brandNm"), "induty": r.get("indutyMlsfcNm"),
-                         "area_m2": mid(r.get("storCrtraAr")),
-                         "per_pyeong_won": round(per_m2 * unit * PYEONG) if per_m2 else None,
-                         "total_won": round(mid(r.get("intrrAmtScopeVal")) * unit) if mid(r.get("intrrAmtScopeVal")) else None})
+                         "area_pyeong": mid(r.get("storCrtraAr")),
+                         "per_pyeong_won": round(per_py * UNIT) if per_py else None,
+                         "total_won": round(total * UNIT) if total else None})
         time.sleep(0.1)
 
     summary = {}
@@ -109,7 +118,7 @@ def main() -> None:
     OUT.write_text(json.dumps({
         "_meta": {"source": "공정거래위원회 가맹정보 (data.go.kr 15125467 브랜드 목록, 15125479 가맹점 인테리어 비용)",
                   "year": args.year, "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                  "note": "정보공개서 값(범위의 가운데). 평당 = 단위면적 금액 × 3.3058. 실제 지출보다 낮게 적힌 사례가 있다"},
+                  "note": "정보공개서 값(범위의 가운데). 단위면적은 평(3.3㎡), 금액은 원으로 바꿈. 실제 지출보다 낮게 적힌 사례가 있다"},
         "summary": summary, "brands": rows,
     }, ensure_ascii=False, indent=1), encoding="utf-8")
     for g, s in summary.items():
