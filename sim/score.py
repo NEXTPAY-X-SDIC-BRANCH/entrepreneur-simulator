@@ -285,6 +285,7 @@ def _num(inputs: dict, k: str) -> float | None:
 def _fixes(F: dict, parts: list[dict]) -> list[dict]:
     """다음 판에 바꿔 볼 것. 점수를 가장 많이 잃은 부분부터, 업종별 실제 레버로. expected는 '다른 조건이 그대로일 때'의 단순 계산."""
     ind, b, inp, R = F["industry"], F["bench"], F["inputs"], F["revenue"]
+    kind = ind if ind in ("bbq", "cafe") else "generic"   # 업종 레인의 범용 엔진: 계획 키 staff, hours, price_change_pct, marketing_krw, delivery
     lost = {p["key"]: p["max"] - p["score"] for p in parts}
     out: list[dict] = []
     add = lambda key, text, lever, expected, w: out.append({"key": key, "text": text, "lever": lever, "expected": expected, "_w": w})  # noqa: E731
@@ -293,7 +294,12 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
     lab_gap, rent_gap, cogs_gap = gap(F["labor_ratio"], b["labor"]), gap(F["rent_ratio"], b["rent"]), gap(F["cogs_ratio"], b["cogs"])
     if lab_gap > 0.02:
         save = man(lab_gap * R)
-        if ind == "cafe":
+        if kind == "generic":
+            staff = _num(inp, "staff")
+            text = f"직원 {int(staff)}명 → {int(staff) - 1}명, 또는 영업시간 줄이기" if staff and staff >= 1 else "직원을 한 명 줄이거나 영업시간 줄이기"
+            add("labor", text, "staff",
+                f"인건비 비율 {pct(F['labor_ratio'])} → {pct(b['labor'])}이면 {F['months']}개월 약 +{save} (단순 계산). {SIDE_STAFF}", lost["cost"] + 1 + lab_gap * 10)
+        elif kind == "cafe":
             pol = inp.get("staff_policy")
             text = ("직원 운영을 한 단계 빠듯하게, 또는 영업시간을 짧게" if pol != "lean" else "영업시간을 짧게 (손님 적은 시간 빼기)")
             add("labor", text, "staff_policy" if pol != "lean" else "hours",
@@ -314,7 +320,11 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
             f"임차료 비율 {pct(F['rent_ratio'])} → {pct(b['rent'])}이면 {F['months']}개월 약 +{man(rent_gap * R)} (단순 계산). "
             "좌석이 줄면 손님도 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + rent_gap * 10)
     if cogs_gap > 0.02:
-        if ind == "cafe":
+        if kind == "generic":
+            add("cogs", "가격을 5% 올려 원가율 낮추기", "price_change_pct",
+                f"재료비 비율 {pct(F['cogs_ratio'])} → {pct(b['cogs'])}이면 {F['months']}개월 약 +{man(cogs_gap * R)} (단순 계산). "
+                "가격을 올리면 손님이 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + cogs_gap * 10)
+        elif kind == "cafe":
             add("cogs", "디저트 폐기를 줄이거나 가격을 5% 올려 원가율 낮추기", "price_change_pct",
                 f"재료비 비율 {pct(F['cogs_ratio'])} → {pct(b['cogs'])}이면 {F['months']}개월 약 +{man(cogs_gap * R)} (단순 계산). "
                 "가격을 올리면 손님이 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + cogs_gap * 10)
@@ -327,11 +337,14 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
         add("cash", "문 열 때 운영자금을 더 남기기 (인테리어·평수를 줄이거나 자본금 늘리기)", "capital",
             f"가장 낮을 때도 고정비 3개월치({man(CASH_MONTHS_FULL * F['fixed_month'])})가 남으려면 약 {man(max(0.0, need))} 더 필요", lost["cash"])
     if F["walk_share"] > 0.08:
-        lever = "staff_policy" if ind == "cafe" else "staff_per_shift"
+        lever = {"cafe": "staff_policy", "bbq": "staff_per_shift"}.get(kind, "staff")
         add("walk", "바쁜 시간에 일손이나 자리를 늘리기", lever,
             f"돌아간 손님 {pct(F['walk_share'])}의 절반만 받아도 손님이 약 {_r(F['walk_share'] / 2 * 100)}% 늘어요 (단순 계산)", lost["customer"] + 1)
     if F["rating_end"] is not None and F["rating_end"] < 3.8:
-        if ind == "cafe":
+        if kind == "generic":
+            add("rating", "가격 인상을 되돌리거나 직원을 늘리기", "price_change_pct",
+                f"평점 {F['rating_end']:.2f}점 → 4.0점 이상이 목표 (평점이 손님 수를 정해요)", lost["customer"])
+        elif kind == "cafe":
             add("rating", "가격 인상을 되돌리거나 직원 운영을 넉넉하게", "price_change_pct",
                 f"평점 {F['rating_end']:.2f}점 → 4.0점 이상이 목표 (평점이 손님 수를 정해요)", lost["customer"])
         else:

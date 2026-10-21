@@ -89,7 +89,7 @@ def candidates(F: dict, sc: dict) -> list[dict]:
     b = F["bench"]
     parts = {p["key"]: p for p in sc["parts"]}
     lost = lambda k: parts[k]["max"] - parts[k]["score"]  # noqa: E731
-    cafe = F["industry"] == "cafe"
+    kind = F["industry"] if F["industry"] in ("bbq", "cafe") else "generic"
     out: list[dict] = []
     add = lambda id_, w, title, evidence, why: out.append({"id": id_, "w": w, "title": title, "evidence": evidence, "why": why})  # noqa: E731
     if F["closed"]:
@@ -100,8 +100,9 @@ def candidates(F: dict, sc: dict) -> list[dict]:
     if F["labor_ratio"] - b["labor"] > 0.02:
         add("labor", (F["labor_ratio"] - b["labor"]) * 100, "손님 수에 비해 일손과 영업시간이 많아요",
             f"직원·알바 인건비가 매출의 {pct(F['labor_ratio'])}로 업계 고용인 인건비 {pct(b['labor'])}보다 커요",
-            ("인건비는 손님이 적은 시간에도 그대로 나가요. 손님이 몰리는 시간에 맞춰 직원 운영과 영업시간을 정해야 해요." if cafe else
-             "인건비는 손님이 적은 날에도 그대로 나가요. 교대 인원과 마감 시간을 실제 손님 수에 맞춰야 해요."))
+            {"cafe": "인건비는 손님이 적은 시간에도 그대로 나가요. 손님이 몰리는 시간에 맞춰 직원 운영과 영업시간을 정해야 해요.",
+             "bbq": "인건비는 손님이 적은 날에도 그대로 나가요. 교대 인원과 마감 시간을 실제 손님 수에 맞춰야 해요."}.get(
+                kind, "인건비는 손님이 적은 날에도 그대로 나가요. 직원 수와 영업시간을 실제 손님 수에 맞춰야 해요."))
     if F["rent_ratio"] - b["rent"] > 0.02:
         add("rent", (F["rent_ratio"] - b["rent"]) * 100, "매장 크기와 월세에 비해 매출이 작아요",
             f"임차료가 매출의 {pct(F['rent_ratio'])}로 업계 {pct(b['rent'])}보다 커요",
