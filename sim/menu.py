@@ -136,7 +136,8 @@ def bbq_plan_prices(menu: list[dict], base_meat: float, base_soju: float) -> tup
     return round(base_meat * k["main"]["ratio"]), round(base_soju * k["drink"]["ratio"])
 
 
-def apply_bbq(p: dict, a: dict, menu: list[dict], pork: float, w_meat: float, w_alc: float, base_side_spend: float) -> None:
+def apply_bbq(p: dict, a: dict, menu: list[dict], pork: float, w_meat: float, w_alc: float, base_side_spend: float,
+              table: dict | None = None) -> None:
     """_setup의 엔진 입력을 메뉴로 덮어쓴다 (제자리 수정). pork = 이번 달 돼지고기 원가 배율 (사건, 원육 등급 반영).
     고기: 1인분 평균 가격·원가. 주류·음료: 1병 평균 가격·원가. 식사·사이드: 평균 가격, 원가율, 1인 개수는 자료 고정.
     가게 앞 가격 수준(_price_index)의 사이드 몫을 메뉴의 사이드 가격 수준으로 바꾼다 (고기·주류 몫은 계획 가격에 이미 들어 있다)."""
@@ -157,6 +158,11 @@ def apply_bbq(p: dict, a: dict, menu: list[dict], pork: float, w_meat: float, w_
         p["prd_side_spend_per_cover"] = 0.0
         side_ratio = 1.0
     p["_price_index"] += (1 - w_meat - w_alc) * (side_ratio - 1)
+    if table and table.get("cost") is not None:
+        # 기본 상차림: 엔진의 반찬 원가(반찬 가짓수 x 가짓수당 단가, 사건 배율 포함)를 상차림 원가로 바꾼다. 가짓수 비례는 그대로
+        part = p["cst_banchan_cost_per_cover"] - table["extras"]
+        engine_base = table["base_banchan"] * table["unit"]   # 엔진의 기본 반찬 원가 (5가지 x 단가)
+        p["cst_banchan_cost_per_cover"] = part * table["cost"] / engine_base + table["extras"]
 
 
 # ------------------------------------------------------------------------------------------------- 카페 엔진 (sim/cafe/season.py)
@@ -201,7 +207,7 @@ def cafe_money(mc: dict, ds_eff: float, served: float, price_mult: float) -> tup
 
 
 # ------------------------------------------------------------------------------------------------- 원가 계산 (오늘 시세)
-def item_cost(item: dict, industry: str, grade: str = "domestic", snap: dict | None = None) -> dict:
+def item_cost(item: dict, industry: str, grade: str = "domestic", snap: dict | None = None, overhead: dict | None = None) -> dict:
     """recipe → 원가 내역. 재료 단가는 ingredients_today.json, 없는 재료는 missing. 손실(overhead)은 가정."""
     snap = snap or snapshot()
     t = template(industry)
@@ -218,12 +224,22 @@ def item_cost(item: dict, industry: str, grade: str = "domestic", snap: dict | N
                       "amount": round(qty * s["price"]), "source": s["source"], "date": s.get("date"),
                       "stage": s.get("stage")})
     raw = sum(x["amount"] for x in lines)
-    oh = t["overhead"].get(item.get("kind"), {"value": 0.0})
+    oh = overhead or t["overhead"].get(item.get("kind"), {"value": 0.0})
     mult = t["aged_cost_mult"]["value"] if industry == "bbq" and item.get("kind") == "main" and grade == "aged" else 1.0
     total = raw * mult * (1 + oh["value"])
     assumed = sum(x["amount"] for x in lines if x["stage"] == "가정")
     return {"unit_cost": round(total, -1), "raw": raw, "overhead": oh, "aged_mult": mult, "lines": lines, "missing": missing,
             "assumed_share": assumed / raw if raw else 1.0}
+
+
+def table_setting(industry: str = "bbq", snap: dict | None = None) -> dict | None:
+    """기본 상차림 원가 (손님 1명당, 반찬 기본 가짓수 기준). 고깃집만."""
+    ts = template(industry).get("table_setting")
+    if not ts:
+        return None
+    c = item_cost({"recipe": ts["recipe"], "kind": "_table"}, industry, "domestic", snap, overhead=ts["overhead"])
+    return {"label": ts["label"], "base_banchan": ts["base_banchan"], "cost": c["unit_cost"], "cost_source": "data",
+            "cost_detail": c}
 
 
 def with_costs(menu: list[dict], industry: str, grade: str = "domestic") -> list[dict]:

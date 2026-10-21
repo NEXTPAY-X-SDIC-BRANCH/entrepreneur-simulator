@@ -26,7 +26,7 @@ def _scale(industry: str, district: str | None) -> float:
     return M.cafe_scale(d["ticket_krw"]["value"], v("season", "dessert_share"), v("demand", "cups_per_tx"))
 
 
-def _per_cover(industry: str, menu: list[dict], scale: float) -> dict:
+def _per_cover(industry: str, menu: list[dict], scale: float, table_cost: float = 0.0) -> dict:
     """1인(카페는 결제 1건) 예상 지출: 자료가 정한 개수 x 메뉴 평균 가격. 가격 탄력성 전, 화면 요약용."""
     k = M.kind_stats(M.clean(menu, industry) or [], industry, scale)
     if industry == "bbq":
@@ -38,6 +38,8 @@ def _per_cover(industry: str, menu: list[dict], scale: float) -> dict:
         cost = ((k["main"]["cost"] * p["prd_portions_per_cover"] if "main" in k else 0.0)
                 + (k["drink"]["cost"] * p["prd_alcohol_per_cover"] if "drink" in k else 0.0)
                 + (side["cost"] * p["prd_side_spend_per_cover"] / M.ref_prices("bbq")["side"] if side else 0.0))
+        menu_cost = cost
+        cost += table_cost   # 기본 상차림 (손님 1명당)
     else:
         from sim.cafe.params import v
         mc = M.cafe_ctx(M.clean(menu, "cafe"), M.ref_prices("cafe")["drink"] * scale * v("demand", "cups_per_tx")
@@ -45,18 +47,21 @@ def _per_cover(industry: str, menu: list[dict], scale: float) -> dict:
         ds = v("season", "dessert_share")
         t, _, _, food = M.cafe_money(mc, ds, 1.0, 1.0)
         parts = {"drink": mc["cups"] * mc["drink"]["price"], "side": t - mc["cups"] * mc["drink"]["price"]}
-        cost = food
+        cost = menu_cost = food
     total = sum(parts.values())
-    return {"ticket": round(total), "parts": {k_: round(x) for k_, x in parts.items()},
+    return {"ticket": round(total), "parts": {k_: round(x) for k_, x in parts.items()}, "table_cost": round(table_cost),
+            "menu_cost_ratio": round(menu_cost / total, 3) if total else 0.0,
             "cost_ratio": round(cost / total, 3) if total else 0.0}
 
 
-def _out(industry: str, menu: list[dict], scale: float) -> dict:
+def _out(industry: str, menu: list[dict], scale: float, table: dict | None = None) -> dict:
     t = M.template(industry)
     snap = M.snapshot()
     return {"industry": industry, "items": menu, "kinds": t["kinds"], "overhead": t["overhead"],
-            "aged_cost_mult": t.get("aged_cost_mult"), "scale": round(scale, 4),
-            "levels": M.summary(menu, industry, scale), "per_cover": _per_cover(industry, menu, scale),
+            "aged_cost_mult": t.get("aged_cost_mult"), "scale": round(scale, 4), "table_setting": table,
+            "benchmark": t.get("benchmark"),
+            "levels": M.summary(menu, industry, scale),
+            "per_cover": _per_cover(industry, menu, scale, table["cost"] if table else 0.0),
             "snapshot": {"basis_date": snap["_meta"].get("basis_date"), "generated": snap["_meta"].get("generated"),
                          "caveat": snap["_meta"].get("caveat"),
                          "sources": [{k: s.get(k) for k in ("id", "publisher", "title", "url", "stage", "status", "basis_date", "note")}
@@ -68,7 +73,7 @@ def menu_template(industry: str = "bbq", grade: str = "domestic", district: str 
     if industry not in ("bbq", "cafe") or grade not in GRADES:
         raise HTTPException(422, "industry는 bbq|cafe, grade는 imported|domestic|aged")
     sc = _scale(industry, district)
-    return _out(industry, M.template_menu(industry, grade, sc), sc)
+    return _out(industry, M.template_menu(industry, grade, sc), sc, M.table_setting(industry))
 
 
 @router.post("/recompute")
@@ -87,4 +92,14 @@ def menu_recompute(body: dict[str, Any] = Body(...)) -> dict:
         for x in items:
             x.pop("cost_source", None)
     sc = _scale(industry, body.get("district"))
-    return _out(industry, M.with_costs(items, industry, grade), sc)
+    table = M.table_setting(industry)
+    sent = body.get("table_setting") or {}
+    if table and sent.get("cost_source") == "user" and not body.get("force"):   # 직접 고친 상차림 원가는 그대로
+        try:
+            cost = float(sent["cost"])
+        except (KeyError, TypeError, ValueError) as e:
+            raise HTTPException(422, "table_setting.cost는 숫자여야 합니다") from e
+        if not 0 <= cost <= 20000:
+            raise HTTPException(422, "기본 상차림 원가는 0 ~ 2만원이어야 합니다")
+        table = {**table, "cost": cost, "cost_source": "user"}
+    return _out(industry, M.with_costs(items, industry, grade), sc, table)

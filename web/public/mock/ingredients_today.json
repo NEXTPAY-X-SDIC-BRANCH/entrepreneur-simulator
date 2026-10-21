@@ -11,10 +11,10 @@
     "title": "생필품 농수축산물 가격 정보 (전통시장·대형마트)",
     "url": "https://data.seoul.go.kr/dataList/OA-1170/S/1/datasetView.do",
     "stage": "소매",
-    "status": "cached",
+    "status": "ok",
     "basis_date": "2026-10-19",
-    "note": "SEOUL_OPEN_DATA_KEY가 없어 지난 스냅샷 값을 씀",
-    "items": 23
+    "note": "2026-10-19 조사 1857행에서 24개 품목",
+    "items": 24
    },
    {
     "id": "kamis",
@@ -69,40 +69,49 @@
     "status": "ok",
     "basis_date": null,
     "note": "공개 자료 없음, 전부 가정",
-    "items": 9
+    "items": 11
    }
   ]
  },
  "items": {
+  "banchan_misc": {
+   "name": "기본 반찬 재료 기타 (손님 1명)",
+   "unit": "인",
+   "price": 300,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "콩나물·무쌈·파절이 양념 등 기본 반찬 재료 가정"
+  },
   "beef_import_retail": {
    "name": "수입 소고기 등심 (소매)",
    "unit": "kg",
-   "price": 40000,
-   "n": 17,
+   "price": 42450,
+   "n": 14,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 17곳 중앙값"
+   "note": "서울 전통시장·대형마트 14곳 중앙값"
   },
   "beef_korean_retail": {
    "name": "한우 등심 1등급 이상 (소매)",
    "unit": "kg",
-   "price": 130000,
-   "n": 25,
+   "price": 129500,
+   "n": 24,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 25곳 중앙값"
+   "note": "서울 전통시장·대형마트 24곳 중앙값"
   },
   "beer": {
    "name": "맥주 500ml (캔)",
    "unit": "병",
-   "price": 2300,
-   "n": 17,
+   "price": 2350,
+   "n": 20,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 17곳 중앙값"
+   "note": "서울 전통시장·대형마트 20곳 중앙값"
   },
   "broth_misc": {
    "name": "육수·양념 기타 (1그릇)",
@@ -122,6 +131,16 @@
    "stage": "가정",
    "note": "업소용 버터 가정"
   },
+  "cabbage": {
+   "name": "배추 (가을)",
+   "unit": "포기",
+   "price": 6295,
+   "n": 12,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 12곳 중앙값"
+  },
   "cake_slice": {
    "name": "조각 케이크 (완제품 납품)",
    "unit": "조각",
@@ -130,6 +149,15 @@
    "date": null,
    "stage": "가정",
    "note": "완제품 케이크 한 조각 납품가 가정"
+  },
+  "charcoal": {
+   "name": "숯 (손님 1명)",
+   "unit": "인",
+   "price": 600,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "참숯 한 판을 손님 수로 나눈 값 가정. 가스는 공과금에 들어 있음"
   },
   "chicken": {
    "name": "닭고기 (육계)",
@@ -144,12 +172,12 @@
   "chili": {
    "name": "청양고추",
    "unit": "kg",
-   "price": 10000,
-   "n": 27,
+   "price": 9800,
+   "n": 25,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 27곳 중앙값",
+   "note": "서울 전통시장·대형마트 25곳 중앙값",
    "alt": [
     {
      "price": 12180,
@@ -163,12 +191,12 @@
   "cider": {
    "name": "사이다",
    "unit": "L",
-   "price": 1987,
-   "n": 21,
+   "price": 1990,
+   "n": 22,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 21곳 중앙값"
+   "note": "서울 전통시장·대형마트 22곳 중앙값"
   },
   "coffee_beans": {
    "name": "원두 (블렌드, 납품)",
@@ -182,12 +210,12 @@
   "cola": {
    "name": "콜라",
    "unit": "L",
-   "price": 2067,
-   "n": 19,
+   "price": 2150,
+   "n": 22,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 19곳 중앙값"
+   "note": "서울 전통시장·대형마트 22곳 중앙값"
   },
   "croffle_dough": {
    "name": "크로플 생지",
@@ -201,32 +229,32 @@
   "doenjang": {
    "name": "된장",
    "unit": "kg",
-   "price": 8480,
-   "n": 19,
+   "price": 8500,
+   "n": 21,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 19곳 중앙값"
+   "note": "서울 전통시장·대형마트 21곳 중앙값"
   },
   "egg": {
    "name": "계란 (특란)",
    "unit": "개",
    "price": 300,
-   "n": 18,
+   "n": 17,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 18곳 중앙값"
+   "note": "서울 전통시장·대형마트 17곳 중앙값"
   },
   "flour": {
    "name": "밀가루 (중력)",
    "unit": "kg",
-   "price": 1980,
-   "n": 19,
+   "price": 1990,
+   "n": 21,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 19곳 중앙값"
+   "note": "서울 전통시장·대형마트 21곳 중앙값"
   },
   "fruit_base": {
    "name": "과일청 베이스 (시즌 음료)",
@@ -240,12 +268,12 @@
   "garlic": {
    "name": "깐마늘",
    "unit": "kg",
-   "price": 10700,
-   "n": 26,
+   "price": 11450,
+   "n": 24,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 26곳 중앙값",
+   "note": "서울 전통시장·대형마트 24곳 중앙값",
    "alt": [
     {
      "price": 10103,
@@ -259,12 +287,12 @@
   "gochujang": {
    "name": "고추장",
    "unit": "kg",
-   "price": 15500,
-   "n": 19,
+   "price": 16000,
+   "n": 21,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 19곳 중앙값"
+   "note": "서울 전통시장·대형마트 21곳 중앙값"
   },
   "green_onion": {
    "name": "대파",
@@ -279,11 +307,11 @@
    "name": "상추 (청)",
    "unit": "kg",
    "price": 7900,
-   "n": 19,
+   "n": 17,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 19곳 중앙값",
+   "note": "서울 전통시장·대형마트 17곳 중앙값",
    "alt": [
     {
      "price": 9490,
@@ -298,11 +326,11 @@
    "name": "우유",
    "unit": "L",
    "price": 3200,
-   "n": 19,
+   "n": 22,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 19곳 중앙값"
+   "note": "서울 전통시장·대형마트 22곳 중앙값"
   },
   "naengmyeon_set": {
    "name": "냉면 사리 + 육수 (1인분)",
@@ -325,12 +353,12 @@
   "perilla": {
    "name": "깻잎",
    "unit": "kg",
-   "price": 15000,
-   "n": 25,
+   "price": 13250,
+   "n": 24,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 25곳 중앙값",
+   "note": "서울 전통시장·대형마트 24곳 중앙값",
    "alt": [
     {
      "price": 25340,
@@ -362,12 +390,12 @@
   "pork_belly_retail": {
    "name": "돼지 삼겹살 (소매)",
    "unit": "kg",
-   "price": 30455,
-   "n": 26,
+   "price": 30500,
+   "n": 24,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 26곳 중앙값"
+   "note": "서울 전통시장·대형마트 24곳 중앙값"
   },
   "pork_gabri": {
    "name": "돼지 가브리살 (국내산, 도매)",
@@ -426,12 +454,12 @@
   "potato": {
    "name": "감자",
    "unit": "kg",
-   "price": 3300,
-   "n": 25,
+   "price": 3200,
+   "n": 24,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 25곳 중앙값",
+   "note": "서울 전통시장·대형마트 24곳 중앙값",
    "alt": [
     {
      "price": 3140,
@@ -454,32 +482,32 @@
   "rice_brand_retail": {
    "name": "쌀 (브랜드 10kg, 소매)",
    "unit": "kg",
-   "price": 5700,
-   "n": 33,
+   "price": 5800,
+   "n": 35,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 33곳 중앙값"
+   "note": "서울 전통시장·대형마트 35곳 중앙값"
   },
   "soju": {
    "name": "소주 360ml",
    "unit": "병",
-   "price": 1500,
-   "n": 19,
-   "source": "seoul_necessities",
-   "date": "2026-10-19",
-   "stage": "소매",
-   "note": "서울 전통시장·대형마트 19곳 중앙값"
-  },
-  "sugar": {
-   "name": "설탕",
-   "unit": "kg",
-   "price": 2990,
+   "price": 1550,
    "n": 22,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
    "note": "서울 전통시장·대형마트 22곳 중앙값"
+  },
+  "sugar": {
+   "name": "설탕",
+   "unit": "kg",
+   "price": 3200,
+   "n": 23,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 23곳 중앙값"
   },
   "tea_bag": {
    "name": "티백·잎차 (1잔)",
@@ -493,12 +521,12 @@
   "tofu": {
    "name": "두부 (380g 한 모)",
    "unit": "모",
-   "price": 3175,
-   "n": 18,
+   "price": 3070,
+   "n": 20,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 18곳 중앙값"
+   "note": "서울 전통시장·대형마트 20곳 중앙값"
   },
   "vanilla_syrup": {
    "name": "바닐라 시럽",
@@ -513,21 +541,21 @@
    "name": "생수 500ml",
    "unit": "병",
    "price": 600,
-   "n": 19,
+   "n": 22,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 19곳 중앙값"
+   "note": "서울 전통시장·대형마트 22곳 중앙값"
   },
   "zucchini": {
    "name": "애호박",
    "unit": "개",
    "price": 1000,
-   "n": 25,
+   "n": 24,
    "source": "seoul_necessities",
    "date": "2026-10-19",
    "stage": "소매",
-   "note": "서울 전통시장·대형마트 25곳 중앙값",
+   "note": "서울 전통시장·대형마트 24곳 중앙값",
    "alt": [
     {
      "price": 1113,

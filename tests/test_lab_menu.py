@@ -204,3 +204,23 @@ def test_ingredient_snapshot_offline_build_is_labelled(monkeypatch):
         for x in M.template(ind)["items"]:
             for ing, _ in x["recipe"] + [r for rs in (x.get("alt_recipe") or {}).values() for r in rs]:
                 assert ing in doc["items"], (ind, x["id"], ing)
+
+
+def test_table_setting_replaces_engine_banchan_cost():
+    c = TestClient(app)
+    d = c.get("/lab/menu/template", params={"industry": "bbq"}).json()
+    ts = d["table_setting"]
+    assert ts["cost"] > 1200 and {l["source"] for l in ts["cost_detail"]["lines"]} >= {"seoul_necessities", "assumed"}
+    assert d["benchmark"]["cost_ratio"] == pytest.approx(0.42) and "경영실태조사" in d["benchmark"]["source"]
+    assert d["per_cover"]["cost_ratio"] > d["per_cover"]["menu_cost_ratio"]
+    tm = [{k: x[k] for k in ("id", "name", "kind", "price", "unit_cost", "mix")} for x in d["items"]]
+    no_t, su0 = _bbq({**S.base_plan(), "menu": tm})
+    with_t, su1 = _bbq({**S.base_plan(), "menu": tm, "table_cost": ts["cost"]})
+    assert su0["params"]["cst_banchan_cost_per_cover"] == pytest.approx(1200)            # 상차림을 안 주면 엔진 반찬 원가 그대로
+    assert su1["params"]["cst_banchan_cost_per_cover"] == pytest.approx(ts["cost"])
+    more, su2 = _bbq({**S.base_plan(), "menu": tm, "table_cost": ts["cost"], "banchan": 8})
+    assert su2["params"]["cst_banchan_cost_per_cover"] == pytest.approx(ts["cost"] * 8 / 5)   # 반찬 가짓수 비례는 그대로
+    assert with_t["cogs"] > no_t["cogs"] and with_t["revenue"] == pytest.approx(no_t["revenue"])
+    kept = c.post("/lab/menu/recompute", json={"industry": "bbq", "menu": d["items"],
+                                               "table_setting": {"cost": 900, "cost_source": "user"}}).json()
+    assert kept["table_setting"]["cost"] == 900 and kept["per_cover"]["table_cost"] == 900

@@ -234,6 +234,8 @@ def _validate(plan: dict) -> dict:
         p["menu"] = menu_mod.clean(p["menu"], "bbq")
         if p["menu"]:
             p["meat_price"], p["soju_price"] = menu_mod.bbq_plan_prices(p["menu"], base_plan()["meat_price"], base_plan()["soju_price"])
+            if p.get("table_cost") is not None:   # 기본 상차림 원가 (원/손님, 반찬 5가지 기준)
+                p["table_cost"] = float(min(max(float(p["table_cost"]), 0.0), 20000.0))
         else:
             del p["menu"]
     p["meat_price"] = int(min(max(p["meat_price"], 12000), 30000))
@@ -303,7 +305,9 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
     a["svc_extra_per_party_min"] = v("staff.table_tasks_min") + sum(x["service_min"] for x in extras)
     a["reorder_patience_min"] = v("staff.reorder_patience_min")
     if plan.get("menu"):   # lab:menu  메뉴판 → 1인분·1병 평균 가격과 원가, 사이드 지출과 원가율 (sim/menu.py)
-        menu_mod.apply_bbq(p, a, plan["menu"], pork, w_meat, w_alc, base["prd_side_spend_per_cover"])
+        menu_mod.apply_bbq(p, a, plan["menu"], pork, w_meat, w_alc, base["prd_side_spend_per_cover"],
+                           {"cost": plan.get("table_cost"), "extras": sum(x["cost_per_cover"] for x in extras),
+                            "base_banchan": base_plan()["banchan"], "unit": v("banchan.cost_per_item")})
 
     # service: staff grilling, staff per shift (a sudden quit removes one this month), fatigue slows service
     p["svc_staff_grilling"] = "Y" if plan["staff_grilling"] else "N"

@@ -13,6 +13,14 @@ overhead:   # 재료비에 더하는 손실 (가정): 고기 손질·굽기 손�
   side: {value: 0.05, tag: 가정, note: "조리 손실·남는 재료"}
   drink: {value: 0.0, tag: 가정, note: "병 그대로 냄"}
 aged_cost_mult: {value: 1.333, tag: "S23;가정", note: "숙성 원가 6,000 ÷ 국내산 4,500 (research/season_params.yaml meat_grade)"}
+benchmark: {cost_ratio: 0.420, label: 한식 육류 요리 전문점 식재료비 비율,
+            source: "2025 외식업체 경영실태조사 (농식품부·농경연), 연 식재료비 14,440.8만원 ÷ 연 매출 34,414.2만원, n=275, 전국 (web/public/mock/gogi_krei.json)"}
+table_setting:   # 기본 상차림 (손님 1명당): 메뉴 줄에 없는 쌈채소·쌈장·김치·기본 반찬·숯. 반찬 가짓수(기본 5가지)에 비례
+  label: 기본 상차림 (손님 1명당)
+  base_banchan: 5
+  overhead: {value: 0.10, tag: 가정, note: "남는 쌈채소·반찬 폐기"}
+  recipe: [[lettuce, 0.03], [perilla, 0.01], [garlic, 0.015], [chili, 0.008], [onion, 0.03], [gochujang, 0.02], [cabbage, 0.05],
+           [banchan_misc, 1], [charcoal, 1]]
 items:
   - {id: samgyeopsal, name: 삼겹살, kind: main, price: 19000, mix: 55, portion: 200g,
      recipe: [[pork_belly, 0.2]], alt_recipe: {imported: [[pork_belly_import, 0.2]]}}

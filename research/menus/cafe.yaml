@@ -8,6 +8,8 @@ kinds:
 overhead:   # 레시피 재료비를 실제 식재료비로 맞추는 보정 (가정): 손실, 폐기, 시럽·얼음·휘핑, 직원 음료, 서비스 제공분
   drink: {value: 1.00, tag: "농경연 2024;가정", note: "레시피 재료비만큼 더 든다고 봄. 기본 메뉴의 음료+디저트 원가율이 업계 평균 식재료비율 38.9% (농경연 2024 비알코올 음료점) 근처가 되게 맞춘 값"}
   side: {value: 0.10, tag: 가정, note: "디저트 원가율 40% (농경연 2025 제과 39.7%) 근처"}
+benchmark: {cost_ratio: 0.389, label: 비알코올 음료점 식재료비 비율,
+            source: "농경연 2024 비알코올 음료점 식재료비 38.9% (research/cafe/params.yaml opex.food_cost_share)"}
 items:
   - {id: americano, name: 아메리카노, kind: drink, price: 3500, mix: 45, recipe: [[coffee_beans, 0.018]]}
   - {id: latte, name: 카페라떼, kind: drink, price: 4300, mix: 25, recipe: [[coffee_beans, 0.018], [milk, 0.2]]}

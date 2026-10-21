@@ -9,3 +9,5 @@ cake_slice:     {name: "조각 케이크 (완제품 납품)", unit: 조각, pric
 butter:         {name: "버터 (업소용)", unit: kg, price: 16000, note: "업소용 버터 가정"}
 naengmyeon_set: {name: "냉면 사리 + 육수 (1인분)", unit: 인분, price: 1600, note: "업소용 냉면 사리와 육수 1인분 가정"}
 broth_misc:     {name: "육수·양념 기타 (1그릇)", unit: 그릇, price: 300, note: "찌개 육수와 양념 가정"}
+banchan_misc:   {name: "기본 반찬 재료 기타 (손님 1명)", unit: 인, price: 300, note: "콩나물·무쌈·파절이 양념 등 기본 반찬 재료 가정"}
+charcoal:       {name: "숯 (손님 1명)", unit: 인, price: 600, note: "참숯 한 판을 손님 수로 나눈 값 가정. 가스는 공과금에 들어 있음"}
