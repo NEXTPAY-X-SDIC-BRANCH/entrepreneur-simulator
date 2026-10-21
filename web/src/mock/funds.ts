@@ -39,14 +39,17 @@ export const FUNDS: Fund[] = [
 export const FUNDS_SRC = "예비창업 정책자금 정리표 (기관 안내와 업계 글 포함, 원문 확인 필요)";
 
 // 지역신용보증재단 보증서 대출을 방문 없이 앱으로 신청할 수 있는 은행 (신용보증재단중앙회 '비대면 보증' 안내, 2026-10-20 확인).
-// 링크는 각 은행의 기업·개인사업자 뱅킹 첫 화면이다. 대출 중개로 보이지 않게 은행을 추천하거나 순서를 매기지 않는다 (가나다순).
-export const BANKS: { name: string; url: string }[] = [
-  { name: "KB국민은행", url: "https://obiz.kbstar.com/" },
-  { name: "IBK기업은행", url: "https://kiup.ibk.co.kr/" },
-  { name: "NH농협은행", url: "https://banking.nonghyup.com/" },
-  { name: "신한은행", url: "https://bizbank.shinhan.com/" },
-  { name: "우리은행", url: "https://nbi.wooribank.com/" },
-  { name: "하나은행", url: "https://biz.kebhana.com/" },
+// 신청은 은행 앱에서 하므로 링크는 각 은행 앱의 Google Play 안내 페이지다. 은행 인터넷뱅킹·상품 페이지는 들어가자마자
+// 보안 프로그램(TouchEn·Veraport·Delfino 등) 설치를 요구할 수 있어 쓰지 않는다 (2026-10-21 확인, 앱 이름도 이날 기준).
+// 대출 중개로 보이지 않게 은행을 추천하거나 순서를 매기지 않는다 (가나다순).
+const PLAY = (id: string) => `https://play.google.com/store/apps/details?id=${id}&hl=ko`;
+export const BANKS: { name: string; app: string; url: string }[] = [
+  { name: "KB국민은행", app: "KB스타뱅킹", url: PLAY("com.kbstar.kbbank") },
+  { name: "IBK기업은행", app: "i-ONE Bank", url: PLAY("com.ibk.android.ionebank") },
+  { name: "NH농협은행", app: "NH올원뱅크", url: PLAY("com.nonghyup.nhallonebank") },
+  { name: "신한은행", app: "신한 슈퍼SOL", url: PLAY("com.shinhan.sbanking") },
+  { name: "우리은행", app: "우리WON뱅킹", url: PLAY("com.wooribank.smart.npib") },
+  { name: "하나은행", app: "하나원큐", url: PLAY("com.hanabank.oqf") },
 ];
 export const BANK_GUARANTEE_URL = "https://www.koreg.or.kr/adit/onTact/onTact_01.html";
 // 은행연합회 소비자포털: 은행별 중소기업(개인사업자) 운전자금 대출금리 비교공시 (보증서담보·신용·마이너스)
