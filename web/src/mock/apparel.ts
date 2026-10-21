@@ -124,9 +124,18 @@ export function apparelEstimate(profile: Profile): { pyeong: number; cost: Retur
 
 // ---------------------------------------------------------------- 한 달
 // buy: 예상 판매분 대비 매입 배수, marketing 만원, markdownAge: 몇 달 지난 옷부터 세일 칸으로 옮길지, markdown: 세일 폭, focus: 더 들일 품목
-export type ApPlan = { buy: number; discount: number; staff: number; marketing: number; markdownAge: number; markdown: number; focus: Cat | "none" };
+export type ApPlan = { buy: number; discount: number; staff: number; marketing: number; markdownAge: number; markdown: number; focus: Cat | "none"; online: number };
+// 온라인 판매 (online: 0 안 함 / 1 스마트스토어 / 2 패션 플랫폼 입점). 같은 재고로 판다. 근거: 2026 SS 패션 구매의 52.3%가 온라인 (S105).
+// 매장 대비 늘어나는 주문(lift), 판매 수수료(fee), 월 고정비(fixed, 사진·등록·광고), 주문당 택배비(ship, 만원)와 반품률은 가정이다
+export const ONLINE = [
+  { label: "안 함", lift: 0, fee: 0, fixed: 0, ship: 0 },
+  { label: "스마트스토어", lift: 0.15, fee: 0.056, fixed: 15, ship: 0.3 },
+  { label: "패션 플랫폼 입점", lift: 0.35, fee: 0.28, fixed: 10, ship: 0.3 },
+];
+const ONLINE_RETURN = 0.15; // 가정: 온라인 주문 중 반품 비율 (반품 택배비만 더 든다고 본다)
+export const ONLINE_ASSUME = "온라인 주문 증가(스마트스토어 매장의 +15%, 플랫폼 +35%), 수수료(5.6% / 28%), 택배비 3,000원, 반품 15%, 월 고정비(15만 / 10만원), 온라인 매출의 기타경비 15%, 포장 일손은 가정. 인터뷰로 확인 필요";
 // 세일 시작 2달·폭 30%: "직영점이나 백화점에서 통상 1~2개월 정상판매되고 … 정상가의 20~30% 할인된 가격으로" (장은영 2001)
-export const DEFAULT_PLAN: ApPlan = { buy: 1, discount: 0, staff: 0, marketing: 0, markdownAge: 2, markdown: 0.3, focus: "none" };
+export const DEFAULT_PLAN: ApPlan = { buy: 1, discount: 0, staff: 0, marketing: 0, markdownAge: 2, markdown: 0.3, focus: "none", online: 0 };
 // costAvg = 지금 선반 재고를 산 평균 원가 배수 (매입 방식·재주문에 따라 1 근처). 재고를 돈으로 셀 때 곱한다
 export type ApState = { cash: number; inv: Inv; costAvg: number; awareness: number; negMonths: number; closed: boolean };
 export type Fx = { demand?: number; buy?: number; discount?: number; cost?: number; awareness?: number; clear?: number; clearCut?: number; buyCost?: number }; // buyCost: 이달 매입 단가 배수
@@ -135,7 +144,7 @@ export type CatMonth = { demand: number; bought: number; sold: number; mdSold: n
 export type ApMonth = {
   month: number; revenue: number; cogs: number; staffPay: number; rent: number; other: number; marketing: number; eventCost: number;
   op: number; interest: number; draw: number; purchase: number; settle: number; cash: number; stockEnd: number; oldEnd: number; consigned: number;
-  writeOff: number; returned: number; mdRev: number; clearRev: number;
+  writeOff: number; returned: number; mdRev: number; clearRev: number; onlineRev: number; onlineCost: number; onlineOrders: number;
   lost: number; lostStock: number; lostCap: number; fill: number; sellThrough: number; load: number; tx: number; ticket: number; awareness: number;
   closed: boolean; demand: number; plan: ApPlan; event: string; choice: string; buyMode: BuyMode; ordered: boolean;
   cats: Record<Cat, CatMonth>; invEnd: Inv; costAvg: number;
@@ -160,8 +169,11 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   const cogsR = KOSIS.cogs;
   const discount = Math.min(0.5, plan.discount + (fx.discount ?? 0));
   const baseAt = (mm: number) => expectedSales(profile.gu, cfg.pyeong) * (st.qidx[Math.floor((mm - 1) / 3)] ?? 1) * MONTH_IN_QUARTER[mm];
-  const demand = baseAt(month) * s.awareness * (ev.demand ?? 1) * (fx.demand ?? 1) * (1 + ELASTIC * discount); // 정가로 팔고 싶은 양 (만원)
-  const capacity = KOSIS.perWorker * HEADROOM * (1 + plan.staff);                                                // 사장 + 알바가 감당하는 매출
+  const demandStore = baseAt(month) * s.awareness * (ev.demand ?? 1) * (fx.demand ?? 1) * (1 + ELASTIC * discount); // 매장에서 정가로 팔고 싶은 양 (만원)
+  const on = ONLINE[plan.online ?? 0] ?? ONLINE[0];
+  const demand = demandStore * (1 + on.lift);   // 온라인 주문도 같은 재고·같은 일손(포장)으로 받는다
+  // 사장 + 알바가 감당하는 매출. 온라인 주문 포장은 영업시간 밖에 한다고 보고 그 절반만큼 일손을 더 쳐 준다 (가정)
+  const capacity = KOSIS.perWorker * HEADROOM * (1 + plan.staff) * (1 + on.lift * 0.5);
   const mix = mixOf(month);
   const inv: Inv = { top: [...s.inv.top], bottom: [...s.inv.bottom], outer: [...s.inv.outer], acc: [...s.inv.acc] };
   const mdAge = plan.markdownAge;
@@ -251,24 +263,29 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   const own = consign ? 0 : 1;
   const writeOff = woUnits * costAvg * own;
   const revenue = fullRev * (1 - discount) + mdRev + clearRev;
+  // 온라인 몫: 정가 판매 중 온라인 주문 비중만큼. 수수료 + (주문 + 반품) 택배비 + 월 고정비
+  const onlineRev = on.lift > 0 ? fullRev * (1 - discount) * (on.lift / (1 + on.lift)) : 0;
+  const onlineOrders = (onlineRev * 1e4) / st.ticket;
+  const onlineCost = on.lift > 0 ? onlineRev * on.fee + onlineOrders * (1 + ONLINE_RETURN) * on.ship + on.fixed : 0;
   const cogs = soldUnits * (consign ? bm.cost : costAvg);
   const staffPay = STAFF_PAY * plan.staff;
   const rent = st.rent * cfg.pyeong;
-  const other = revenue * KOSIS.other;
+  // 기타경비(카드 수수료·공과금·포장 등)는 매장 매출에 도소매업조사 비율, 온라인 매출에는 15% (카드 수수료는 플랫폼 수수료로 대신, 가정)
+  const other = (revenue - onlineRev) * KOSIS.other + onlineRev * 0.15;
   const marketing = plan.marketing;
   const eventCost = fx.cost ?? 0;
-  const op = revenue - cogs - staffPay - rent - other - marketing - eventCost - writeOff;
+  const op = revenue - cogs - staffPay - rent - other - marketing - eventCost - writeOff - onlineCost;
   const interest = (cfg.loan * LOAN_RATE) / 12;
   const purchase = consign ? 0 : paid;
   const settle = consign ? cogs : 0; // 위탁: 팔린 옷값을 도매상에 정산
-  const cash = s.cash + revenue - purchase - settle - staffPay - rent - other - marketing - eventCost - OWNER_DRAW - interest;
+  const cash = s.cash + revenue - purchase - settle - staffPay - rent - other - marketing - eventCost - onlineCost - OWNER_DRAW - interest;
   const negMonths = cash < 0 ? s.negMonths + 1 : 0;
   const awareness = Math.min(1.3, s.awareness + (1 - s.awareness) * 0.15 + (marketing / 100) * 0.15 + (fx.awareness ?? 0));
   const endUnits = invTotal(inv);
   const m: ApMonth = {
     month, revenue, cogs, staffPay, rent, other, marketing, eventCost, op, interest, draw: OWNER_DRAW, purchase, settle, cash,
     stockEnd: endUnits * costAvg * own, oldEnd: invTotal(inv, OLD_AGE) * costAvg * own, consigned: consign ? endUnits * bm.cost : 0,
-    writeOff, returned: returned * bm.cost, mdRev, clearRev,
+    writeOff, returned: returned * bm.cost, mdRev, clearRev, onlineRev, onlineCost, onlineOrders,
     lost: lostStock + lostCap, lostStock, lostCap, fill: demand > 0 ? reachAll / demand : 1,
     sellThrough: avail > 0 ? soldUnits / avail : 0, load: Math.min(1.5, demand / capacity), tx: (revenue * 1e4) / st.ticket, ticket: st.ticket,
     awareness, closed: negMonths >= 2, demand, plan, event: ev.title, choice: opt.label, buyMode: cfg.buyMode, ordered,
@@ -360,7 +377,7 @@ export function apStrategies(last: ApMonth | undefined, plan: ApPlan): { id: ApS
     if (last.op < 0 && rec.marketing > 0) rec = { ...rec, marketing: 0 };
     if (last.awareness < 0.8 && last.cash > 1000 && rec.marketing === 0) rec = { ...rec, marketing: 50 };
   }
-  const grow = { ...b, marketing: Math.max(50, b.marketing), buy: Math.min(1.5, +(b.buy + 0.2).toFixed(1)), discount: Math.min(0.3, +(b.discount + 0.05).toFixed(2)) };
+  const grow = { ...b, marketing: Math.max(50, b.marketing), buy: Math.min(1.5, +(b.buy + 0.2).toFixed(1)), discount: Math.min(0.3, +(b.discount + 0.05).toFixed(2)), online: Math.max(1, b.online ?? 0) };
   const save = { ...b, staff: Math.max(0, b.staff - 1), buy: Math.max(0.7, +(b.buy - 0.15).toFixed(2)), marketing: 0, discount: 0, markdownAge: 2, markdown: Math.max(b.markdown, 0.4) };
   return [
     { id: "rec", title: "추천대로", desc: last ? "지난달 결과를 보고 고칠 곳만 고쳐요. 다음 달 잘 팔릴 품목을 더 들여요." : "첫 달은 기본 계획으로 시작해요.", plan: rec, changes: diffPlan(b, rec) },
@@ -377,6 +394,7 @@ export const PLAN_TEXT: Record<keyof ApPlan, { label: string; text: (p: ApPlan) 
   markdown: { label: "세일 폭", text: (p) => `${Math.round(p.markdown * 100)}%`, hint: "폭이 클수록 세일 칸이 빨리 비지만 남는 돈이 줄어요. 30%면 제철 품목은 한 달에 55%가 팔려요 (가정)" },
   staff: { label: "알바", text: (p) => `${p.staff}명`, hint: `한 명에 월 ${STAFF_PAY}만원. 일손이 모자라면 바쁜 날 손님을 놓쳐요` },
   marketing: { label: "SNS 홍보비", text: (p) => (p.marketing ? `${p.marketing}만원` : "없음"), hint: "인지도가 올라 손님이 늘어요 (100만원당 인지도 +0.15, 고깃집과 같은 가정)" },
+  online: { label: "온라인 판매", text: (p) => ONLINE[p.online ?? 0].label, hint: "같은 재고를 온라인으로도 팔아요. 스마트스토어는 수수료가 싸고 손님이 적게 늘고, 플랫폼은 손님이 많이 늘지만 수수료가 28%예요 (가정). 택배비와 반품도 들어요" },
 };
 const diffPlan = (a: ApPlan, b: ApPlan) => (Object.keys(PLAN_TEXT) as (keyof ApPlan)[])
   .filter((k) => PLAN_TEXT[k].text(a) !== PLAN_TEXT[k].text(b)).map((k) => `${PLAN_TEXT[k].label} ${PLAN_TEXT[k].text(a)} → ${PLAN_TEXT[k].text(b)}`);

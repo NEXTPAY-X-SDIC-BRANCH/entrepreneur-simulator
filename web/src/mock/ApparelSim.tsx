@@ -4,7 +4,7 @@
 // 계산은 apparel.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 옷가게의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
-  BUY_MODES, BUY_MODE_ASSUME, CATS, MARKET, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
+  BUY_MODES, BUY_MODE_ASSUME, CATS, MARKET, ONLINE, ONLINE_ASSUME, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
   playMonth, startState, stateAfter, stockValue,
   type ApMonth, type ApPlan, type ApState, type ApStratId, type ApparelCfg, type Cat,
 } from "./apparel";
@@ -50,6 +50,7 @@ function buildDays(m: ApMonth, year: number, cashStart: number, dow: number[]): 
       if (m.purchase > 0) ticks.push({ label: m.ordered ? "옷 매입 (석 달치 선발주)" : "옷 매입", amount: -m.purchase });
       ticks.push({ label: "월세", amount: -m.rent });
       if (m.marketing + m.eventCost > 0) ticks.push({ label: "홍보·사건 대응", amount: -(m.marketing + m.eventCost) });
+      if (m.onlineCost > 0) ticks.push({ label: "온라인 수수료·택배", amount: -m.onlineCost });
       notes.push(`이달의 사건 · ${m.event} · ${m.choice}`);
     }
     if (i === 9 && m.staffPay > 0) ticks.push({ label: "알바 급여", amount: -m.staffPay });
@@ -380,7 +381,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                               </select>
                             </div>
                           </div>
-                          {([["buy", 0.7, 1.5, 0.1], ["discount", 0, 0.3, 0.05], ["markdownAge", 2, 4, 1], ["markdown", 0.1, 0.5, 0.1], ["staff", 0, 2, 1], ["marketing", 0, 100, 25]] as [Exclude<keyof ApPlan, "focus">, number, number, number][]).map(([k, lo, hi, step]) => {
+                          {([["buy", 0.7, 1.5, 0.1], ["discount", 0, 0.3, 0.05], ["markdownAge", 2, 4, 1], ["markdown", 0.1, 0.5, 0.1], ["staff", 0, 2, 1], ["marketing", 0, 100, 25], ["online", 0, 2, 1]] as [Exclude<keyof ApPlan, "focus">, number, number, number][]).map(([k, lo, hi, step]) => {
                             const before = cur?.m.plan;
                             const changed = before && PLAN_TEXT[k].text(before) !== PLAN_TEXT[k].text(plan);
                             return (
@@ -470,6 +471,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                           <tr><th>월세</th><td>−{man(w(c.rent))}</td><td /></tr>
                           <tr><th>기타경비</th><td>−{man(w(c.other))}</td><td>카드 수수료·공과금·포장 등, 매출의 {Math.round(KOSIS.other * 100)}% (도소매업조사)</td></tr>
                           {c.marketing + c.eventCost > 0 && <tr><th>홍보·사건 대응</th><td>−{man(w(c.marketing + c.eventCost))}</td><td /></tr>}
+                          {c.onlineCost > 0 && <tr><th>온라인 판매 비용</th><td>−{man(w(c.onlineCost))}</td><td>{ONLINE[c.plan.online].label}: 온라인 매출 {man(w(c.onlineRev))} × 수수료 {Math.round(ONLINE[c.plan.online].fee * 1000) / 10}% + 택배 약 {Math.round(c.onlineOrders * 1.15).toLocaleString("ko-KR")}건 + 월 {ONLINE[c.plan.online].fixed}만원<Assume what={ONLINE_ASSUME} /></td></tr>}
                           {c.writeOff > 0 && <tr><th>재고 평가손</th><td>−{man(w(c.writeOff))}</td><td>석 달 넘은 옷 값이 떨어졌어요<Assume what="석 달 넘은 옷 매달 11% (시즌을 넘기면 30% 이상, 장은영 2001), 반년 넘은 옷 12% (가정)" /></td></tr>}
                           <tr className="sum"><th>영업이익</th><td>{signed(c.op)}</td><td>감가상각 전</td></tr>
                           <tr><th>감가상각비</th><td>−{man(w(dep))}</td><td>인테리어·집기·간판을 5년에 나눈 몫. 현금은 안 나가요</td></tr>
