@@ -20,7 +20,7 @@ const tone = (v: number) => (v < 0 ? "neg" : "pos");
 
 type Hours = "short" | "standard" | "long";
 type Staff = "lean" | "standard" | "generous";
-type Dec = { price_change_pct: number; hours: Hours; staff_policy: Staff; marketing_krw: number; dessert: boolean };
+type Dec = { price_change_pct: number; hours: Hours; staff_policy: Staff; marketing_krw: number; dessert: boolean; delivery: boolean };
 const HOURS_KO: Record<Hours, string> = { short: "짧게 (11~20시)", standard: "기본 (10~22시)", long: "길게 (8~23시)" };
 const STAFF_KO: Record<Staff, string> = { lean: "빠듯하게", standard: "기본", generous: "넉넉하게" };
 const HOURS_ORDER: Hours[] = ["short", "standard", "long"], STAFF_ORDER: Staff[] = ["lean", "standard", "generous"];
@@ -41,8 +41,10 @@ const LEVERS: Lever[] = [
     move: (d, s) => ({ ...d, marketing_krw: d.marketing_krw + s * 500_000 }) },
   { key: "dessert", label: "디저트", hint: "디저트를 팔면 객단가가 늘지만 폐기와 준비 시간이 생겨요.",
     text: (d) => (d.dessert ? "판매" : "안 팔아요"), can: (d, s) => (s > 0 ? !d.dessert : d.dessert), move: (d, s) => ({ ...d, dessert: s > 0 }) },
+  { key: "delivery", label: "배달", hint: "배달앱에 들어가면 주문이 늘지만(배달하는 카페는 주문의 25%가 배달) 한 건마다 배달앱 258원·대행 1,147원·포장재가 빠져요 (외식업체 경영실태조사).",
+    text: (d) => (d.delivery ? "배달앱 입점" : "안 해요"), can: (d, s) => (s > 0 ? !d.delivery : d.delivery), move: (d, s) => ({ ...d, delivery: s > 0 }) },
 ];
-const planKey = (l: Lever): keyof Dec => (l.key === "price" ? "price_change_pct" : l.key === "hours" ? "hours" : l.key === "staff" ? "staff_policy" : l.key === "marketing" ? "marketing_krw" : "dessert");
+const planKey = (l: Lever): keyof Dec => (l.key === "price" ? "price_change_pct" : l.key === "hours" ? "hours" : l.key === "staff" ? "staff_policy" : l.key === "marketing" ? "marketing_krw" : l.key === "delivery" ? "delivery" : "dessert");
 
 type Month = {
   month: number; calendar_month: number; status: "open" | "closed" | "finished"; owner_note_ko: string;
@@ -89,6 +91,10 @@ function recommend(last: Month | undefined, plan: Dec): Rec[] {
   else if (lp.marketing_krw > 0 && walk >= 0.1) rec("marketing", { ...lp, marketing_krw: 0 }, "이미 손님을 다 받지 못해요. 마케팅을 멈춰도 돼요.");
   else rec("marketing", lp, "바꿀 신호가 없어요.");
   rec("dessert", lp, lp.dessert ? "디저트는 객단가를 올려 줘요. 폐기가 크지 않으면 유지하세요." : "디저트를 팔지 않고 있어요. 객단가를 올리고 싶으면 켜 보세요.");
+  // 배달: 손님이 돌아갈 만큼 바쁘면 배달을 끄라고, 한가하고 적자면 켜 보라고 (건당 수수료가 커서 남는 돈이 적다)
+  if (lp.delivery && walk >= 0.12) rec("delivery", { ...lp, delivery: false }, `매장 손님도 ${pct}%가 돌아갈 만큼 바빠요. 배달을 끄면 한 건에 1,400원쯤 빠지는 수수료를 아껴요.`);
+  else if (!lp.delivery && walk < 0.05 && op < 0) rec("delivery", { ...lp, delivery: true }, "매장이 한가하고 적자예요. 배달앱에 들어가면 주문은 늘지만 한 건마다 수수료가 빠져요.");
+  else rec("delivery", lp, lp.delivery ? "배달 수수료가 정산표에 따로 나와요. 남는 돈보다 크면 꺼 보세요." : "배달은 안 하고 있어요. 한가한 달에 켜 볼 만해요.");
   return LEVERS.map((l) => out.find((r) => r.lever.key === l.key)!);
 }
 
@@ -132,7 +138,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const [months, setMonths] = useState<Month[]>([]);
   const [token, setToken] = useState("");
   const [startMonth, setStartMonth] = useState(3);
-  const [plan, setPlan] = useState<Dec>({ price_change_pct: 0, hours: "standard", staff_policy: "standard", marketing_krw: 0, dessert: true });
+  const [plan, setPlan] = useState<Dec>({ price_change_pct: 0, hours: "standard", staff_policy: "standard", marketing_krw: 0, dessert: true, delivery: false });
   const [view, setView] = useState<View>("intro");
   const [hourIdx, setHourIdx] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -194,7 +200,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
     if (!body || daily.current == null) return;
     setBusy(true); setErr("");
     post("/cafe/season", { ...body, daily_customers: daily.current, start_month: startMonth })
-      .then((s) => { hist.current = []; setAlts({}); setAltPick({}); setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setPlan({ price_change_pct: 0, hours: s.decisions.hours, staff_policy: s.decisions.staff_policy, marketing_krw: 0, dessert: true }); setView("plan"); })
+      .then((s) => { hist.current = []; setAlts({}); setAltPick({}); setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setPlan({ price_change_pct: 0, hours: s.decisions.hours, staff_policy: s.decisions.staff_policy, marketing_krw: 0, dessert: true, delivery: false }); setView("plan"); })
       .catch((e) => setErr(netErr(e))).finally(() => setBusy(false));
   };
   // 운영 계획을 확정하면 먼저 이번 달 사건과 대응 상황을 받는다

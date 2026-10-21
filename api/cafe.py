@@ -59,6 +59,7 @@ class MonthIn(BaseModel):
     staff_policy: Literal["lean", "standard", "generous"] | None = None
     marketing_krw: int | None = Field(None, ge=0, le=5_000_000)
     dessert: bool | None = None
+    delivery: bool | None = None                  # 배달앱 입점 (None = 지난달 그대로)
     scenario: dict[str, str] | None = None        # {decision point id: option id}; missing ones take the default
     month_index: int | None = Field(None, ge=0)   # optional: 0-based month this request is for (= months played); a
                                                   # repeat of a played month with the same decisions returns it again

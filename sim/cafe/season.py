@@ -16,12 +16,12 @@ from .params import g, load_districts, load_params, v, weakest
 
 HOURS_KO = {"short": "짧게", "standard": "기본", "long": "길게"}
 STAFF_KO = {"lean": "빠듯하게", "standard": "기본", "generous": "넉넉하게"}
-DECISION_KEYS = ("price_change_pct", "hours", "staff_policy", "marketing_krw", "dessert")
+DECISION_KEYS = ("price_change_pct", "hours", "staff_policy", "marketing_krw", "dessert", "delivery")
 # waterfall: factors are switched from the reference month to this month one at a time, in this order
-STEPS = (("season", "계절"), ("ingredient", "원두·우유 시세"), ("reputation", "별점과 단골"), ("price", "가격"), ("hours", "영업시간"),
+STEPS = (("season", "계절"), ("ingredient", "원두·우유 시세"), ("delivery", "배달"), ("reputation", "별점과 단골"), ("price", "가격"), ("hours", "영업시간"),
          ("staff", "직원 운영"), ("marketing", "마케팅"), ("dessert", "디저트"), ("rival", "경쟁 카페"),
          ("viral", "SNS 화제"), ("breakdown", "설비 고장"), ("rent", "임대료 인상"), ("scn", "이번 달 대응"))
-STEP_FACTORS = {"season": ("season",), "ingredient": ("ingredient",), "reputation": ("rating", "maturity"), "price": ("price_level",),
+STEP_FACTORS = {"season": ("season",), "ingredient": ("ingredient",), "delivery": ("delivery", "delivery_mult"), "reputation": ("rating", "maturity"), "price": ("price_level",),
                 "hours": ("hours",), "staff": ("staff",), "marketing": ("marketing_krw",), "dessert": ("dessert",),
                 "rival": ("rival",), "viral": ("viral",), "breakdown": ("breakdown",), "rent": ("rent_mult",), "scn": ("scn",)}
 DAYS = m.DAYS_PER_MONTH_DATA
@@ -192,6 +192,13 @@ def evaluate(ctx: dict, f: dict) -> dict:
     ds_eff = ds * (1 if cfg["showcase"] else s("dessert_no_showcase_factor")) if f["dessert"] else 0.0
     drink_ticket = ctx["ticket"] * (1 - ds)
     ticket = drink_ticket / (1 - ds_eff) * f["price_level"] * scn["ticket_mult"]
+    # 배달: 배달하는 달에는 전체 주문의 delivery_order_share가 배달이고, 그중 delivery_cannibal은 원래 매장에 왔을 손님이다.
+    # 배달 주문은 구·달별 배달 수요 배수를 곱하고, 한 건마다 배달앱·대행 수수료와 포장재가 든다 (주방 일손 한도는 보지 않음)
+    deliv, served_store = 0.0, served
+    if f.get("delivery"):
+        sh = s("delivery_order_share")
+        deliv = served * sh / (1 - sh) * f.get("delivery_mult", 1.0)
+        served = served - deliv * s("delivery_cannibal") + deliv
     revenue = served * ticket
     dessert_rev = revenue * ds_eff
     drink_food = (v("opex", "food_cost_share") - ds * s("dessert_food_cost_share")) / (1 - ds)
@@ -207,6 +214,8 @@ def evaluate(ctx: dict, f: dict) -> dict:
          "음료 원가 + 디저트 원가 (디저트 원가율은 L), 가격을 올려도 원가는 그대로"),
         ("card", "카드수수료", revenue * o("card_share") * rate, g("opex", "card_fee_bands"), f"{rate * 100:.2f}% 구간"),
         ("packaging", "포장재", takeout_cups * o("packaging_per_takeout_cup"), "가정", "테이크아웃 잔당"),
+        ("delivery", "배달 수수료·포장", deliv * (s("delivery_app_fee_krw") + s("delivery_agency_fee_krw") + s("delivery_packaging_krw")), "M",
+         f"배달 {round(deliv):,}건 × (배달앱 {s('delivery_app_fee_krw'):,}원 + 대행 {s('delivery_agency_fee_krw'):,}원 + 포장 {s('delivery_packaging_krw'):,}원)"),
         ("shares", "수선 소모품 기본 마케팅", revenue * (o("repairs_share") + o("supplies_share") + o("marketing_share")),
          "가정", "매출 비례"),
         ("marketing", "추가 마케팅", f["marketing_krw"], "가정", "사장님이 정한 예산"),
@@ -225,10 +234,11 @@ def evaluate(ctx: dict, f: dict) -> dict:
     op_before = round(revenue) - sum(x["krw"] for x in cost)
     return {
         "revenue_krw": round(revenue), "customers": round(served), "demand": round(demand),
-        "walkaways": round(demand - served), "walkaway_share": (demand - served) / demand if demand else 0.0,
+        "walkaways": round(demand - served_store), "walkaway_share": (demand - served_store) / demand if demand else 0.0,
         "ticket_krw": round(ticket), "dessert_revenue_krw": round(dessert_rev), "cost_lines": cost,
         "op_before_depreciation_krw": op_before, "depreciation_krw": ctx["dep"], "op_krw": op_before - ctx["dep"],
         "paid_hours": paid_h, "binding": binding, "peak_util": peak, "mult": mult, "marketing_lift": lift,
+        "delivery_orders": round(deliv),
     }
 
 
@@ -267,7 +277,8 @@ def baseline_factors(decisions: dict) -> dict:
     """A mature month at the opening rating, the opening decisions, no season swing, no event."""
     return {"season": 1.0, "rating": s("rating_start"), "maturity": 1.0, "price_level": 1.0,
             "hours": decisions["hours"], "staff": decisions["staff_policy"], "marketing_krw": decisions["marketing_krw"],
-            "dessert": decisions["dessert"], "rival": False, "viral": 1.0, "breakdown": False, "rent_mult": 1.0, "scn": {}}
+            "dessert": decisions["dessert"], "rival": False, "viral": 1.0, "breakdown": False, "rent_mult": 1.0, "scn": {},
+            "delivery": decisions.get("delivery", False), "delivery_mult": 1.0}
 
 
 def _loan(principal: int) -> dict:
@@ -303,7 +314,7 @@ def start(body: dict) -> dict:
     loan_amt = p["capex"]["loan_needed_krw"] + extra
     cash = cfg["own_capital_krw"] + loan_amt - capex
     decisions = {"price_change_pct": 0.0, "hours": "standard", "staff_policy": "standard", "marketing_krw": 0,
-                 "dessert": True}
+                 "dessert": True, "delivery": False}
     base = evaluate(ctx, baseline_factors(decisions))
     return {
         "cfg": cfg, "seed": seed, "start_month": start_month, "months_total": s("months"),
@@ -335,6 +346,7 @@ def options() -> dict:
         "staff_policy": [{"key": k, "label_ko": STAFF_KO[k]} for k in s("staff_utilization")],
         "marketing_krw": {"min": 0, "max": s("marketing_max_krw")},
         "dessert": [True, False],
+        "delivery": [False, True],
     }
 
 
@@ -403,6 +415,7 @@ def apply_decisions(prev: dict, body: dict) -> dict:
     if d["hours"] not in s("hours") or d["staff_policy"] not in s("staff_utilization"):
         raise ValueError("unknown hours or staff_policy")
     d["dessert"] = bool(d["dessert"])
+    d["delivery"] = bool(d.get("delivery", False))
     return d
 
 
@@ -431,7 +444,8 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
          "maturity": _maturity(st["regulars_idx"]), "price_level": st["price_level"], "hours": dec["hours"],
          "staff": dec["staff_policy"], "marketing_krw": dec["marketing_krw"], "dessert": dec["dessert"],
          "rival": st["rival"], "viral": viral, "breakdown": "breakdown" in keys, "rent_mult": st["rent_mult"],
-         "scn": scn, "ingredient": s("ingredient_index")[cal]}
+         "scn": scn, "ingredient": s("ingredient_index")[cal], "delivery": dec.get("delivery", False),
+         "delivery_mult": s("delivery_gu_index").get(run["cfg"]["district"], 1.0) * s("delivery_month_index")[cal]}
     e = evaluate(ctx, f)
 
     # cash: OP + depreciation (non-cash) - loan interest and principal + VAT refund

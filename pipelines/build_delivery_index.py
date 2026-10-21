@@ -13,6 +13,8 @@
   가운데를 쓴다 (가정).
   가구형태도 본다: KOSIS 세대구성별 가구원 (DT_1JC1515, 2025, 시군구) 1인·부부·2세대 이상·기타 인원 × 서베이 가구형태별 횟수.
   최종 지수 = (연령 지수 + 가구 지수) ÷ 2. 연령과 가구형태는 겹치는 몫이 있어 곱하지 않고 평균한다 (가정).
+  research/delivery/seongdong_public_delivery_20240829.csv  서울 성동구 공공배달앱 '배달특급' 가맹점 (2024-08-29, cp949).
+      업종은 상호의 낱말로 나눈다 (가정, 상호만 있고 업종 칸이 없다). 같은 사업자번호의 가게 여러 개는 브랜드가 여럿인 '공유주방'이다
 """
 from __future__ import annotations
 
@@ -83,6 +85,28 @@ def households() -> dict[str, dict[str, float]]:
     return out
 
 
+SD_KINDS = [("치킨", ["치킨", "통닭", "닭강정", "BBQ", "BHC", "교촌", "굽네", "60계", "처갓집", "호식이"]),
+            ("카페·디저트", ["카페", "커피", "CAFE", "Cafe", "빵", "베이커리", "케이크", "디저트", "와플", "도넛", "아이스크림", "빙수", "마카롱"]),
+            ("분식", ["분식", "떡볶이", "김밥", "순대", "튀김", "라면", "떡볶"]),
+            ("피자·버거", ["피자", "파파존스", "버거", "롯데리아", "맘스터치", "KFC", "써브웨이", "서브웨이"]),
+            ("족발·보쌈", ["족발", "보쌈"]), ("중식", ["짜장", "짬뽕", "중화", "마라", "탕수육", "반점"]),
+            ("도시락·샐러드", ["도시락", "샐러드", "포케", "Salad", "salad", "포케올데이"])]
+
+
+def seongdong() -> dict:
+    f = ROOT / "research" / "delivery" / "seongdong_public_delivery_20240829.csv"
+    if not f.exists():
+        return {}
+    rows = list(csv.reader(f.open(encoding="cp949", errors="ignore")))[1:]
+    kinds = collections.Counter()
+    for r in rows:
+        name = r[1] if len(r) > 1 else ""
+        kinds[next((k for k, ws in SD_KINDS if any(w in name for w in ws)), "그 밖의 음식점")] += 1
+    return {"source": "서울특별시 성동구 공공배달앱 배달특급 가맹점 현황 (2024-08-29)", "stores": len(rows),
+            "businesses": len({r[2] for r in rows if len(r) > 2}), "by_kind": dict(kinds.most_common()),
+            "note": "업종은 상호 낱말로 나눔 (가정). 사업자번호 하나에 상호가 여럿이면 한 주방이 여러 브랜드로 배달하는 경우"}
+
+
 def main() -> None:
     s = survey()
     f = {"10대": s["연령별|만 18~29세"], "20대": s["연령별|만 18~29세"], "30대": s["연령별|30대"], "40대": s["연령별|40대"],
@@ -130,7 +154,7 @@ def main() -> None:
                      "areas": "소상공인365 배달상권 경계 2024-01 (구별 개수, 참고)",
                      "weekly_by_age": f, "seoul_weekly": round(base, 3), "seoul_survey_avg": s["소계|소계"],
                      "household": {k.split("|")[1].strip(): v for k, v in s.items() if k.startswith("가구형태")}},
-           "gu": dict(sorted(out_gu.items(), key=lambda x: -x[1]["index"]))}
+           "gu": dict(sorted(out_gu.items(), key=lambda x: -x[1]["index"])), "seongdong_public_app": seongdong()}
     OUT.write_bytes(json.dumps(out, ensure_ascii=False, indent=1).encode("utf-8"))
     top = list(out["gu"].items())
     print("서울 주당", round(base, 2), "| 높은 구", [(k, v["index"]) for k, v in top[:4]], "| 낮은 구", [(k, v["index"]) for k, v in top[-3:]])

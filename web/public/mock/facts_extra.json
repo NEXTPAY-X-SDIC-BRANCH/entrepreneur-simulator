@@ -77,6 +77,13 @@
    "url": "https://kosis.kr",
    "period": "2025년"
   },
+  "seongdong_public_app": {
+   "publisher": "서울특별시 성동구",
+   "title": "공공배달앱 배달특급 가맹점 현황",
+   "api": "공공데이터포털 파일데이터",
+   "url": "https://www.data.go.kr",
+   "period": "2024-08-29"
+  },
   "jang2001": {
    "publisher": "장은영 (복식 51(2))",
    "title": "국내 의류업체의 재고처리 및 재고감축실태 연구 (의류 브랜드 92곳)",
@@ -1543,6 +1550,22 @@
    "sources": [
     "seoul_survey_delivery",
     "kosis_household"
+   ]
+  },
+  {
+   "id": "delivery_seongdong_public",
+   "tags": [
+    "성동구",
+    "배달",
+    "공공배달앱",
+    "배달특급",
+    "가맹점",
+    "치킨",
+    "카페"
+   ],
+   "text": "성동구 공공배달앱 '배달특급'에는 가게 937곳(사업자 723곳)이 들어와 있어요 (2024년 8월). 상호로 나누면 그 밖의 음식점 612곳, 치킨 88곳, 피자·버거 60곳, 카페·디저트 48곳, 분식 42곳, 중식 33곳이에요. 사업자 하나가 여러 상호로 배달하는 공유주방도 있어요.",
+   "sources": [
+    "seongdong_public_app"
    ]
   },
   {

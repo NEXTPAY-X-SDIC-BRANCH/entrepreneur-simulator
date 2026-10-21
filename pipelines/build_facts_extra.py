@@ -39,6 +39,8 @@ SOURCES = {
                               "url": "https://data.seoul.go.kr", "period": "2022년"},
     "kosis_household": {"publisher": "국가데이터처 (KOSIS)", "title": "세대구성별 가구 및 가구원 (시군구)", "api": "KOSIS DT_1JC1515",
                         "url": "https://kosis.kr", "period": "2025년"},
+    "seongdong_public_app": {"publisher": "서울특별시 성동구", "title": "공공배달앱 배달특급 가맹점 현황", "api": "공공데이터포털 파일데이터",
+                             "url": "https://www.data.go.kr", "period": "2024-08-29"},
     "jang2001": {"publisher": "장은영 (복식 51(2))", "title": "국내 의류업체의 재고처리 및 재고감축실태 연구 (의류 브랜드 92곳)", "api": "논문",
                  "url": "https://www.koreascience.kr", "period": "2000년 조사"},
 }
@@ -131,6 +133,13 @@ def build() -> list[dict]:
             add(f"delivery_gu_{gu}", [gu, "배달", "포장", "수요", "1인 가구"],
                 f"{gu} 주민은 배달·포장 음식을 서울 평균의 {r['index']:.2f}배 먹을 것으로 보여요 (주민의 1인 가구원 {round((r['single_share'] or 0) * 100)}%, 연령 구성 반영). "
                 "치킨·분식 시뮬레이션의 배달 주문에 이 배수를 곱해요.", ["seoul_survey_delivery", "kosis_household"])
+
+        sd = dg.get("seongdong_public_app") or {}
+        if sd:
+            kinds = ", ".join(f"{k} {v}곳" for k, v in list(sd["by_kind"].items())[:6])
+            add("delivery_seongdong_public", ["성동구", "배달", "공공배달앱", "배달특급", "가맹점", "치킨", "카페"],
+                f"성동구 공공배달앱 '배달특급'에는 가게 {sd['stores']}곳(사업자 {sd['businesses']}곳)이 들어와 있어요 (2024년 8월). "
+                f"상호로 나누면 {kinds}이에요. 사업자 하나가 여러 상호로 배달하는 공유주방도 있어요.", ["seongdong_public_app"])
 
     # 옷가게 시장
     fm = load("fashion_market.json")

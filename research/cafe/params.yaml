@@ -162,6 +162,21 @@ season:   # step 3 월별 운영 (sim/cafe/season.py). Every effect size here is
     grade: M
     source: "S103 KOSIS 생활물가지수 서울 커피·우유 (DT_1J22005 T11) 최근 12개월 평균 ÷ 2024년 평균 (커피 1.148, 우유 1.007) × 달별 지수 (2021~2025), 외식업체 경영실태조사 2025 비알코올 음료점업 식재료비 중 가공식품 61.7% (DT_114054_031)"
     note: "음료 식재료비에 곱하는 배수. 원두와 우유가 둘 다 가공식품에 묶여 있어 반반으로 봄 (가정). 식재료비율(food_cost_share)이 2024년 실적이라 그 뒤 오른 몫을 더한다. pipelines/fetch_food_cost.py"
+  delivery_order_share: {value: 0.25, grade: M, source: "외식업체 경영실태조사 2025 비알코올 음료점업 (KOSIS DT_114054_023·016): 하루 배달 9.3건(전체 평균) ÷ 배달앱 이용 31.2% = 이용 카페 29.8건, 방문 62.6명·포장 26.5건과 합치면 배달이 25%", note: "배달하는 달에 전체 주문 중 배달 몫"}
+  delivery_cannibal: {value: 0.3, grade: 가정, source: "none", note: "배달 주문 중 원래 매장·포장으로 왔을 손님 비율. 나머지 70%가 새 주문"}
+  delivery_app_fee_krw: {value: 258, grade: M, source: "경영실태조사 비알코올 음료점업 배달앱 이용 가게 월평균 214,963원 ÷ (이용 카페 하루 29.8건 × 28일)", note: "배달 한 건에 배달앱에 내는 돈"}
+  delivery_agency_fee_krw: {value: 1147, grade: M, source: "경영실태조사 비알코올 음료점업 배달대행 이용 가게 월평균 957,302원 ÷ (29.8건 × 28일)", note: "배달 한 건에 배달대행에 내는 돈 (손님 부담 배달비 제외)"}
+  delivery_packaging_krw: {value: 250, grade: 가정, source: "배민상회 쿠폰가 기준 컵 캐리어·비닐봉투 (S98)", note: "배달 한 건 포장재 (컵·뚜껑은 테이크아웃 잔당 포장재에 이미 있음)"}
+  delivery_gu_index:
+    value: {"3120012": 1.004, "3120094": 1.002, "3110131": 1.001}
+    grade: M
+    source: "서울서베이 2022 연령·가구형태별 주당 배달·포장 식사 × 상권이 속한 구(종로·서대문·성동)의 주민 연령·세대구성 (delivery_gu.json, pipelines/build_delivery_index.py)"
+    note: "서울 평균 = 1. 배달 주문에 곱한다"
+  delivery_month_index:
+    value: {1: 0.978, 2: 0.904, 3: 0.959, 4: 0.927, 5: 0.988, 6: 0.98, 7: 1.044, 8: 1.082, 9: 0.987, 10: 1.022, 11: 1.005, 12: 1.125}
+    grade: M
+    source: "통계청 온라인쇼핑동향 음식서비스 거래액 달별 배율 (DT_1KE10071, delivery_market.json)"
+    note: "그해 월평균 = 1. 배달 주문에 곱한다"
   launch_share: {value: 0.7, grade: 가정, source: "none", note: "새 매장은 성숙 매장 손님의 70%에서 시작, 단골이 쌓이며 100%로 다가감"}
   regulars_speed: {value: 0.15, grade: 가정, source: "none", note: "단골 지수가 목표값에 다가가는 한 달 비율"}
   regulars_speed_marketing: {value: 0.15, grade: 가정, source: "none", note: "마케팅 효과가 최대일 때 더해지는 속도"}
