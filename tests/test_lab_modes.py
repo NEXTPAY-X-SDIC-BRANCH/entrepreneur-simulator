@@ -228,3 +228,25 @@ def test_easy_generic_rejects_unknown_dong_and_labels_rent():
     assert E.rent_row(17.1, "R-ONE 근사")["src"] == "공공 통계"
     assert E.rent_row(17.1, "R-ONE 채움")["src"] == "가정"
     assert E.rent_row(12.0, "가정 (월세 자료 없음)")["src"] == "가정"
+
+
+# ---- 기본 메뉴판: 이지 = 하드 (lab:menu) -----------------------------------------------------------------
+def test_easy_uses_hard_mode_default_menu(client):
+    keys = ("id", "name", "kind", "price", "unit_cost", "mix")
+    a = E.easy_inputs("bbq", "마포구", 12000)
+    t = client.get("/lab/menu/template", params={"industry": "bbq", "grade": "domestic"}).json()
+    assert a["run"]["plan"]["menu"] == [{k: x[k] for k in keys} for x in t["items"]]
+    assert a["run"]["plan"]["table_cost"] == t["table_setting"]["cost"]
+    c = E.easy_inputs("cafe", "마포구", 12000)
+    tc = client.get("/lab/menu/template", params={"industry": "cafe", "grade": "domestic", "district": c["run"]["district"]}).json()
+    assert c["run"]["menu"] == [{k: x[k] for k in keys} for x in tc["items"]]
+
+
+def test_easy_bbq_price_override_rescales_main_menu(client):
+    a = E.easy_inputs("bbq", "마포구", 12000, overrides={"price": 20900})
+    base = E.easy_inputs("bbq", "마포구", 12000)
+    for x, y in zip(a["run"]["plan"]["menu"], base["run"]["plan"]["menu"]):
+        if x["kind"] == "main":
+            assert x["price"] == E.js_round(y["price"] * 20900 / 19000 / 100) * 100
+        else:
+            assert x == y

@@ -5,7 +5,7 @@ import { dongsOf, man, type Gu, type Profile } from "../../mock/model";
 import { PICKER, type LabIndustry } from "../industry/industries";
 import { easyRun, netErr, type EasyInputs, type EasyRes, type Overrides } from "./api";
 import { addAttempt, nextAttemptNo, useAttempts, type Attempt } from "./attempts";
-import Compare, { AttemptLine, Parts, manWon, signedMan } from "./Compare";
+import Compare, { AttemptLine, Parts, controlOf, manWon, signedMan } from "./Compare";
 import { scoreOf } from "./scoreStub";
 import { bbqSummary, cafeSummary, easyInputsOf, genericSummary } from "./summary";
 import "./modes.css";
@@ -163,6 +163,9 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
   const inp = res.inputs;
   const s = cur.summary;
   const ctls = CTLS[kind];
+  // 성적표가 고른 고칠 점(fixes.lever)이 가리키는 입력 칸을 미리 표시한다 (값은 학습자가 정한다)
+  const suggested: Record<string, string> = {};
+  for (const f of cur.scored.score.fixes) { const c = controlOf(f.lever); if (c && !suggested[c]) suggested[c] = f.text; }
   const changedNext = Object.entries(valuesOf(inp)).some(([k, v]) => next[k] !== v) || next.loan !== undefined;
   return (
     <main className="lm-result">
@@ -219,8 +222,9 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
             const base = k === "loan" ? Math.round((s.loan ?? 0) / 1e4) : (v ?? c.min);
             const cur0 = auto ? base : (v as number);
             return (
-              <div key={k} id={`lm-ctl-${k}`} className={`lm-ctl${flash === k ? " is-flash" : ""}`}>
+              <div key={k} id={`lm-ctl-${k}`} className={`lm-ctl${flash === k ? " is-flash" : ""}${suggested[k] ? " is-suggested" : ""}`} data-suggested={suggested[k] ? "1" : undefined}>
                 <span className="lm-ctl-l">{c.label}</span>
+                {suggested[k] && <small className="lm-sugg">성적표 제안: {suggested[k]}</small>}
                 <div className="m-stepper">
                   <output>{auto ? `자동 (${man(base)})` : c.fmt(cur0)}</output>
                   <button type="button" aria-label={`${c.label} 줄이기`} disabled={cur0 - c.step < c.min} onClick={() => setNext({ ...next, [k]: Math.max(c.min, cur0 - c.step) })}>−</button>

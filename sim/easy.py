@@ -301,6 +301,33 @@ def rent_row(value: float, src: str) -> dict:
     return {**row, "src": "가정", "basis": "이 구의 임대료 자료가 없어 넣은 예시값"}
 
 
+ENGINE_MENU_KEYS = ("id", "name", "kind", "price", "unit_cost", "mix")   # web/src/lab/menu/api.ts toEngine
+
+
+def default_menu(industry: str, price: int = BASE_PRICE, district: str | None = None) -> tuple[list[dict], float | None, dict]:
+    """하드 모드와 같은 기본 메뉴판 (lab:menu, /lab/menu/template). 원가 = 오늘 시세(ingredients_today.json).
+    고깃집: SimulateEngine처럼 삼겹살 가격이 19,000원이 아니면 주메뉴 가격만 같은 비율로 (100원 단위) 바꾸고 원가를 다시 계산,
+    기본 상차림 원가(table_cost)를 함께 넘긴다. 카페: CafeSim처럼 상권 객단가에 맞춘 배율로 판매가를 맞춘다.
+    돌려주는 값: (엔진에 넘길 메뉴, 상차림 원가 또는 None, 화면 요약)."""
+    from sim import menu as M
+    if industry == "bbq":
+        items = M.template_menu("bbq", "domestic", 1.0)
+        k = price / BASE_PRICE
+        if abs(k - 1) > 1e-6:
+            items = M.with_costs([{**x, "price": js_round(x["price"] * k / 100) * 100} if x["kind"] == "main" else x for x in items],
+                                 "bbq", "domestic", 1.0)
+        table = M.table_setting("bbq")
+        tcost = float(table["cost"]) if table else None
+    else:
+        from sim.cafe.params import load_districts, v as cv
+        d = load_districts()[district]
+        scale = M.cafe_scale(d["ticket_krw"]["value"], cv("season", "dessert_share"), cv("demand", "cups_per_tx"))
+        items, tcost = M.template_menu("cafe", "domestic", scale), None
+    menu = [{k: x[k] for k in ENGINE_MENU_KEYS} for x in items]
+    snap = M.snapshot()["_meta"].get("basis_date")
+    return menu, tcost, {"n": len(menu), "basis_date": snap}
+
+
 def _check(industry: str, capital_man: float, pyeong: float | None) -> None:
     if industry not in INDUSTRY_IDS:
         raise ValueError("업종을 확인해 주세요 (bbq, cafe, " + ", ".join(GENERIC) + ")")
@@ -344,6 +371,10 @@ def easy_bbq(gu: str, capital_man: float, dong: str | None = None, pyeong: int |
             "start_month": int(start_month), "flow": flow_shape(code, gu)}
     plan = {"meat_price": price, "staff_per_shift": staff, "close_hour": 24, "marketing_budget": 0,
             "meat_grade": "domestic", "banchan": 5, "delivery": "none"}
+    menu, tcost, msum = default_menu("bbq", price)   # 하드 모드 시뮬레이션 첫 계획과 같은 메뉴판 + 기본 상차림
+    plan["menu"] = menu
+    if tcost is not None:
+        plan["table_cost"] = tcost
     run = {"seed": EASY_SEED, "opening": True, "store": spec, "plan": plan,
            "invest": {x["key"]: x["amount"] * 1e4 for x in lines},
            "own_capital": float(capital_man) * 1e4, "owner_draw": OWNER_DRAW * 1e4,
@@ -369,6 +400,8 @@ def easy_bbq(gu: str, capital_man: float, dong: str | None = None, pyeong: int |
         {"key": "start_month", "label": "여는 달", "value": int(start_month), "unit": "월", "src": "가정", "basis": "다음 달에 연다고 봄"},
         {"key": "plan", "label": "운영", "value": "밤 12시 마감, 반찬 5가지, 국내산, 배달 안 함", "unit": "", "src": "가정",
          "basis": "엔진의 기준 운영 (하드 모드 첫 달 계획과 같음)"},
+        {"key": "menu", "label": "메뉴판", "value": f"기본 메뉴 {msum['n']}가지 + 기본 상차림", "unit": "", "src": "가정",
+         "basis": f"하드 모드와 같은 기본 메뉴판, 원가는 {msum['basis_date'] or '최근'} 시세로 계산 (메뉴 구성과 판매가는 가정)"},
     ]
     return {"industry": "bbq", "gu": gu, "dong": st["dong"], "capital_man": float(capital_man), "store": store,
             "staff": staff, "price": price, "loan_man": loan, "loan_rate": rate, "opening": lines, "opening_total": opening,
@@ -427,6 +460,8 @@ def easy_cafe(gu: str, capital_man: float, dong: str | None = None, pyeong: int 
     pv = cafe_model.preview({k: x for k, x in body.items() if k not in ("seed", "start_month", "extra_loan_krw")})
     ratio = (st["sales"] * area_fx * 10000) / pv["rough_month"]["revenue_krw"] if pv["rough_month"]["revenue_krw"] else 1.0
     body["daily_customers"] = min(600, max(10, js_round(pv["demand"]["default_daily_customers"] * ratio)))
+    menu, _, msum = default_menu("cafe", district=code)   # CafeSim과 같은 기본 메뉴판 (상권 가격에 맞춤)
+    body["menu"] = menu
     shown = [
         {"key": "dong", "label": "동네", "value": dname or "대학로 기준 상권", "unit": "", "src": "가정" if auto_dong else "입력",
          "basis": "동을 안 골라 구 안에서 점포당 매출이 구 평균에 가장 가까운 동을 씀" if auto_dong else "직접 고른 동"},
@@ -442,6 +477,8 @@ def easy_cafe(gu: str, capital_man: float, dong: str | None = None, pyeong: int 
          "basis": "서울시 상권분석서비스 카드 추정매출(공공 통계)에 보정 배율과 전국 독립 카페 중앙값/평균 비율을 곱한 추정"},
         {"key": "daily", "label": "바쁜 날 주문 수", "value": body["daily_customers"], "unit": "건", "src": "가정",
          "basis": "위 월매출에 맞춘 값 (카페 시뮬레이션 화면과 같은 규칙)"},
+        {"key": "menu", "label": "메뉴판", "value": f"기본 메뉴 {msum['n']}가지", "unit": "", "src": "가정",
+         "basis": f"하드 모드와 같은 기본 메뉴판(상권 가격에 맞춤), 원가는 {msum['basis_date'] or '최근'} 시세로 계산"},
         {"key": "start_month", "label": "여는 달", "value": int(start_month), "unit": "월", "src": "가정", "basis": "다음 달에 연다고 봄"},
     ]
     return {"industry": "cafe", "gu": gu, "dong": dname, "capital_man": float(capital_man), "pyeong": p, "staff": staff,

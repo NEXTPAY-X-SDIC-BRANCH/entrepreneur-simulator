@@ -19,6 +19,7 @@ import MenuEditor, { MenuSummary } from "../lab/menu/MenuEditor"; // lab:menu
 import { fetchTemplate, toEngine, type MenuDoc } from "../lab/menu/api"; // lab:menu
 import ScoreCard from "../lab/score/ScoreCard"; // lab:score
 import { cafeSummary } from "../lab/score/summary"; // lab:score
+import RecordAttempt from "../lab/modes/RecordAttempt"; // lab:modes 하드 모드 판 기록 (다시 해보기 비교)
 
 const wman = (krw: number) => man(krw / 10000);
 const sgn = (krw: number) => `${krw >= 0 ? "+" : "−"}${man(Math.abs(krw / 10000))}`;
@@ -569,6 +570,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
               <>
                 <div className="sx-scroll">
                   {scoreSummary && <ScoreCard summary={scoreSummary} />}{/* lab:score */}
+                  {scoreSummary && <RecordAttempt summary={scoreSummary} extra={{ capital_man: profile.capital }} />}{/* lab:modes */}
                   <h1>{months.length}개월 결과</h1>
                   {!report ? <p>계산 중이에요.</p> : (
                     <>

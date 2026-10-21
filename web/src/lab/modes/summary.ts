@@ -98,7 +98,8 @@ const LABEL: Record<string, [string, (v: any) => string]> = {
 };
 export type DiffRow = { key: string; label: string; before: string; after: string; changed: boolean };
 export function diffInputs(a: Record<string, unknown>, b: Record<string, unknown>, industry: string): DiffRow[] {
-  const keys = Object.keys(LABEL).filter((k) => (a[k] !== undefined || b[k] !== undefined));
+  // 두 판 중 한쪽에만 있는 값(예: 이지 판의 바쁜 날 주문 수, 하드 판에는 없음)은 비교할 수 없어 뺀다
+  const keys = Object.keys(LABEL).filter((k) => a[k] !== undefined && a[k] !== null && b[k] !== undefined && b[k] !== null || (k === "dong" && (k in a) && (k in b)));
   return keys.map((k) => {
     const [label, f] = LABEL[k];
     const shown = industry === "bbq" ? label : k === "staff" ? (industry === "cafe" ? "바쁜 시간 직원" : "직원 (사장님 빼고)") : k === "tables" ? "테이블" : label;

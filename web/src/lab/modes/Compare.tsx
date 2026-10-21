@@ -48,7 +48,7 @@ export function DiffTable({ prev, cur }: { prev: Attempt; cur: Attempt }) {
   );
 }
 
-const LEVER_TO_CONTROL: Record<string, string> = { staff_per_shift: "staff", staff_policy: "staff", staff: "staff", price: "price", meat_price: "price", pyeong: "pyeong", tables: "tables", loan_man: "loan", loan: "loan" };
+const LEVER_TO_CONTROL: Record<string, string> = { staff_per_shift: "staff", staff_policy: "staff", staff: "staff", price: "price", meat_price: "price", pyeong: "pyeong", tables: "tables", loan_man: "loan", loan: "loan", capital: "loan" }; // capital(운영자금 더 남기기) = 이지 모드에서는 대출 칸
 export const controlOf = (lever: string) => LEVER_TO_CONTROL[lever];
 
 export function Fixes({ fixes, onFix }: { fixes: ScoreFix[]; onFix?: (control: string) => void }) {
