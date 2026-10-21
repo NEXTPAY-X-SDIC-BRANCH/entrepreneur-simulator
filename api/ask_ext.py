@@ -28,8 +28,8 @@ FAMILIES: dict[str, tuple[str, ...]] = {
     "sales": ("hansik", "cafe", "dong_", "cafe_sales", "survival_"),
     "neighborhood": ("dong_", "rent_dong_", "cafe_dong"),
     "meat_price": ("price_", "kmta_pork", "kmta_import", "kmta_retail_pork", "kmta_market_pork", "pork_retail", "pork_import",
-                   "pork_wholesale", "pork_margin", "pork_stock", "pig_auction"),
-    "food_price": ("kamis_",),  # 채소·곡물 가격 (KAMIS 수집 파이프라인이 아직 없다)
+                   "pork_wholesale", "pork_margin", "pork_stock", "pig_auction", "food_pork", "food_chicken", "costidx_pork"),
+    "food_price": ("kamis_", "food_", "costidx_veg"),  # 채소·곡물·식재료 가격 (KAMIS, 서울 생활물가지수 food_cost.json)
     "livestock": ("kape_", "pig_", "kmta_hanwoo", "kmta_pork_grading", "kmta_pork_consumption"),
     "cafe": ("cafe_", "coffee_", "dessert_", "beverage_"),
     "cafe_cost": ("cafe_cost_", "cafe_startup", "cafe_investment"),
@@ -39,7 +39,10 @@ FAMILIES: dict[str, tuple[str, ...]] = {
     "flow": ("flow_", "live_flow", "live_type"),
     "loan": ("ecos_", "live_loan"),       # 은행 대출 금리 (pipelines/fetch_ecos.py)
     "support": ("kstartup_",),            # 창업 지원사업 공고 (pipelines/fetch_kstartup.py)
-    "apparel": ("apparel_",),             # 옷가게(일반의류): 서울 상권분석 구 값, 도소매업조사 비용 구조, 도소매업 생존율
+    "apparel": ("apparel_", "fashion_", "ftc_interior_apparel"),  # 옷가게: 상권분석·도소매업조사·생존율 + 패션 소비 실태조사·수입 원가·재고 논문
+    "chicken": ("chicken_", "food_chicken", "food_oil", "delivery_"),  # 치킨집: 경영실태조사·상권분석 치킨전문점·닭고기·식용유 시세
+    "bunsik": ("bunsik_", "food_rice", "food_tteok", "food_fishcake", "food_egg", "delivery_"),  # 분식집: 경영실태조사·상권분석 분식전문점·쌀·떡·어묵·달걀
+    "interior": ("ftc_interior_", "cafe_cost_"),  # 가맹점 평당 인테리어 (공정위 정보공개서)
     "delivery": ("delivery_",),           # 배달 시장·수수료 (pipelines/fetch_kosis_delivery.py, season_params.yaml delivery)
 }
 TOPIC_RE: list[tuple[str, re.Pattern]] = [
@@ -62,6 +65,9 @@ TOPIC_RE: list[tuple[str, re.Pattern]] = [
     ("support", re.compile(r"지원 ?사업|공고|창업 ?교육|컨설팅|멘토링|보육|입주|지원금|[Kk]-?스타트업|케이스타트업")),
     ("delivery", re.compile(r"배달|배민|쿠팡 ?이츠|요기요|중개 ?수수료")),
     ("apparel", re.compile(r"옷가게|옷 ?가게|의류|옷 ?장사|패션|보세|옷을 ?팔")),
+    ("chicken", re.compile(r"치킨|통닭|닭집|프라이드|양념 ?치킨")),
+    ("bunsik", re.compile(r"분식|떡볶이|김밥|순대|튀김 ?가게")),
+    ("interior", re.compile(r"인테리어|공사비|가맹점|프랜차이즈|정보공개서")),
     ("neighborhood", re.compile(r"동네|행정동|유형")),
     ("cost", re.compile(r"영업이익률|원가율|마진|비용 ?구조|비율|퍼센트|몇 ?%|몇 ?프로")),
     ("myshop", re.compile(r"이 ?(동네|구|지역)|내 ?(가게|점포|조건)|제 ?가게|우리 ?가게|입력한|내가|제가|본전|회수|되찾|흑자|적자|몇 ?달|개월|영업이익(?!률)|"
@@ -75,7 +81,7 @@ PORK_PRICE = re.compile(r"^pork_(retail|import|wholesale|margin|stock)")
 RULEQ = re.compile(r"어떻게 ?(나눠|분류|정해|구분|나누)|분류 ?(기준|방법)|기준이 ?뭐|규칙")
 SNOW = re.compile(r"눈 ?(이|도)? ?(오|와|온|올|내)|폭설|적설")
 GU = re.compile(r"[가-힣]{1,3}구(?![가-힣])")
-PER_GU = re.compile(r"^(hansik_(?!seoul)|cafe_(?!seoul)|pork_(?!top|retail|import|wholesale|margin|stock))")
+PER_GU = re.compile(r"^(hansik_(?!seoul)|cafe_(?!seoul)|pork_(?!top|retail|import|wholesale|margin|stock)|chicken_gu_|bunsik_gu_)")
 EFFECT = re.compile(r"줄어|늘어|영향|효과|떨어|오르면|내리면|올리면|때문에|손님이 ?(줄|늘)")
 
 # 가격을 물을 수 있는 품목. 질문에 품목이 나오면 그 품목 이름이 들어간 근거만 답에 쓴다 (다른 품목으로 대신하지 않는다).
@@ -88,7 +94,7 @@ ITEMS: list[tuple[str, re.Pattern]] = [
     ("시금치", re.compile(r"시금치")), ("토마토", re.compile(r"토마토")), ("부추", re.compile(r"부추")),
     ("미나리", re.compile(r"미나리")), ("생강", re.compile(r"생강")), ("브로콜리", re.compile(r"브로콜리")),
     ("파프리카", re.compile(r"파프리카|피망")), ("열무", re.compile(r"열무")), ("현미", re.compile(r"현미")),
-    ("팥", re.compile(r"팥")), ("녹두", re.compile(r"녹두")),
+    ("팥", re.compile(r"팥")), ("녹두", re.compile(r"녹두")), ("떡", re.compile(r"(?<!볶)떡(?!볶)")), ("어묵", re.compile(r"어묵|오뎅")),
     ("밀가루", re.compile(r"밀가루")), ("식용유", re.compile(r"식용유")), ("설탕", re.compile(r"설탕")),
     ("계란", re.compile(r"계란|달걀")), ("우유", re.compile(r"우유")),
     ("원두", re.compile(r"원두|커피 ?콩")),
@@ -99,7 +105,8 @@ ITEMS: list[tuple[str, re.Pattern]] = [
 PRICE_Q = re.compile(r"가격|얼마|시세|값|단가|비싸|싸[요나니게]|올랐|내렸|오르|내리|물가")
 PRICE_WORD = re.compile(r"가격|물가|시세|원/|원이에요|원이고")
 HAVE_PRICES = ("지금 가격 자료가 있는 품목은 돼지고기(삼겹살·목심·갈비 등) 소비자가격과 물가지수, "
-               "서울 채소·곡물 소매가격(KAMIS: 상추, 깻잎, 양파, 대파, 마늘, 고추, 쌀 등), 카페 원두 구매량·구매 금액이에요.")
+               "서울 채소·곡물 소매가격(KAMIS: 상추, 깻잎, 양파, 대파, 마늘, 고추, 쌀 등), 카페 원두 구매량·구매 금액, "
+               "서울 생활물가지수(닭고기·달걀·우유·쌀·식용유·떡·어묵·커피)예요. 닭고기 도매가(생계·도계)는 아직 없어요.")
 
 NONE_MESSAGE = ("죄송해요, 그 질문에 맞는 근거 자료를 찾지 못했어요.\n"
                 "이런 질문에는 자료를 바탕으로 답할 수 있어요.\n"
@@ -157,8 +164,9 @@ def static_facts() -> tuple[list[dict], dict]:
     d = _load("cafe_dong.json")
     e = _load("cafe_cost.json")
     f = _load("kamis.json")  # 서울 채소·곡물 소매가격 (pipelines/fetch_kamis.py)
+    x = _load("facts_extra.json")  # 식재료 시세·치킨·분식·패션·가맹 인테리어 (pipelines/build_facts_extra.py)
 
-    facts = a["facts"] + b["facts"] + f.get("facts", [])
+    facts = a["facts"] + b["facts"] + f.get("facts", []) + x.get("facts", [])
     # 카페 JSON을 facts 형태로 변환
     if c.get("facts"):
         facts.extend([{
@@ -240,6 +248,8 @@ def static_facts() -> tuple[list[dict], dict]:
     sources.update(cafe_srcs)
     if f.get("sources"):
         sources.update(f["sources"])
+    if x.get("sources"):
+        sources.update(x["sources"])
 
     return facts, sources
 
