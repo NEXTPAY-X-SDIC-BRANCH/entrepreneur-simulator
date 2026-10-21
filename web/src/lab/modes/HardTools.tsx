@@ -9,7 +9,7 @@ import { ENGINE, netErr, post } from "./api";
 import { fetchTemplate, recompute, toEngine } from "../menu/api";
 import { addAttempt, attemptsOf, nextAttemptNo, type Attempt } from "./attempts";
 import Compare from "./Compare";
-import { forgetRecorded } from "./RecordAttempt";
+import { forgetRecorded, recordPending } from "./RecordAttempt";
 import { scoreOf } from "./scoreStub";
 import Sensitivity from "./Sensitivity";
 import { hardBbqSummary, type Inputs } from "./summary";
@@ -72,15 +72,19 @@ export default function HardTools({ profile, store, levers, cafeCfg, indCfg, ste
   const [cmp, setCmp] = useState<{ prev?: Attempt; cur: Attempt } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [shown, setShown] = useState(() => attemptsOf(profile.industry).at(-1)?.n ?? 0); // 카페: 비교 창을 이미 보여 준 판 번호 (새로 고침 전 판은 다시 안 띄움)
+  // 카페·새 업종: 비교 창은 이 화면이 뜬 뒤에 남긴 판만, 한 번씩 띄운다 (새로 고침 전 판은 다시 안 띄움).
+  // 판 번호가 아니라 기록 시각으로 본다: 번호는 업종마다 1부터라, 업종을 바꾸면 다른 업종의 번호와 겹친다
+  const [since] = useState(() => Date.now());
+  const [shown] = useState(() => new Set<number>());
   const ind = profile.industry;
   const n = nextAttemptNo(ind);
   if (step !== "build" && step !== "sim") return null;
 
   const retry = async () => {
-    if (ind === "cafe") { // 카페: 결과 화면이 판을 이미 남겼다 (RecordAttempt). 아직 안 보여 준 판이면 비교부터
+    if (ind === "cafe" || isLab(ind)) { // 카페·새 업종: 결과 화면이 판을 이미 남겼다 (RecordAttempt). 아직 안 보여 준 판이면 비교부터
+      setBusy(true); await recordPending(); setBusy(false);
       const list = attemptsOf(ind), last = list.at(-1);
-      if (last && last.summary.mode === "hard" && last.n !== shown) { setShown(last.n); setCmp({ prev: list.at(-2), cur: last }); return; }
+      if (last && last.summary.mode === "hard" && last.at >= since && !shown.has(last.at)) { shown.add(last.at); setCmp({ prev: list.at(-2), cur: last }); return; }
       forgetRecorded(); onRetry(); return;
     }
     const ctx = ind === "bbq" ? getEngineCtx() : null;
@@ -109,8 +113,8 @@ export default function HardTools({ profile, store, levers, cafeCfg, indCfg, ste
         <button type="button" className="m-btn m-btn-quiet lm-toolbtn" disabled={!cafeReady} onClick={() => setSens(true)}>민감도 보기</button>
         {step === "sim" && (
           <button type="button" className="m-btn m-btn-quiet lm-toolbtn" disabled={busy} onClick={retry}
-            title={isLab(ind) ? "이 업종의 하드 모드는 성적표가 결과 화면에 붙은 뒤 판 기록을 남겨요. 지금은 입력을 그대로 두고 가게 꾸미기로 돌아가요" : !finished ? "6개월을 끝까지 돌리면 이번 판 점수를 남기고 다음 판과 비교해요" : undefined}>
-            {busy ? "점수 매기는 중" : isLab(ind) ? "다시 해보기 (점수 기록 없이)" : "다시 해보기"}
+            title={!finished && ind === "bbq" ? "6개월을 끝까지 돌리면 이번 판 점수를 남기고 다음 판과 비교해요" : ind !== "bbq" ? "결과 화면까지 가면 이번 판 점수를 남기고 다음 판과 비교해요" : undefined}>
+            {busy ? "점수 매기는 중" : "다시 해보기"}
           </button>
         )}
         {err && <span className="lm-err lm-err-inline" role="alert">{err}</span>}

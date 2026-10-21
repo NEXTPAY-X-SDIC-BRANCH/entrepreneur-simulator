@@ -8,6 +8,9 @@ import { scoreOf } from "./scoreStub";
 const done = new Set<string>();
 /** 다시 해보기를 누르면 부른다: 시드가 고정이라 같은 입력의 다음 판은 같은 결과가 나오는데, 그것도 새 판으로 남겨야 한다 */
 export const forgetRecorded = () => done.clear();
+let pending: Promise<unknown> = Promise.resolve();
+/** 다시 해보기가 점수 매기기 전에 눌려도 이번 판을 비교에 넣도록, 진행 중인 기록이 끝날 때까지 기다린다 */
+export const recordPending = () => pending;
 
 export default function RecordAttempt({ summary, extra }: { summary: SeasonSummary; extra?: Record<string, unknown> }) {
   const key = JSON.stringify([summary.industry, summary.start_cash, summary.months.map((m) => [m.month, m.op, m.cash_after])]);
@@ -16,7 +19,7 @@ export default function RecordAttempt({ summary, extra }: { summary: SeasonSumma
     done.add(key);
     const n = nextAttemptNo(summary.industry);
     const s: SeasonSummary = { ...summary, mode: "hard", attempt: n, inputs: { ...summary.inputs, ...extra, loan_man: Math.round(summary.loan / 1e4), start_month: summary.months[0]?.month } };
-    scoreOf(s).then((scored) => addAttempt(s, scored)).catch(() => done.delete(key)); // 실패하면 다음에 다시
+    pending = scoreOf(s).then((scored) => addAttempt(s, scored)).catch(() => done.delete(key)); // 실패하면 다음에 다시
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }

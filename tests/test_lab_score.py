@@ -350,3 +350,11 @@ def test_generic_industry_gets_only_generic_levers(ind):
     assert levers and levers <= {"staff", "price_change_pct", "hours", "pyeong", "capital", "loan", "location", "retry"}
     txt = json.dumps(SC.score(s)["fixes"], ensure_ascii=False) + json.dumps(C.coach(s, llm=False), ensure_ascii=False)
     assert "고기" not in txt and "반찬" not in txt and "교대" not in txt and "마감" not in txt
+
+
+def test_thin_margin_with_high_rent_gets_rent_lever_not_vague_retry():
+    # 흑자(6%)지만 업계 이익률(7%) 아래, 임차료 15% (업계 8.5%, 권고 문턱 20% 아래): 막연한 '다시 해 보세요' 대신 평수·자리
+    out = SC.score(summary(cogs=0.38, labor=0.25, rent=0.15, mgmt=0.15))
+    keys = [f["key"] for f in out["fixes"]]
+    assert "rent" in keys and "keep" not in keys
+    assert next(f for f in out["fixes"] if f["key"] == "rent")["lever"] == "pyeong"

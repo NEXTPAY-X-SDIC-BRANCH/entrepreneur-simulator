@@ -7,6 +7,10 @@ import { man, type Profile } from "../../mock/model";
 import { IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "../../mock/SimulateEngine";
 import { engineBody, netErr, post, sgn, usePreview, wman, type IndustryCfg, type Month, type Start } from "./api";
 import { LAB_TXT, type LabIndustry } from "./industries";
+import ScoreCard from "../score/ScoreCard"; // lab:score 6개월 성적표 (카페·고깃집 결과 화면과 같은 카드)
+import RecordAttempt from "../modes/RecordAttempt"; // lab:modes 하드 모드 판 기록 (다시 해보기 비교)
+import { genericSummary } from "../modes/summary";
+import type { GenericRun } from "../modes/api";
 import "../../mock/simulate-engine.css";
 import "../../mock/cafe-sim.css";
 import "./industry.css";
@@ -109,6 +113,18 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
     post("/season/report", { state_token: token }).then((r) => { setReport(r); setView("report"); }).catch((e) => setErr(netErr(e))).finally(() => setBusy(false));
   };
   const restart = () => { setStart(null); setMonths([]); setReport(null); setView("intro"); };
+  // 결과 화면의 성적표: 엔진 report.season_summary를 이지 모드와 같은 genericSummary로 바꾼다. 직원·가격은 마지막 달 결정
+  const scoreSummary = useMemo(() => {
+    if (view !== "report" || !report?.season_summary || !start || !months.length) return null;
+    const last = months[months.length - 1].decisions;
+    const run = { start, months, report } as unknown as GenericRun;
+    const s = genericSummary(run, {
+      gu: profile.gu, dong: profile.dong && profile.dong.gu === profile.gu ? profile.dong.name : null, capital_man: profile.capital,
+      pyeong: p?.input.pyeong ?? 0, tables: p?.input.tables, staff: last.staff, loan_man: Math.round(start.loan.principal_krw / 1e4),
+      start_month: start.start_month, grade: cfg.grade,
+    }, "hard", 0);
+    return { ...s, inputs: { ...s.inputs, price_change_pct: Math.round((last.price_level - 1) * 100) } };
+  }, [view, report, start, months]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="sx-root" style={{ top }}>
@@ -117,7 +133,7 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
       </div>
 
       <header className="sx-hud">
-        <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금이에요. 매달 영업이익이 더해지고 대출 이자와 원금이 빠져요.</>}>{wman(cur ? cur.kpi.cash_krw : startCash)}</Metric>
+        <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금이에요. 매달 영업이익이 더해지고 대출 이자와 원금이 빠져요.</>}>{cur ? wman(cur.kpi.cash_krw) : start ? wman(startCash) : p ? wman(profile.capital * 1e4 - p.capex.total_krw) : "-"}</Metric>
         <Metric icon={<IconCal />} label="달" tip={<>시작 달부터 {TOTAL}개월을 한 달씩 진행해요.</>}>{cur ? `${cur.calendar_month}월 (${cur.month}/${TOTAL})` : `${start?.start_month ?? startMonth}월 시작`}</Metric>
         <Metric icon={<IconStar />} label="별점" tip={<>손님 만족에 따라 움직여요. 돌아간 손님이 많거나 가격을 올리면 내려가요. (가정)</>}>{cur ? `★ ${cur.kpi.rating.toFixed(1)}` : "★ 4.0"}</Metric>
         <Metric icon={<IconHeart />} label="못 받은 손님" tip={<>좌석이나 일손이 모자라 받지 못한 주문(인분)이에요.</>}>{cur ? `${cur.kpi.walkaways.toLocaleString("ko-KR")}인분` : "-"}</Metric>
@@ -301,6 +317,8 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
                   { label: "가장 나빴던 달", value: report.worst_month ? `${report.worst_month.calendar_month}월 ${sgn(report.worst_month.op_krw)}` : "-" },
                 ]} />
                 <p className="sx-note">{report.survived ? `${TOTAL}개월을 버텼어요. ` : <b>가게를 닫게 됐어요. </b>}{report.summary_ko}</p>
+                {scoreSummary && <ScoreCard summary={scoreSummary} />}{/* lab:score */}
+                {scoreSummary && <RecordAttempt summary={scoreSummary} extra={{ capital_man: profile.capital }} />}{/* lab:modes */}
                 <section className="sx-sec"><h2>남은 현금</h2><Cash start={startCash} months={months} total={TOTAL} /></section>
                 <section className="sx-sec"><h2>월별</h2>
                   <table className="sx-table"><thead><tr><th>달</th><th>매출</th><th>영업이익</th><th>월말 현금</th><th>사건과 대응</th></tr></thead>

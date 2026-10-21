@@ -357,6 +357,10 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
     if F["loan_share"] > LOAN_OK + 0.1:
         add("loan", "대출 비중 낮추기 (창업 자금 중 대출 50% 아래)", "loan",
             f"지금 대출 비중 {pct(F['loan_share'])}, 대출 {man(F['loan'])}", lost["risk"])
+    if not out and F["margin"] < b["margin"] and rent_gap > 0.02:   # 흑자지만 업계 이익률 아래이고 임차료가 업계보다 크면, 막연한 '다시 해 보세요' 대신 평수·자리
+        add("rent", "평수를 줄이거나 월세가 낮은 자리로 (다음 판 가게 꾸미기에서)", "pyeong",
+            f"임차료 비율 {pct(F['rent_ratio'])}, 업계 {pct(b['rent'])}. 업계 수준이면 {F['months']}개월 약 +{man(rent_gap * R)} (단순 계산). "
+            "좌석이 줄면 손님도 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["profit"])
     if F["closed"] and not out:
         add("closed", "가게를 닫게 된 달의 대응부터 다시 (다시 해보기)", "retry",
             f"{F['months']}개월째 폐업. 같은 조건에서 다른 대응을 고르면 결과가 달라져요", lost["survival"])
