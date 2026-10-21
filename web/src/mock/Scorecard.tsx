@@ -12,6 +12,22 @@ export type ScoreMonth = {
   decisions: { title: string; chosen_label: string; vs_default_op: number }[];
 };
 type Area = { key: string; label: string; max: number; got: number; detail: string; fix: string };
+
+// 시도 기록: 이 브라우저(localStorage)에만 남는다. 같은 업종·모드의 바로 전 시도와 영역별 점수를 비교한다
+type Attempt = { ts: string; shop: string; mode: string; gu: string; seed?: number; total: number; endCash: number; areas: Record<string, number> };
+const ATTEMPTS = "cu-attempts";
+function readAttempts(): Attempt[] {
+  try { return JSON.parse(localStorage.getItem(ATTEMPTS) ?? "[]") as Attempt[]; } catch { return []; }
+}
+// 같은 판을 두 번 넣지 않는다 (React 개발 모드의 effect 두 번 실행, 화면 다시 그리기)
+function recordAttempt(a: Attempt): Attempt[] {
+  const all = readAttempts();
+  const last = all.at(-1);
+  if (last && last.seed === a.seed && last.total === a.total && last.endCash === a.endCash && last.shop === a.shop && last.mode === a.mode) return all;
+  const next = [...all, a].slice(-30);
+  try { localStorage.setItem(ATTEMPTS, JSON.stringify(next)); } catch { /* 저장 못 해도 이번 화면은 보여 준다 */ }
+  return next;
+}
 type Row = { id: string; rank: number; name: string; score: number; grade: string; mode: string; gu: string; shop?: string };
 
 const API = "http://127.0.0.1:8010";
@@ -104,6 +120,12 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
   const [cls, setCls] = useState(() => { try { return acc?.cls ?? localStorage.getItem("cu-cls") ?? "공개"; } catch { return acc?.cls ?? "공개"; } });
   const [board, setBoard] = useState<{ top: Row[]; count: number; mine?: string; rank?: number } | null>(null);
   const [msg, setMsg] = useState("");
+  const [tries, setTries] = useState<Attempt[]>([]);
+  useEffect(() => {
+    const all = recordAttempt({ ts: new Date().toISOString(), shop, mode, gu, seed, total, endCash: Math.round(endCash),
+      areas: Object.fromEntries(areas.map((a) => [a.key, Math.round(a.got)])) });
+    setTries(all.filter((t) => t.shop === shop && t.mode === mode));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}mock/survival_kosis.json`).then((r) => r.json())
@@ -172,6 +194,30 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
           {weak.map((a) => <li key={a.key}><b>{a.label} +{Math.round(a.max - a.got)}점 가능</b><span>{a.fix}</span></li>)}
         </ol>
       )}
+      {tries.length >= 2 && (() => {
+        const prev = tries[tries.length - 2];
+        const d = total - prev.total;
+        const moved = areas.map((a) => ({ a, d: Math.round(a.got) - (prev.areas[a.key] ?? 0) })).filter((x) => x.d !== 0).sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
+        const recent = tries.slice(-5);
+        return <>
+          <h2>지난 시도와 비교</h2>
+          <p className="sx-note">{shop} · {mode === "hard" ? "자세히" : "쉬운"} 모드 {tries.length}번째 시도예요. 바로 전보다 <b className={d >= 0 ? "sc-up" : "sc-down"}>{d >= 0 ? `+${d}` : d}점</b>{d === 0 ? " (같아요)" : ""}.</p>
+          {moved.length > 0 && (
+            <ul className="sc-diff">
+              {moved.map(({ a, d: x }) => <li key={a.key}><span>{a.label}</span><b className={x > 0 ? "sc-up" : "sc-down"}>{x > 0 ? `+${x}` : x}</b></li>)}
+            </ul>
+          )}
+          <table className="sx-table sc-tries">
+            <thead><tr><th>시도</th><th>날짜</th><th>동네</th><th>점수</th><th>6개월 뒤 현금</th></tr></thead>
+            <tbody>{recent.map((t, i) => (
+              <tr key={t.ts} className={i === recent.length - 1 ? "me" : undefined}>
+                <td>{tries.length - recent.length + i + 1}</td><td>{t.ts.slice(5, 10).replace("-", "/")}</td><td>{t.gu}</td><td>{t.total}</td><td>{won(t.endCash)}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+          <p className="sx-note">시도 기록은 이 브라우저에만 저장돼요.</p>
+        </>;
+      })()}
       {benchmark ? <p className="sx-note">{benchmark}</p> : surv && <p className="sx-note">참고로 서울에서 새로 연 음식점(숙박·음식점업)은 3년 뒤 {surv.s3}%만 남아요 (통계청 기업생멸행정통계 {surv.y}년).</p>}
       <p className="sx-note">배점(생존 30, 수익성 25, 현금 여유 20, 운영 효율 15, 위기 대응 10)과 만점 기준은 교육용으로 정한 가정이에요<Assume what="성적표 배점과 만점 기준, 등급 구간(90·80·60점)" />. 진단은 결과 숫자로 만든 규칙이에요.</p>
 
