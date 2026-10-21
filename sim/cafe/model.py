@@ -374,6 +374,29 @@ def _capex(cfg: dict, solved: dict) -> dict:
             "grade": weakest(*(x["grade"] for x in lines))}
 
 
+def funding(capex_krw: int, own_capital_krw: int, monthly_fixed_krw: int, extra_loan_krw: int | None = None) -> dict:
+    """How the store opens: the CAPEX gap is borrowed, plus a 운전자금 loan so the bank account holds
+    `working_capital_months` of fixed costs on day one (None = that default, an int = the learner's own amount).
+    One rule for the build screen (preview), the season (season.start) and 이지 모드, so every screen shows the
+    same loan and opening cash. The VAT line in the CAPEX is paid now and refunded in `vat_refund_month`."""
+    months = v("season", "working_capital_months")
+    reserve = round(months * monthly_fixed_krw)
+    gap = max(0, capex_krw - own_capital_krw)
+    if extra_loan_krw is None:
+        extra = max(0, reserve - max(0, own_capital_krw - capex_krw))
+        note = (f"운전자금 {won(extra)}: 문을 열 때 통장에 월 고정비 {months}개월치({won(reserve)})가 있도록 모자란 만큼 빌림 (가정)")
+    else:
+        extra = int(extra_loan_krw)
+        note = f"운전자금 {won(extra)}: 직접 정한 값"
+    loan = gap + extra
+    r, n = v("season", "loan_rate") / 12, v("season", "loan_term_months")
+    pay = (round(loan * r / (1 - (1 + r) ** -n)) if r > 0 else round(loan / n)) if loan > 0 else 0
+    return {"capex_krw": capex_krw, "own_capital_krw": own_capital_krw, "capex_gap_krw": gap, "extra_loan_krw": extra,
+            "loan_krw": loan, "working_capital_target_krw": reserve, "cash_krw": own_capital_krw + loan - capex_krw,
+            "loan_payment_krw": pay, "loan_rate": v("season", "loan_rate"), "loan_term_months": n,
+            "working_capital_note_ko": note, "grade": "가정"}
+
+
 # ---------------------------------------------------------------------------------------------- core
 
 def _core(cfg: dict) -> dict:
@@ -598,6 +621,9 @@ def preview(cfg: dict) -> dict:
     # average-day orders x 상권 ticket x 30.3 days; equals the anchor month (industry average x 상권 index) at the data default
     revenue = round(dem["avg_day_customers"] * dist["ticket_krw"]["value"] * DAYS_PER_MONTH_DATA * min(1.0, ratio))
     rough = _rough_month(cfg, dem, revenue, min(1.0, ratio), monthly, capex)
+    # demand before the capacity cap: callers that scale daily_customers to a target month divide by THIS, not by the
+    # capped rough revenue (dividing by the capped one inflated demand for small stores, lab 2026-10-22)
+    revenue_uncapped = round(dem["avg_day_customers"] * dist["ticket_krw"]["value"] * DAYS_PER_MONTH_DATA)
 
     return {
         "input": cfg,
@@ -624,6 +650,7 @@ def preview(cfg: dict) -> dict:
         "bottleneck": [{**b, "grade": throughput_grade} for b in core["bottleneck"]],
         "suggestion": _suggestion(cfg, core),
         "capex": {k: x for k, x in capex.items() if k != "depreciable"},
+        "funding": funding(capex["total_krw"], cfg["own_capital_krw"], monthly["total_krw"]),
         "monthly_fixed": monthly,
         "staff": {"peak": max(r["staff"] for r in sched), "base": min(r["staff"] for r in sched),
                   "staff_peak": crew["peak"], "recommended_peak": crew["recommended"], "user_peak": crew["user"],
@@ -640,6 +667,7 @@ def preview(cfg: dict) -> dict:
         "demand": {"daily_customers": dem["daily_customers"], "default_daily_customers": dem["default_daily_customers"],
                    "source": dem["source"], "peak_day": dem["peak_day"],
                    "peak_orders_per_h": round(dem["tx_peak"], 1), "grade": dem["grade"],
+                   "revenue_uncapped_krw": revenue_uncapped,
                    "range_hint_ko": (f"기본값 {dem['default_daily_customers']}명은 업계 평균 카페 연매출 "
                                      f"{won(v('opex', 'industry_avg_sales_krw'))}(전국, 프랜차이즈 포함)에 이 상권의 매출 지수 "
                                      f"{demand_index(cfg['district']):.2f}(점포당 매출 ÷ 서울 점포당 매출)를 곱해 객단가로 나눈 값, "

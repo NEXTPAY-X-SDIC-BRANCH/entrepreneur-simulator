@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { getEngineCtx } from "../../mock/chatContext";
 import { flowShape, profileOf } from "../../mock/area";
-import { areaFx, engineBody, type CafeCfg } from "../../mock/cafeChecks";
+import { cafeDaily, engineBody, type CafeCfg } from "../../mock/cafeChecks";
 import { LOAN_RATE, OWNER_DRAW, guStat, openingCost, storeStats, type Levers, type Profile, type Store } from "../../mock/model";
 import { ENGINE, post } from "./api";
 import { fetchTemplate, recompute, toEngine } from "../menu/api";
@@ -52,9 +52,8 @@ export async function cafeHardBody(profile: Profile, cfg: CafeCfg) {
   const code = profile.dong && profile.dong.gu === profile.gu ? profileOf(profile.gu, profile.dong.name)?.code : undefined;
   if (!code) throw new Error("카페는 동네를 골라야 돌릴 수 있어요. 동네 분석에서 동을 골라 주세요.");
   const body = engineBody(profile, cfg, String(code));
-  const p0 = await post<{ rough_month: { revenue_krw: number }; demand: { default_daily_customers: number } }>("/cafe/preview", body);
-  const ratio = (guStat(profile.gu).sales * areaFx(cfg.pyeong) * 10000) / p0.rough_month.revenue_krw;
-  return { ...body, daily_customers: Math.min(600, Math.max(10, Math.round(p0.demand.default_daily_customers * ratio))), start_month: 3 };
+  const p0 = await post<Parameters<typeof cafeDaily>[0]>("/cafe/preview", body);
+  return { ...body, daily_customers: cafeDaily(p0, profile.gu, cfg.pyeong), start_month: 3 }; // CafeSim·이지와 같은 손님 수 (자리 제한 전 매출 기준)
 }
 
 /** 새 업종: IndustrySim과 같은 몸통 (가게 꾸미기 값, 비어 있으면 엔진의 업종 기본값). 시작 달은 IndustrySim 기본 3월, 시드 고정 */

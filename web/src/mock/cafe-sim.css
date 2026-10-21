@@ -57,3 +57,12 @@
 .m-catalog .cs-card .m-stepper { inline-size: 100%; margin-block-start: 6px; }
 .m-catalog .cs-card .m-stepper button { inline-size: 36px; block-size: 36px; padding: 0; border: 0; border-radius: 10px; box-shadow: none; display: block; }
 .m-catalog .cs-card .m-stepper output { min-inline-size: 2em; flex: 1; }
+
+/* 카페 가게 꾸미기: 엔진 여는 비용 합계 줄, 엔진 답을 기다리는 동안의 현금 상자, 동네 경고 (lab 2026-10-22) */
+.m-spent .m-spent-total { margin-block-start: 4px; padding-block-start: 4px; border-block-start: 1px solid var(--rule); }
+.m-spent .m-spent-total dt { color: var(--ink); font-weight: 700; }
+.m-spent .m-spent-total dd { font-weight: 800; }
+.m-cash.is-stale strong { opacity: 0.55; }
+.m-room .m-dongwarn { max-inline-size: 220px; margin: 0; font-size: 13px; }
+.sx-warnline { margin-block-start: 10px; padding: 8px 10px; border-radius: 10px; background: #fdecec; color: var(--weak-ink, #9b1c1c); font-size: 14px; font-weight: 600; }
+.sx-dongbtns { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block-start: 14px; }

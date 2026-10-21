@@ -117,7 +117,7 @@ export default function Mock() {
       {ready && step === "profile" && mode === "hard" /* lab:modes */ && <ProfileStep profile={profile} setProfile={setProfile} gus={gus} onDone={() => go("area")} />}
       {ready && step === "area" && !isLab(ind) && <Analysis profile={profile} setProfile={setProfile} gus={gus} onNext={() => go("build")} />} {/* lab:industry 새 업종은 아래 IndustryArea */}
       {ready && ind === "cafe" && step === "build" && <CafeBuild profile={profile} cfg={cafeCfg} setCfg={setCafeCfg} onNext={() => go("sim")} />}
-      {ready && ind === "cafe" && step === "sim" && <CafeSim profile={profile} cfg={cafeCfg ?? { pyeong: 20, grade: "basic", staff: 1 }} onBack={() => go("build")} />}
+      {ready && ind === "cafe" && step === "sim" && <CafeSim profile={profile} cfg={cafeCfg ?? { pyeong: 20, grade: "basic", staff: 1 }} onBack={() => go("build")} onArea={() => go("area")} />}
       {ready && isLab(ind) && step === "area" && <IndustryArea profile={profile} setProfile={setProfile} gus={gus} onNext={() => go("build")} />} {/* lab:industry */}
       {ready && isLab(ind) && step === "build" && <IndustryBuild profile={profile} cfg={indCfg} setCfg={setIndCfg} onNext={() => go("sim")} />} {/* lab:industry */}
       {ready && isLab(ind) && step === "sim" && <IndustrySim profile={profile} cfg={indCfg} onBack={() => go("build")} />} {/* lab:industry */}

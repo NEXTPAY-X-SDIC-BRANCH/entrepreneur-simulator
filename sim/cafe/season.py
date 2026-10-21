@@ -314,16 +314,10 @@ def start(body: dict) -> dict:
     ctx = _context(body)
     p, cfg = ctx["preview"], ctx["cfg"]
     capex = p["capex"]["total_krw"]
-    reserve = round(s("working_capital_months") * p["monthly_fixed"]["total_krw"])
-    if extra is None:   # default 운전자금: borrow just enough to open with `working_capital_months` of fixed costs
-        extra = max(0, reserve - max(0, cfg["own_capital_krw"] - capex))
-        wc_note = (f"운전자금 {won(extra)}: 문을 열 때 통장에 월 고정비 {s('working_capital_months')}개월치"
-                   f"({won(reserve)})가 있도록 모자란 만큼 빌림 (가정)")
-    else:
-        extra = int(extra)
-        wc_note = f"운전자금 {won(extra)}: 직접 정한 값"
-    loan_amt = p["capex"]["loan_needed_krw"] + extra
-    cash = cfg["own_capital_krw"] + loan_amt - capex
+    # one funding rule with the build screen (preview["funding"]) and 이지 모드: CAPEX gap + default 운전자금
+    fund = m.funding(capex, cfg["own_capital_krw"], p["monthly_fixed"]["total_krw"], extra)
+    extra, reserve, wc_note = fund["extra_loan_krw"], fund["working_capital_target_krw"], fund["working_capital_note_ko"]
+    loan_amt, cash = fund["loan_krw"], fund["cash_krw"]
     decisions = {"price_change_pct": 0.0, "hours": "standard", "staff_policy": "standard", "marketing_krw": 0,
                  "dessert": True}
     base = evaluate(ctx, baseline_factors(decisions))

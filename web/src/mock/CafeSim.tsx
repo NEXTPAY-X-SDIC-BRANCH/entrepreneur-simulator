@@ -4,7 +4,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { profileOf } from "./area";
 import { flowRatioNote } from "./DongFlow";
-import { areaFx, engineBody, type CafeCfg } from "./cafeChecks";
+import { cafeDaily, cafeOpenFromEngine, engineBody, type CafeCfg, type EngineCapex, type EngineFunding } from "./cafeChecks";
 import CafeRoom3D from "./CafeRoom3D";
 import { ENGINE, type Preview } from "./useCafePreview";
 import { guStat, man, type Profile } from "./model";
@@ -131,12 +131,12 @@ function Cash({ start, months, total }: { start: number; months: Month[]; total:
   );
 }
 
-export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cfg: CafeCfg; onBack: () => void }) {
+export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Profile; cfg: CafeCfg; onBack: () => void; onArea?: () => void }) {
   const code = profile.dong && profile.dong.gu === profile.gu ? profileOf(profile.gu, profile.dong.name)?.code : undefined;
   const body = useMemo(() => code ? engineBody(profile, cfg, String(code)) : null, [code, cfg, profile.capital]); // eslint-disable-line react-hooks/exhaustive-deps
   const [top, setTop] = useState(108);
   const [start, setStart] = useState<any>(null);
-  const [pv, setPv] = useState<Preview | null>(null);
+  const [pv, setPv] = useState<(Preview & { capex: EngineCapex; funding?: EngineFunding }) | null>(null);
   const [months, setMonths] = useState<Month[]>([]);
   const [token, setToken] = useState("");
   const [startMonth, setStartMonth] = useState(3);
@@ -186,8 +186,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
     if (!body) return;
     setErr("");
     post("/cafe/preview", body).then((p0) => {
-      const ratio = (guStat(profile.gu).sales * areaFx(cfg.pyeong) * 10000) / p0.rough_month.revenue_krw;
-      daily.current = Math.min(600, Math.max(10, Math.round(p0.demand.default_daily_customers * ratio)));
+      daily.current = cafeDaily(p0, profile.gu, cfg.pyeong); // 가게 꾸미기(CafeBuild)와 이지 모드(sim/easy.py cafe_daily)와 같은 식
       return post("/cafe/preview", { ...body, daily_customers: daily.current });
     }).then(setPv).catch((e) => setErr(netErr(e)));
   }, [body]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -256,12 +255,17 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
     <main className="m-area"><section className="m-panel a-card">
       <h1>동네를 먼저 골라 주세요</h1>
       <p>카페 시뮬레이션은 행정동 단위로 돌아가요. 동네 분석에서 지도의 동네를 누르거나 목록에서 고르면 돼요.</p>
-      <button type="button" className="a-back" onClick={onBack}>← 열기 전 점검으로</button>
+      <div className="sx-dongbtns">
+        <button type="button" className="se-btn" onClick={onArea ?? onBack}>{onArea ? "동네 분석에서 동네 고르기" : "가게 꾸미기로 돌아가기"}</button>
+        {onArea && <button type="button" className="a-back" onClick={onBack}>가게 꾸미기로 돌아가기</button>}
+      </div>
     </section></main>
   );
 
   const TOTAL: number = start?.months_total ?? 6; // 한 시즌의 달 수 (엔진 season.months)
-  const startCash: number = start ? start.start.cash_krw : 0;
+  // 문을 열기 전에도 엔진이 계산한 '문 열 때 현금'(가진 돈 + 대출 − 여는 비용)을 보여 준다. 0만원으로 두면 돈이 없는 것처럼 보였다
+  const fund = pv?.funding ? cafeOpenFromEngine(pv.capex, pv.funding) : null;
+  const startCash: number = start ? start.start.cash_krw : fund ? fund.cash * 10000 : 0;
   const cur = last;
   const prevPlan = months.length > 1 ? months[months.length - 2].decisions : undefined;
   const occupancy = view === null && sched[hourIdx] ? (sched[hourIdx].orders / maxOrders) * 0.9 : 0;
@@ -278,7 +282,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
 
       <header className="sx-hud">
         <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금이에요. 매달 영업이익이 더해지고, 대출 이자와 원금은 빠져요. 개업 비용을 낸 뒤 통장에 남은 돈에서 시작해요.</>}>
-          {wman(cur ? cur.kpi.cash_krw : startCash)}
+          {cur || start || fund ? wman(cur ? cur.kpi.cash_krw : startCash) : "-"}
         </Metric>
         <Metric icon={<IconCal />} label="달" tip={<>시작 달부터 {TOTAL}개월을 한 달씩 진행해요.</>}>
           {cur ? `${cur.calendar_month}월 · ${cur.month}/${TOTAL}` : start ? `${start.start_month}월 시작` : `${startMonth}월 시작`}
@@ -354,9 +358,13 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                   <Kpis items={[
                     { label: "가게", value: `${cfg.pyeong}평 · ${pv?.seats.total ?? "-"}석` },
                     { label: "평당 월세", value: `${guStat(profile.gu).rent}만원` },
-                    { label: "여는 데 드는 돈 (엔진)", value: pv ? wman(pv.capex.total_krw) : "-" },
-                    { label: "가진 돈", value: man(profile.capital), main: true },
+                    { label: "여는 데 드는 돈", value: fund ? man(fund.total) : "-" },
+                    { label: "가진 돈", value: man(profile.capital) },
+                    { label: "대출", value: fund ? (fund.loan > 0 ? man(fund.loan) : "없음") : "-" },
+                    { label: "문 열 때 현금", value: fund ? man(fund.cash) : "-", main: true },
                   ]} />
+                  {fund && <p className="sx-note">여는 비용은 가게 꾸미기 화면과 같은 엔진 값이에요(보증금 {man(fund.deposit)}, 권리금 {man(fund.keyMoney)}, 부가세 선납 {man(fund.vat)} 포함, 부가세는 개업 후 돌려받아요).</p>}
+                  {fund && fund.loan > 0 && <p className="sx-warnline">{fund.gap > 0 ? `여는 비용이 가진 돈보다 ${man(fund.gap)} 많아요. ` : ""}대출 {man(fund.loan)}({fund.gap > 0 ? `모자란 ${man(fund.gap)} + ` : ""}운전자금 {man(fund.extra)})으로 시작하고, 다달이 원리금 {man(fund.pay)}씩 갚아요(고른 금리가 없으면 연 4.5%, 5년).</p>}
                   <section className="sx-sec">
                     <h2>이렇게 진행돼요</h2>
                     <ol className="sx-flow">

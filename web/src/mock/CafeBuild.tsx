@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Mark } from "./Checks";
 import SettledStack, { cafeSettled } from "../lab/cost/SettledStack"; // lab:cost
-import { CAFE_GRADES, CAFE_PYEONG, cafeEstimate, cafeOpeningCost } from "./cafe";
-import { cafeChecks, cafeLayoutOf, type CafeCfg } from "./cafeChecks";
+import { CAFE_PYEONG, cafeDistrictCode, cafeEstimate } from "./cafe";
+import { cafeChecks, cafeDaily, cafeLayoutOf, cafeOpenFromEngine, engineBody, type CafeCfg, type CafeOpen } from "./cafeChecks";
 import CafeRoom3D from "./CafeRoom3D";
 import FinanceBox from "../lab/finance/FinanceBox"; // lab:finance
 import { CAFE_DEFAULT_RATE } from "../lab/finance/finance"; // lab:finance
-import { useCafePreview } from "./useCafePreview";
-import { STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
+import { ENGINE, useCafePreview } from "./useCafePreview";
+import { STATUS_LABEL, guStat, man, type Profile } from "./model";
 // lab:layout: 문·창문 tab (가로:세로, 출입문, 창문), 손님 동선 from the engine's plan
 import { setView } from "./Scene3D";
 import { FlowCard, ShapePanel } from "../lab/layout/ShapePanel";
@@ -39,13 +39,31 @@ const CATS: { key: string; label: string; items: Item[] }[] = [
 export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNext }: { profile: Profile; cfg: CafeCfg | null; setCfg: (c: CafeCfg) => void; onNext: () => void }) {
   const est = useMemo(() => cafeEstimate(profile, 3 * 550), [profile.gu, profile.capital, profile.keyMoney]); // eslint-disable-line react-hooks/exhaustive-deps
   const cfg: CafeCfg = cfgIn ?? { pyeong: est.pyeong, grade: est.grade, staff: 1 };
+  // 아무것도 안 바꾸고 시뮬레이션으로 가도 이 화면의 구성(추천 평수)이 넘어가게 한다. 전에는 Mock의 기본값 20평이 넘어가
+  // 가진 돈이 적을 때 가게 꾸미기(예: 10평)와 시뮬레이션(20평)의 여는 비용이 달랐다
+  useEffect(() => { if (!cfgIn) setCfgOut(cfg); }, [cfgIn]); // eslint-disable-line react-hooks/exhaustive-deps
   const [cat, setCat] = useState(CATS[0].key);
   const pv = useCafePreview(profile, cfg);
   const lay = cafeLayoutOf(cfg);
-  const { list, settled } = useMemo(() => cafeChecks(profile, cfg), [profile, cfg]);
-  const open = cafeOpeningCost(cfg.pyeong, cfg.grade, profile.gu, profile.keyMoney ?? 0);
+  // 여는 비용과 대출은 엔진 값 하나만 쓴다: 시뮬레이션과 같은 손님 수(cafeDaily)로 미리보기를 한 번 더 불러 funding을 받는다.
+  // 그래야 운전자금(월 고정비 3개월치, 인건비가 손님 수에 따라 달라짐)까지 시뮬레이션 시작 화면과 같은 값이 된다.
+  const [eng, setEng] = useState<{ key: string; open: CafeOpen } | null>(null);
+  const engKey = JSON.stringify([profile.gu, profile.dong, profile.capital, cfg]);
+  useEffect(() => {
+    const d = pv.data as unknown as Parameters<typeof cafeDaily>[0] | null;
+    if (!d?.demand) return;
+    let alive = true;
+    const body = { ...engineBody(profile, cfg, cafeDistrictCode(profile)), daily_customers: cafeDaily(d, profile.gu, cfg.pyeong) };
+    fetch(`${ENGINE}/cafe/preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then((r) => r.json()).then((j) => { if (alive && j?.capex?.lines && j.funding) setEng({ key: engKey, open: cafeOpenFromEngine(j.capex, j.funding) }); })
+      .catch(() => undefined);
+    return () => { alive = false; };
+  }, [pv.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const open = eng?.open ?? null;
+  const fresh = !!eng && eng.key === engKey;
+  const { list, settled } = useMemo(() => cafeChecks(profile, cfg, open), [profile, cfg, open]);
   const st = guStat(profile.gu);
-  const left = profile.capital - open.total;
+  const noDong = !(profile.dong && profile.dong.gu === profile.gu);
   const set = (p: Partial<CafeCfg>) => { setNote(""); setCfgOut({ ...cfg, ...p }); }; // lab:layout clears the shape note
   const seats = pv.data?.seats.total ?? 0;
   // lab:layout: room shape, route, and a line saying what a shape change did once the engine answers
@@ -99,11 +117,6 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
             <output aria-labelledby="py">{cfg.pyeong}평</output>
             <button type="button" aria-label="1평 늘리기" disabled={cfg.pyeong >= 30} onClick={() => set({ pyeong: cfg.pyeong + 1, tables: undefined, chairs: undefined })}>+</button>
           </div>
-          <div className="m-seg" role="group" aria-label="마감 수준">
-            {(Object.keys(CAFE_GRADES) as Grade[]).map((g) => (
-              <button type="button" key={g} aria-pressed={cfg.grade === g} onClick={() => set({ grade: g })}>{CAFE_GRADES[g].label}</button>
-            ))}
-          </div>
           <div className="m-stepper">
             <span id="st">직원 수</span>
             <button type="button" aria-label="직원 1명 줄이기" disabled={cfg.staff <= 0} onClick={() => set({ staff: cfg.staff - 1 })}>−</button>
@@ -113,13 +126,19 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
           <p>테이블 {lay.tables}개, {seats}석</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn"
             onClick={() => { setNote(""); setCfgOut({ pyeong: est.pyeong, grade: est.grade, staff: 1, shape: cfg.shape }); }}>추천 배치</button>
+          {noDong && <p className="m-warn m-dongwarn" role="note">동네를 아직 고르지 않았어요. 카페 시뮬레이션은 동네(행정동)를 골라야 돌아가요. 지금 숫자는 대학로 상권 기준이에요. 동네 분석에서 먼저 골라 주세요.</p>}
         </div>
 
-        <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>
-          <p><span>{left < 0 ? "모자란 현금" : "현금"}</span><strong>{man(Math.abs(left))}</strong></p>
-          <small>가진 돈 {man(profile.capital)} 중 {man(open.total)}을 썼어요.</small>
-          {left < 0 && <p className="m-warn">가진 돈보다 여는 비용이 커요. 시뮬레이션에서는 모자란 만큼을 대출로 계산해요. 평수나 마감을 낮추면 줄어요.</p>}
-          <FinanceBox loanMan={Math.max(0, -left)} rentMan={st.rent * cfg.pyeong} fallback={CAFE_DEFAULT_RATE} young={profile.age === "20대" || profile.age === "30대"} />{/* lab:finance 은행별 가상 금리, 월세 카드 할부 */}
+        <div className={`m-cash ${open && open.gap > 0 ? "is-short" : ""}${fresh ? "" : " is-stale"}`} aria-busy={!fresh}>
+          {open ? (
+            <>
+              <p><span>{open.loan > 0 ? "문 열 때 현금 (대출 포함)" : "문 열 때 현금"}</span><strong>{man(open.cash)}</strong></p>
+              <small>가진 돈 {man(profile.capital)}, 여는 데 {man(open.total)}{open.loan > 0 ? `, 대출 ${man(open.loan)}` : ""}</small>
+              {open.gap > 0 && <p className="m-warn">여는 비용이 가진 돈보다 {man(open.gap)} 많아요. 시뮬레이션은 대출 {man(open.loan)}(모자란 {man(open.gap)} + 운전자금 {man(open.extra)})으로 시작하고, 다달이 원리금 {man(open.pay)}씩 갚아요(기본 금리 연 4.5%, 5년). 평수를 줄이면 대출이 줄어요.</p>}
+              {open.gap === 0 && open.extra > 0 && <p className="m-warn">여는 비용은 가진 돈으로 내지만, 문 열 때 통장에 월 고정비 3개월치({man(open.reserve)})를 두려고 운전자금 {man(open.extra)}을 빌려요(다달이 원리금 {man(open.pay)}).</p>}
+            </>
+          ) : <p><span>문 열 때 현금</span><strong>계산 중</strong></p>}
+          <FinanceBox loanMan={open?.loan ?? 0} rentMan={st.rent * cfg.pyeong} fallback={CAFE_DEFAULT_RATE} young={profile.age === "20대" || profile.age === "30대"} />{/* lab:finance 은행별 가상 금리, 월세 카드 할부 */}
         </div>
 
         {flowOn && flow && <FlowCard onTop={() => setView("top")} f={{ inLen: flow.inLen, outLen: flow.outLen, inLabel: "주문하고 가장 먼 자리까지", outLabel: "나가기", hints: flow.hints,
@@ -128,8 +147,11 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
       </div>
 
       <div className="m-tray">
-        <dl className="m-spent">
-          {open.lines.filter((l) => l.amount > 0).map((l) => <div key={l.key}><dt>{l.label}</dt><dd>{man(l.amount)}</dd></div>)}
+        <dl className="m-spent" aria-label="여는 비용 (엔진 계산)">
+          {open ? <>
+            {open.lines.filter((l) => l.amount > 0).map((l) => <div key={l.key} title={l.basis}><dt>{l.label}</dt><dd>{man(l.amount)}</dd></div>)}
+            <div className="m-spent-total"><dt>여는 비용 합계</dt><dd>{man(open.total)}</dd></div>
+          </> : <div><dt>여는 비용</dt><dd>계산 중</dd></div>}
         </dl>
         <div className="m-cats" role="tablist" aria-label="물건 종류">
           {CATS.map((c) => <button type="button" role="tab" key={c.key} aria-selected={cat === c.key} onClick={() => setCat(c.key)}>{c.label}</button>)}
@@ -166,7 +188,10 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
       <section className="m-checks" aria-labelledby="checks-h">
         <p className="m-eyebrow" id="checks-h">열기 전 점검</p>
         <h1>{headline}</h1>
-        <p className="m-sub">{profile.gu}, {cfg.pyeong}평, {seats}석, 직원 {cfg.staff}명 기준이에요. 여는 데 {man(open.total)}이 들어요(보증금 {man(open.lines.find((l) => l.key === "deposit")?.amount ?? 0)} 포함). 바꾸면 바로 다시 계산해요.</p>
+        <p className="m-sub">{profile.gu}, {cfg.pyeong}평, {seats}석, 직원 {cfg.staff}명 기준이에요. {open
+          ? <>여는 데 {man(open.total)}이 들어요(보증금 {man(open.deposit)}, 권리금 {man(open.keyMoney)}, 부가세 선납 {man(open.vat)} 포함, 부가세는 개업 후 돌려받아요).{open.loan > 0 ? ` 가진 돈 ${man(profile.capital)}에 대출 ${man(open.loan)}을 더해 시작해요.` : ""} </>
+          : "여는 비용은 엔진이 계산하는 중이에요. "}바꾸면 바로 다시 계산해요.</p>
+        {(profile.keyMoney ?? 0) > 0 && open && <p className="m-aside">동네 분석에서 넣은 권리금 {man(profile.keyMoney ?? 0)}은 카페 엔진에 아직 들어가지 않아요. 여는 비용에는 이 동네 자료값 {man(open.keyMoney)}을 썼어요.</p>}
         <SettledStack stack={cafeSettled(profile, cfg)} note="헤드라인의 금액은 아래 비용을 모두 뺀 값이에요." />{/* lab:cost */}
         <ul className="m-checklist">
           {list.map((c) => (

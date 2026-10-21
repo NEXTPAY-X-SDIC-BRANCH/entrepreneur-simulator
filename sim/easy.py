@@ -435,6 +435,26 @@ def cafe_opening(pyeong: int, rent: float) -> list[dict]:
     ]
 
 
+def cafe_area_fx(p: float) -> float:
+    """cafeChecks.ts areaFx와 같은 식: 면적별 매출 구간(10평 미만 0.89, 10~30평 1.00, 30평 이상 1.37)을 선으로 이은 값 (가정)."""
+    return 0.89 if p <= 10 else 0.89 + (p - 10) * 0.011 if p <= 20 else min(1.37, 1 + (p - 20) * (0.37 / 15))
+
+
+def cafe_daily(pv: dict, sales_man: float, area_fx: float) -> int:
+    """손님 수 맞춤 (CafeSim, cafeChecks.cafeDaily와 같은 식): 이 동네 보통 카페 월매출 x 면적 차이에 맞춘 바쁜 날 주문 수.
+    나누는 값은 처리 능력으로 깎기 전의 수요 매출이다. 깎인 매출로 나누면 작은 가게일수록 손님을 부풀려
+    10평이 20평보다 더 파는 일이 생겼다 (2026-10-22 수정)."""
+    base = pv["demand"].get("revenue_uncapped_krw") or pv["rough_month"]["revenue_krw"]
+    ratio = (sales_man * area_fx * 10000) / base if base else 1.0
+    return min(600, max(10, js_round(pv["demand"]["default_daily_customers"] * ratio)))
+
+
+def cafe_capex_lines(pv: dict) -> list[dict]:
+    """엔진(/cafe/preview capex)의 여는 비용 줄 (만원). 가게 꾸미기와 시뮬레이션이 같은 줄을 쓴다."""
+    return [{"key": f"capex{i}", "label": x["item_ko"], "amount": round(x["subtotal_krw"] / 10000), "src": x["grade"]}
+            for i, x in enumerate(pv["capex"]["lines"])]
+
+
 def easy_cafe(gu: str, capital_man: float, dong: str | None = None, pyeong: int | None = None, start_month: int = 3,
               overrides: dict | None = None) -> dict:
     """카페 이지 입력. run 은 sim.cafe.season.start 에 넣을 몸통 (daily_customers 까지 채움)."""
@@ -456,10 +476,9 @@ def easy_cafe(gu: str, capital_man: float, dong: str | None = None, pyeong: int 
             "start_month": int(start_month)}
     if ov.get("loan_man") is not None:
         body["extra_loan_krw"] = max(0, js_round(float(ov["loan_man"]) * 10000))
-    area_fx = 0.89 if p < 10 else 1.0 if p < 30 else 1.37
+    area_fx = cafe_area_fx(p)
     pv = cafe_model.preview({k: x for k, x in body.items() if k not in ("seed", "start_month", "extra_loan_krw")})
-    ratio = (st["sales"] * area_fx * 10000) / pv["rough_month"]["revenue_krw"] if pv["rough_month"]["revenue_krw"] else 1.0
-    body["daily_customers"] = min(600, max(10, js_round(pv["demand"]["default_daily_customers"] * ratio)))
+    body["daily_customers"] = cafe_daily(pv, st["sales"], area_fx)
     menu, _, msum = default_menu("cafe", district=code)   # CafeSim과 같은 기본 메뉴판 (상권 가격에 맞춤)
     body["menu"] = menu
     shown = [
@@ -482,7 +501,8 @@ def easy_cafe(gu: str, capital_man: float, dong: str | None = None, pyeong: int 
         {"key": "start_month", "label": "여는 달", "value": int(start_month), "unit": "월", "src": "가정", "basis": "다음 달에 연다고 봄"},
     ]
     return {"industry": "cafe", "gu": gu, "dong": dname, "capital_man": float(capital_man), "pyeong": p, "staff": staff,
-            "run": body, "shown": shown, "opening": cafe_opening(p, st["rent"])}
+            "run": body, "shown": shown, "opening": cafe_capex_lines(pv),   # 엔진 여는 비용 (권리금, 부가세 선납 포함)
+            "opening_total": round(pv["capex"]["total_krw"] / 10000)}
 
 
 def easy_generic(industry: str, gu: str, capital_man: float, dong: str | None = None, pyeong: int | None = None,
