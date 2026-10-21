@@ -149,8 +149,16 @@ export function qfEstimate(profile: Profile, ind: QfInd): { pyeong: number; cost
 
 // ---------------------------------------------------------------- 한 달
 // price: 처음 가격 대비 배수, staff: 알바(고용) 인원, marketing: SNS 홍보비(만원), ad: 배달앱 광고 0 없음 / 1 기본 / 2 적극
-export type QfPlan = { price: number; staff: number; marketing: number; ad: number };
-export const DEFAULT_PLAN: QfPlan = { price: 1, staff: 1, marketing: 0, ad: 1 };
+// hours: 0 짧게 / 1 기본 / 2 늦게까지, pickup: 포장 할인율 (0 또는 0.1)
+export type QfPlan = { price: number; staff: number; marketing: number; ad: number; hours: number; pickup: number };
+export const DEFAULT_PLAN: QfPlan = { price: 1, staff: 1, marketing: 0, ad: 1, hours: 1, pickup: 0 };
+// 가정: 영업시간. 치킨은 저녁 매출이 82%라 늦게 열면 더 늘고, 분식은 점심 장사라 덜 는다. 알바비·공과금도 그만큼 는다
+export const HOURS = [
+  { label: "짧게", demand: { chicken: 0.9, bunsik: 0.92 }, cost: 0.85 },
+  { label: "기본", demand: { chicken: 1, bunsik: 1 }, cost: 1 },
+  { label: "늦게까지", demand: { chicken: 1.08, bunsik: 1.04 }, cost: 1.15 },
+];
+const PICKUP_LIFT = 2; // 가정: 포장 할인 10%면 포장 주문 +20%
 export type QfState = { cash: number; awareness: number; negMonths: number; closed: boolean };
 export type Fx = { demand?: number; visit?: number; delivery?: number; takeout?: number; food?: number; cost?: number; awareness?: number; extraWorker?: number; feeAdd?: number; price?: number };
 export type Channel = { visit: number; takeout: number; delivery: number };
@@ -167,11 +175,13 @@ export function startState(profile: Profile, cfg: QfCfg): QfState {
 export function playMonth(profile: Profile, cfg: QfCfg, s: QfState, month: number, plan: QfPlan, ev: QfEvent, opt: QfOption): { month: QfMonth; next: QfState } {
   const st = guStat(profile.gu), d = derived(cfg.ind), fx = opt.fx;
   const level = plan.price * (fx.price ?? 1);
+  const hrs = HOURS[plan.hours ?? 1] ?? HOURS[1];
+  const pick = plan.pickup ?? 0;
   const base = expectedSales(cfg, profile.gu) * (st.qidx[Math.floor((month - 1) / 3)] ?? 1) * s.awareness * (ev.fx?.demand ?? 1) * (fx.demand ?? 1)
-    * Math.pow(level, 1 - ELASTIC);  // 매출 = 주문 × 가격: 주문은 level^-1.2, 한 건 값은 level배
+    * Math.pow(level, 1 - ELASTIC) * hrs.demand[cfg.ind];  // 매출 = 주문 × 가격, 영업시간 배수
   const want: Channel = {
     visit: base * d.share.visit * (ev.fx?.visit ?? 1) * (fx.visit ?? 1),
-    takeout: base * d.share.takeout * (ev.fx?.takeout ?? 1) * (fx.takeout ?? 1),
+    takeout: base * d.share.takeout * (ev.fx?.takeout ?? 1) * (fx.takeout ?? 1) * (1 + PICKUP_LIFT * pick) * (1 - pick),  // 할인한 만큼 한 건 값이 준다
     delivery: base * d.share.delivery * DELIVERY_MONTH[month] * deliveryGu(profile.gu) * AD_BOOST[plan.ad] * (ev.fx?.delivery ?? 1) * (fx.delivery ?? 1),
   };
   const need = want.visit + want.takeout + want.delivery;
@@ -186,9 +196,9 @@ export function playMonth(profile: Profile, cfg: QfCfg, s: QfState, month: numbe
   const agencyFees = orders.delivery * d.agencyFee;
   const fm = foodMult(cfg.ind, month).mult;
   const food = (revenue / level) * d.foodRatio * fm * (ev.fx?.food ?? 1) * (fx.food ?? 1);   // 가격을 올려도 식재료는 그대로. fm = 이달 식재료 시세
-  const staffPay = d.wage * plan.staff;
+  const staffPay = d.wage * plan.staff * hrs.cost;
   const rent = st.rent * cfg.pyeong;
-  const other = revenue * OTHER;
+  const other = revenue * OTHER * hrs.cost;
   const adCost = AD_COST[plan.ad];
   const eventCost = fx.cost ?? 0;
   const op = revenue - food - staffPay - rent - other - plan.marketing - adCost - appFees - agencyFees - eventCost;
@@ -315,6 +325,8 @@ export const PLAN_TEXT: Record<keyof QfPlan, { label: string; text: (p: QfPlan) 
   staff: { label: "알바", text: (p) => `${p.staff}명`, hint: "모자라면 몰리는 날 주문을 놓치고, 많으면 인건비가 남아요" },
   ad: { label: "배달앱 광고", text: (p) => `${AD_TEXT[p.ad]}${p.ad ? ` (${AD_COST[p.ad]}만원)` : ""}`, hint: "배달 주문이 늘지만(기본 +15%, 적극 +28%, 가정) 한 건마다 수수료도 나가요. 주문이 적은 동네에서는 광고비를 못 뽑아요" },
   marketing: { label: "SNS 홍보비", text: (p) => (p.marketing ? `${p.marketing}만원` : "없음"), hint: "인지도가 올라 손님이 늘어요 (100만원당 인지도 +0.15, 고깃집과 같은 가정)" },
+  hours: { label: "영업시간", text: (p) => HOURS[p.hours ?? 1].label, hint: "늦게까지 열면 치킨 주문 +8%·분식 +4%, 알바비·공과금 +15%. 짧게 열면 반대로 (가정)" },
+  pickup: { label: "포장 할인", text: (p) => ((p.pickup ?? 0) > 0 ? `${Math.round(p.pickup * 100)}%` : "없음"), hint: "포장 손님에게 깎아 주면 포장 주문이 늘고(10% 할인 = +20%, 가정) 배달 수수료가 안 드는 주문이 많아져요" },
 };
 const diffPlan = (a: QfPlan, b: QfPlan) => (Object.keys(PLAN_TEXT) as (keyof QfPlan)[])
   .filter((k) => PLAN_TEXT[k].text(a) !== PLAN_TEXT[k].text(b)).map((k) => `${PLAN_TEXT[k].label} ${PLAN_TEXT[k].text(a)} → ${PLAN_TEXT[k].text(b)}`);

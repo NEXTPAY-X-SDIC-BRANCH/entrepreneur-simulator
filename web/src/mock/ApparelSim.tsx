@@ -10,12 +10,19 @@ import {
 } from "./apparel";
 import { FloorPlan } from "./ApparelBuild";
 import Assume from "./Assume";
+import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import { LOAN_RATE, guStat, man, type Profile } from "./model";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine";
 import "./simulate-engine.css";
 
 const TURNS = 6;
+// 쉬운 모드: 방향을 고른 뒤 버튼으로 바꾸는 세 가지
+const PICKS: QPick<ApPlan>[] = [
+  { key: "buy", label: "매입량", hint: "많이 사면 사이즈가 덜 빠지고, 적게 사면 현금이 남아요", opts: [{ label: "적게", value: 0.8 }, { label: "보통", value: 1 }, { label: "많이", value: 1.2 }] },
+  { key: "markdownAge", label: "세일 시작", hint: "일찍 세일하면 돈이 빨리 돌고, 늦으면 정가로 더 팔아요", opts: [{ label: "2달 지나면", value: 2 }, { label: "3달", value: 3 }, { label: "4달", value: 4 }] },
+  { key: "online", label: "온라인 판매", hint: "같은 재고를 온라인으로도 팔아요 (수수료·택배비)", opts: [{ label: "안 함", value: 0 }, { label: "스마트스토어", value: 1 }, { label: "플랫폼 입점", value: 2 }] },
+];
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
 type View = "intro" | "plan" | "scenario" | "settle" | "report" | null;
 type Tick = { label: string; amount: number }; // 만원
@@ -110,6 +117,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
   const [done, setDone] = useState<Done[]>([]);
   const [plan, setPlan] = useState<ApPlan>({ ...DEFAULT_PLAN, staff: cfg.staff });
   const [strat, setStrat] = useState<ApStratId>("rec");
+  const [tweak, setTweak] = useState<Partial<ApPlan>>({});
   const [choice, setChoice] = useState("");
   const [dayIdx, setDayIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -159,7 +167,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
 
   const restart = () => { setState(startState(profile, cfg, startMonth)); setDone([]); setPlan({ ...DEFAULT_PLAN, staff: cfg.staff }); setSeed(Math.floor(Math.random() * 1000)); setView("intro"); };
   const toScenario = () => {
-    const p = mode === "easy" ? strats.find((x) => x.id === strat)!.plan : plan;
+    const p = mode === "easy" ? { ...strats.find((x) => x.id === strat)!.plan, ...tweak } : plan;
     setPlan(p);
     setChoice(ev.options[ev.options.length - 1].id);
     setView("scenario");
@@ -176,6 +184,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
   const next = () => {
     if (state.closed || done.length >= TURNS) { setView("report"); return; }
     setStrat("rec");
+    setTweak({});
     setView("plan");
   };
   const redo = () => { // 이 달을 계획을 바꿔 다시: 달이 시작될 때의 상태로 돌아간다
@@ -362,7 +371,8 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                             </label>
                           ))}
                         </div>
-                        <p className="sx-note">자세히 모드에서는 매입량·더 들일 품목·할인·세일·알바·홍보비를 하나씩 정할 수 있어요.</p>
+                        <QuickPicks picks={PICKS} base={strats.find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
+                        <p className="sx-note">자세히 모드에서는 매입량·더 들일 품목·상시 할인·세일 시작과 폭·알바·홍보비·온라인 판매를 숫자로 하나씩 정할 수 있어요.</p>
                       </section>
                     ) : (
                       <section className="sx-right" aria-label="이번 달 운영 계획">

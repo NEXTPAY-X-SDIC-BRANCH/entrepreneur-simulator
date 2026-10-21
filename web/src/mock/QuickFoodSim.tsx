@@ -10,6 +10,7 @@ import {
   type QfCfg, type QfMonth, type QfPlan, type QfState, type QfStratId,
 } from "./quickfood";
 import { QfFloorPlan } from "./QuickFoodBuild";
+import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine";
 import "./simulate-engine.css";
@@ -24,7 +25,13 @@ const w = (x: number) => Math.round(x); // 만원
 const signed = (x: number) => (w(x) === 0 ? "0원" : `${x > 0 ? "+" : "−"}${man(Math.abs(w(x)))}`);
 const tone = (x: number) => (w(x) > 0 ? "pos" : w(x) < 0 ? "neg" : "");
 const n0 = (x: number) => Math.round(x).toLocaleString("ko-KR");
-const STEPS: [keyof QfPlan, number, number, number][] = [["price", 0.85, 1.2, 0.05], ["staff", 0, 3, 1], ["ad", 0, 2, 1], ["marketing", 0, 100, 25]];
+const STEPS: [keyof QfPlan, number, number, number][] = [["price", 0.85, 1.2, 0.05], ["staff", 0, 3, 1], ["ad", 0, 2, 1], ["marketing", 0, 100, 25], ["hours", 0, 2, 1], ["pickup", 0, 0.1, 0.1]];
+// 쉬운 모드: 방향을 고른 뒤 버튼으로 바꾸는 세 가지
+const PICKS: QPick<QfPlan>[] = [
+  { key: "price", label: "가격", hint: "올리면 한 건 값이 늘고 주문이 줄어요", opts: [{ label: "5% 싸게", value: 0.95 }, { label: "그대로", value: 1 }, { label: "5% 비싸게", value: 1.05 }] },
+  { key: "staff", label: "알바", hint: "바쁜 날 주문을 놓치지 않게", opts: [{ label: "없이", value: 0 }, { label: "1명", value: 1 }, { label: "2명", value: 2 }] },
+  { key: "ad", label: "배달앱 광고", hint: "배달 주문을 늘리지만 광고비가 들어요", opts: [{ label: "안 함", value: 0 }, { label: "기본", value: 1 }, { label: "적극", value: 2 }] },
+];
 
 const ico = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 const IconBike = () => <svg {...ico}><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M6 17h4l3-6h3l2 6M13 11l-2-4H8" /></svg>;
@@ -93,6 +100,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const [done, setDone] = useState<Done[]>([]);
   const [plan, setPlan] = useState<QfPlan>({ ...DEFAULT_PLAN, staff: cfg.staff });
   const [strat, setStrat] = useState<QfStratId>("rec");
+  const [tweak, setTweak] = useState<Partial<QfPlan>>({});
   const [choice, setChoice] = useState("");
   const [dayIdx, setDayIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -139,7 +147,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
 
   const restart = () => { setState(startState(profile, cfg)); setDone([]); setPlan({ ...DEFAULT_PLAN, staff: cfg.staff }); setSeed(Math.floor(Math.random() * 1000)); setView("intro"); };
   const toScenario = () => {
-    setPlan(mode === "easy" ? strats.find((x) => x.id === strat)!.plan : plan);
+    setPlan(mode === "easy" ? { ...strats.find((x) => x.id === strat)!.plan, ...tweak } : plan);
     setChoice(ev.options[ev.options.length - 1].id);
     setView("scenario");
   };
@@ -151,7 +159,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
     setDayIdx(0); setPlaying(true); setView(null);
   };
   const skip = () => { if (cur) { setDayIdx(cur.days.length - 1); setPlaying(false); setView("settle"); } };
-  const next = () => { if (state.closed || done.length >= TURNS) { setView("report"); return; } setStrat("rec"); setView("plan"); };
+  const next = () => { if (state.closed || done.length >= TURNS) { setView("report"); return; } setStrat("rec"); setTweak({}); setView("plan"); };
   const redo = () => {
     const rest = done.slice(0, -1), prev = rest.at(-1)?.m;
     setDone(rest);
@@ -326,7 +334,8 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                             </label>
                           ))}
                         </div>
-                        <p className="sx-note">자세히 모드에서는 가격·알바·배달앱 광고·홍보비를 하나씩 정할 수 있어요.</p>
+                        <QuickPicks picks={PICKS} base={strats.find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
+                        <p className="sx-note">자세히 모드에서는 가격·알바·배달앱 광고·홍보비·영업시간·포장 할인을 숫자로 하나씩 정할 수 있어요.</p>
                       </section>
                     ) : (
                       <section className="sx-right" aria-label="이번 달 운영 계획">
