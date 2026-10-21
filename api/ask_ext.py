@@ -40,8 +40,22 @@ FAMILIES: dict[str, tuple[str, ...]] = {
     "loan": ("ecos_", "live_loan"),       # 은행 대출 금리 (pipelines/fetch_ecos.py)
     "support": ("kstartup_",),            # 창업 지원사업 공고 (pipelines/fetch_kstartup.py)
     "delivery": ("delivery_",),           # 배달 시장·수수료 (pipelines/fetch_kosis_delivery.py, season_params.yaml delivery)
+    "industry": ("ind_",),                # lab:industry 새 업종 (facts_industry.json)
 }
+# lab:industry 새 업종 이름 -> id. '한식'·'닭'만으로는 고르지 않는다 (기존 한식음식점·닭고기 가격 질문을 지킨다)
+IND_Q: list[tuple[str, re.Pattern]] = [
+    ("hansik", re.compile(r"백반|밥집|국밥집|찌개집|한정식")), ("pub", re.compile(r"호프|주점|술집|생맥주|포차|이자카야|맥줏집|맥주집")),
+    ("bunsik", re.compile(r"분식|김밥|떡볶이")), ("bakery", re.compile(r"베이커리|빵집|빵 ?가게|제과")), ("chicken", re.compile(r"치킨|통닭|닭강정")),
+]
+
+
+def industry_of(q: str) -> str | None:  # lab:industry
+    hit = [i for i, rx in IND_Q if rx.search(q)]
+    return hit[0] if len(hit) == 1 else None
+
+
 TOPIC_RE: list[tuple[str, re.Pattern]] = [
+    ("industry", re.compile("|".join(rx.pattern for _, rx in IND_Q))),  # lab:industry
     ("weather", re.compile(r"날씨|기온|장마|강수|소나기|비가|비 ?(오|와|온|올|내)|눈이|눈 ?(오|와|온)|더위|추위|한파|폭염")),
     ("holiday", re.compile(r"공휴일|휴일|연휴|명절|설날|추석|쉬는 ?날")),
     ("rent", re.compile(r"월세|임대|임차|보증금|권리금|평당")),
@@ -104,6 +118,7 @@ NONE_MESSAGE = ("죄송해요, 그 질문에 맞는 근거 자료를 찾지 못�
                 "• 월세, 보증금, 권리금 (지역별)\n"
                 "• 카페 창업 비용: 인테리어, 장비, 원두 구매량, 식재료비\n"
                 "• 카페·고깃집 경쟁: 지역별 가게 수, 폐업률, 매출\n"
+                "• 백반집·호프·분식집·베이커리·치킨집: 매출, 비용 구조, 배달 비중, 구별 가게 수\n"  # lab:industry
                 "• 동네 분석: 유동인구, 직장인구, 동네 유형\n"
                 "• 고기 가격: 돼지고기 소비자가격, 물가지수\n"
                 "• 채소·곡물 가격: 서울 소매가격 (상추, 양파, 대파, 마늘, 쌀 등)\n"
@@ -238,6 +253,9 @@ def static_facts() -> tuple[list[dict], dict]:
     sources.update(cafe_srcs)
     if f.get("sources"):
         sources.update(f["sources"])
+    ind = _load("facts_industry.json")  # lab:industry 새 업종 근거 (pipelines/build_industry_facts.py)
+    facts += ind.get("facts", [])  # lab:industry
+    sources.update(ind.get("sources", {}))  # lab:industry
 
     return facts, sources
 
@@ -611,8 +629,17 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
         if OWN.search(q):
             here = [f for f in pool if f["id"].startswith("live_")]
             pool = here or pool
+    ind_hit = industry_of(q)  # lab:industry 새 업종을 물으면 그 업종 근거만 (구를 말하면 그 구 문장, 아니면 서울·전국 문장)
+    if ind_hit:
+        gq = GU.search(q)
+        mine = [f for f in pool if f["id"].startswith(f"ind_{ind_hit}_") and ("_gu_" not in f["id"] or (gq and f.get("gu") == gq.group()))]
+        if gq and tps & {"sales", "competition"}:
+            mine = [f for f in mine if f.get("gu") == gq.group()] or mine
+        pool = mine + [f for f in pool if f["id"].startswith("live_")] if mine else pool
     cafe_q, meat_q = bool(CAFE_Q.search(q)), bool(MEAT_Q.search(q))
-    if cafe_q and not meat_q:
+    if ind_hit:  # lab:industry
+        pass
+    elif cafe_q and not meat_q:
         pool = [f for f in pool if not MEAT_ID.match(f["id"]) and not MEAT_TEXT.search(f["text"])]
     elif meat_q and not cafe_q:
         pool = [f for f in pool if not CAFE_ID.match(f["id"])]
