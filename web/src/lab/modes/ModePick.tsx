@@ -15,7 +15,7 @@ export default function ModePick({ initial, onPick }: { initial: Mode | null; on
           <div className="m-choices m-choices-big">
             <label className="m-choice">
               <input type="radio" name="mode" checked={m === "easy"} onChange={() => setM("easy")} />
-              <span>이지 모드<small>업종, 동네, 가진 돈만 정하면 나머지(평수, 테이블, 직원, 가격, 월세)는 서울 상권 자료로 채워서 6개월을 한 번에 돌려요. 결과를 보고 고쳐서 다시 해 봐요.</small></span>
+              <span>이지 모드<small>업종, 동네, 가진 돈만 정하면 나머지(평수, 테이블, 직원, 가격, 월세)는 서울 상권 자료와 추천 규칙으로 채워서 6개월을 한 번에 돌려요. 결과를 보고 고쳐서 다시 해 봐요.</small></span>
             </label>
             <label className="m-choice">
               <input type="radio" name="mode" checked={m === "hard"} onChange={() => setM("hard")} />

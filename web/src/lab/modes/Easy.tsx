@@ -96,7 +96,7 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
         <p className="m-progress"><button type="button" onClick={onModes}>연습 방식 다시 고르기</button><span>이지 모드</span></p>
         <form className="m-q" onSubmit={(e) => { e.preventDefault(); if (profile.capital >= 500) run(); }}>
           <h1 className="lm-h1">세 가지만 알려 주세요</h1>
-          <p className="m-help">나머지(평수, 테이블, 직원, 가격, 월세)는 서울 상권 자료와 외식업 실태조사로 채워요. 채운 값과 근거는 결과 화면에 다 보여 드려요.</p>
+          <p className="m-help">나머지(평수, 테이블, 직원, 가격, 월세)는 서울 상권 자료, 외식업 실태조사와 추천 규칙으로 채워요. 채운 값과 근거는 결과 화면에 다 보여 드려요.</p>
           <div className="lm-form">
             <fieldset>
               <legend>어떤 가게</legend>

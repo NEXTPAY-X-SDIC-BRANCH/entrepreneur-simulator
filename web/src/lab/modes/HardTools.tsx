@@ -5,7 +5,7 @@ import { getEngineCtx } from "../../mock/chatContext";
 import { flowShape, profileOf } from "../../mock/area";
 import { areaFx, engineBody, type CafeCfg } from "../../mock/cafeChecks";
 import { LOAN_RATE, OWNER_DRAW, guStat, openingCost, storeStats, type Levers, type Profile, type Store } from "../../mock/model";
-import { post } from "./api";
+import { netErr, post } from "./api";
 import { addAttempt, attemptsOf, nextAttemptNo, type Attempt } from "./attempts";
 import Compare from "./Compare";
 import { scoreOf } from "./scoreStub";
@@ -49,6 +49,7 @@ export default function HardTools({ profile, store, levers, cafeCfg, step, onRet
   const [sens, setSens] = useState(false);
   const [cmp, setCmp] = useState<{ prev?: Attempt; cur: Attempt } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
   const ind = profile.industry;
   const n = nextAttemptNo(ind);
   if (step !== "build" && step !== "sim") return null;
@@ -56,17 +57,19 @@ export default function HardTools({ profile, store, levers, cafeCfg, step, onRet
   const retry = async () => {
     const ctx = ind === "bbq" ? getEngineCtx() : null;
     if (!ctx || !ctx.months.length || !(ctx.finished || ctx.closed)) { onRetry(); return; }
-    setBusy(true);
-    const cost = openingCost(store, profile.gu, profile.keyMoney ?? 0);
-    const st = storeStats(store);
-    const inputs: Inputs = { gu: profile.gu, dong: profile.dong?.gu === profile.gu ? profile.dong.name : null, capital_man: profile.capital,
-      pyeong: store.pyeong, tables: st.tables, staff: Math.min(4, levers.staff), price: levers.price, loan_man: store.loan, start_month: ctx.start_month, grade: store.grade };
-    const summary = hardBbqSummary(ctx, (profile.capital + store.loan - cost.total) * 1e4, cost.total * 1e4, store.loan * 1e4, LOAN_RATE, inputs, n);
-    const scored = await scoreOf(summary);
-    const before = attemptsOf(ind).at(-1);
-    const cur = addAttempt(summary, scored);
+    setBusy(true); setErr("");
+    try {
+      const cost = openingCost(store, profile.gu, profile.keyMoney ?? 0);
+      const st = storeStats(store);
+      const inputs: Inputs = { gu: profile.gu, dong: profile.dong?.gu === profile.gu ? profile.dong.name : null, capital_man: profile.capital,
+        pyeong: store.pyeong, tables: st.tables, staff: Math.min(4, levers.staff), price: levers.price, loan_man: store.loan, start_month: ctx.start_month, grade: store.grade };
+      const summary = hardBbqSummary(ctx, (profile.capital + store.loan - cost.total) * 1e4, cost.total * 1e4, store.loan * 1e4, LOAN_RATE, inputs, n);
+      const scored = await scoreOf(summary);
+      const before = attemptsOf(ind).at(-1);
+      const cur = addAttempt(summary, scored);
+      setCmp({ prev: before, cur });
+    } catch (e) { setErr(netErr(e)); }
     setBusy(false);
-    setCmp({ prev: before, cur });
   };
 
   const cafeReady = ind !== "cafe" || !!cafeCfg;
@@ -78,10 +81,11 @@ export default function HardTools({ profile, store, levers, cafeCfg, step, onRet
         <button type="button" className="m-btn m-btn-quiet lm-toolbtn" disabled={!cafeReady} onClick={() => setSens(true)}>민감도 보기</button>
         {step === "sim" && (
           <button type="button" className="m-btn m-btn-quiet lm-toolbtn" disabled={busy} onClick={retry}
-            title={ind === "bbq" && !finished ? "6개월을 끝까지 돌리면 이번 판 점수를 남기고 다음 판과 비교해요" : undefined}>
-            {busy ? "점수 매기는 중" : "다시 해보기"}
+            title={ind === "cafe" ? "카페 하드 모드는 성적표가 결과 화면에 붙은 뒤 판 기록을 남겨요. 지금은 입력을 그대로 두고 가게 꾸미기로 돌아가요" : !finished ? "6개월을 끝까지 돌리면 이번 판 점수를 남기고 다음 판과 비교해요" : undefined}>
+            {busy ? "점수 매기는 중" : ind === "cafe" ? "다시 해보기 (점수 기록 없이)" : "다시 해보기"}
           </button>
         )}
+        {err && <span className="lm-err lm-err-inline" role="alert">{err}</span>}
       </span>
       {sens && (
         <Sensitivity industry={ind} onClose={() => setSens(false)}

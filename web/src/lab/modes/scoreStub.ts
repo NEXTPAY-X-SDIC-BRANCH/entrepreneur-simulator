@@ -1,5 +1,6 @@
 // lab:modes — local stand-in for the score lane's POST /score, same contract shape (web/src/lab/types.ts Score).
 // scoreOf() calls the real endpoint first and only falls back to this stub when /score is missing (404) or unreachable,
+// any other error (e.g. 422 contract mismatch) is thrown so it is not hidden behind "임시 점수",
 // so once the score lane is merged the real scorecard is used without any change here.
 // Every threshold below is a 가정 for the stub only; the real weights belong to the score lane.
 import type { Score, ScoreBand, ScoreFix, ScorePart, SeasonSummary } from "../types";
@@ -49,12 +50,12 @@ export function stubScore(s: SeasonSummary): Score {
 
 export type Scored = { score: Score; stub: boolean };
 export async function scoreOf(s: SeasonSummary): Promise<Scored> {
+  let r: Response;
   try {
-    const r = await fetch(`${ENGINE}/score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) });
-    if (r.ok) {
-      const j = await r.json();
-      if (typeof j?.total === "number" && Array.isArray(j?.parts)) return { score: j as Score, stub: false };
-    }
-  } catch { /* score lane not merged yet or engine down: use the stub */ }
-  return { score: stubScore(s), stub: true };
+    r = await fetch(`${ENGINE}/score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) });
+  } catch { return { score: stubScore(s), stub: true }; } // engine unreachable
+  if (r.status === 404) return { score: stubScore(s), stub: true }; // score lane not merged yet
+  const j = await r.json().catch(() => null);
+  if (!r.ok || typeof j?.total !== "number" || !Array.isArray(j?.parts)) throw new Error(`성적표 계산 오류 ${r.status}: ${JSON.stringify(j?.detail ?? j).slice(0, 160)}`);
+  return { score: j as Score, stub: false };
 }

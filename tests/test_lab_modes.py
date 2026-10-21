@@ -47,6 +47,13 @@ def test_easy_bbq_short_capital_borrows_enough_to_open():
     assert start > 0   # 모자란 돈 + 석 달 고정비를 빌린다
 
 
+def test_easy_bbq_loan_override_too_small_is_rejected():
+    with pytest.raises(ValueError, match="모자라요"):
+        E.easy_inputs("bbq", "종로구", 3000, overrides={"loan_man": 0})
+    ok = E.easy_inputs("bbq", "종로구", 3000, overrides={"loan_man": 5000})
+    assert ok["capital_man"] + ok["loan_man"] >= ok["opening_total"]
+
+
 def test_easy_bbq_pyeong_and_overrides_win():
     a = E.easy_inputs("bbq", "마포구", 15000, pyeong=25)
     assert a["store"]["pyeong"] == 25

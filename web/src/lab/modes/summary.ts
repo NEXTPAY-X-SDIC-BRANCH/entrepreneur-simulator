@@ -13,10 +13,10 @@ export type Inputs = {
 export function easyInputsOf(i: EasyInputs): Inputs {
   if (i.industry === "cafe") {
     return { gu: i.gu, dong: i.dong, capital_man: i.capital_man, pyeong: i.pyeong ?? 0, staff: i.staff, loan_man: 0,
-      daily_customers: i.run.daily_customers, start_month: i.run.start_month };
+      daily_customers: i.run.daily_customers, start_month: i.run.start_month, grade: "basic" };
   }
   return { gu: i.gu, dong: i.dong, capital_man: i.capital_man, pyeong: i.store?.pyeong ?? 0, tables: i.store?.tables, staff: i.staff,
-    price: i.price, loan_man: i.loan_man ?? 0, start_month: i.run.store?.start_month };
+    price: i.price, loan_man: i.loan_man ?? 0, start_month: i.run.store?.start_month, grade: "basic" };
 }
 
 export function bbqSummary(run: BbqRun, inv: Record<string, number>, loan: { principal: number; annual_rate: number } | null,
@@ -79,7 +79,7 @@ const LABEL: Record<string, [string, (v: any) => string]> = {
   loan_man: ["대출", (v) => `${Math.round(Number(v)).toLocaleString("ko-KR")}만원`],
   daily_customers: ["바쁜 날 주문 수", (v) => `${v}건`],
   start_month: ["여는 달", (v) => `${v}월`],
-  grade: ["인테리어", (v) => String(v)],
+  grade: ["인테리어 등급", (v) => ({ basic: "기본", mid: "중급", high: "고급" } as Record<string, string>)[v] ?? String(v)],
 };
 export type DiffRow = { key: string; label: string; before: string; after: string; changed: boolean };
 export function diffInputs(a: Record<string, unknown>, b: Record<string, unknown>, industry: string): DiffRow[] {

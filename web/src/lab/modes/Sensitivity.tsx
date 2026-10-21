@@ -7,12 +7,13 @@ import "./modes.css";
 
 const KEYS = { bbq: ["customers", "meat", "rent", "labor"], cafe: ["customers", "food", "rent", "labor"] } as const;
 const LABEL: Record<string, string> = { customers: "손님 수", meat: "고깃값", food: "재료비 (원두, 우유, 디저트)", rent: "월세", labor: "인건비" };
+const LABEL_BBQ: Record<string, string> = { labor: "알바 시급" }; // 고깃집 엔진은 알바 시급만 바꾼다 (사장님 몫은 그대로)
 const HINT: Record<string, string> = {
   customers: "동네 손님이 생각보다 적거나 많을 때",
   meat: "돼지고기 도매가가 오르내릴 때 (질병, 계절)",
   food: "원두와 우유값이 오르내릴 때",
   rent: "재계약 때 월세가 바뀔 때",
-  labor: "시급이 오르거나 알바를 더 쳐줘야 할 때",
+  labor: "시급이 오르거나 사람을 구하기 어려울 때",
 };
 const DEFAULT: Record<string, number> = { customers: 15, meat: 20, food: 20, rent: 10, labor: 10 };
 
@@ -22,6 +23,7 @@ export default function Sensitivity({ industry, getBody, onClose }: {
   industry: "bbq" | "cafe"; getBody: () => Promise<Record<string, unknown>>; onClose: () => void;
 }) {
   const keys = KEYS[industry];
+  const lab = (k: string) => (industry === "bbq" && LABEL_BBQ[k]) || LABEL[k];
   const [ranges, setRanges] = useState<Record<string, number>>(() => Object.fromEntries(keys.map((k) => [k, DEFAULT[k]])));
   const [out, setOut] = useState<Sens | null>(null);
   const [busy, setBusy] = useState(false);
@@ -63,16 +65,16 @@ export default function Sensitivity({ industry, getBody, onClose }: {
           <h2 id="lm-sens-h">민감도: 이 계획은 얼마나 흔들리나요</h2>
           <button type="button" className="m-btn m-btn-quiet lm-close" onClick={onClose}>닫기</button>
         </header>
-        <p className="lm-quiet">지금 정한 가게와 운영 계획을 그대로 두고, 아래 값만 바꿔 6개월을 여러 번 돌려요. 범위는 직접 정하는 가정이에요.
-          사건 순서(시드)가 같아서 칸끼리의 차이는 바꾼 값 때문이에요.</p>
+        <p className="lm-quiet">가게 꾸미기에서 정한 가게{industry === "bbq" ? "와 가격, 알바" : ", 직원"}로 기본 운영을 6개월 그대로 둔 계획을, 아래 값만 바꿔 여러 번 돌려요.
+          매달 바꾼 운영 계획은 들어가지 않아요. 범위는 직접 정하는 가정이고, 사건 순서(시드)를 고정해서 칸끼리의 차이는 바꾼 값 때문이에요.</p>
         <div className="lm-ranges">
           {keys.map((k) => (
             <div key={k} className="lm-range">
-              <span className="lm-ctl-l">{LABEL[k]}<small>{HINT[k]}</small></span>
+              <span className="lm-ctl-l">{lab(k)}<small>{HINT[k]}</small></span>
               <div className="m-stepper">
                 <output>±{ranges[k]}%</output>
-                <button type="button" aria-label={`${LABEL[k]} 범위 줄이기`} disabled={ranges[k] <= 0} onClick={() => setRanges({ ...ranges, [k]: Math.max(0, ranges[k] - 5) })}>−</button>
-                <button type="button" aria-label={`${LABEL[k]} 범위 늘리기`} disabled={ranges[k] >= 50} onClick={() => setRanges({ ...ranges, [k]: Math.min(50, ranges[k] + 5) })}>+</button>
+                <button type="button" aria-label={`${lab(k)} 범위 줄이기`} disabled={ranges[k] <= 0} onClick={() => setRanges({ ...ranges, [k]: Math.max(0, ranges[k] - 5) })}>−</button>
+                <button type="button" aria-label={`${lab(k)} 범위 늘리기`} disabled={ranges[k] >= 50} onClick={() => setRanges({ ...ranges, [k]: Math.min(50, ranges[k] + 5) })}>+</button>
               </div>
             </div>
           ))}
@@ -94,7 +96,7 @@ export default function Sensitivity({ industry, getBody, onClose }: {
                   const bad = f.good === "high" ? f.low : f.high, good = f.good === "high" ? f.high : f.low;
                   return (
                     <li key={f.key}>
-                      <span className="lm-tor-l">{LABEL[f.key]} ±{f.pct}%</span>
+                      <span className="lm-tor-l">{lab(f.key)} ±{f.pct}%</span>
                       <div className="lm-tor-bar" aria-hidden>
                         {lo < 0 && hi > 0 && <i className="lm-tor-zero" style={{ insetInlineStart: pos(0) }} />}
                         <i className="lm-tor-span" style={{ insetInlineStart: pos(a), inlineSize: `calc(${pos(b)} - ${pos(a)})` }} />
@@ -112,7 +114,7 @@ export default function Sensitivity({ industry, getBody, onClose }: {
             <section className="lm-sec">
               <h3>{out.grid.x.label} × {out.grid.y.label}, 같이 바뀌면</h3>
               <table className="lm-tbl lm-grid">
-                <thead><tr><th scope="col">{out.grid.y.label} \ {out.grid.x.label}</th>{xSteps.map((p) => <th key={p} scope="col">{pct(p)}</th>)}</tr></thead>
+                <thead><tr><th scope="col">{out.grid.y.label} \ {out.grid.x.label}</th>{xSteps.map((p, i) => <th key={i} scope="col">{pct(p)}</th>)}</tr></thead>
                 <tbody>
                   {out.grid.cells.map((row, r) => (
                     <tr key={r}><th scope="row">{pct(ySteps[r])}</th>

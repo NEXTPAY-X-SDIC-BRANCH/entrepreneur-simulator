@@ -300,6 +300,9 @@ def easy_bbq(gu: str, capital_man: float, dong: str | None = None, pyeong: int |
     if ov.get("loan_man") is not None:
         loan = max(0.0, float(ov["loan_man"]))
         loan_src = "입력"
+        if float(capital_man) + loan < opening:
+            raise ValueError(f"가진 돈과 대출로는 가게를 열 수 없어요. 여는 비용 {opening:,.0f}만원에 "
+                             f"{opening - float(capital_man) - loan:,.0f}만원이 모자라요. 대출을 늘리거나 평수를 줄여 보세요")
     else:
         loan = math.ceil((short + WORKING_MONTHS * _fixed_month(st, store, staff)) / 100) * 100 if short > 0 else 0.0
         loan_src = "가정"
@@ -329,7 +332,8 @@ def easy_bbq(gu: str, capital_man: float, dong: str | None = None, pyeong: int |
          "basis": OV_BASIS if ov.get("price") else "기준 고깃집(대학로) 가격, 팀 조사"},
         {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": st["rent"], "unit": "만원",
          "src": "공공 통계" if st["rent_src"].startswith("R-ONE") else "가정",
-         "basis": f"한국부동산원 상가 임대료 ({st['rent_src']}), 보증금 환산분을 뺀 현금 월세"},
+         "basis": f"한국부동산원 상가 임대료 ({st['rent_src']}), 보증금 환산분을 뺀 현금 월세" if st["rent_src"] != "예시값"
+         else "이 구의 임대료 자료가 없어 넣은 예시값"},
         {"key": "sales", "label": "구 한식음식점 점포당 월매출", "value": st["sales_hansik"], "unit": "만원", "src": "공공 통계",
          "basis": "서울시 상권분석서비스 2025" + (f", {st['dong']} 상대 위치 반영" if st["dong"] else "")},
         {"key": "loan", "label": "대출", "value": loan, "unit": "만원", "src": loan_src,
@@ -407,9 +411,10 @@ def easy_cafe(gu: str, capital_man: float, dong: str | None = None, pyeong: int 
         {"key": "seats", "label": "테이블 / 의자", "value": f"{body['tables']} / {body['chairs']}", "unit": "", "src": "업계 자료",
          "basis": "독립 카페 평당 테이블 0.36개, 좌석 1.27석"},
         {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": st["rent"], "unit": "만원",
-         "src": "공공 통계" if st["rent_src"].startswith("R-ONE") else "가정", "basis": f"한국부동산원 상가 임대료 ({st['rent_src']})"},
-        {"key": "sales", "label": "이 동네 보통 카페 월매출", "value": st["sales"], "unit": "만원", "src": "공공 통계",
-         "basis": "서울시 상권분석서비스 카드 추정매출 × 보정 배율, 전국 독립 카페 중앙값/평균 비율 (추정)"},
+         "src": "공공 통계" if st["rent_src"].startswith("R-ONE") else "가정",
+         "basis": f"한국부동산원 상가 임대료 ({st['rent_src']})" if st["rent_src"] != "예시값" else "이 구의 임대료 자료가 없어 넣은 예시값"},
+        {"key": "sales", "label": "이 동네 보통 카페 월매출", "value": st["sales"], "unit": "만원", "src": "가정",
+         "basis": "서울시 상권분석서비스 카드 추정매출(공공 통계)에 보정 배율과 전국 독립 카페 중앙값/평균 비율을 곱한 추정"},
         {"key": "daily", "label": "바쁜 날 주문 수", "value": body["daily_customers"], "unit": "건", "src": "가정",
          "basis": "위 월매출에 맞춘 값 (카페 시뮬레이션 화면과 같은 규칙)"},
         {"key": "start_month", "label": "여는 달", "value": int(start_month), "unit": "월", "src": "가정", "basis": "다음 달에 연다고 봄"},
