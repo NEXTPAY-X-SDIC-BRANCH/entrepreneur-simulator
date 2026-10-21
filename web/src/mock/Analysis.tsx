@@ -393,7 +393,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
           <div className="m-finding" key="budget">
             <h1>{profile.gu}에 {est.pyeong}평 {S}{cafe || apparel ? "를" : "을"} 열려면 <mark>{man(need)}</mark>쯤 필요해요.</h1>
             <table className="m-quote">
-              <caption>{apparel ? "13평에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 첫 재고는 이 구 옷가게의 한 달 매출 1.5개월치를 원가(29%)로 들인다고 봤어요. 인테리어 단가는 의류 자료가 없어 고깃집 값을 빌려 썼어요." : cafe ? `독립 카페 면적 중앙값(20평)에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 값은 외식업체 경영실태조사 2025 원자료의 25%·50%·75% 분위수를 기본·중급·고급으로 놓은 거예요.` : "이 돈에 맞춘 추천 구성으로 낸 견적이에요. 다음 단계에서 직접 꾸미거나 '추천 배치'를 누르면 이 구성이 놓여요."}</caption>
+              <caption>{apparel ? "13평에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 첫 재고는 이 구 옷가게의 한 달 매출 1.5개월치를 원가(29%)로 들인다고 봤어요. 인테리어 단가는 공정위 정보공개서 의류 가맹 9개 브랜드 값이라 표본이 적어요." : cafe ? `독립 카페 면적 중앙값(20평)에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 값은 외식업체 경영실태조사 2025 원자료의 25%·50%·75% 분위수를 기본·중급·고급으로 놓은 거예요.` : "이 돈에 맞춘 추천 구성으로 낸 견적이에요. 다음 단계에서 직접 꾸미거나 '추천 배치'를 누르면 이 구성이 놓여요."}</caption>
               <tbody>
                 {cost.lines.filter((l: { amount: number }) => l.amount > 0).map((l) => (
                   <tr key={l.key}><th scope="row">{l.label}<small>{l.basis}</small></th><td>{man(l.amount)}</td></tr>

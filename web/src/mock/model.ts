@@ -211,6 +211,15 @@ export type Grade = "basic" | "mid" | "high";
 // 평당 인테리어 공사비(만원). 외식업체 경영실태조사 2025 원자료, 한식 육류 요리 전문점 중 12~40평 가게의 가중 분위수:
 // 25% 42 / 50% 77 / 75% 153 (응답 85곳, gogi_krei.json micro.mid_size_12_40). 기본·중급·고급을 이 세 분위수에 맞춰 45·80·150으로 둔다.
 // 예전 가정값은 150·220·320이었고, 실측 상위 25%가 150이라 고급 320은 조사 범위를 벗어난다.
+// 비교용: 공정위 가맹정보 API 2024 정보공개서의 3.3㎡당 인테리어 비용 분위수 (만원, web/public/mock/ftc_interior.json,
+// pipelines/fetch_ftc_interior.py). 가맹점 값이라 개인 가게보다 높다. 고깃집·카페 공사비는 위 실측 분위수를 쓰고 이 값은 옆에 보여 주기만 한다.
+// 옷가게는 업종 실측 자료가 없어 이 분위수를 공사비로 쓴다 (브랜드 9개뿐).
+export const FTC_INTERIOR = {
+  bbq: { n: 175, p25: 160, median: 195, p75: 215 },
+  cafe: { n: 263, p25: 195, median: 215, p75: 275 },
+  apparel: { n: 9, p25: 82, median: 160, p75: 190 },
+} as const;
+export const ftcNote = (k: keyof typeof FTC_INTERIOR) => `가맹점이면 평당 ${FTC_INTERIOR[k].median}만원쯤 (공정위 정보공개서 ${FTC_INTERIOR[k].n}개 브랜드 중앙값)`;
 export const GRADES: Record<Grade, { label: string; perPyeong: number; floor: string; wall: string }> = {
   basic: { label: "기본", perPyeong: 45, floor: "#cbb9a0", wall: "#efe6d6" },
   mid: { label: "중급", perPyeong: 80, floor: "#9a8672", wall: "#e4ddd0" },
@@ -341,7 +350,7 @@ export function openingCost(store: Store, gu: string, keyMoney = 0): { lines: Co
   const lines: CostLine[] = [
     ...(keyMoney > 0 ? [{ key: "keymoney", label: "권리금", amount: keyMoney, basis: "직접 넣은 값 (가게 자리에 붙는 웃돈, 나갈 때 돌려받지 못해요)" }] : []),
     { key: "deposit", label: "보증금", amount: st.rent * store.pyeong * DEPOSIT_MONTHS, basis: `월세 ${DEPOSIT_MONTHS}개월분 (서울시 실태조사: 보증금은 월세의 11~15개월)` },
-    { key: "interior", label: "인테리어 공사", amount: GRADES[store.grade].perPyeong * store.pyeong, basis: `${store.pyeong}평, 평당 ${GRADES[store.grade].perPyeong}만원 (${GRADES[store.grade].label})` },
+    { key: "interior", label: "인테리어 공사", amount: GRADES[store.grade].perPyeong * store.pyeong, basis: `${store.pyeong}평, 평당 ${GRADES[store.grade].perPyeong}만원 (${GRADES[store.grade].label}, 외식업체 경영실태조사 개인 가게). ${ftcNote("bbq")}` },
     { key: "equip", label: "주방과 설비", amount: equip, basis: "주방, 냉장고, 계산대 등" },
     { key: "seat", label: "테이블과 의자", amount: seatCost, basis: `테이블 ${s.tables}개, ${s.seats}석` },
     { key: "deco", label: "꾸밈", amount: s.furnish - seatCost - equip, basis: "화분, 조명, 대기 의자" },

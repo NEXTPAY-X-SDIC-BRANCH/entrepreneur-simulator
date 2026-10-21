@@ -13,7 +13,10 @@
 //   새 가게 인지도 0.6에서 매달 15%씩 1로, 협찬 100만원당 인지도 +0.15: 고깃집 시즌 엔진의 가정 (season_params.yaml)
 //   그 밖(면적 효과, 할인 탄력, 달별 품목 비중, 결품 곡선, 재고 값 하락, 세일 판매 속도, 매입 방식별 원가, 사건 효과 크기)은
 //   가정이고 아래에 '가정'으로 적었다. 인터뷰·POS 자료가 생기면 이 값부터 바꾼다.
-import { DEPOSIT_MONTHS, GRADES, LOAN_RATE, OWNER_DRAW, guStat, type CostLine, type Grade, type Profile } from "./model";
+import { DEPOSIT_MONTHS, FTC_INTERIOR, GRADES, LOAN_RATE, OWNER_DRAW, guStat, type CostLine, type Grade, type Profile } from "./model";
+
+// 옷가게 평당 인테리어 공사비(만원): 공정위 의류 가맹 분위수를 기본·중급·고급에 맞춘다 (model.ts FTC_INTERIOR)
+const AP_GRADE_COST: Record<Grade, number> = { basic: FTC_INTERIOR.apparel.p25, mid: FTC_INTERIOR.apparel.median, high: FTC_INTERIOR.apparel.p75 };
 
 export type BuyMode = "react" | "pre" | "consign";
 export type ApparelCfg = { pyeong: number; grade: Grade; staff: number; stockMonths: number; loan: number; buyMode: BuyMode }; // loan 만원
@@ -77,13 +80,13 @@ const ORDER_MONTHS = [3, 6, 9, 12];
 export const expectedSales = (gu: string, pyeong: number) => guStat(gu).sales * Math.sqrt(pyeong / BASE_PYEONG); // 만원/월, 자리 잡은 뒤
 
 export function apparelOpeningCost(cfg: ApparelCfg, gu: string, keyMoney = 0): { lines: CostLine[]; total: number } {
-  const st = guStat(gu), g = GRADES[cfg.grade], bm = BUY_MODES[cfg.buyMode];
+  const st = guStat(gu), g = { label: GRADES[cfg.grade].label, perPyeong: AP_GRADE_COST[cfg.grade] }, bm = BUY_MODES[cfg.buyMode];
   const units = expectedSales(gu, cfg.pyeong) * KOSIS.cogs * cfg.stockMonths;
   const stock = cfg.buyMode === "consign" ? 0 : Math.round(units * bm.cost);
   const lines: CostLine[] = [
     ...(keyMoney > 0 ? [{ key: "keymoney", label: "권리금", amount: keyMoney, basis: "직접 넣은 값 (나갈 때 돌려받지 못해요)" }] : []),
     { key: "deposit", label: "보증금", amount: Math.round(st.rent * cfg.pyeong * DEPOSIT_MONTHS), basis: `월세 ${DEPOSIT_MONTHS}개월분 (서울시 상가임대차 실태조사)` },
-    { key: "interior", label: "인테리어 공사", amount: g.perPyeong * cfg.pyeong, basis: `${cfg.pyeong}평, 평당 ${g.perPyeong}만원 (${g.label}, 의류 자료가 없어 고깃집 값을 빌려 씀)` },
+    { key: "interior", label: "인테리어 공사", amount: g.perPyeong * cfg.pyeong, basis: `${cfg.pyeong}평, 평당 ${g.perPyeong}만원 (${g.label}). 공정위 정보공개서 의류 가맹 ${FTC_INTERIOR.apparel.n}개 브랜드의 25·50·75% 값이라 표본이 적어요` },
     { key: "seat", label: "진열대·행거·피팅룸", amount: FIXTURES, basis: "가정" },
     { key: "sign", label: "간판", amount: SIGN, basis: "전면 간판 1개, 가정" },
     { key: "stock", label: "첫 재고", amount: stock, basis: cfg.buyMode === "consign"
