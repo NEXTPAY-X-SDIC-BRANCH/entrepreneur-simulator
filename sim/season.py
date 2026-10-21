@@ -304,6 +304,11 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
         pork = (1 + (pork - 1) * v("meat_grade.pork_event_strength_imported")) * op_mult.get("import_meat_cost_mult", 1.0)
     elif plan["meat_grade"] == "aged":
         pork = 1 + (pork - 1) * v("meat_grade.pork_event_strength_aged")
+    if plan.get("use_pork_forecast"):  # lab:pork — 원가가 돼지고기 도매가 예측(sim/pork_forecast.py)을 따른다. 기본 끔
+        from sim.pork_forecast import meat_cost_mult
+        strength = {"imported": v("meat_grade.pork_event_strength_imported"),
+                    "aged": v("meat_grade.pork_event_strength_aged")}.get(plan["meat_grade"], 1.0)
+        pork *= 1 + (meat_cost_mult(m) - 1) * strength
     p["cst_meat_cost_per_portion"] = g["cost"] * pork
     extras = [P["menu_extras"][x] for x in plan["menu_extras"]]
     p["cst_banchan_cost_per_cover"] = (plan["banchan"] * v("banchan.cost_per_item") * op_mult.get("cst_banchan_cost_per_cover", 1.0)
