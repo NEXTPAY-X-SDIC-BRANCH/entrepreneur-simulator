@@ -1,6 +1,6 @@
 // 카페의 3단계. 고깃집 가게 꾸미기(Builder.tsx)와 같은 틀: 전체 폭 3D 무대(왼쪽 위 가게 크기·마감·직원, 오른쪽 위 현금), 아래 물건 쟁반, 그 아래 열기 전 점검.
 // 3D는 엔진(/cafe/preview)이 준 배치를 상자로만 그린 목업이고, 실제 3D 장면이 이 자리를 대체한다. 물건은 고깃집처럼 놓는 게 아니라 개수로 정한다.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Mark } from "./Checks";
 import SettledStack, { cafeSettled } from "../lab/cost/SettledStack"; // lab:cost
 import { CAFE_GRADES, CAFE_PYEONG, cafeEstimate, cafeOpeningCost } from "./cafe";
@@ -10,6 +10,11 @@ import FinanceBox from "../lab/finance/FinanceBox"; // lab:finance
 import { CAFE_DEFAULT_RATE } from "../lab/finance/finance"; // lab:finance
 import { useCafePreview } from "./useCafePreview";
 import { STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
+// lab:layout: 문·창문 tab (가로:세로, 출입문, 창문), 손님 동선 from the engine's plan
+import { setView } from "./Scene3D";
+import { FlowCard, ShapePanel } from "../lab/layout/ShapePanel";
+import { cafeFlow, cafeRatioOk, shapeFromRoom, type CafeRoom } from "../lab/layout/cafeFlow";
+import { CAFE_DOOR_MARGIN, CAFE_SHAPE, type RoomShape } from "../lab/layout/shape";
 
 type Layout = ReturnType<typeof cafeLayoutOf>;
 type Item = { key: keyof Layout; name: string; note: string; min: number; max: number };
@@ -28,6 +33,7 @@ const CATS: { key: string; label: string; items: Item[] }[] = [
     { key: "showcase", name: "디저트 진열장", note: "디저트를 팔려면 필요해요", min: 0, max: 1 },
     { key: "oven", name: "오븐", note: "구움 디저트용", min: 0, max: 1 },
   ] },
+  { key: "room", label: "문·창문", items: [] }, // lab:layout
 ];
 
 export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNext }: { profile: Profile; cfg: CafeCfg | null; setCfg: (c: CafeCfg) => void; onNext: () => void }) {
@@ -40,14 +46,41 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
   const open = cafeOpeningCost(cfg.pyeong, cfg.grade, profile.gu, profile.keyMoney ?? 0);
   const st = guStat(profile.gu);
   const left = profile.capital - open.total;
-  const set = (p: Partial<CafeCfg>) => setCfgOut({ ...cfg, ...p });
+  const set = (p: Partial<CafeCfg>) => { setNote(""); setCfgOut({ ...cfg, ...p }); }; // lab:layout clears the shape note
   const seats = pv.data?.seats.total ?? 0;
+  // lab:layout: room shape, route, and a line saying what a shape change did once the engine answers
+  const shape = cfg.shape ?? CAFE_SHAPE;
+  const area = cfg.pyeong * 3.3058, rw = Math.sqrt(area * shape.ratio), rd = area / rw;
+  const [flowOn, setFlowOn] = useState(false);
+  const flow = useMemo(() => (pv.data ? cafeFlow(pv.data.room, pv.data.layout) : null), [pv.data]);
+  const [note, setNote] = useState("");
+  const pending = useRef<{ what: string; seats: number; tables: number; route: number } | null>(null);
+  useEffect(() => {
+    const p = pending.current, dd = pv.data;
+    if (!p || !dd) return;
+    const s = cafeLayoutOf(cfg), got = shapeFromRoom(dd.room as CafeRoom);
+    if (got.door.wall !== shape.door.wall || Math.abs(got.door.pos - shape.door.pos) > 1e-3 || Math.abs(got.ratio - shape.ratio) > 0.01) return; // still the old answer
+    pending.current = null;
+    const tables = dd.layout.filter((i) => i.type === "table" && i.fits).length, route = flow ? Math.round(flow.total) : 0;
+    const parts = [p.tables === tables ? `테이블 ${tables}개 그대로` : `테이블 ${p.tables}→${tables}개`, p.seats === dd.seats.total ? `${dd.seats.total}석 그대로` : `${p.seats}→${dd.seats.total}석`];
+    if (p.route || route) parts.push(`손님 동선 ${p.route}m→${route}m`);
+    const over = dd.space.overflow.length ? ` 공간이 모자라요: ${dd.space.overflow.map((o) => `${o.type} ${o.count}개`).join(", ")}.` : "";
+    setNote(`${p.what} ${parts.join(", ")}.${tables < s.tables ? ` 테이블 ${s.tables - tables}개는 자리가 없어 가게 밖(빨간색)에 있어요.` : ""}${over}`);
+  }, [pv.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const onShape = (next: RoomShape, what: string) => {
+    const dd = pv.data;
+    const moved = next.ratio !== shape.ratio || next.door.wall !== shape.door.wall || next.door.pos !== shape.door.pos;
+    pending.current = dd && moved ? { what, seats: dd.seats.total, tables: dd.layout.filter((i) => i.type === "table" && i.fits).length, route: flow ? Math.round(flow.total) : 0 } : null;
+    setNote(what);
+    setCfgOut({ ...cfg, shape: next });
+  };
   const headline = settled <= 0
     ? <>보통 카페 기준으로는 자리가 잡혀도 한 달에 <mark>{man(-settled)}씩 줄어요.</mark></>
     : <>보통 카페 기준으로 자리가 잡히면 한 달에 <mark>{man(settled)}</mark>이 남아요.</>;
 
   const d = pv.data;
   const msg = pv.err ? pv.err
+    : note ? note // lab:layout
     : !d ? "엔진에서 배치를 받아 오는 중이에요."
     : d.space.overflow.length > 0 ? `공간이 모자라요: ${d.space.overflow.map((o) => `${o.type} ${o.count}개`).join(", ")}. ${d.space.fix[0]?.label_ko ?? ""}`
     : `먼저 막히는 곳은 ${d.bottleneck[0].label_ko}이에요. ${d.suggestion.label_ko ? `제안: ${d.suggestion.label_ko} (${d.suggestion.effect_ko})` : ""}`;
@@ -56,7 +89,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
     <main className="m-build">
       <div className="m-stage">
         <div className="m-canvas">
-          {d ? <CafeRoom3D room={d.room} layout={d.layout} roster={d.staff.roster} height="fill" /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
+          {d ? <CafeRoom3D room={d.room} layout={d.layout} roster={d.staff.roster} height="fill" shape={shape} flow={flowOn ? flow : null} /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
         </div>
 
         <div className="m-room">
@@ -79,7 +112,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
           </div>
           <p>테이블 {lay.tables}개, {seats}석</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn"
-            onClick={() => setCfgOut({ pyeong: est.pyeong, grade: est.grade, staff: 1 })}>추천 배치</button>
+            onClick={() => { setNote(""); setCfgOut({ pyeong: est.pyeong, grade: est.grade, staff: 1, shape: cfg.shape }); }}>추천 배치</button>
         </div>
 
         <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>
@@ -89,6 +122,8 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
           <FinanceBox loanMan={Math.max(0, -left)} rentMan={st.rent * cfg.pyeong} fallback={CAFE_DEFAULT_RATE} young={profile.age === "20대" || profile.age === "30대"} />{/* lab:finance 은행별 가상 금리, 월세 카드 할부 */}
         </div>
 
+        {flowOn && flow && <FlowCard onTop={() => setView("top")} f={{ inLen: flow.inLen, outLen: flow.outLen, inLabel: "주문하고 가장 먼 자리까지", outLabel: "나가기", hints: flow.hints,
+          note: `테이블 ${flow.tables}개 가운데 문에서 가장 먼 자리 기준이에요. 통로 폭과 동선은 엔진 배치도로 잰 값이고 매출 계산에는 들어가지 않아요. 좌석 수 변화는 엔진 계산에 들어가요. 문 폭과 주문 줄 깊이 1.2m는 엔진의 가정, 통로 권장 90~120cm는 업계 자료(AJD 인테리어 가이드)예요.` }} /> /* lab:layout */}
         <p className="m-msg" role="status">{msg}</p>
       </div>
 
@@ -99,6 +134,10 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
         <div className="m-cats" role="tablist" aria-label="물건 종류">
           {CATS.map((c) => <button type="button" role="tab" key={c.key} aria-selected={cat === c.key} onClick={() => setCat(c.key)}>{c.label}</button>)}
         </div>
+        {cat === "room" ? ( // lab:layout
+          <ShapePanel shape={shape} pyeong={cfg.pyeong} w={rw} d={rd} margin={CAFE_DOOR_MARGIN} defRatio={CAFE_SHAPE.ratio} flowOn={flowOn} setFlowOn={setFlowOn}
+            ratioAllowed={(r) => cafeRatioOk(cfg.pyeong, r)} onShape={onShape} />
+        ) : (
         <ul className="m-catalog">
           {CATS.find((c) => c.key === cat)!.items.map((it) => {
             const v = lay[it.key] as number;
@@ -117,6 +156,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
             );
           })}
         </ul>
+        )}
         <div className="m-tray-go">
           <button type="button" className="m-btn m-btn-outline" onClick={() => document.querySelector(".m-checks")?.scrollIntoView({ behavior: "smooth", block: "start" })}>오픈 전 점검 보러가기</button>
           <button type="button" className="m-btn" disabled={seats === 0} onClick={onNext}>시뮬레이션 하러 가기</button>

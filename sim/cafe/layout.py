@@ -13,6 +13,13 @@ Zones, all anchored to a wall so a bigger room never loses a slot (table_slots i
   seating      rows of 2-tops / 4-tops (and wall 2-tops) packed into the free region by sim/cafe/seating.py; every
                zone is anchored to a wall, so a bigger room never loses a slot
 Whatever does not fit gets fits:false and is laid out in a ghost zone to the right of the room (x > width).
+
+lab:layout: optional cfg keys aspect (가로 ÷ 세로), door_wall (front/back/left/right) and door_pos (0..1 along that
+wall: front/back from the left corner, left/right from the front corner). Without them the result is unchanged.
+With them the solver works in the DOOR FRAME: x along the door wall, z into the room from it (the door wall plays
+the part of the old front wall), and room.width_m/depth_m are that frame's dims. room.frame says how the door frame
+sits in the real room (which wall, mirrored or not, real width/depth); the frontend rotates the drawing with it.
+A door off the right end splits the seating into a left part (window bar side) and a right part, packed separately.
 """
 from __future__ import annotations
 
@@ -28,10 +35,43 @@ def L(key):
     return v("layout", key)
 
 
-def room_dims(size_pyeong: float) -> tuple[float, float, float]:
+def room_dims(size_pyeong: float, aspect: float | None = None) -> tuple[float, float, float]:
     area = size_pyeong * PYEONG_M2
-    width = math.sqrt(area * L("aspect"))
+    width = math.sqrt(area * (aspect or L("aspect")))   # lab:layout optional aspect override
     return area, width, area / width
+
+
+# ---- lab:layout door frame --------------------------------------------------------------------------------------
+WALLS = ("front", "back", "left", "right")
+
+
+def door_frame(cfg: dict) -> dict:
+    """Real room dims, the door-frame dims and the door centre along the door wall (door frame x)."""
+    area, W, D = room_dims(cfg["size_pyeong"], cfg.get("aspect"))
+    wall = cfg.get("door_wall") or "front"
+    if wall not in WALLS:
+        raise ValueError(f"unknown door_wall {wall}")
+    Wc, Dc = (W, D) if wall in ("front", "back") else (D, W)
+    m = L("entry_w") / 2
+    pos = cfg.get("door_pos")
+    if pos is None:
+        xd = Wc - m                                   # the old default: entry path along the right-hand wall
+    else:
+        along = m + min(1.0, max(0.0, float(pos))) * max(0.0, Wc - 2 * m)   # real metres from the wall's start corner
+        xd = {"front": along, "back": Wc - along, "left": Wc - along, "right": along}[wall]
+    return {"area": area, "W": W, "D": D, "wall": wall, "Wc": Wc, "Dc": Dc, "xd": xd, "pos": pos}
+
+
+def _mirror_rows(rows: list[dict], W: float) -> list[dict]:
+    out = []
+    for r in rows:
+        r = dict(r)
+        if r["orient"] == "x":
+            r["u0"] = W - (r["u0"] + r["length"])
+        else:
+            r["vc"] = W - r["vc"]
+        out.append(r)
+    return out
 
 
 def machines_for(groups: int) -> list[int]:
@@ -63,8 +103,29 @@ def seat_band_start(cfg: dict) -> float:
 
 
 def solve(cfg: dict) -> dict:
-    """cfg keys: size_pyeong, tables, chairs, bar_seats, espresso_groups, showcase, oven, kiosks, pos."""
-    area, W, D = room_dims(cfg["size_pyeong"])
+    """cfg keys: size_pyeong, tables, chairs, bar_seats, espresso_groups, showcase, oven, kiosks, pos
+    (+ lab:layout aspect, door_wall, door_pos). Door left of the middle = the right-door solution mirrored."""
+    f = door_frame(cfg)
+    Wc, xd = f["Wc"], f["xd"]
+    mirror = xd < Wc / 2 - 1e-9
+    out = _solve(cfg, f["area"], Wc, f["Dc"], Wc - xd if mirror else xd)
+    if mirror:
+        for it in out["layout"]:
+            if it["fits"]:                            # ghosts stay in the ghost zone right of the room
+                it["x"] = _r(Wc - it["x"])
+                it["rot_deg"] = (360 - it["rot_deg"]) % 360
+        cz = out["room"]["counter_zone"]
+        cz["x"] = _r(Wc - cz["x"] - cz["w"])
+        out["room"]["door"]["x"] = _r(Wc - out["room"]["door"]["x"])
+    out["room"]["door"].update({"wall": f["wall"], "pos": f["pos"]})
+    out["room"]["frame"] = {"wall": f["wall"], "mirror": mirror, "real_width_m": _r(f["W"]), "real_depth_m": _r(f["D"])}
+    if cfg.get("windows") is not None:   # drawing only (which walls have windows); no effect on the plan
+        out["room"]["frame"]["windows"] = list(cfg["windows"])
+    return out
+
+
+def _solve(cfg: dict, area: float, W: float, D: float, xd: float) -> dict:
+    """The solver in the door frame with the door (entry path centre) at xd >= W/2 on the z=0 wall."""
     wm, cd, line_d = L("wall_margin"), L("counter_d"), L("counter_line_d")
     items: list[dict] = []
     ghosts: list[dict] = []   # non-fitting items in placement order, laid out in the ghost zone at the end
@@ -83,11 +144,14 @@ def solve(cfg: dict) -> dict:
     pickup = L("item_w")["pickup"]
     need = max(sum(x for _, x in front) + pickup, sum(x for _, x in back)) + L("counter_side_access")
     cw = min(need, W - 2 * wm)
-    cx0, cz0 = W - cw, D - cd
+    entry_w = L("entry_w")
+    strip_r = xd + entry_w / 2                         # right edge of the entry path (= W for the old default)
+    cx1 = min(W, max(strip_r, cw + wm))                # counter's right end lines up with the entry path
+    cx0, cz0 = cx1 - cw, D - cd
     counter_zone = {"x": _r(cx0), "z": _r(cz0), "w": _r(cw), "d": _r(cd)}
     left_limit = cx0 + L("counter_side_access")
     for line, z, rot in ((front, cz0 + line_d / 2, 180), (back, D - line_d / 2, 180)):   # both face -z
-        cursor = W - wm
+        cursor = cx1 - wm
         n = {}
         for type_, iw in line:
             n[type_] = n.get(type_, 0) + 1
@@ -97,9 +161,8 @@ def solve(cfg: dict) -> dict:
                 cursor -= iw
 
     # ---- door + kiosks + bar along the front wall
-    entry_w = L("entry_w")
-    door = {"x": _r(W - entry_w / 2), "z": 0.0, "w": L("door_w")}
-    kx = W - entry_w
+    door = {"x": _r(xd), "z": 0.0, "w": L("door_w")}
+    kx = xd - entry_w / 2
     kw = L("kiosk_w")
     for i in range(cfg["kiosks"]):
         fits = kx - kw >= wm - 1e-9
@@ -120,7 +183,13 @@ def solve(cfg: dict) -> dict:
 
     # ---- seating: rows of 2-tops / 4-tops in the free region (sim/cafe/seating.py)
     z_start = seat_band_start(cfg)
-    cands = seating.candidates(W, D, z_start, W - entry_w, cx0 - L("counter_side_access"), cz0 - L("queue_d"), wm)
+    xc_l = max(wm, cx0 - L("counter_side_access"))  # lab:layout: a counter reaching the left wall blocks the whole width
+    cands = seating.candidates(W, D, z_start, xd - entry_w / 2, xc_l, cz0 - L("queue_d"), wm)
+    xr_r = W - strip_r                                 # lab:layout: seating right of the entry path, packed mirrored
+    if xr_r - wm >= seating.W2:
+        xc_r = max(wm, W - cx1) if cx1 > strip_r + 1e-9 else xr_r
+        right = seating.candidates(W, D, z_start, xr_r, xc_r, cz0 - L("queue_d"), wm)
+        cands = [a + _mirror_rows(b, W) for a in cands for b in right]
     nt, nc = cfg["tables"], cfg["chairs"]
     rows, table_slots = seating.choose(cands, nt, nc)
     placed = seating.arrange(rows, nt, nc)

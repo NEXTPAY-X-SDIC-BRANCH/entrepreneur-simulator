@@ -3,17 +3,23 @@
 // 엔진 좌표계: 원점은 방 모서리, +x는 앞벽(창·문)을 따라, +z는 방 안쪽, rot_deg는 위에서 본 시계 방향(0 = 앞면이 +z).
 // 엔진 좌표는 Unity처럼 왼손 좌표라 화면에서는 z를 뒤집어 그린다: 장면 z = 깊이/2 - 엔진 z, 회전 = 180° - rot_deg.
 // 그래서 앞벽(유리)이 카메라 쪽, 문과 카운터가 오른쪽에 보여 엔진 설명(카운터는 오른쪽 안쪽)과 같다.
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { GLGuard } from "../shared/GLGuard";
 import { Box, C } from "../store3d/Building";
 import { hash } from "../store3d/Figures";
-import { FitControls, FrontFade, Pendant, People, StoreLights, Storefront, ViewBar, WALL_H, Wall, gfxDpr, gfxFrameloop, gfxShadows, useGfx, type Person } from "./Scene3D";
+import { FitControls, Pendant, People, StoreLights, ViewBar, gfxDpr, gfxFrameloop, gfxShadows, useGfx, type Person } from "./Scene3D";
+// lab:layout: walls/door/windows from the room shape; the engine plan is in the door frame and turns with room.frame
+import { FlowArrows } from "../lab/layout/Arrows3D";
+import { FRAME_ROT, realDims, shapeFromRoom, toReal, type CafeFlow } from "../lab/layout/cafeFlow";
+import { Hide, Shell } from "../lab/layout/Shell3D";
+import { CAFE_DOOR_MARGIN, doorPoint, type RoomShape, type Wall } from "../lab/layout/shape";
 
 export type LayoutItem = { id: string; type: string; x: number; z: number; rot_deg: number; fits: boolean; w: number; d: number; unassigned?: boolean };
 export type RosterItem = { id: string; role: string; label_ko: string; x: number; z: number; fits: boolean };
-export type Room3D = { width_m: number; depth_m: number; door: { x: number; w: number } };
+export type Room3D = { width_m: number; depth_m: number; door: { x: number; w: number; wall?: Wall; pos?: number | null }; counter_zone?: { x: number; z: number; w: number; d: number };
+  frame?: { wall: Wall; mirror: boolean; real_width_m: number; real_depth_m: number; windows?: Wall[] | null } }; // lab:layout door frame
 
 const OAK = "#b98c5f", MILK = "#f7f4ee", INK = "#2b2d30", STONE = "#e8e4dc", BLUE = "#3d63ea";
 const ROOM = { floor: "#dcc9ab", plank: "#b49a76", wall: "#f3eee6", wainscot: "#c8b08f" };
@@ -255,8 +261,15 @@ function BackWallDecor({ runs, z }: { runs: [number, number][]; z: number }) {
 const seedOf = (id: string) => Array.from(id).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 // occupancy: 0~1, 의자(와 바 좌석) 가운데 손님이 앉은 비율. 앉는 자리 순서는 id 해시로 고정해 손님이 늘 때 앉아 있던 사람은 그대로 있다.
-export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, height = 420 }: { room: Room3D; layout: LayoutItem[]; roster?: RosterItem[]; occupancy?: number; height?: number | "fill" }) {
-  const { width_m: W, depth_m: D } = room;
+export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, height = 420, shape, flow }: { room: Room3D; layout: LayoutItem[]; roster?: RosterItem[]; occupancy?: number; height?: number | "fill"; shape?: RoomShape; flow?: CafeFlow | null }) {
+  const { width_m: W, depth_m: D } = room; // door frame (= the real room when the door is on the front wall)
+  // lab:layout: the real room and how the door frame turns into it
+  const wall: Wall = room.frame?.wall ?? "front";
+  const turn = FRAME_ROT[wall];
+  const { w: Wr, d: Dr } = realDims(room);
+  // walls follow the plan the engine solved (door wall, position, ratio); only the windows come from the prop
+  const shp = shapeFromRoom(room, shape?.windows);
+  const portal = useRef<HTMLDivElement>(null); // tags (출입문, 동선 번호) render into the canvas box, not a detached root
   // 엔진 좌표 -> 장면 좌표
   const sx = (x: number) => x - W / 2;
   const sz = (z: number) => D / 2 - z;
@@ -273,21 +286,29 @@ export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, h
     const back = placed.filter((i) => ["sink", "ice_maker", "fridge", "oven"].includes(i.type));
     const runs: { x0: number; x1: number; z: number; d: number; customer: boolean }[] = [];
     let left = Infinity;
-    if (front.length) {
+    // lab:layout: the counter ends at its zone's edge (the right wall in the old room); mirrored, the pickup is on the right
+    const zone = room.counter_zone, mir = !!room.frame?.mirror;
+    const zx0 = zone ? zone.x : 0, zx1 = zone ? zone.x + zone.w : W;
+    if (front.length && mir) {
+      const right = Math.max(...front.map((i) => i.x + i.w / 2)) + PICKUP;
+      runs.push({ x0: zx0, x1: Math.min(W - 0.05, right), z: front[0].z, d: front[0].d, customer: true });
+      left = zx0;
+    } else if (front.length) {
       left = Math.min(...front.map((i) => i.x - i.w / 2)) - PICKUP;
-      runs.push({ x0: Math.max(0.05, left), x1: W, z: front[0].z, d: front[0].d, customer: true });
+      runs.push({ x0: Math.max(0.05, left), x1: zx1, z: front[0].z, d: front[0].d, customer: true });
     }
     if (back.length) {
       const z = back[0].z, d = back[0].d;
       const solid = back.filter((i) => i.type === "ice_maker" || i.type === "fridge").map((i) => [i.x - i.w / 2, i.x + i.w / 2]).sort((a, b) => a[0] - b[0]);
       let cur = Math.max(0.05, Math.min(left, ...back.map((i) => i.x - i.w / 2)));
-      for (const [a, b] of [...solid, [W, W]]) {
+      const end = mir ? Math.max(...back.map((i) => i.x + i.w / 2), ...runs.map((r) => r.x1)) : zx1;
+      for (const [a, b] of [...solid, [end, end]]) {
         if (a - cur > 0.05) runs.push({ x0: cur, x1: a, z, d, customer: false });
         cur = Math.max(cur, b);
       }
     }
     return runs;
-  }, [layout, W]);
+  }, [layout, W, room]);
   const backRuns = counters.filter((r) => !r.customer).map((r): [number, number] => [sx(r.x0), sx(r.x1)]);
 
   // 손님과 직원
@@ -328,36 +349,33 @@ export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, h
   const ghosts = layout.filter((i) => !i.fits);
   const gx1 = ghosts.length ? Math.max(...ghosts.map((i) => i.x + 0.6)) : W;
   const gz1 = ghosts.length ? Math.max(...ghosts.map((i) => i.z + 0.6)) : 0;
-  const box: [number, number, number, number] = [-W / 2, Math.min(-D / 2, sz(gz1)), sx(Math.max(W, gx1)), D / 2 + 0.6];
-  const R = Math.max(W, D) / 2 + Math.max(0, gx1 - W) + 2;
-  const door = { x: sx(room.door.x), w: room.door.w };
+  // lab:layout: frame the real room plus the ghost zone turned into the real scene
+  const gc = [[sx(W), sz(0)], [sx(Math.max(W, gx1)), sz(Math.max(0, gz1))]].map(([x, z]) => toReal(wall, x, z));
+  const box: [number, number, number, number] = [Math.min(-Wr / 2, ...gc.map((c) => c[0])), Math.min(-Dr / 2, ...gc.map((c) => c[1])), Math.max(Wr / 2, ...gc.map((c) => c[0])), Math.max(Dr / 2 + 0.6, ...gc.map((c) => c[1]))];
+  const R = Math.max(Wr, Dr) / 2 + Math.max(0, gx1 - W) + 2;
+  const dp = doorPoint(shp, Wr, Dr, CAFE_DOOR_MARGIN);
+  const tx = dp.nx === 0 ? 1 : 0, tz = dp.nx === 0 ? 0 : -1;
+  const opposite: Record<Wall, (c: THREE.Vector3) => boolean> = { front: (c) => c.z < -Dr / 2, back: () => false, left: (c) => c.x > Wr / 2, right: (c) => c.x < -Wr / 2 };
 
   // everything but the guests, cups and staff: built once per layout, so an occupancy tick re-renders only the people
   const staticScene = useMemo(() => (
     <>
           {/* 바깥 땅과 인도 */}
-          <Box p={[0, -0.12, 0]} s={[W + 8 + Math.max(0, gx1 - W) * 2, 0.02, D + 8]} color="#e6eaf2" receive />
-          <Box p={[0, -0.1, D / 2 + 1.1]} s={[W + 8 + Math.max(0, gx1 - W) * 2, 0.02, 2]} color="#d6d3cc" receive />
-          <Floor W={W} D={D} />
+          <Box p={[0, -0.12, 0]} s={[Wr + 8 + Math.max(0, gx1 - W) * 2, 0.02, Dr + 8 + Math.max(0, gx1 - W) * 2]} color="#e6eaf2" receive />
+          <Box p={[0, -0.1, Dr / 2 + 1.1]} s={[Wr + 8 + Math.max(0, gx1 - W) * 2, 0.02, 2]} color="#d6d3cc" receive />
+          <Floor W={Wr} D={Dr} />
 
-          {/* 벽: 뒤·왼쪽·오른쪽은 카메라 쪽에서 볼 때 숨고, 앞은 유리 */}
-          <Wall p={[0, WALL_H / 2, -D / 2 - 0.06]} s={[W + 0.24, WALL_H, 0.12]} color={ROOM.wall} outside={(c) => c.z < -D / 2}>
-            <Box p={[0, 0.45, -D / 2 + 0.005]} s={[W, 0.9, 0.02]} color={ROOM.wainscot} />
-            {backRuns.length > 0 && <BackWallDecor runs={backRuns} z={-D / 2} />}
-          </Wall>
-          <Wall p={[-W / 2 - 0.06, WALL_H / 2, 0]} s={[0.12, WALL_H, D]} color={ROOM.wall} outside={(c) => c.x < -W / 2}>
-            <Box p={[-W / 2 + 0.005, 0.45, 0]} s={[0.02, 0.9, D]} color={ROOM.wainscot} />
-          </Wall>
-          <Wall p={[W / 2 + 0.06, WALL_H / 2, 0]} s={[0.12, WALL_H, D]} color={ROOM.wall} outside={(c) => c.x > W / 2} />
-          {/* 줌인하면 손님 쪽 앞벽(유리 전면)이 흐려져 안쪽 배치가 보인다 (고깃집과 같은 방식) */}
-          <FrontFade z={D / 2}><Storefront x0={-W / 2} x1={W / 2} z={D / 2} door={door} /></FrontFade>
-          {[door.x - door.w / 2 - 0.35, door.x + door.w / 2 + 0.35].filter((x) => x > -W / 2 && x < W / 2 + 1).map((x) => (
-            <group key={x} position={[x, 0, D / 2 + 0.35]}>
+          {/* lab:layout: 벽·출입문·창문 (Shell3D), 문 밖 화분 두 개 */}
+          <Shell w={Wr} d={Dr} shape={shp} margin={CAFE_DOOR_MARGIN} color={ROOM.wall} wainscot={ROOM.wainscot} storefrontMat doorW={room.door.w} />
+          {[-1, 1].map((k) => (
+            <group key={k} position={[dp.x - dp.nx * 0.35 + tx * k * (room.door.w / 2 + 0.35), 0, dp.z - dp.nz * 0.35 + tz * k * (room.door.w / 2 + 0.35)]}>
               <Cy p={[0, 0.2, 0]} r={0.17} r2={0.14} h={0.4} color="#b9836a" />
               <mesh position={[0, 0.66, 0]} castShadow><icosahedronGeometry args={[0.3, 0]} /><meshStandardMaterial color="#4d7a4a" flatShading roughness={0.9} /></mesh>
             </group>
           ))}
 
+          <group rotation={[0, turn, 0]}>
+          {backRuns.length > 0 && <Hide outside={opposite[wall]}><BackWallDecor runs={backRuns} z={-D / 2} /></Hide>}
           {/* 카운터 몸통과 조각 */}
           {counters.map((r) => <Cabinet key={`${r.x0}-${r.z}`} x0={sx(r.x0)} x1={sx(r.x1)} z={sz(r.z)} d={r.d} customer={r.customer} />)}
           {layout.map((it) => (
@@ -369,20 +387,23 @@ export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, h
             </Ghost.Provider>
           ))}
           {lamps.map(([x, z], i) => <Pendant key={i} x={sx(x)} z={sz(z)} y={1.85} />)}
+          </group>
     </>
     // sx, sz, yaw, door and backRuns follow from W, D, room, counters
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), [W, D, gx1, room, layout, counters, lamps]);
+  ), [W, D, Wr, Dr, gx1, room, layout, counters, lamps, shp]);
   const gfx = useGfx();
   return (
     <>
-    <div className="cs-3d" style={{ height: height === "fill" ? "100%" : height, borderRadius: height === "fill" ? 0 : undefined }} role="img"
+    <div ref={portal} className="cs-3d" style={{ height: height === "fill" ? "100%" : height, borderRadius: height === "fill" ? 0 : undefined }} role="img"
       aria-label="카페 3D 화면. 엔진이 정한 배치대로 창가 바, 테이블과 의자, 키오스크, 카운터의 에스프레소 머신·그라인더·쇼케이스, 뒤쪽 냉장고와 제빙기, 직원과 앉은 손님을 보여 줘요. 공간이 모자라 못 놓은 것은 가게 오른쪽 밖에 빨간 반투명으로 보여요">
       <GLGuard>
-        <Canvas key={gfx} frameloop={gfxFrameloop(gfx)} shadows={gfxShadows(gfx)} camera={{ position: [W * 0.55, Math.max(W, D) * 0.95, D * 1.25], fov: 40 }} dpr={gfxDpr(gfx)}>
-          <StoreLights w={W} d={D} r={R} />
+        <Canvas key={gfx} frameloop={gfxFrameloop(gfx)} shadows={gfxShadows(gfx)} camera={{ position: [Wr * 0.55, Math.max(Wr, Dr) * 0.95, Dr * 1.25], fov: 40 }} dpr={gfxDpr(gfx)}>
+          <StoreLights w={Wr} d={Dr} r={R} />
 
           {staticScene}
+          <group rotation={[0, turn, 0]}>{/* lab:layout: people, cups and the route turn with the door frame */}
+          {flow && <FlowArrows inPath={flow.inPath.map(([x, z]) => [sx(x), sz(z)])} outPath={flow.outPath.map(([x, z]) => [sx(x), sz(z)])} stops={flow.stops.map((p) => ({ label: p.label, x: sx(p.x), z: sz(p.z) }))} portal={portal} />}
           {cups.map((c) => (
             <group key={c.id} position={[c.x, c.y, c.z]}>
               <mesh position={[0, 0.005, 0]}><cylinderGeometry args={[0.06, 0.06, 0.01, 14]} /><meshStandardMaterial color={MILK} /></mesh>
@@ -390,6 +411,7 @@ export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, h
             </group>
           ))}
           <People list={people} />
+          </group>
 
           <FitControls box={box} />
         </Canvas>
