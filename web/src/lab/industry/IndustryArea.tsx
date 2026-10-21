@@ -63,11 +63,11 @@ export default function IndustryArea({ profile, setProfile, gus, onNext }: { pro
           )}
         </div>
         <p className="ia-lead">
-          {p ? <>{st.area ?? profile.gu}에서 {josa(t.shop, "이가")} 자리를 잡으면 한 달에 <mark>{wman(p.rough_month.revenue_krw)}</mark>쯤 팔 거라고 엔진이 봐요 (업종 평균 가게 기준).</> : pv.err || "엔진에서 계산하는 중이에요."}
+          {p ? <>{st.area ?? profile.gu}에서 {josa(t.shop, "이가")} 자리를 잡으면 한 달에 <mark>{wman(p.rough_month.revenue_krw)}</mark>쯤 팔 거라고 엔진이 봐요 (업종 중앙값 가게 기준).</> : pv.err || "엔진에서 계산하는 중이에요."}
         </p>
 
         <div className="ia-kpis">
-          <div className="ia-kpi"><span>자리 잡힌 달 매출</span><strong>{p ? wman(p.rough_month.revenue_krw) : "-"}</strong><small>업종 평균에서 옮긴 엔진 추정, {p?.input.pyeong ?? "-"}평</small></div>
+          <div className="ia-kpi"><span>자리 잡힌 달 매출</span><strong>{p ? wman(p.rough_month.revenue_krw) : "-"}</strong><small>업종 중앙값에서 옮긴 엔진 추정, {p?.input.pyeong ?? "-"}평</small></div>
           <div className="ia-kpi"><span>{t.kind} 수</span><strong>{(st.area ? st.areaPork ?? 0 : st.pork).toLocaleString("ko-KR")}<i>곳</i></strong><small>{st.area ? `${st.area} 안` : "구 전체"}</small></div>
           <div className="ia-kpi"><span>평당 월세</span><strong>{st.rent}<i>만원</i></strong><small>{st.rentSrc}, 현금 월세</small></div>
           <div className="ia-kpi"><span>1년 폐업률</span><strong>{d?.close_rate != null ? (d.close_rate * 100).toFixed(1) : st.closure}<i>%</i></strong><small>{d?.close_rate != null ? "이 동네" : "구 안 상권"}, 2025년</small></div>
@@ -104,7 +104,7 @@ export default function IndustryArea({ profile, setProfile, gus, onNext }: { pro
 
         <details className="m-srcnote"><summary>숫자의 출처와 한계</summary>
           <p className="m-src">
-            자리 잡힌 달 매출은 {p?.demand.note_ko ?? "외식업체 경영실태조사 업종 평균 × 서울 배율 × 구 지수"}로 낸 엔진 추정이에요. 구 지수와 가게 수 흐름, 폐업률은 서울시 상권분석서비스 2025년 {t.base} 값이고,
+            자리 잡힌 달 매출은 {p?.demand.note_ko ?? "외식업체 경영실태조사 업종 중앙값 × 서울 배율 × 구 지수"}로 낸 엔진 추정이에요. 구 지수와 가게 수 흐름, 폐업률은 서울시 상권분석서비스 2025년 {t.base} 값이고,
             카드 매출이라 배달 앱 결제가 많은 업종은 실제보다 낮게 잡혀요. 그래서 금액이 아니라 구 사이 비교에만 써요. 가게 수는 소상공인 상가정보 2026년 6월 기준이에요.
             월세는 한국부동산원 소규모 상가 1층 임대료에서 보증금 환산분을 뺀 현금 월세예요.{ind === "hansik" ? " 한식 백반집은 상권분석서비스에 따로 코드가 없어 한식음식점 전체(고깃집 포함) 값을 써요." : ""}
           </p>

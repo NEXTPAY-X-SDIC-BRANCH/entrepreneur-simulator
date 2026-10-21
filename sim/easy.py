@@ -520,7 +520,7 @@ def easy_generic(industry: str, gu: str, capital_man: float, dong: str | None = 
          "basis": OV_BASIS if given("staff") else "업종 기본 인원 (경영실태조사 종사자 수)"},
         rent_row(pv["rent"]["man_per_pyeong"], str(pv["rent"]["source"])),
         {"key": "sales", "label": "자리 잡힌 달 매출", "value": round(pv["demand"]["anchor_month_krw"] / 1e4), "unit": "만원", "src": "가정",
-         "basis": "경영실태조사 연매출 평균(전국) × 서울 배율 × 구 매출 지수(서울시 상권분석서비스) × 면적 효과(탄력성 추정), 추정"},
+         "basis": "경영실태조사 연매출 중앙값(전국) × 서울 배율 × 구 매출 지수(서울시 상권분석서비스) × 면적 효과(탄력성 추정), 추정"},
         {"key": "ticket", "label": "객단가", "value": pv["demand"]["ticket_krw"], "unit": "원", "src": "업계 자료",
          "basis": "경영실태조사 2025 원자료 1인 평균"},
         {"key": "delivery", "label": "배달", "value": "함" if pv["demand"]["delivery_available"] else "거의 없음", "unit": "",

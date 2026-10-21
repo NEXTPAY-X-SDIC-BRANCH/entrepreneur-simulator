@@ -1,10 +1,10 @@
 """새 업종(한식 백반집, 호프·주점, 분식집, 베이커리, 치킨집)의 월 단위 결정론 모델 (lab:industry).
 
-카페 엔진(sim/cafe, docs/CAFE.md)의 틀을 따른다: 업종 평균 매출을 동네 지수로 옮겨 '자리 잡힌 달'의 수요를 정하고,
+카페 엔진(sim/cafe, docs/CAFE.md)의 틀을 따른다: 업종 중앙값 매출을 동네 지수로 옮겨 '자리 잡힌 달'의 수요를 정하고,
 좌석과 사람이 받을 수 있는 만큼만 손님을 받고, 비용은 업종 비중과 동네 월세로 뺀다. 같은 입력이면 같은 결과다.
 값의 출처는 research/industries/*.yaml (값마다 등급), 설명은 docs/INDUSTRY.md.
 
-  수요(인분/월) = 업종 연매출 평균 ÷ 12 (평균 평수 가게 기준, 카페 엔진과 같은 '업종 평균' 기준점) × 서울 배율 × 구 지수 × 동네 위치 × (평수 ÷ 평균 평수)^면적 탄력성 ÷ 객단가
+  수요(인분/월) = 업종 연매출 중앙값 ÷ 12 (중앙값 평수 가게 기준, '보통 가게' 기준점) × 서울 배율(중앙값끼리) × 구 지수 × 동네 위치 × (평수 ÷ 중앙값 평수)^면적 탄력성 ÷ 객단가
                   × 분기 지수 × 개업 곡선 × 별점 × 가격^(-탄력성) × 마케팅 × 영업시간 × 경쟁 × 사건
   받는 손님 = min(홀 수요, 좌석 × 하루 회전 상한 × 영업일) + 배달 + 포장, 전체가 (직원 + 사장님) × 1인 처리 상한 × 영업일을 넘으면 줄임
   영업이익 = 매출 − 식재료 − 카드 − 배달 − 세금과 공과 − 기타 − 월세 − 인건비 − 마케팅 − 수리 − 감가상각 (사장님 인건비는 빼지 않음)
@@ -110,11 +110,12 @@ def context(cfg: dict) -> dict:
     dr = _dong_row(ind, gu, cfg["dong"])
     lo, hi = P.cv("demand", "dong_rel_range")
     rel = _clamp(dr["rel"], lo, hi) if dr and dr.get("rel") else 1.0
-    gu_index = g["sales_per_store_month"] / seoul["sales_per_store_month"]
-    area = P.iv(ind, "demand", "area_pyeong_mean")
+    glo, ghi = P.cv("demand", "gu_index_range")
+    gu_index = _clamp(g["sales_per_store_month"] / seoul["sales_per_store_month"], glo, ghi)
+    area = P.iv(ind, "demand", "area_pyeong_p50")   # 기준점은 중앙값 가게: 중앙값 매출과 중앙값 평수를 짝짓는다
     size = (cfg["pyeong"] / area) ** P.iv(ind, "demand", "area_elasticity")
     uplift = P.cv("demand", "seoul_uplift")
-    anchor = P.iv(ind, "demand", "annual_sales_mean_man") * 1e4 / 12 * uplift * gu_index * rel * size
+    anchor = P.iv(ind, "demand", "annual_sales_p50_man") * 1e4 / 12 * uplift * gu_index * rel * size
     ticket = P.iv(ind, "demand", "ticket_krw")
     if cfg["rent_man_per_pyeong"] is not None:
         rent_pp, rent_src = cfg["rent_man_per_pyeong"], "입력"
@@ -328,7 +329,7 @@ def preview(body: dict) -> dict:
             "gu_index": round(ctx["gu_index"], 3), "dong_rel": round(ctx["rel"], 3), "size_factor": round(ctx["size"], 3), "seoul_uplift": ctx["uplift"],
             "ticket_krw": ctx["ticket"], "days_month": days, "channels": ctx["channels"], "delivery_available": ctx["delivery_ok"],
             "grade": "M",
-            "note_ko": (f"{k['krei_label']} 연매출 평균 {P.iv(ind, 'demand', 'annual_sales_mean_man'):,.0f}만원(전국, 평균 {P.iv(ind, 'demand', 'area_pyeong_mean'):g}평 가게) × 서울 배율 {ctx['uplift']} × "
+            "note_ko": (f"{k['krei_label']} 연매출 중앙값 {P.iv(ind, 'demand', 'annual_sales_p50_man'):,.0f}만원(전국, 중앙값 {P.iv(ind, 'demand', 'area_pyeong_p50'):g}평 가게) × 서울 배율 {ctx['uplift']} × "
                         f"{cfg['gu']} 지수 {ctx['gu_index']:.2f}" + (f" × {cfg['dong']} 위치 {ctx['rel']:.2f}" if ctx["rel"] != 1.0 else "")
                         + f" × 평수 효과 {ctx['size']:.2f}"),
         },

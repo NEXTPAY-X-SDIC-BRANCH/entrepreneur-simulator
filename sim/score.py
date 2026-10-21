@@ -25,7 +25,10 @@
 """
 from __future__ import annotations
 
+import json
 import math
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 VERSION = "score-v1"
@@ -56,7 +59,7 @@ BENCH: dict[str, dict[str, Any]] = {
     "cafe": {
         "label": "독립 카페 중앙값", "src": f"{KOSIS_FOOD} 원자료 독립 음료점",
         "margin": 0.10, "cogs": 0.40, "labor": 0.11, "rent": 0.109,   # 임차료: 10% × 임차 매장 월세 103.5 / 전체 95 (자가 0 포함) = 임차 매장 기준
-        "owner_wage_in_op": False, "owner_wage_month": 1_584_167, "owner_in_labor": 0,
+        "owner_wage_in_op": False, "owner_wage_month": 1_584_167, "owner_in_labor": 0, "owner_stat": "중앙값",
         "labor_def": "직원 인건비(사장은 무급)를 업계 고용인 인건비와 비교해요", "labor_total": None,
         "def": ("외식업체경영실태조사 2025 원자료, 독립 음료점 중앙값: 식재료 40%, 고용인 인건비 11%, 임차료 10%, "
                 "대표자 인건비 월 158만원(별도), 영업이익률 10%(대표자 인건비를 뺀 뒤). 임차료 10%는 자가 매장을 0으로 넣은 값이라 "
@@ -122,8 +125,39 @@ def band_for(total: int) -> tuple[str, str]:
     return BANDS[-1][1], BANDS[-1][2]
 
 
+GENERIC = ("hansik", "pub", "bunsik", "bakery", "chicken")   # lab:industry 새 업종 (sim/generic)
+KREI = Path(__file__).resolve().parents[1] / "research" / "industries" / "krei.json"
+
+
+@lru_cache(maxsize=None)
+def _generic_bench(ind: str) -> dict:
+    """새 업종 기준: 경영실태조사 2025 원자료 그 업종 (전국, 가중 평균 금액끼리 비중). 새 업종 엔진은 사장님 몫을 비용에 넣지 않으므로
+    카페처럼 비교할 때 그 업종 대표자 인건비(월)를 뺀다. 이걸 안 빼면 사장님 몫이 든 이익률을 업계 이익률(대표자 인건비를 뺀 뒤)과 견줘
+    점수가 크게 부풀었다 (2026-10-22: 치킨집 이지 기본 96점 적격)."""
+    from sim.generic import params as gp
+    g = json.loads(KREI.read_text(encoding="utf-8"))["groups"][ind]
+    s, label = g["pl_share"], g["label"]
+    owner = float(gp.iv(ind, "cost", "owner_pay_month_krw"))
+    pc = lambda x: f"{x * 100:.1f}"  # noqa: E731
+    return {
+        "label": f"{label} 평균", "src": f"{KOSIS_FOOD} 원자료, 전국",
+        "margin": s["profit"], "cogs": s["food"], "labor": s["labor_hired"], "rent": s["rent"], "labor_total": None,
+        "owner_wage_in_op": False, "owner_wage_month": owner, "owner_in_labor": 0, "owner_stat": "평균",
+        "labor_def": "직원 인건비(사장님 몫 제외)를 업계 고용인 인건비와 비교해요",
+        "def": (f"{KOSIS_FOOD} 원자료 {label} (전국, 가중 평균 금액의 비중): 매출 = 식재료 {pc(s['food'])} + 고용인 인건비 {pc(s['labor_hired'])} "
+                f"+ 가족 {pc(s['labor_family'])} + 대표자 인건비 {pc(s['labor_owner'])} + 임차료 {pc(s['rent'])} + 세금 {pc(s['tax'])} "
+                f"+ 기타 {pc(s['other'])} + 영업이익 {pc(s['profit'])}(%). 서울 1층 월세는 전국 비중보다 높기 쉬워요"),
+    }
+
+
 def bench_for(industry: str) -> dict:
-    return BENCH.get(str(industry), DEFAULT_BENCH)
+    ind = str(industry)
+    if ind in GENERIC:
+        try:
+            return _generic_bench(ind)
+        except (OSError, KeyError, ValueError):
+            pass
+    return BENCH.get(ind, DEFAULT_BENCH)
 
 
 # ---------------------------------------------------------------- facts (also used by the coach)
@@ -190,7 +224,7 @@ def _profit(F: dict) -> dict:
     b = F["bench"]["margin"]
     m = 0.5 * F["margin"] + 0.5 * F["margin_last2"] if F["months"] >= 3 else F["margin"]
     s = _lerp(m, [(-0.20, 0.0), (0.0, 10.0), (b, 20.0), (b + 0.06, 25.0)])
-    owner = (f" 카페 엔진은 사장 노동을 무급으로 계산해서, 비교를 위해 대표자 인건비 중앙값 월 {man(F['owner_wage_month'])}을 뺐어요."
+    owner = (f" 이 업종 엔진은 사장님 몫을 비용에 넣지 않아서, 업계와 같은 기준으로 비교하려고 대표자 인건비 {F['bench'].get('owner_stat', '중앙값')} 월 {man(F['owner_wage_month'])}을 뺐어요."
              if F["owner_wage_month"] else
              f" 영업이익은 사장 가상 급여(월 {man(F['owner_in_labor'])})를 뺀 값이라 업계 영업이익(대표자 인건비를 뺀 값)과 같은 기준이에요."
              if F["owner_in_labor"] else "")

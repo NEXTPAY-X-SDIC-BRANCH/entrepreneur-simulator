@@ -153,7 +153,7 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
           </ul>
           <p className="m-aside">
             비용 비율, 객단가, 좌석과 일손 한도는 외식업체 경영실태조사 2025 {p.benchmark.krei_label} 전국 가게의 값이에요 (프랜차이즈 포함).
-            매출은 업종 평균을 {profile.gu}의 카드 매출 지수로 옮긴 엔진 추정이에요. 3D 가구는 카페 가구 모양을 빌려 그렸어요.
+            매출은 업종 중앙값 가게를 {profile.gu}의 카드 매출 지수로 옮긴 엔진 추정이에요. 3D 가구는 카페 가구 모양을 빌려 그렸어요.
           </p>
         </section>
       )}

@@ -42,7 +42,7 @@ def build_one(ind: str, g: dict) -> dict:
         "id": ind, "name_ko": INDUSTRIES[ind]["name"], "krei_group": ind,
         "demand": {
             "annual_sales_mean_man": ent(pl["sales"], "H", f"{s}, 연 매출액 가중 평균 (만원, 통계보고서 표 95와 같은 값)",
-                                         f"수요 기준점 (카페 엔진처럼 업종 평균). 면적 평균 {v['area_pyeong']['mean']}평과 짝을 지어, 평수가 다르면 면적 탄력성으로 옮김. "
+                                         f"참고값. 수요 기준점은 중앙값(annual_sales_p50_man, 중앙값 평수와 짝)으로 바꿈 (2026-10-22): 평균은 큰 가게에 끌려 올라감. "
                                          f"중앙값 {v['sales']['p50']:,}만원, 4분의 1~4분의 3: {v['sales']['p25']:,}~{v['sales']['p75']:,}만원"),
             "area_pyeong_mean": ent(v["area_pyeong"]["mean"], "H", f"{s}, 사업장 신고 면적 가중 평균 (평)"),
             "annual_sales_p50_man": ent(v["sales"]["p50"], "H", f"{s}, 연 매출액 중앙값 (만원)"),
@@ -77,9 +77,9 @@ def build_one(ind: str, g: dict) -> dict:
             "pay_per_staff_month_krw": ent(round(dv["pay_per_hired_month_man"]["value"] * 1e4 * 10320 / 9860), "L",
                                            f"{s}, 고용인 인건비 합 ÷ 유급 고용인 수 합 ÷ 12 = {dv['pay_per_hired_month_man']['value']}만원 (2024년)",
                                            "최저임금 2024년 9,860원 → 2026년 10,320원 (고용노동부 고시, H) 비율 1.047을 곱함. 상용·임시·일용이 섞인 평균 1명"),
-            "default_staff": ent(max(1, int(round(dv["pay_per_hired_month_man"]["hired_mean"]))), "L",
-                                 f"{s}, 유급 고용인 수(상용·임시·일용, 대표자와 무급 가족 제외) 가중 평균 {dv['pay_per_hired_month_man']['hired_mean']}명을 반올림",
-                                 f"수요 기준점이 업종 평균 매출이라 사람 수도 평균에 맞춤 (중앙값 {dv['pay_per_hired_month_man']['hired_p50']:.0f}명, "
+            "default_staff": ent(max(1, int(round(dv["pay_per_hired_month_man"]["hired_p50"]))), "L",
+                                 f"{s}, 유급 고용인 수(상용·임시·일용, 대표자와 무급 가족 제외) 가중 중앙값 {dv['pay_per_hired_month_man']['hired_p50']:.0f}명 (1명 아래면 1명)",
+                                 f"수요 기준점이 업종 중앙값 매출이라 사람 수도 중앙값에 맞춤 (평균 {dv['pay_per_hired_month_man']['hired_mean']}명, "
                                  f"대표자·무급 가족을 포함한 근로자 전체 중앙값 {v['workers']['p50']:.0f}명). 무급 가족은 엔진에 없음"),
             "owner_pay_month_krw": ent(round(pl["labor_owner"] / 12 * 1e4), "H", f"{s}, 대표자 인건비 연 {pl['labor_owner']:,}만원 ÷ 12",
                                        "영업이익에 넣지 않고 '사장님 몫 (참고)'로만 보임 (카페 엔진과 같음)"),
