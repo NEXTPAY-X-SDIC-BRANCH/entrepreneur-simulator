@@ -68,6 +68,10 @@ export const fillOf = (cover: number) => 1 - Math.exp(-FILL_K * Math.max(0, cove
 const DECAY = [0, 0, 0, 0.06, 0.06, 0.06, 0.12]; // 가정: 나이별 한 달 값 하락. 석 달 넘으면 매달 6%, 반년 넘으면 12%
 const MD_BASE = 0.1;      // 가정: 세일 칸의 옷이 한 달에 팔리는 비율 = 0.1 + 1.5 × 세일 폭 (제철 품목 기준)
 const CONSIGN_RETURN = 3; // 가정: 위탁 옷은 석 달 안 팔리면 돌려보낸다
+// 가정: 일손 한 명이 감당하는 매출 = 도소매업조사 종사자 1명당 평균 매출(KOSIS.perWorker) × 1.4. 평균은 한가한 날까지 섞인 값이라
+// 실제로 받을 수 있는 양은 그보다 많다. 받을 손님이 감당 수준만큼이면 바쁜 날에 16%를 놓치고, 절반이면 거의 다 받는다
+// (served = need ÷ (1 + (need/감당)^4)^(1/4))
+const HEADROOM = 1.4, CAP_K = 4;
 
 export const BUY_MODES: Record<BuyMode, { label: string; cost: number; reorder: number; desc: string }> = {
   react: { label: "동대문 반응 재주문", cost: 1, reorder: 1, desc: "매달 팔리는 만큼 다시 사요. 원가는 도소매업조사 원가율 그대로예요" },
@@ -142,7 +146,7 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   const discount = Math.min(0.5, plan.discount + (fx.discount ?? 0));
   const baseAt = (mm: number) => expectedSales(profile.gu, cfg.pyeong) * (st.qidx[Math.floor((mm - 1) / 3)] ?? 1) * MONTH_IN_QUARTER[mm];
   const demand = baseAt(month) * s.awareness * (ev.demand ?? 1) * (fx.demand ?? 1) * (1 + ELASTIC * discount); // 정가로 팔고 싶은 양 (만원)
-  const capacity = KOSIS.perWorker * (1 + plan.staff);                                                           // 사장 + 알바가 감당하는 매출
+  const capacity = KOSIS.perWorker * HEADROOM * (1 + plan.staff);                                                // 사장 + 알바가 감당하는 매출
   const mix = mixOf(month);
   const inv: Inv = { top: [...s.inv.top], bottom: [...s.inv.bottom], outer: [...s.inv.outer], acc: [...s.inv.acc] };
   const mdAge = plan.markdownAge;
@@ -198,8 +202,11 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
     clearRev += (cleared / cogsR) * (1 - (fx.clearCut ?? 0));
     mdSold[c] = md + cleared;
   }
-  // 세일 손님도 같은 일손으로 받는다: 세일 매출을 뺀 나머지 일손으로 정가 손님을 받는다
-  const capScale = reachAll > 0 ? Math.min(1, Math.max(0, capacity - mdRev - clearRev) / reachAll) : 1;
+  // 일손: 받을 손님(정가 + 세일)이 감당 수준에 가까워질수록 바쁜 날 놓치는 손님이 서서히 는다 (부드러운 한도, 아래 served)
+  // 세일 손님도 같은 일손으로 받고, 놓치는 몫은 정가 손님에서 뺀다
+  const need = reachAll + mdRev + clearRev;
+  const served = need > 0 ? need / Math.pow(1 + Math.pow(need / capacity, CAP_K), 1 / CAP_K) : 0;
+  const capScale = reachAll > 0 ? Math.min(1, Math.max(0, served - mdRev - clearRev) / reachAll) : 1;
   for (const { id: c } of CATS) {
     // 정가 칸은 오래된 옷부터 판다 (선반 앞쪽에 먼저 꺼내 둔다)
     const soldFull = Math.min(invOf(inv, c, 0, mdAge), reach[c] * capScale * cogsR);

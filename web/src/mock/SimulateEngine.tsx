@@ -13,6 +13,7 @@ import { flowShape, profileOf } from "./area";
 import "./simulate-engine.css";
 import { setEngineCtx } from "./chatContext";
 import Assume from "./Assume";
+import PriceTrend from "./PriceTrend";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, roomSize, storeStats, type Levers, type Profile, type Store } from "./model";
 
@@ -956,6 +957,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       {mode === "hard" && cur && recs.some((r) => r.change) && (
                         <button type="button" className="sx-ghost" onClick={() => setPlan(recs.reduce((p, r) => (r.change ? { ...p, [r.lever.key]: r.next[r.lever.key] } : p), plan))}>추천대로 적용</button>
                       )}
+                      <PriceTrend month={planMonth} />
                     </section>
                     {mode === "easy" ? (
                     <section className="sx-right" aria-label="이번 달 방향">

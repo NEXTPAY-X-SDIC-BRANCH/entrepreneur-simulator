@@ -319,3 +319,19 @@
 .sx-bar button { min-width: 72px; }
 /* 평면이 왼쪽 패널(360px)·오른쪽 영수증(300px) 사이에 들어가게 */
 .sx-canvas.ap-stage .ap-plan { width: clamp(320px, calc(100vw - 760px), 820px); max-height: 70%; }
+/* 재료 시세 대시보드 (PriceTrend.tsx) */
+.pt { margin-top: 12px; display: grid; gap: 8px; }
+.pt-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.pt-fig { margin: 0; padding: 10px; border: 1px solid #d5deea; border-radius: 10px; background: #fff; display: grid; gap: 4px; }
+.pt-fig figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; font-size: 13px; }
+.pt-fig figcaption span { color: #5b6b82; }
+.pt-fig svg { width: 100%; height: auto; display: block; }
+.pt-fig text { font-size: 10px; fill: #5b6b82; }
+.pt-fig .pt-cur { fill: #14233a; font-weight: 700; }
+.pt-fig small { font-size: 12px; color: #5b6b82; line-height: 1.5; }
+.pt-grid { stroke: #e8edf5; }
+.pt-one { stroke: #9fb0c8; stroke-dasharray: 3 3; }
+.pt-band { fill: #256abf; opacity: .12; }
+.pt-season { fill: none; stroke: #8aa4c8; stroke-width: 1; opacity: .7; }
+.pt-mean { fill: none; stroke: #256abf; stroke-width: 2.5; }
+.pt-now { fill: #b3261e; stroke: #fff; stroke-width: 1.5; }
