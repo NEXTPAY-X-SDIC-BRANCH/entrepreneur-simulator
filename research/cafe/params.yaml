@@ -10,7 +10,7 @@ district_meta:
     context_ko: 공연 관객 중심 오후 저녁 상권, 14~17시 피크, 커피 3년 생존율 64.6%
     stores: {value: 122, grade: H, source: "VwsmTrdarStorQq 20262 (83 개인 + 39 프랜차이즈), research §0"}
     rent_per_pyeong_krw: {value: 198348, grade: H, source: "R-ONE 소규모상가 1층 환산임대료 2026Q2 혜화동 60.0천원/㎡ x 3.3058, research §4"}
-    deposit_per_pyeong_krw: {value: 2660000, grade: M, source: "배라 rent model 혜화역 1층 66㎡ 보증금 중앙값 5,320만 ÷ 20평, research §3.3"}
+    deposit_per_pyeong_krw: {value: 3081000, grade: M, source: "서울시 「2023년 서울시 상가임대차 실태조사」 상권별 1층 보증금/㎡ 혜화역 93.21만원 x 3.3058 (S99)", note: "2023년 1:1 면접 조사, 1층 상가. 이전 값은 다른 상권 비율로 환산한 가정 또는 매물 호가"}
     key_money_krw: {value: 45200000, grade: M, source: "배라 rent model 혜화역 권리금 prior 중앙값, research §3.3"}
     opens_per_year: {value: 11, grade: H, source: "VwsmTrdarStorQq 25Q3~26Q2 개업 11곳 (평균 점포의 8.8%), research §5"}
   "3120094":
@@ -18,7 +18,7 @@ district_meta:
     context_ko: 학생 상권, 늦은 시간까지 수요, 유동인구 많지만 점포당 매출 낮음, 공실률 19.5%
     stores: {value: 144, grade: H, source: "VwsmTrdarStorQq 20262 (110 개인 + 34 프랜차이즈), research §0"}
     rent_per_pyeong_krw: {value: 134877, grade: H, source: "R-ONE 소규모상가 1층 환산임대료 2026Q2 신촌/이대 40.8천원/㎡ x 3.3058, research §4"}
-    deposit_per_pyeong_krw: {value: 1810000, grade: 가정, source: "GAP (research §7-6)", note: "대학로 평당 보증금 x 임대료 비율(135/198)로 환산한 가정"}
+    deposit_per_pyeong_krw: {value: 2956000, grade: M, source: "서울시 「2023년 서울시 상가임대차 실태조사」 상권별 1층 보증금/㎡ 신촌역(신촌로터리) 89.41만원 x 3.3058 (S99)", note: "2023년 1:1 면접 조사, 1층 상가. 이전 값은 다른 상권 비율로 환산한 가정 또는 매물 호가"}
     key_money_krw: {value: 39900000, grade: M, source: "한국부동산원 상업용부동산 임대동향 권리금 조사 2025, 서울 숙박·음식점업 중앙값 3,990만원 (R-ONE). 교차 확인: 농식품부·농경연 「2025 외식업체 경영실태 조사 통계보고서」 (2025.8~10 방문 면접, 2024년 실적, 커피 전문점 n=261) 표22 사업장 임차권리금, 커피 전문점 평균 3,828.6만원 (권리금을 낸 102곳)", note: "두 공식 자료가 4% 안에서 맞음. 업종은 숙박·음식점 전체(R-ONE)이거나 지역이 전국(농경연)이라 M, 입지별 값 없음"}
     opens_per_year: {value: 15, grade: H, source: "VwsmTrdarStorQq 25Q3~26Q2 개업 15곳 (평균 점포의 10.6%), research §5"}
   "3110131":
@@ -26,7 +26,7 @@ district_meta:
     context_ko: 카페 밀집 골목 상권, 11~14시 점심 피크, 점포당 매출은 성수 일대에서 가장 낮음
     stores: {value: 51, grade: H, source: "VwsmTrdarStorQq 20262 (43 개인 + 8 프랜차이즈), research §1.2"}
     rent_per_pyeong_krw: {value: 214877, grade: H, source: "R-ONE 소규모상가 1층 환산임대료 2026Q2 뚝섬 65.0천원/㎡ x 3.3058, research §4"}
-    deposit_per_pyeong_krw: {value: 2890000, grade: 가정, source: "GAP (research §7-6)", note: "대학로 평당 보증금 x 임대료 비율(215/198)로 환산한 가정"}
+    deposit_per_pyeong_krw: {value: 2097000, grade: M, source: "서울시 「2023년 서울시 상가임대차 실태조사」 상권별 1층 보증금/㎡ 성수동 카페거리 63.44만원 x 3.3058 (S99)", note: "2023년 1:1 면접 조사, 1층 상가. 이전 값은 다른 상권 비율로 환산한 가정 또는 매물 호가"}
     key_money_krw: {value: 39900000, grade: M, source: "한국부동산원 상업용부동산 임대동향 권리금 조사 2025, 서울 숙박·음식점업 중앙값 3,990만원 (R-ONE). 교차 확인: 농식품부·농경연 「2025 외식업체 경영실태 조사 통계보고서」 (2025.8~10 방문 면접, 2024년 실적, 커피 전문점 n=261) 표22 사업장 임차권리금, 커피 전문점 평균 3,828.6만원 (권리금을 낸 102곳)", note: "두 공식 자료가 4% 안에서 맞음. 업종은 숙박·음식점 전체(R-ONE)이거나 지역이 전국(농경연)이라 M, 입지별 값 없음"}
     opens_per_year: {value: 7, grade: H, source: "VwsmTrdarStorQq 25Q3~26Q2 개업 7곳 (평균 점포의 14.1%), research §5"}
 

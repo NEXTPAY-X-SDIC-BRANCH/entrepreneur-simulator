@@ -82,3 +82,4 @@ S95,연도별 최저임금 결정현황 (2027년 시간급 ₩10700; 인상률 3
 S96,서비스업생산지수 (DT_1KC2020; 한식 음식점업 I5611 / 커피 등 비알코올 음료점업 I5622) · 소매판매액지수 (DT_1K41012; 의복 G21) 월별 불변지수,통계청 (KOSIS),2026,https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1KC2020,statistics,"Official monthly; 전국. 분기 안의 달 비율로만 쓴다 (2023~2025 평균). pipelines/fetch_kosis_monthly.py"
 S97,생산자물가지수 품목별 (DT_404Y016; 플라스틱 포대·봉투 / 뚜껑 / 식품용 종이용기 / 폴리스티렌 발포 / 필름·시트),한국은행 (KOSIS),2026,https://kosis.kr/statHtml/statHtml.do?orgId=301&tblId=DT_404Y016,statistics,"Official monthly price index; 단가(원)가 아니라 1년 변화율 근거. pipelines/fetch_kosis_monthly.py"
 S98,배민상회 포장재 쿠폰가 (탕용기·소스컵·쌈채소봉투·비닐봉투·수저·아이스컵·뚜껑·빨대·홀더·캐리어),배민상회 (mart.baemin.com),2026,https://mart.baemin.com,retail,"2026-10-21 조회, 쿠폰가를 묶음 수량으로 나눈 개당 값. 행사가라 바뀔 수 있음"
+S99,2023년 서울시 상가임대차 실태조사 최종보고서 (145개 주요 상권 1층 12531개 점포; 통상임대료·보증금·월세·초기투자비·월평균 매출 /㎡),서울특별시 (리서치앤리서치),2023,https://data.seoul.go.kr,survey,"Official city survey; 2023년 6~12월 1:1 면접. 서울 평균 보증금 95.61만원/㎡, 월세 6.24만원/㎡"
