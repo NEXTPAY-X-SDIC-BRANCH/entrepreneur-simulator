@@ -45,12 +45,12 @@ export default function Mock() {
   useEffect(() => {
     const get = (f: string) => fetch(`${import.meta.env.BASE_URL}mock/${f}`).then((r) => r.json());
     const cafe = ind === "cafe";
-    const apparel = ind === "apparel"; // 옷가게는 구 단위 자료만 있다. 동네 파일(한식·카페 기준)은 읽지 않는다
+    const apparel = ind === "apparel"; // 옷가게는 동네 매출·가게 수(apparel_dong_stats)만 있다. 동네 지도·경쟁 목록 파일(한식·카페 기준)은 읽지 않는다
     const none = Promise.resolve(null);
     let alive = true; // 업종을 빠르게 바꿔도 늦게 도착한 이전 업종의 자료가 덮어쓰지 않게
     setReady(false);
     const rent = get("rent_gu.json").catch(() => null); // 없으면 월세는 예시값으로 돌아간다
-    const dong = apparel ? none : get(cafe ? "cafe_dong_stats.json" : "dong_stats.json").catch(() => null); // 없으면 동네 고르기를 숨긴다
+    const dong = get(apparel ? "apparel_dong_stats.json" : cafe ? "cafe_dong_stats.json" : "dong_stats.json").catch(() => null); // 없으면 동네 고르기를 숨긴다
     const krei = cafe || apparel ? none : get("gogi_krei.json").catch(() => null);        // 없으면 한식음식점 기준으로 돌아간다
     const growth = cafe || apparel ? none : get("growth.json").catch(() => null);         // 없으면 성장률을 숨긴다. 카페는 2024년 구 매출이 없다
     const prof = apparel ? none : get(cafe ? "cafe_dong_profile.json" : "dong_profile.json").catch(() => null);     // 없으면 동네 지도와 '~형 상권'을 숨긴다

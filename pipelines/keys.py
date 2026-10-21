@@ -24,9 +24,21 @@ def _env_file() -> dict[str, str]:
 
 _FILE = _env_file()
 
+# 팀원마다 .env에 같은 키를 다른 이름으로 넣어 두었다. 코드가 읽는 이름이 비어 있으면 이 별칭도 본다.
+ALIASES = {
+    "SEOUL_OPEN_DATA_KEY": ["SEOUL_API_KEY"],
+    "SBIZ_STORE_KEY": ["SBIZ_API_KEY"],
+    "KOSIS_KEY": ["KOSIS_API_KEY"],
+    "KMA_APIHUB_KEY": ["KMA_API_HUB_KEY"],
+    "ASOS_HOURLY_KEY": ["KMA_ASOS_HOURLY_KEY"],
+    "LIVESTOCK_AUCTION_KEY": ["MEAT_PRICE_API_KEY"],
+}
+
 
 def key(name: str, fallback: str | None = "DATA_GO_KR_KEY") -> str:
     v = os.environ.get(name) or _FILE.get(name)
+    for alt in ALIASES.get(name, []):
+        v = v or os.environ.get(alt) or _FILE.get(alt)
     if not v and fallback:
         v = os.environ.get(fallback) or _FILE.get(fallback)
     if not v:

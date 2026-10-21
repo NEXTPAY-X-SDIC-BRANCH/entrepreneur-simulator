@@ -120,7 +120,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
         : apparel ? `한 번에 평균 ${n0(st.ticket)}원 결제`
         : growth != null ? `${growth >= 0 ? "▲" : "▼"} ${Math.abs(growth)}% 전년 대비 (${st.area ? "동 전체 한식 매출" : "한식"})` : "전년 자료 없음",
       subTone: !cafe && !apparel && growth != null ? (growth >= 0 ? "up" : "down") : undefined,
-      basis: cafe ? `카페 점포당 월매출 중앙값 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}` : apparel ? "옷가게 점포당 월매출 (카드 추정)" : `고깃집 점포당 월매출 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}`,
+      basis: cafe ? `카페 점포당 월매출 중앙값 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}` : apparel ? `옷가게 점포당 월매출 (카드 추정)${st.area ? ", 구 값 × 동네 위치" : ""}` : `고깃집 점포당 월매출 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}`,
       rows: [
         { title: "하루 결제 건수", sub: cafe || apparel ? "한 곳당 하루 평균 카드 결제" : "한 곳당 하루 평균, 1건은 보통 한 팀", scope: guArea, value: `${st.tx}건` },
         { title: "매출 지수", sub: "서울 평균을 1로 놓았을 때", scope: st.area ? `${B} · 동 (구 값 × 동네 위치)` : guArea, value: st.demand.toFixed(2) },
@@ -135,7 +135,9 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
         // 고깃집은 한식음식점 값과 섞지 않고 고깃집 수만 따로 보인다
         cafe
           ? { title: `${B} 수`, sub: "카페를 포함한 커피·음료 가게 전체", scope: st.area ? `${B} · 동` : guArea, value: `${n0(st.area ? st.areaStores ?? 0 : st.stores)}곳` }
-          : apparel ? { title: "옷가게 수", sub: `상권 안 일반의류 가게 · ${rankWord(rankOf(profile.gu, "pork", names), n, "많음", "적음")}`, scope: guArea, value: `${n0(st.stores)}곳` }
+          : apparel ? (st.area
+            ? { title: "옷가게 수", sub: `${st.area} 안의 남성·여성·기타 의류 소매점 (소상공인 상가정보)`, scope: "옷가게 · 동", value: `${n0(st.areaPork ?? 0)}곳` }
+            : { title: "옷가게 수", sub: `상권 안 일반의류 가게 · ${rankWord(rankOf(profile.gu, "pork", names), n, "많음", "적음")}`, scope: guArea, value: `${n0(st.stores)}곳` })
           : { title: "고깃집 수", sub: st.area ? `${st.area} 안의 돼지고기 구이/찜 가게` : `돼지고기 구이/찜 가게 · ${rankWord(rankOf(profile.gu, "pork", names), n, "많음", "적음")}`, scope: st.area ? "고깃집 · 동" : "고깃집 · 구 전체", value: `${n0(count)}곳` },
         ...(dp?.pop_per_pork != null ? [{ title: `${S} 1곳당 인구`, sub: "주민 + 직장인", scope: `${S} · 동`, value: `${n0(dp.pop_per_pork)}명` }] : []),
       ],
@@ -366,7 +368,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                 {apparel ? (
                   <>
                     매출과 가게 수, 폐업률·개업률은 서울시 상권분석서비스 2025년 일반의류(CS300011) 상권 값을 구로 모은 거예요. 매출은 카드사 추정이고 현금·온라인 매출은 빠져 있어요.
-                    원가와 경비 비율은 통계청 도소매업조사 2024년 서울 의복 소매업 중 연매출 1억~5억 사업체 값이에요. 옷가게는 동네(행정동) 자료를 아직 만들지 않아 구 단위로만 봐요.
+                    원가와 경비 비율은 통계청 도소매업조사 2024년 서울 의복 소매업 중 연매출 1억~5억 사업체 값이에요. 동네를 고르면 서울시 상권분석서비스 행정동 일반의류 매출과 소상공인 상가정보(2026년 6월) 남성·여성·기타 의류 소매점 수로 구 안의 위치를 맞춰요. 동네 가게 수는 상권 밖 가게까지 센 값이라 구 전체의 상권 안 가게 수와 기준이 달라요.
                   </>
                 ) : cafe ? (
                   <>

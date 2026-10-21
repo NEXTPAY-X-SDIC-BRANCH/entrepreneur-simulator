@@ -31,7 +31,7 @@ export type GuStat = {
 };
 export type Dong = {
   code: string; name: string; stores: number; pork: number; sales_month: number; raw_per_store: number | null; rel: number | null;
-  dow: number[]; qidx: number[]; shares: { weekend: number; lunch: number; evening: number; age20: number; age30: number }; type: string;
+  dow: number[]; qidx: number[] | null; shares: { weekend: number; lunch: number; evening: number; age20: number; age30: number }; type: string;
 };
 // 카페용(cafe_dong_stats.json)은 _meta에 보정 배율(adj)과 구별 카페 수(gu_cafes)가 더 들어 있다.
 export type DongData = { _meta: { generated: string; year: number; caveats: string[]; adj?: number; gu_cafes?: Record<string, number> }; gu: Record<string, Dong[]> };
