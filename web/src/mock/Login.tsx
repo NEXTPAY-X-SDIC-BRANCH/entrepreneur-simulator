@@ -26,7 +26,7 @@ export default function Login({ onDone, onSkip }: { onDone: () => void; onSkip: 
         <h1>ChangeUp 시작하기</h1>
         <p className="lg-sub">예비 창업 시뮬레이터에 오신 걸 환영해요. 성적표와 반 랭킹에 이 이름이 쓰여요.</p>
         <label>이름 (별명)
-          <input value={name} maxLength={12} autoFocus onChange={(e) => setName(e.target.value)} placeholder="예: 수빈" />
+          <input value={name} maxLength={12} autoFocus onChange={(e) => setName(e.target.value)} placeholder="예: 창업러" />
         </label>
         <label>반 코드 <small>강사님이 알려 준 코드. 없으면 비워 두세요</small>
           <input value={cls} maxLength={20} onChange={(e) => setCls(e.target.value)} placeholder="예: 서울대-1기" />

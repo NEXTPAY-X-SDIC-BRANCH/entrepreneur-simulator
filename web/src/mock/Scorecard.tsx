@@ -224,7 +224,7 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
       <h2>랭킹</h2>
       <div className="sc-save">
         {acc ? <p className="sx-note"><b>{acc.name}</b> · 반 {acc.cls} 이름으로 저장해요.</p> : <>
-          <label>별명<input value={name} maxLength={12} onChange={(e) => setName(e.target.value)} placeholder="예: 수빈" /></label>
+          <label>별명<input value={name} maxLength={12} onChange={(e) => setName(e.target.value)} placeholder="예: 창업러" /></label>
           <label>반 코드<input value={cls} maxLength={20} onChange={(e) => setCls(e.target.value)} onBlur={() => load(cls.trim() || "공개")} /></label>
         </>}
         <button type="button" className="se-btn" onClick={save} disabled={!!board?.mine}>{board?.mine ? "저장했어요" : "점수 저장"}</button>

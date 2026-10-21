@@ -457,8 +457,8 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
             )}
             <div className="m-ftabs" role="tablist" aria-label="돈을 구하는 방법">
               {FUND_TABS.map((t, i) => {
-                const n = t.key === "pre" ? FUNDS.filter((f) => (f.pre === "가능" || f.pre === "조건부") && (!f.youth || young)).length
-                  : t.key === "post" ? FUNDS.filter((f) => f.pre === "등록 후" && (!f.youth || young)).length
+                const n = t.key === "pre" ? FUNDS.filter((f) => (f.pre === "가능" || f.pre === "조건부") && !f.program && (!f.youth || young)).length
+                  : t.key === "post" ? FUNDS.filter((f) => f.pre === "등록 후" && !f.program && (!f.youth || young)).length
                   : t.key === "bank" ? BANKS.length : null;
                 return (
                   <button key={t.key} type="button" role="tab" id={`ftab-${t.key}`} aria-selected={ftab === t.key} aria-controls="fpanel"
@@ -472,7 +472,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
             <div className="m-fpanel" id="fpanel" role="tabpanel" aria-labelledby={`ftab-${ftab}`} key={ftab}>
               {(ftab === "pre" || ftab === "post") && (() => {
                 const t = FUND_TABS.find((x) => x.key === ftab)!;
-                const list = FUNDS.filter((f) => (ftab === "pre" ? f.pre === "가능" || f.pre === "조건부" : f.pre === "등록 후") && (!f.youth || young));
+                const list = FUNDS.filter((f) => (ftab === "pre" ? f.pre === "가능" || f.pre === "조건부" : f.pre === "등록 후") && !f.program && (!f.youth || young));
                 return (
                   <div className="m-funds">
                     <p className={`m-fund-head is-${ftab}`}>{t.lead}</p>
@@ -514,7 +514,23 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                   <small className="m-src">이 시뮬레이터의 대출 이자는 정책자금이 아니라 일반 은행 대출로 본 연 {+(LOAN_RATE * 100).toFixed(2)}%예요.</small>
                 </div>
               )}
-              {ftab === "support" && <KStartup young={young} gu={profile.gu} />}
+              {ftab === "support" && (
+                <KStartup young={young} gu={profile.gu} before={(() => {
+                  const progs = FUNDS.filter((f) => f.program && (!f.youth || young));
+                  return progs.length ? (
+                    <ul>
+                      {progs.map((f) => (
+                        <li key={f.name}>
+                          <ul className="m-chips" aria-label="종류"><li className="m-chip is-good">교육 프로그램</li></ul>
+                          <b>{f.url ? <a href={f.url} target="_blank" rel="noreferrer">{f.name}</a> : f.name}</b> <small>{f.org} · {f.who}</small>
+                          <p>{f.limit}. {f.terms}</p>
+                          <small>{f.where}. {f.note}</small>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null;
+                })()} />
+              )}
             </div>
             <button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button>
           </div>
