@@ -81,9 +81,12 @@ t("moving the door changes the plan and the table count flows into storeStats", 
 });
 
 t("manual placement may not block the door", () => {
-  const s = withShape(starterStore(20, "basic", 0, 0), { ...BBQ_SHAPE, door: { wall: "back", pos: 0.5 } });
-  const door = doorInfo(s);
-  assert.equal(fitsIn(s, { id: "table4", x: door.x, z: door.z + 1, rot: 0 }), false);
+  for (const wall of walls) {
+    const s = relayout(starterStore(20, "basic", 0, 0), { ...BBQ_SHAPE, door: { wall, pos: 0.5 } }).store;
+    const door = doorInfo(s);
+    const at = { id: "plant", x: door.step[0], z: door.step[1], rot: 0 as const };
+    assert.equal(fitsIn(s, at), false, `${wall}: plant in the doorway`);
+  }
 });
 
 t("an unreachable table is reported", () => {

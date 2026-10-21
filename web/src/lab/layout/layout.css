@@ -21,11 +21,14 @@
 .ly-flow-h span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink2); font-variant-numeric: tabular-nums; }
 .ly-flow-h i { display: inline-block; inline-size: 14px; block-size: 4px; border-radius: 2px; }
 .ly-flowcard small { font-size: 12px; line-height: 1.45; }
-.ly-flowcard ul { display: grid; gap: 3px; padding: 0; list-style: none; }
-.ly-flowcard li { position: relative; padding-inline-start: 14px; line-height: 1.45; }
-.ly-flowcard li::before { content: ""; position: absolute; inset: 0.55em auto auto 0; inline-size: 7px; block-size: 7px; border-radius: 50%; background: var(--ok); }
-.ly-flowcard li.is-warn { color: var(--warn-ink); } .ly-flowcard li.is-warn::before { background: var(--warn); }
-.ly-flowcard li.is-weak { color: var(--weak-ink); } .ly-flowcard li.is-weak::before { background: var(--weak); }
+.ly-hint { position: relative; padding-inline-start: 14px; line-height: 1.45; }
+.ly-hint::before { content: ""; position: absolute; inset: 0.55em auto auto 0; inline-size: 7px; block-size: 7px; border-radius: 50%; background: var(--ok); }
+.ly-hint.is-warn { color: var(--warn-ink); } .ly-hint.is-warn::before { background: var(--warn); }
+.ly-hint.is-weak { color: var(--weak-ink); } .ly-hint.is-weak::before { background: var(--weak); }
+.ly-flowcard details { display: grid; gap: 4px; }
+.ly-flowcard summary { cursor: pointer; color: var(--blue-deep); font-size: 13px; }
+.ly-flowcard details[open] { display: grid; gap: 4px; }
+.ly-flowcard details .m-link { justify-self: start; font-size: 13px; }
 
 /* tags in the 3D scene (drei Html) */
 .ly-door-tag { display: inline-block; padding: 2px 8px; border-radius: 8px; background: #1f6b4e; color: #fff; font: 600 12px/1.5 var(--text, system-ui); white-space: nowrap; box-shadow: 0 1px 4px rgba(25, 31, 40, 0.25); pointer-events: none; }

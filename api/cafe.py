@@ -48,6 +48,7 @@ class CafeIn(BaseModel):
     aspect: float | None = Field(None, ge=0.35, le=3.0)
     door_wall: Literal["front", "back", "left", "right"] | None = None
     door_pos: float | None = Field(None, ge=0.0, le=1.0)
+    windows: list[Literal["front", "back", "left", "right"]] | None = Field(None, max_length=4)   # echoed for the 3D walls
 
 
 class SeasonIn(CafeIn):
@@ -76,9 +77,17 @@ class TokenMonthIn(MonthIn):
     state_token: str = Field(..., min_length=10, max_length=8000)
 
 
+LAB_LAYOUT_KEYS = ("aspect", "door_wall", "door_pos", "windows")   # lab:layout
+
+
+def _dump(body: BaseModel) -> dict:
+    """lab:layout: drop the room-shape keys when unset, so an old request gives the old answer byte for byte."""
+    return body.model_dump(exclude={k for k in LAB_LAYOUT_KEYS if getattr(body, k, None) is None})
+
+
 @router.post("/preview")
 def cafe_preview(body: CafeIn):
-    return cafe.preview(body.model_dump())
+    return cafe.preview(_dump(body))
 
 
 @router.get("/districts")
@@ -171,7 +180,7 @@ def _sent(body: MonthIn) -> tuple[dict, int | None]:
 
 @router.post("/season")
 def cafe_season_start(body: SeasonIn):
-    b = body.model_dump()
+    b = _dump(body)   # lab:layout
     run = cafe_season.start(b)
     run["id"] = uuid.uuid4().hex[:12]
     state = {"v": TOKEN_VERSION, "pv": model_version(), "b": b, "d": []}

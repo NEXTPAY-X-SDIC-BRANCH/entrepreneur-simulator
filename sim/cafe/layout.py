@@ -119,6 +119,8 @@ def solve(cfg: dict) -> dict:
         out["room"]["door"]["x"] = _r(Wc - out["room"]["door"]["x"])
     out["room"]["door"].update({"wall": f["wall"], "pos": f["pos"]})
     out["room"]["frame"] = {"wall": f["wall"], "mirror": mirror, "real_width_m": _r(f["W"]), "real_depth_m": _r(f["D"])}
+    if cfg.get("windows") is not None:   # drawing only (which walls have windows); no effect on the plan
+        out["room"]["frame"]["windows"] = list(cfg["windows"])
     return out
 
 

@@ -18,7 +18,7 @@ const FRAME = "#4f555c";
 type Open = { a: number; b: number; y0: number; y1: number; kind: "door" | "window" };
 
 // hide when the camera is above the roofline on the wall's outer side (Scene3D Wall's rule)
-function Hide({ outside, children }: { outside: (c: THREE.Vector3) => boolean; children: ReactNode }) {
+export function Hide({ outside, children }: { outside: (c: THREE.Vector3) => boolean; children: ReactNode }) {
   const ref = useRef<THREE.Group>(null);
   useFrame(({ camera }) => {
     if (ref.current) ref.current.visible = !(camera.position.y > WALL_H + 0.6 && outside(camera.position));

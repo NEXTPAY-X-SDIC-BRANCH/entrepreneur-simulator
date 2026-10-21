@@ -60,18 +60,24 @@ export function ShapePanel({ shape, onShape, pyeong, w, d, margin, defRatio, rat
 }
 
 const m1 = (v: number) => `${v.toFixed(1).replace(/\.0$/, "")}m`;
-// the card over the stage while 동선 is on: length, in/out split, every hint (the congestion line first)
+// the card over the stage while 동선 is on: length, in/out split, the most important hint (congestion first); the
+// rest folds away so the card covers little of the floor
 export function FlowCard({ f, onTop }: { f: FlowSummary; onTop: () => void }) {
+  const [first, ...rest] = f.hints;
   return (
     <div className="ly-flowcard" role="status" aria-live="polite">
       <p className="ly-flow-h">
         <strong>손님 동선 {m1(f.inLen + f.outLen)}</strong>
         <span><i style={{ background: IN_COLOR }} />{f.inLabel} {m1(f.inLen)}</span>
         <span><i style={{ background: OUT_COLOR }} />{f.outLabel} {m1(f.outLen)}</span>
-        <button type="button" className="m-link" onClick={onTop}>위에서 보기</button>
       </p>
-      <ul>{f.hints.map((h) => <li key={h.text} className={`is-${h.level}`}>{h.text}</li>)}</ul>
-      {f.note && <small>{f.note}</small>}
+      {first && <p className={`ly-hint is-${first.level}`}>{first.text}</p>}
+      <details>
+        <summary>{rest.length ? `안내 ${rest.length}개 더 보기` : "어떻게 쟀나요"}</summary>
+        {rest.map((h) => <p key={h.text} className={`ly-hint is-${h.level}`}>{h.text}</p>)}
+        {f.note && <small>{f.note}</small>}
+        <button type="button" className="m-link" onClick={onTop}>위에서 보기</button>
+      </details>
     </div>
   );
 }
