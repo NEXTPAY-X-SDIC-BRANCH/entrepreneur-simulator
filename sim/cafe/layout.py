@@ -142,7 +142,10 @@ def _solve(cfg: dict, area: float, W: float, D: float, xd: float) -> dict:
     # slot is bare counter at the left end of the front line, so it only widens the zone.
     front, back = _counter_lines(cfg)
     pickup = L("item_w")["pickup"]
-    need = max(sum(x for _, x in front) + pickup, sum(x for _, x in back)) + L("counter_side_access")
+    # lab:layout fix: both lines fill from 5 cm off the right wall (cursor = cx1 - wm), so the back line needs that margin
+    # too; without it the last back item (fridge or oven) fell off whenever the back line set the counter's width, i.e.
+    # without a showcase. The front line's pickup slot already absorbs the margin, so only the back term changes.
+    need = max(sum(x for _, x in front) + pickup, sum(x for _, x in back) + wm) + L("counter_side_access")
     cw = min(need, W - 2 * wm)
     entry_w = L("entry_w")
     strip_r = xd + entry_w / 2                         # right edge of the entry path (= W for the old default)
