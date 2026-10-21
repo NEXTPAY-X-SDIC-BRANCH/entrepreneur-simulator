@@ -186,7 +186,8 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
           </tbody>
         </table>
         {s.closed && <p className="lm-closed">{s.months.length}개월째 문을 닫았어요. {s.closed_reason ?? ""}</p>}
-        {kind === "bbq" && <small>남은 현금은 사장님 생활비 월 300만원과 대출 이자를 뺀 값이에요 (가정).</small>}
+        {kind === "bbq" ? <small>남은 현금은 사장님 생활비 월 300만원과 대출 이자를 뺀 값이에요 (가정).</small>
+          : <small>남은 현금은 대출 원리금을 뺀 값이고, 사장님 생활비는 빼지 않았어요 (고깃집과 다른 점, 가정).</small>}
       </section>
 
       {prev && <div className="lm-two"><Parts cur={cur} /><div /></div>}

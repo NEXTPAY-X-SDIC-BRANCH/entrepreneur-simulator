@@ -289,6 +289,18 @@ GENERIC = ("hansik", "pub", "bunsik", "bakery", "chicken")   # lab:industry 새 
 INDUSTRY_IDS = ("bbq", "cafe", *GENERIC)
 
 
+def rent_row(value: float, src: str) -> dict:
+    """월세 줄. R-ONE 근사/동네 = 공공 통계. R-ONE 채움(자료 없는 구를 비슷한 구로 채운 값)과 예시값 = 가정."""
+    row = {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": value, "unit": "만원"}
+    if src in ("R-ONE 근사", "R-ONE 동네"):
+        return {**row, "src": "공공 통계", "basis": f"한국부동산원 상가 임대료 ({src}), 보증금 환산분을 뺀 현금 월세"}
+    if src == "R-ONE 채움":
+        return {**row, "src": "가정", "basis": "한국부동산원 자료가 없는 구라 비슷한 구 값으로 채운 월세"}
+    if src == "입력":
+        return {**row, "src": "입력", "basis": "직접 넣은 월세"}
+    return {**row, "src": "가정", "basis": "이 구의 임대료 자료가 없어 넣은 예시값"}
+
+
 def _check(industry: str, capital_man: float, pyeong: float | None) -> None:
     if industry not in INDUSTRY_IDS:
         raise ValueError("업종을 확인해 주세요 (bbq, cafe, " + ", ".join(GENERIC) + ")")
@@ -348,10 +360,7 @@ def easy_bbq(gu: str, capital_man: float, dong: str | None = None, pyeong: int |
          "basis": OV_BASIS if ov.get("staff") is not None else "추천 규칙 (일하는 사람 1명이 하루 손님 34명쯤, 엔진에 맞춘 가정)"},
         {"key": "price", "label": "삼겹살 1인분", "value": price, "unit": "원", "src": "입력" if ov.get("price") else "업계 자료",
          "basis": OV_BASIS if ov.get("price") else "기준 고깃집(대학로) 가격, 팀 조사"},
-        {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": st["rent"], "unit": "만원",
-         "src": "공공 통계" if st["rent_src"].startswith("R-ONE") else "가정",
-         "basis": f"한국부동산원 상가 임대료 ({st['rent_src']}), 보증금 환산분을 뺀 현금 월세" if st["rent_src"] != "예시값"
-         else "이 구의 임대료 자료가 없어 넣은 예시값"},
+        rent_row(st["rent"], st["rent_src"]),
         {"key": "sales", "label": "구 한식음식점 점포당 월매출", "value": st["sales_hansik"], "unit": "만원", "src": "공공 통계",
          "basis": "서울시 상권분석서비스 2025" + (f", {st['dong']} 상대 위치 반영" if st["dong"] else "")},
         {"key": "loan", "label": "대출", "value": loan, "unit": "만원", "src": loan_src,
@@ -428,9 +437,7 @@ def easy_cafe(gu: str, capital_man: float, dong: str | None = None, pyeong: int 
          "basis": OV_BASIS if ov.get("staff") is not None else "가게 꾸미기 화면의 기본값"},
         {"key": "seats", "label": "테이블 / 의자", "value": f"{body['tables']} / {body['chairs']}", "unit": "", "src": "업계 자료",
          "basis": "독립 카페 평당 테이블 0.36개, 좌석 1.27석"},
-        {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": st["rent"], "unit": "만원",
-         "src": "공공 통계" if st["rent_src"].startswith("R-ONE") else "가정",
-         "basis": f"한국부동산원 상가 임대료 ({st['rent_src']})" if st["rent_src"] != "예시값" else "이 구의 임대료 자료가 없어 넣은 예시값"},
+        rent_row(st["rent"], st["rent_src"]),
         {"key": "sales", "label": "이 동네 보통 카페 월매출", "value": st["sales"], "unit": "만원", "src": "가정",
          "basis": "서울시 상권분석서비스 카드 추정매출(공공 통계)에 보정 배율과 전국 독립 카페 중앙값/평균 비율을 곱한 추정"},
         {"key": "daily", "label": "바쁜 날 주문 수", "value": body["daily_customers"], "unit": "건", "src": "가정",
@@ -447,8 +454,11 @@ def easy_generic(industry: str, gu: str, capital_man: float, dong: str | None = 
     테이블 = 평당 좌석, 직원 = 업종 기본 인원. 하드 모드 가게 꾸미기(IndustryBuild)의 첫 화면과 같은 가게다.
     모자란 돈과 석 달 고정비는 엔진이 빌린다고 본다 (카페 엔진과 같은 규칙)."""
     from sim.generic import model as gm
+    from sim.generic import params as gp
     from sim.generic.registry import INDUSTRIES
     _check(industry, capital_man, pyeong)
+    if dong and not any(d["name"] == dong for d in ((gp.dong_data(industry) or {}).get("gu", {}).get(gu) or [])):
+        raise ValueError(f"{gu}에 {dong} 자료가 없어요")
     ov = overrides or {}
     body = {"industry": industry, "gu": gu, "dong": dong or None, "grade": "basic", "delivery": True,
             "own_capital_krw": js_round(float(capital_man) * 10000), "seed": EASY_SEED, "start_month": int(start_month)}
@@ -471,11 +481,9 @@ def easy_generic(industry: str, gu: str, capital_man: float, dong: str | None = 
          "basis": OV_BASIS if given("tables") else f"평당 좌석 수로 어림 (경영실태조사), 테이블당 {pv['seats']['per_table']}석"},
         {"key": "staff", "label": "직원 (사장님 빼고)", "value": inp["staff"], "unit": "명", "src": "입력" if given("staff") else "업계 자료",
          "basis": OV_BASIS if given("staff") else "업종 기본 인원 (경영실태조사 종사자 수)"},
-        {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": pv["rent"]["man_per_pyeong"], "unit": "만원",
-         "src": "공공 통계" if "R-ONE" in str(pv["rent"]["source"]) or "부동산원" in str(pv["rent"]["source"]) else "가정",
-         "basis": str(pv["rent"]["source"])},
+        rent_row(pv["rent"]["man_per_pyeong"], str(pv["rent"]["source"])),
         {"key": "sales", "label": "자리 잡힌 달 매출", "value": round(pv["demand"]["anchor_month_krw"] / 1e4), "unit": "만원", "src": "가정",
-         "basis": "경영실태조사 연매출 평균(전국) × 서울 배율 × 구 매출 지수(서울시 상권분석서비스) × 평수, 추정"},
+         "basis": "경영실태조사 연매출 평균(전국) × 서울 배율 × 구 매출 지수(서울시 상권분석서비스) × 면적 효과(탄력성 추정), 추정"},
         {"key": "ticket", "label": "객단가", "value": pv["demand"]["ticket_krw"], "unit": "원", "src": "업계 자료",
          "basis": "경영실태조사 2025 원자료 1인 평균"},
         {"key": "delivery", "label": "배달", "value": "함" if pv["demand"]["delivery_available"] else "거의 없음", "unit": "",

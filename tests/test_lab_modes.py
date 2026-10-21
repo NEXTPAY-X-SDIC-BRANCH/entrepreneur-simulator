@@ -220,3 +220,11 @@ def test_api_generic_run_and_sensitivity(client):
     s = client.post("/lab/sensitivity", json={"industry": "pub", "body": r.json()["inputs"]["run"]})
     assert s.status_code == 200 and s.json()["industry"] == "pub"
     assert client.post("/lab/sensitivity", json={"industry": "pub", "body": {"gu": "없는구"}}).status_code == 422
+
+
+def test_easy_generic_rejects_unknown_dong_and_labels_rent():
+    with pytest.raises(ValueError):
+        E.easy_inputs("chicken", "마포구", 8000, dong="없는동")
+    assert E.rent_row(17.1, "R-ONE 근사")["src"] == "공공 통계"
+    assert E.rent_row(17.1, "R-ONE 채움")["src"] == "가정"
+    assert E.rent_row(12.0, "가정 (월세 자료 없음)")["src"] == "가정"

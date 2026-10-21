@@ -97,6 +97,7 @@ export default function HardTools({ profile, store, levers, cafeCfg, indCfg, ste
       </span>
       {sens && (
         <Sensitivity industry={ind} onClose={() => setSens(false)}
+          note={ind === "bbq" ? undefined : "시작 달은 3월로 고정해서, 시뮬레이션에서 다른 달을 골랐거나 사건이 달랐다면 그 판의 숫자와 달라요."}
           getBody={async () => (ind === "bbq" ? bbqHardBody(profile, store, levers) : isLab(ind) ? labHardBody(profile, indCfg ?? null)
             : cafeHardBody(profile, cafeCfg ?? { pyeong: 20, grade: "basic", staff: 1 }))} />
       )}

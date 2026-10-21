@@ -19,8 +19,8 @@ const DEFAULT: Record<string, number> = { customers: 15, meat: 20, food: 20, ren
 
 const cellText = (c: Cell) => (c.closed ? `${c.closed_month}개월째 폐업` : manWon(c.end_cash));
 
-export default function Sensitivity({ industry, getBody, onClose }: {
-  industry: string; getBody: () => Promise<Record<string, unknown>>; onClose: () => void;
+export default function Sensitivity({ industry, getBody, onClose, note }: {
+  industry: string; note?: string; getBody: () => Promise<Record<string, unknown>>; onClose: () => void;
 }) {
   const keys = KEYS[industry === "bbq" ? "bbq" : "other"];
   const lab = (k: string) => (industry === "bbq" && LABEL_BBQ[k]) || (industry !== "cafe" && k === "food" ? "재료비" : LABEL[k]);
@@ -66,7 +66,7 @@ export default function Sensitivity({ industry, getBody, onClose }: {
           <button type="button" className="m-btn m-btn-quiet lm-close" onClick={onClose}>닫기</button>
         </header>
         <p className="lm-quiet">가게 꾸미기에서 정한 가게{industry === "bbq" ? "와 가격, 알바" : "와 직원"}로 기본 운영을 6개월 그대로 둔 계획을, 아래 값만 바꿔 여러 번 돌려요.
-          매달 바꾼 운영 계획은 들어가지 않아요. 범위는 직접 정하는 가정이고, 사건 순서(시드)를 고정해서 칸끼리의 차이는 바꾼 값 때문이에요.</p>
+          매달 바꾼 운영 계획은 들어가지 않아요. 범위는 직접 정하는 가정이고, 사건 순서(시드)를 고정해서 칸끼리의 차이는 바꾼 값 때문이에요.{note ? ` ${note}` : ""}</p>
         <div className="lm-ranges">
           {keys.map((k) => (
             <div key={k} className="lm-range">
