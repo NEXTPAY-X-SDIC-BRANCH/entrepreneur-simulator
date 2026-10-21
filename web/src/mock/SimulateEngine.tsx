@@ -42,7 +42,27 @@ type MonthResult = {
 };
 type Tick = { label: string; amount: number }; // 원
 type Day = { n: number; date: Date; open: boolean; covers: number; rain: boolean; revenue: number; ticks: Tick[]; notes: string[]; net: number; cash: number; fixedShare: number; cum: number };
-type Done = { result: MonthResult; plan: Plan; days: Day[]; cashStart: number; cashEnd: number; year: number; picked: Record<string, string> };
+type Done = { result: MonthResult; plan: Plan; days: Day[]; cashStart: number; cashEnd: number; year: number; picked: Record<string, string>; rentPaid: number; rentFee: number };
+// 임대료 카드 할부 (자세히 모드, 시즌 시작 때 고르고 그 시즌 동안 고정). 달마다 월세를 카드로 내고, 수수료를 더한 금액을 N개월에 나눠 갚는다.
+// 손익(엔진 영업이익)은 그대로고 현금이 나가는 시점만 뒤로 밀린다. 수수료는 현금에서 따로 빠진다. 수수료율은 가정 (카드 임대료 결제 서비스 이용료 + 할부 수수료).
+type RentN = 0 | 3 | 6;
+const RENT_PAY: Record<RentN, { label: string; fee: number; desc: string }> = {
+  0: { label: "현금으로 바로", fee: 0, desc: "월세를 매달 1일에 한 번에 내요." },
+  3: { label: "카드 3개월 할부", fee: 0.03, desc: "월세를 카드로 내고 3개월에 나눠 갚아요. 수수료 3%." },
+  6: { label: "카드 6개월 할부", fee: 0.045, desc: "6개월에 나눠 갚아요. 첫 달 현금이 가장 많이 남지만 수수료 4.5%." },
+};
+// 이번 달 현금으로 나가는 월세 몫과 그중 수수료. rents는 1월차부터 이번 달까지의 월세(손익 기준)
+function rentSchedule(rents: number[], n: RentN): { paid: number; fee: number; left: number } {
+  if (!n) return { paid: rents.at(-1) ?? 0, fee: 0, left: 0 };
+  const f = RENT_PAY[n].fee, i = rents.length - 1;
+  let paid = 0, fee = 0, left = 0;
+  rents.forEach((r, j) => {
+    const done = Math.min(n, i - j + 1); // j번째 달 월세 중 이번 달까지 갚은 회차
+    if (i - j < n) { paid += (r * (1 + f)) / n; fee += (r * f) / n; }
+    left += (r * (1 + f) * (n - done)) / n;
+  });
+  return { paid, fee, left };
+}
 // 고르지 않은 대응을 골랐다면: 같은 달을 그 대응으로 한 번 더 계산한 결과 (고른 뒤에만 계산한다)
 type Alt = { label: string; month_op: number; op_gap: number; revenue: number; night_revenue: number; night_covers: number };
 type Ledger = {
@@ -162,7 +182,7 @@ function recommend(last: Done | undefined, plan: Plan): Rec[] {
 }
 
 // ---------------------------------------------------------------- 날짜별 풀이
-function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imputed: number; draw: number; interest: number }): Day[] {
+function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imputed: number; draw: number; interest: number; rentPaid?: number; rentFee?: number; rentN?: RentN }): Day[] {
   const n = new Date(year, r.month, 0).getDate();
   const open: Date[] = [];
   const all: Date[] = [];
@@ -180,7 +200,8 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
   open.forEach((dt, i) => { const nt = nights[Math.min(i, nights.length - 1)]; if (nt) byDate.set(dt.getDate(), nt); });
   const laborCash = Math.max(0, k.labor - ctx.imputed);
   // 월세·관리비·급여·생활비·이자는 지급일에 한꺼번에 나가 영업일 영수증에는 안 보인다. 영업일마다 그 몫을 따로 보여 준다 (현금에는 지급일에 반영)
-  const fixedShare = (k.rent + k.mgmt + laborCash + ctx.draw + ctx.interest) / Math.max(1, byDate.size);
+  const rentFee = ctx.rentFee ?? 0;
+  const fixedShare = (k.rent + rentFee + k.mgmt + laborCash + ctx.draw + ctx.interest) / Math.max(1, byDate.size);
   const firstSat = all.find((d) => d.getDay() === 6)?.getDate();
   let cash = cashStart;
   let cum = 0; // 이달 1일부터 오늘까지 (매출 - 재료비 - 수수료 - 오늘 몫 고정비)의 합
@@ -197,7 +218,10 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
       if (fee > 0) ticks.push({ label: k.delivery_fee > 0 ? "카드·배달 수수료" : "카드 수수료", amount: -fee });
     }
     if (i === 0) {
-      ticks.push({ label: "월세", amount: -k.rent });
+      if (ctx.rentN) {
+        ticks.push({ label: `월세 (카드 ${ctx.rentN}개월 할부 갚는 몫)`, amount: -((ctx.rentPaid ?? k.rent) - rentFee) });
+        if (rentFee > 0) ticks.push({ label: "할부 수수료", amount: -rentFee });
+      } else ticks.push({ label: "월세", amount: -k.rent });
       ticks.push({ label: "관리비", amount: -k.mgmt });
       if (ctx.interest > 0) ticks.push({ label: "대출 이자", amount: -ctx.interest });
       for (const e of r.events) notes.push(`일어난 일 · ${e.label}`);
@@ -312,7 +336,7 @@ export function CashChart({ start, months, labels, compact }: { start: number; m
 // 손익계산서 순서: 매출 → 매출원가 → 매출총이익 → 판매관리비 → 영업이익 → 감가상각·이자 → 세전이익.
 // 영업이익은 엔진 값(감가상각 전)이다. 감가상각은 인테리어·설비·가구·간판을 5년(60개월)에 나눈 몫으로 현금은 안 나간다
 // (법인세법 시행규칙 별표5 기구 및 비품 기준내용연수 5년, 카페 엔진과 같은 기준). 부가세·소득세·4대보험 사업주 부담은 아직 없다.
-function SettleTable({ m, imputed, dep, interest }: { m: MonthResult; imputed: number; dep: number; interest: number }) {
+function SettleTable({ m, imputed, dep, interest, rent }: { m: MonthResult; imputed: number; dep: number; interest: number; rent?: { n: RentN; paid: number; fee: number; left: number } }) {
   const k = m.kpis;
   const pre = k.op - dep - interest;
   return (
@@ -322,14 +346,14 @@ function SettleTable({ m, imputed, dep, interest }: { m: MonthResult; imputed: n
         <tr><th>재료비 (매출원가)</th><td>−{man(won(k.cogs))}</td><td>매출의 {Math.round((k.cogs / k.revenue) * 100)}%, 남는 재료 폐기 포함</td></tr>
         <tr className="sub"><th>매출총이익</th><td>{signed(won(k.revenue - k.cogs))}</td><td>매출의 {Math.round(((k.revenue - k.cogs) / k.revenue) * 100)}%</td></tr>
         <tr><th>인건비</th><td>−{man(won(k.labor))}</td><td>알바(주휴수당 포함)·직원 급여 {man(won(k.labor - imputed))}, 사장 가상 급여 {man(won(imputed))}</td></tr>
-        <tr><th>월세</th><td>−{man(won(k.rent))}</td><td /></tr>
+        <tr><th>월세</th><td>−{man(won(k.rent))}</td><td>{rent?.n ? <>카드 {rent.n}개월 할부로 냈어요. 이번 달 현금으로 나간 몫 {man(won(rent.paid - rent.fee))}, 남은 할부금 {man(won(rent.left))}<Assume what={`할부 수수료 ${+(RENT_PAY[rent.n].fee * 100).toFixed(1)}% (카드 임대료 결제 서비스 이용료와 할부 수수료를 합친 가정)`} /></> : null}</td></tr>
         <tr><th>관리비·공과금·기타</th><td>−{man(won(k.mgmt))}</td><td>전기·가스·수도, 소모품·수선, 마케팅</td></tr>
         {k.delivery_revenue > 0 && (
           <tr><th>배달 매출</th><td>{man(won(k.delivery_revenue))}</td><td>매출에 포함, 주문 {fmt(Math.round(k.delivery_orders))}건. 일부는 원래 매장에 올 손님이라 그만큼 매장 매출이 줄었어요<Assume what="배달 매출 중 30%는 원래 매장에 왔을 손님, 배달 1건 = 2인분" /></td></tr>
         )}
         <tr><th>카드 수수료</th><td>−{man(won(k.fees - (k.delivery_fee ?? 0)))}</td><td /></tr>
         {k.delivery_fee > 0 && (
-          <tr><th>배달 수수료</th><td>−{man(won(k.delivery_fee))}</td><td>중개수수료, 결제 수수료, 건당 배달비·포장재<Assume what="포장재 건당 800원" />. 배달 매출의 {Math.round((k.delivery_fee / k.delivery_revenue) * 100)}%.{" "}
+          <tr><th>배달 수수료</th><td>−{man(won(k.delivery_fee))}</td><td>중개수수료, 결제 수수료, 건당 배달비·포장재<Assume what="포장재 건당 523원 (배민상회 2026-10-21, 2인분 한 건 용기·수저·봉투)" />. 배달 매출의 {Math.round((k.delivery_fee / k.delivery_revenue) * 100)}%.{" "}
             {k.delivery_orders >= 1 && (() => {
               const per = k.delivery_revenue / k.delivery_orders;
               const net = per - k.delivery_fee / k.delivery_orders - per * (k.cogs / k.revenue);
@@ -338,6 +362,7 @@ function SettleTable({ m, imputed, dep, interest }: { m: MonthResult; imputed: n
         )}
         <tr className="sum"><th>영업이익</th><td>{signed(won(k.op))}</td><td>감가상각 전. 비슷한 달 10번 중 8번은 {signed(won(m.p10.op))} ~ {signed(won(m.p90.op))}</td></tr>
         <tr><th>감가상각비</th><td>−{man(won(dep))}</td><td>인테리어·설비를 5년에 나눈 몫. 현금은 안 나가요</td></tr>
+        {rent?.n && rent.fee > 0 ? <tr><th>할부 수수료</th><td>−{man(won(rent.fee))}</td><td>임대료 카드 할부. 영업이익에는 없고 현금에서 빠져요</td></tr> : null}
         {interest > 0 && <tr><th>이자비용</th><td>−{man(won(interest))}</td><td>대출 이자 (연 {+(LOAN_RATE * 100).toFixed(2)}%)</td></tr>}
         <tr className="sum"><th>세전이익</th><td>{signed(won(pre))}</td><td>부가세·소득세는 아직 계산하지 않아요</td></tr>
       </tbody>
@@ -491,6 +516,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const [plan, setPlan] = useState<Plan>({ meat_price: levers.price, staff_per_shift: Math.min(4, levers.staff), close_hour: 24, marketing_budget: 0, meat_grade: "domestic", banchan: 5, delivery: "none" });
   const gfx = useGfx();
   const [mode, setMode] = useState<Mode>("easy");
+  const [rentN, setRentN] = useState<RentN>(0); // 쉬운 모드는 늘 현금
   const [strat, setStrat] = useState<StratId>("rec");
   const [view, setView] = useState<View>("intro");
   const [fade, setFade] = useState(false);
@@ -608,8 +634,10 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
       const result: MonthResult = out.result;
       const idx = done.length;
       const cs = cashAtStart.current[idx];
-      const days = buildDays(result, cs, yearOf(idx), { imputed, draw, interest });
-      const entry: Done = { result, plan: p, days, cashStart: cs, cashEnd: days.at(-1)?.cash ?? cs, year: yearOf(idx), picked };
+      const rn: RentN = mode === "hard" ? rentN : 0;
+      const rs = rentSchedule([...done.map((m) => m.result.kpis.rent), result.kpis.rent], rn);
+      const days = buildDays(result, cs, yearOf(idx), { imputed, draw, interest, rentPaid: rs.paid, rentFee: rs.fee, rentN: rn });
+      const entry: Done = { result, plan: p, days, cashStart: cs, cashEnd: days.at(-1)?.cash ?? cs, year: yearOf(idx), picked, rentPaid: rs.paid, rentFee: rs.fee };
       setDone((d) => [...d, entry]);
       setAlts({});
       setEngineState(out.state);
@@ -860,6 +888,18 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       <span><b>자세히 모드</b><small>메뉴와 원가를 직접 등록하고, 달마다 가격·알바·마감·반찬·협찬·고기·배달을 하나씩 정해요.</small></span>
                     </label>
                   </fieldset>
+                  {mode === "hard" && (
+                    <fieldset className="sx-mode">
+                      <legend>임대료는 어떻게 낼까요? <Assume what="할부 수수료율(3개월 3%, 6개월 4.5%)은 카드 임대료 결제 서비스 이용료와 할부 수수료를 합친 가정" /></legend>
+                      {([0, 3, 6] as RentN[]).map((n) => (
+                        <label key={n} className={rentN === n ? "on" : ""}>
+                          <input type="radio" name="rentpay" checked={rentN === n} onChange={() => setRentN(n)} />
+                          <span><b>{RENT_PAY[n].label}</b><small>{RENT_PAY[n].desc}</small></span>
+                        </label>
+                      ))}
+                      <small>영업이익은 같고, 현금이 나가는 때만 뒤로 밀려요. 그 대신 수수료만큼 현금이 더 나가요. 시즌 중에는 바꿀 수 없어요.</small>
+                    </fieldset>
+                  )}
                   <label className="sx-field">시작할 달
                     <select value={startMonth} onChange={(e) => setStartMonth(+e.target.value)}>
                       {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}월</option>)}
@@ -1019,7 +1059,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                     <div className="sx-settle">
                       <section className="sx-sec">
                         <h2>정산표</h2>
-                        <SettleTable m={r} imputed={imputed} dep={dep} interest={interest} />
+                        <SettleTable m={r} imputed={imputed} dep={dep} interest={interest} rent={cur && mode === "hard" && rentN ? { n: rentN, paid: cur.rentPaid, fee: cur.rentFee, left: rentSchedule(done.map((x) => x.result.kpis.rent), rentN).left } : undefined} />
                         <small>월말 현금은 영업이익에서 사장 생활비 {man(won(draw))}와 이자를 빼고, 사장 가상 급여는 되돌린 값이에요.</small>
                       </section>
                       <section className="sx-sec">
@@ -1110,7 +1150,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                         {done.map((m, i) => (
                           <details key={i} className="sx-det" open={i === done.length - 1}>
                             <summary><b>{m.result.month}월</b><span className={tone(m.result.kpis.op)}>영업이익 {signedMan(m.result.kpis.op)}</span><span>월말 현금 {man(won(m.cashEnd))}</span></summary>
-                            <SettleTable m={m.result} imputed={imputed} dep={dep} interest={interest} />
+                            <SettleTable m={m.result} imputed={imputed} dep={dep} interest={interest} rent={m.rentFee || mode === "hard" && rentN ? { n: mode === "hard" ? rentN : 0, paid: m.rentPaid, fee: m.rentFee, left: rentSchedule(done.slice(0, i + 1).map((x) => x.result.kpis.rent), mode === "hard" ? rentN : 0).left } : undefined} />
                             {m.result.events.length > 0 && <p className="sx-note">사건: {m.result.events.map((e) => e.label).join(", ")}</p>}
                             {m.result.decisions.length > 0 && (
                               <ul className="sx-wf">
