@@ -228,20 +228,27 @@ def _load_scores() -> list[dict]:
         return []
 
 
-def _board(rows: list[dict], cls: str, limit: int = 20) -> list[dict]:
-    mine = sorted((r for r in rows if r["cls"] == cls), key=lambda r: (-r["score"], r["ts"]))
+def _same(r: dict, cls: str, shop: str, mode: str) -> bool:
+    """같은 반·업종·모드끼리만 순위를 매긴다 (예전 기록은 shop이 없으면 고깃집, mode가 없으면 쉬운 모드로 본다)."""
+    return r["cls"] == cls and r.get("shop", "고깃집") == shop and r.get("mode", "easy") == mode
+
+
+def _board(rows: list[dict], cls: str, shop: str, mode: str, limit: int = 20) -> list[dict]:
+    mine = sorted((r for r in rows if _same(r, cls, shop, mode)), key=lambda r: (-r["score"], r["ts"]))
     return [{**r, "rank": i + 1} for i, r in enumerate(mine[:limit])]
 
 
 @app.get("/scores")
-def scores(cls: str = "공개") -> dict:
+def scores(cls: str = "공개", shop: str = "고깃집", mode: str = "easy") -> dict:
     rows = _load_scores()
-    return {"cls": cls, "count": sum(r["cls"] == cls for r in rows), "top": _board(rows, cls)}
+    mode = "hard" if mode == "hard" else "easy"
+    return {"cls": cls, "shop": shop, "mode": mode, "count": sum(_same(r, cls, shop, mode) for r in rows), "top": _board(rows, cls, shop, mode)}
 
 
 @app.post("/scores")
 def score_add(body: dict[str, Any] = Body(...)) -> dict:
-    """body: {name, cls?, score (0~100), grade, mode, gu, end_cash}. 저장한 기록의 순위와 그 반의 상위 20명을 돌려준다."""
+    """body: {name, cls?, score (0~100), grade, mode, gu, shop, end_cash, seed?}.
+    저장한 기록의 순위와 같은 반·업종·모드의 상위 20명을 돌려준다. seed는 그 판이 겪은 사건·날씨를 다시 볼 수 있게 함께 저장한다."""
     name = str(body.get("name", "")).strip()[:12]
     cls = str(body.get("cls") or "공개").strip()[:20] or "공개"
     try:
@@ -252,11 +259,13 @@ def score_add(body: dict[str, Any] = Body(...)) -> dict:
         raise HTTPException(422, "별명과 0~100 점수가 필요합니다")
     row = {"id": uuid.uuid4().hex[:10], "name": name, "cls": cls, "score": score, "grade": str(body.get("grade", ""))[:20],
            "mode": "hard" if body.get("mode") == "hard" else "easy", "gu": str(body.get("gu", ""))[:10], "shop": str(body.get("shop", "고깃집"))[:10],
-           "end_cash": int(float(body.get("end_cash", 0))), "ts": time.strftime("%Y-%m-%dT%H:%M:%S")}
+           "end_cash": int(float(body.get("end_cash", 0))), "seed": int(body["seed"]) if isinstance(body.get("seed"), (int, float)) else None,
+           "ts": time.strftime("%Y-%m-%dT%H:%M:%S")}
     with _SCORE_LOCK:
         rows = _load_scores() + [row]
         SCORES.parent.mkdir(parents=True, exist_ok=True)
         SCORES.write_text(json.dumps(rows, ensure_ascii=False, indent=1), encoding="utf-8")
-    ranked = sorted((r for r in rows if r["cls"] == cls), key=lambda r: (-r["score"], r["ts"]))
+    ranked = sorted((r for r in rows if _same(r, cls, row["shop"], row["mode"])), key=lambda r: (-r["score"], r["ts"]))
     rank = next(i + 1 for i, r in enumerate(ranked) if r["id"] == row["id"])
-    return {"id": row["id"], "rank": rank, "count": len(ranked), "cls": cls, "top": _board(rows, cls)}
+    return {"id": row["id"], "rank": rank, "count": len(ranked), "cls": cls, "shop": row["shop"], "mode": row["mode"],
+            "top": _board(rows, cls, row["shop"], row["mode"])}

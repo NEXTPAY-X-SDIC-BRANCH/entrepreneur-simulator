@@ -436,7 +436,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                   <h1>{done.length}개월 결과</h1>
                   <Scorecard
                     months={scoreMonths(months)} startCash={start.cash * 1e4} lowestCash={lowest() * 1e4}
-                    endCash={(months.at(-1)?.cash ?? start.cash) * 1e4} monthlyCashOut={monthlyOut(months) * 1e4} gu={profile.gu} mode={mode} kind="retail" shop="옷가게"
+                    endCash={(months.at(-1)?.cash ?? start.cash) * 1e4} monthlyCashOut={monthlyOut(months) * 1e4} gu={profile.gu} mode={mode} kind="retail" shop="옷가게" seed={seed}
                     benchmark={`참고로 서울에서 새로 연 도소매업 가게는 1년 뒤 ${KOSIS.survival1}%, 3년 뒤 ${KOSIS.survival3}%만 남아요 (통계청 기업생멸행정통계 2023년).`}
                   />
                   <section className="sx-sec"><h2>남은 현금</h2>

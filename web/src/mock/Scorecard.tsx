@@ -89,10 +89,11 @@ export function scoreOf(months: ScoreMonth[], startCash: number, lowestCash: num
   return { total: Math.round(areas.reduce((a, x) => a + x.got, 0)), areas };
 }
 
-export default function Scorecard({ months, startCash, lowestCash, endCash, monthlyCashOut, gu, mode, kind = "food", benchmark, shop = "고깃집" }: {
+export default function Scorecard({ months, startCash, lowestCash, endCash, monthlyCashOut, gu, mode, kind = "food", benchmark, shop = "고깃집", seed }: {
   months: ScoreMonth[]; startCash: number; lowestCash: number; endCash: number; monthlyCashOut: number; gu: string; mode: "easy" | "hard";
   kind?: "food" | "retail"; benchmark?: string; // benchmark: 생존율 참고 문장을 바꿀 때 (옷가게는 도소매업 값)
-  shop?: string; // 업종 이름 (랭킹에 함께 저장)
+  shop?: string; // 업종 이름 (랭킹은 같은 반·업종·모드끼리)
+  seed?: number; // 이 판의 시드 (사건·날씨). 점수와 함께 저장한다
 }) {
   const { total, areas } = scoreOf(months, startCash, lowestCash, endCash, monthlyCashOut, kind);
   const grade = GRADES.find((g) => total >= g.min)!;
@@ -108,7 +109,8 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
     fetch(`${import.meta.env.BASE_URL}mock/survival_kosis.json`).then((r) => r.json())
       .then((d) => { const y = d._meta.latest; setSurv({ y, s3: d.region.seoul_food[y]["3"] }); }).catch(() => setSurv(null));
   }, []);
-  const load = (c: string) => fetch(`${API}/scores?cls=${encodeURIComponent(c)}`).then((r) => r.json())
+  const modeKo = mode === "hard" ? "자세히" : "쉬운";
+  const load = (c: string) => fetch(`${API}/scores?${new URLSearchParams({ cls: c, shop, mode })}`).then((r) => r.json())
     .then((d) => setBoard({ top: d.top, count: d.count })).catch(() => setBoard(null));
   useEffect(() => { void load(cls); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -117,11 +119,11 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
     try { localStorage.setItem("cu-name", name.trim()); localStorage.setItem("cu-cls", cls.trim() || "공개"); } catch { /* 저장 못 해도 진행 */ }
     try {
       const r = await fetch(`${API}/scores`, { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), cls: cls.trim() || "공개", score: total, grade: grade.label, mode, gu, shop, end_cash: endCash }) });
+        body: JSON.stringify({ name: name.trim(), cls: cls.trim() || "공개", score: total, grade: grade.label, mode, gu, shop, end_cash: endCash, seed }) });
       if (!r.ok) throw new Error(await r.text());
       const d = await r.json();
       setBoard({ top: d.top, count: d.count, mine: d.id, rank: d.rank });
-      setMsg(`${d.cls} 반 ${d.count}명 중 ${d.rank}등이에요.`);
+      setMsg(`${d.cls} 반 · ${shop} · ${modeKo} 모드 ${d.count}명 중 ${d.rank}등이에요.`);
     } catch { setMsg("랭킹 서버(엔진 서버 8010)에 저장하지 못했어요."); }
   };
 
@@ -184,6 +186,7 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
       {msg && <p className="sx-note" role="status">{msg}</p>}
       {board && board.top.length > 0 ? (
         <table className="sx-table sc-rank">
+          <caption>{cls.trim() || "공개"} 반 · {shop} · {modeKo} 모드 랭킹</caption>
           <thead><tr><th>순위</th><th>별명</th><th>점수</th><th>등급</th><th>업종</th><th>모드</th><th>동네</th></tr></thead>
           <tbody>{board.top.map((r) => (
             <tr key={r.id} className={r.id === board.mine ? "me" : undefined}>
@@ -191,7 +194,7 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
             </tr>
           ))}</tbody>
         </table>
-      ) : <p className="sx-note">{board ? "이 반에 아직 기록이 없어요. 첫 기록을 남겨 보세요." : "랭킹 서버에 연결하지 못했어요."}</p>}
+      ) : <p className="sx-note">{board ? `이 반의 ${shop} · ${modeKo} 모드에는 아직 기록이 없어요. 첫 기록을 남겨 보세요.` : "랭킹 서버에 연결하지 못했어요."}</p>}
       <small className="sx-note">같은 반 코드를 쓰는 사람끼리 순위를 봐요. 별명과 점수만 저장해요.</small>
     </section>
   );

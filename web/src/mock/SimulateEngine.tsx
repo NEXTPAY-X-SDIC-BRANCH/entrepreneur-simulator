@@ -1077,7 +1077,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                         months={scoreMonths(done)}
                         startCash={ledger.start_cash} lowestCash={ledger.lowest_cash} endCash={ledger.end_cash}
                         monthlyCashOut={monthlyOut(done)}
-                        gu={profile.gu} mode={mode}
+                        gu={profile.gu} mode={mode} seed={seed}
                       />
                       <Kpis items={[
                         { label: "6개월 뒤 현금", value: man(won(ledger.end_cash)), main: true },
