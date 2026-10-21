@@ -13,13 +13,16 @@ import { flowShape, profileOf } from "./area";
 import "./simulate-engine.css";
 import { setEngineCtx } from "./chatContext";
 import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, roomSize, storeStats, type Levers, type Profile, type Store } from "./model";
+import MenuEditor, { MenuSummary } from "../lab/menu/MenuEditor"; // lab:menu
+import { fetchTemplate, recompute, toEngine, type EngineMenuItem, type MenuDoc } from "../lab/menu/api"; // lab:menu
 
 const API = (import.meta.env.VITE_ENGINE_API as string | undefined) ?? "http://127.0.0.1:8010";
 const SHIRTS = ["#e0735a", "#43648a", "#d4a032", "#5679a3", "#ec8a4f", "#35614a"];
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
 const TURNS = 6;
 
-type Plan = { meat_price: number; staff_per_shift: number; close_hour: number; marketing_budget: number; meat_grade: string; banchan: number; delivery: string };
+type Plan = { meat_price: number; staff_per_shift: number; close_hour: number; marketing_budget: number; meat_grade: string; banchan: number; delivery: string;
+  menu?: EngineMenuItem[]; table_cost?: number }; // lab:menu  메뉴판이 있으면 엔진이 삼겹살 가격 대신 메뉴로 객단가·원가를 계산
 type Night = { dow: string; rain: boolean; revenue: number; covers: number; walkaways: number; cogs: number; fees: number };
 type Ev = { id: string; label: string; group: string; mechanism: string | null; outcome?: string | null };
 type Option = { id: string; label: string; hint: string; downside: string; tag: string };
@@ -46,7 +49,7 @@ type Ledger = {
   start_cash: number; end_cash: number; lowest_cash: number; lowest_month: number; spent: number; deposit: number;
   payback: { month: number | null; estimated: boolean; within_engine: boolean; reason: string }; note: string;
 };
-type View = "intro" | "plan" | "scenario" | "settle" | "report" | null;
+type View = "intro" | "plan" | "menu" | "scenario" | "settle" | "report" | null; // lab:menu "menu"
 
 const won = (x: number) => Math.round(x / 1e4);
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${man(Math.abs(v))}`;
@@ -407,6 +410,10 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const [engineState, setEngineState] = useState<Record<string, unknown> | null>(null);
   const [done, setDone] = useState<Done[]>([]);
   const [plan, setPlan] = useState<Plan>({ meat_price: levers.price, staff_per_shift: Math.min(4, levers.staff), close_hour: 24, marketing_budget: 0, meat_grade: "domestic", banchan: 5, delivery: "none" });
+  // lab:menu  메뉴판: 처음에 업종 기본 메뉴(원가 = 오늘 시세)를 받아 계획에 넣는다. 원육 등급을 바꾸면 고기 원가를 다시 계산
+  const [menuDoc, setMenuDoc] = useState<MenuDoc | null>(null);
+  const menuGrade = useRef<string | null>(null);
+  const applyMenu = (d: MenuDoc) => { setMenuDoc(d); setPlan((p) => ({ ...p, menu: toEngine(d.items), table_cost: d.table_setting?.cost })); };
   const gfx = useGfx();
   const [view, setView] = useState<View>("intro");
   const [fade, setFade] = useState(false);
@@ -448,6 +455,16 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, []);
+
+  useEffect(() => { // lab:menu
+    if (health !== "ok") return;
+    const g = plan.meat_grade;
+    if (menuGrade.current === g) return;
+    const first = menuGrade.current === null;
+    menuGrade.current = g;
+    (first || !menuDoc ? fetchTemplate(API, "bbq", g) : recompute(API, "bbq", g, menuDoc.items, { table: menuDoc.table_setting }))
+      .then((d) => { if (mounted.current) applyMenu(d); }).catch((e) => setErr(`메뉴판: ${String(e.message ?? e)}`));
+  }, [health, plan.meat_grade]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dongCode = profile.dong && profile.dong.gu === profile.gu ? profileOf(profile.gu, profile.dong.name)?.code : undefined;
   const spec = () => ({
@@ -580,7 +597,9 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const cashNow = view === null || view === "settle" || view === "report" ? curDay?.cash ?? startCash : (cashAtStart.current[done.length] ?? startCash);
   const planMonth = monthSeq[Math.min(idx, TURNS - 1)];
   const filled = curDay && curDay.open ? Math.min(stats.seats, Math.round((curDay.covers / Math.max(1, stats.seats * 1.5)) * stats.seats)) : 0;
-  const recs = useMemo(() => recommend(cur, plan), [cur, plan]);
+  // lab:menu  가격 추천은 메뉴판에서. filter(Boolean): recommend()는 배달(delivery) 레버의 추천을 만들지 않아 한 달 뒤 undefined가 섞인다 (원래 있던 버그)
+  const recs = useMemo(() => recommend(cur, plan).filter(Boolean).map((r) => (r.lever.key === "meat_price" && plan.menu
+    ? { ...r, change: false, last: `메뉴 ${plan.menu.length}개`, why: "메뉴판이 있어서 가격은 메뉴판에서 고쳐요." } : r)), [cur, plan]);
 
   // 챗봇이 "내 가게는 몇 달째부터 남아요?"에 답할 수 있도록 지금까지의 결과를 넘긴다
   useEffect(() => {
@@ -674,11 +693,12 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
             <dl>
               {LEVERS.map((lv) => {
                 const before = done.length > 1 ? done[done.length - 2].plan : null;
-                const changed = before !== null && before[lv.key] !== cur.plan[lv.key];
+                const asMenu = lv.key === "meat_price" && !!cur.plan.menu; // lab:menu
+                const changed = before !== null && (asMenu ? JSON.stringify(before.menu) !== JSON.stringify(cur.plan.menu) : before[lv.key] !== cur.plan[lv.key]);
                 return (
                   <div key={lv.key} className={changed ? "is-changed" : undefined}>
-                    <dt>{lv.label}</dt>
-                    <dd>{lv.text(cur.plan)}</dd>
+                    <dt>{asMenu ? "메뉴판" : lv.label}</dt>
+                    <dd>{asMenu ? `메뉴 ${cur.plan.menu!.length}개` : lv.text(cur.plan)}</dd>
                   </div>
                 );
               })}
@@ -794,7 +814,10 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                     </section>
                     <section className="sx-right" aria-label="이번 달 운영 계획">
                       <h2>{planMonth}월에 이렇게 할게요</h2>
-                      <div className="sx-steps">{LEVERS.map((lv) => <Stepper key={lv.key} lv={lv} plan={plan} prev={cur?.plan} set={setPlan} />)}</div>
+                      <div className="sx-steps">
+                        {plan.menu && <MenuSummary doc={menuDoc} onEdit={() => swap("menu")} />}{/* lab:menu 삼겹살 가격 자리 */}
+                        {LEVERS.filter((lv) => !(plan.menu && lv.key === "meat_price")).map((lv) => <Stepper key={lv.key} lv={lv} plan={plan} prev={cur?.plan} set={setPlan} />)}
+                      </div>
                       <p className="sx-note">가격이나 고기를 바꾸면 그달 단골이 조금 빠져요.</p>
                     </section>
                   </div>
@@ -804,6 +827,12 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                   <button type="button" className="se-btn" onClick={startMonthCall} disabled={busy}>{busy ? "엔진이 계산 중이에요" : `${planMonth}월 시작`}</button>
                 </footer>
               </>
+            )}
+
+            {view === "menu" && menuDoc && ( // lab:menu
+              <MenuEditor api={API} industry="bbq" grade={plan.meat_grade} doc={menuDoc}
+                onSave={(d) => { applyMenu(d); swap("plan"); }} onCancel={() => swap("plan")}
+                note={`${planMonth}월부터 이 메뉴판으로 계산해요. 가격을 바꾸면 그달 단골이 조금 빠져요.`} />
             )}
 
             {view === "scenario" && dps && (

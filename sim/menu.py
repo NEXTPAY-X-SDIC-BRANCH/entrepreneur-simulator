@@ -248,9 +248,9 @@ def with_costs(menu: list[dict], industry: str, grade: str = "domestic") -> list
     out = []
     for x in menu:
         y = dict(x)
-        if y.get("recipe") and y.get("cost_source") != "user":
+        if y.get("recipe"):
             c = item_cost(y, industry, grade, snap)
-            if not c["missing"]:
+            if y.get("cost_source") != "user" and not c["missing"]:   # 직접 고친 원가는 그대로, 내역만 붙인다
                 y["unit_cost"] = c["unit_cost"]
                 y["cost_source"] = "data" if c["assumed_share"] < 0.5 else "가정"
             y["cost_detail"] = c

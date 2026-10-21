@@ -9,8 +9,8 @@ kinds:
   side: {label: 식사·사이드, unit: 1개, per_cover: "사이드 지출 1인 3,500원 (S30)을 기본 메뉴 가격으로 나눈 개수"}
   drink: {label: 주류·음료, unit: 1병, per_cover: "1인 0.9병 (S62), 가격이 오르면 줄어듦"}
 overhead:   # 재료비에 더하는 손실 (가정): 고기 손질·굽기 손실, 사이드 조리 손실. 병 음료는 없음
-  main: {value: 0.05, tag: 가정, note: "손질·굽기 손실"}
-  side: {value: 0.05, tag: 가정, note: "조리 손실·남는 재료"}
+  main: {value: 0.05, label: 손질·굽기 손실, tag: 가정, note: "손질·굽기 손실"}
+  side: {value: 0.05, label: 조리 손실, tag: 가정, note: "조리 손실·남는 재료"}
   drink: {value: 0.0, tag: 가정, note: "병 그대로 냄"}
 aged_cost_mult: {value: 1.333, tag: "S23;가정", note: "숙성 원가 6,000 ÷ 국내산 4,500 (research/season_params.yaml meat_grade)"}
 benchmark: {cost_ratio: 0.420, label: 한식 육류 요리 전문점 식재료비 비율,
@@ -18,7 +18,7 @@ benchmark: {cost_ratio: 0.420, label: 한식 육류 요리 전문점 식재료�
 table_setting:   # 기본 상차림 (손님 1명당): 메뉴 줄에 없는 쌈채소·쌈장·김치·기본 반찬·숯. 반찬 가짓수(기본 5가지)에 비례
   label: 기본 상차림 (손님 1명당)
   base_banchan: 5
-  overhead: {value: 0.10, tag: 가정, note: "남는 쌈채소·반찬 폐기"}
+  overhead: {value: 0.10, label: 남는 쌈채소·반찬 폐기, tag: 가정, note: "남는 쌈채소·반찬 폐기"}
   recipe: [[lettuce, 0.03], [perilla, 0.01], [garlic, 0.015], [chili, 0.008], [onion, 0.03], [gochujang, 0.02], [cabbage, 0.05],
            [banchan_misc, 1], [charcoal, 1]]
 items:

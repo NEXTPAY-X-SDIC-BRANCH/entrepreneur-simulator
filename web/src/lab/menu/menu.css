@@ -1,0 +1,66 @@
+/* 메뉴판 고치기 (lab:menu). 시뮬레이션 팝업(simulate-engine.css)의 색과 글꼴을 그대로 쓴다. */
+.sx-pop.sx-pop-menu { width: min(1180px, 100%); }
+.mn { gap: 16px; }
+.mn-sum { display: flex; flex-wrap: wrap; gap: 10px 32px; padding: 12px 18px; border-radius: 14px; background: #f6f8fc; }
+.mn-sum > div { display: grid; gap: 2px; align-content: start; }
+.mn-sum small { font-size: 12px; color: #5b6b82; }
+.mn-sum b { font-size: 19px; font-variant-numeric: tabular-nums; }
+.mn-levels { display: flex; gap: 12px; font-size: 15px !important; }
+.mn-bench { font-size: 12px; color: #33465f; }
+.mn-bench.low { color: #7a5200; }
+.mn-gap { font-size: 13px; color: #5b4a1a; background: #fbf2d0; padding: 8px 12px; border-radius: 10px; line-height: 1.55; }
+.mn-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+.mn-table { width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; }
+.mn-cap { caption-side: top; text-align: left; font-size: 12px; color: #5b6b82; padding-bottom: 6px; }
+.mn-table col.c-name { width: 24%; } .mn-table col.c-num { width: 14%; } .mn-table col.c-pct { width: 7%; }
+.mn-table col.c-mix { width: 12%; } .mn-table col.c-src { width: 19%; } .mn-table col.c-x { width: 58px; }
+.mn-table thead th { font-size: 12px; font-weight: 500; color: #5b6b82; text-align: right; padding: 4px 6px; white-space: nowrap; }
+.mn-table thead th:first-child, .mn-table thead th:nth-child(6) { text-align: left; }
+.mn-table td { padding: 4px 6px; border-top: 1px solid #edf1f7; vertical-align: middle; }
+.mn-table tbody tr:not(.mn-grp):not(.mn-addrow) { cursor: pointer; }
+.mn-table tr.on td { background: #eef3fd; }
+.mn-grp th { text-align: left; padding: 12px 6px 6px; font-size: 14px; color: #14233a; background: #fff; border-top: 0; }
+.mn-grp th small { display: block; font-weight: 400; font-size: 12px; color: #5b6b82; margin-top: 2px; }
+.mn-table input { width: 100%; box-sizing: border-box; font: inherit; font-variant-numeric: tabular-nums; text-align: right;
+  padding: 5px 8px; border: 1px solid #c3d0e2; border-radius: 8px; background: #fff; color: #14233a; }
+.mn-table input.mn-name { text-align: left; }
+.mn-table input:focus-visible { outline: 2px solid #256abf; outline-offset: 1px; }
+.mn-mix { display: flex; align-items: center; gap: 6px; }
+.mn-mix input { width: 58px; flex: none; }
+.mn-share { font-size: 12px; color: #5b6b82; font-variant-numeric: tabular-nums; min-width: 30px; text-align: right; }
+.mn-n { text-align: right; font-variant-numeric: tabular-nums; color: #33465f; white-space: nowrap; }
+.mn-tag { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 8px; border-radius: 6px;
+  font-size: 12px; background: #eef3fd; color: #184f95; cursor: help; }
+.mn-tag.as { background: #fbf2d0; color: #5b4a1a; }
+.mn-x { white-space: nowrap; padding: 4px 8px; border: 0; border-radius: 8px; background: none; color: #b3261e; font-size: 13px; cursor: pointer; }
+.mn-x:hover { background: #fdecea; }
+.mn-x:focus-visible, .mn-add:focus-visible { outline: 2px solid #256abf; outline-offset: 1px; }
+.mn-addrow td { border-top: 0; padding-top: 2px; }
+.mn-add { padding: 4px 10px; border: 1px dashed #9ab4d6; border-radius: 8px; background: #fff; color: #184f95; font-size: 13px; cursor: pointer; }
+.mn-add:hover { background: #eef3fd; }
+.mn-fixed { font-size: 13px; color: #4a5b73; }
+.mn-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.mn-side { display: grid; gap: 10px; position: sticky; top: 0; }
+.mn-slip { padding: 14px; background: #fffef9; color: #222; font-size: 13px; border-top: 4px solid #d6d2c4; box-shadow: 0 4px 16px rgba(20,35,58,.15); display: grid; gap: 8px; }
+.mn-slip-h { font-weight: 700; font-size: 15px; display: grid; }
+.mn-slip-h small { font-weight: 400; font-size: 12px; color: #6b6a63; }
+.mn-slip ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mn-slip li { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+.mn-slip li span { display: grid; }
+.mn-slip li small { font-size: 11px; color: #6b6a63; }
+.mn-slip li b { white-space: nowrap; }
+.mn-slip-sum { border-top: 1px dashed #b8b4a4; padding-top: 6px; font-weight: 600; }
+.mn-slip-note { font-size: 12px; color: #5b4a1a; background: #fbf2d0; padding: 4px 8px; border-radius: 4px; }
+.mn-refresh { justify-self: stretch; text-align: center; }
+.mn-hint { font-size: 12px; color: #5b6b82; line-height: 1.5; }
+.mn-src summary { font-size: 13px; color: #184f95; cursor: pointer; }
+.mn-src ul { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 6px; }
+.mn-src li { display: grid; font-size: 12px; color: #33465f; }
+.mn-src li small { color: #5b6b82; }
+/* 운영 계획 안의 한 줄 요약 */
+.mn-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid #edf1f7; }
+.mn-row:first-child { border-top: 0; padding-top: 2px; }
+.mn-row-t { display: grid; gap: 2px; }
+.mn-row-l { font-weight: 600; font-size: 15px; }
+.mn-row small { font-size: 12px; color: #5b6b82; line-height: 1.5; }
+@media (max-width: 900px) { .mn-grid { grid-template-columns: 1fr; } .mn-side { position: static; } }
