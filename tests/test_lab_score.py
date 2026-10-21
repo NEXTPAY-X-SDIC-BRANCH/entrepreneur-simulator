@@ -202,7 +202,8 @@ def _submit(client, nick, labor, cls="sdic-1"):
     return r.json()
 
 
-def test_rank_ordering_best_score_then_first_to_reach(client):
+def test_rank_ordering_best_score_then_first_to_reach(client, monkeypatch):
+    monkeypatch.setenv("LAB_ADMIN_KEY", "t")   # 강사용 보기는 기본으로 닫혀 있다 (키 경로로 연다)
     a1 = _submit(client, "가나", 0.50)["score"]["total"]
     a2 = _submit(client, "가나", 0.30)["score"]["total"]
     _submit(client, "다라", 0.30)
@@ -214,9 +215,9 @@ def test_rank_ordering_best_score_then_first_to_reach(client):
     assert rank[0]["attempts"] == 2 and rank[0]["best"] == a2 and rank[0]["gain"] == a2 - a1
     me = client.get("/score/me", params={"class_code": "sdic-1", "nickname": "가나"}).json()
     assert [x["total"] for x in me["attempts"]] == [a1, a2]
-    adm = client.get("/score/admin").json()["classes"]
+    adm = client.get("/score/admin", params={"key": "t"}).json()["classes"]
     assert adm[0]["class_code"] == "SDIC-1" and adm[0]["learners"] == 3 and adm[0]["attempts"] == 4
-    one = client.get("/score/admin", params={"class_code": "SDIC-1"}).json()
+    one = client.get("/score/admin", params={"class_code": "SDIC-1", "key": "t"}).json()
     assert sum(one["bands"].values()) == 3 and one["weakest"][0]["key"]
 
 
@@ -358,3 +359,116 @@ def test_thin_margin_with_high_rent_gets_rent_lever_not_vague_retry():
     keys = [f["key"] for f in out["fixes"]]
     assert "rent" in keys and "keep" not in keys
     assert next(f for f in out["fixes"] if f["key"] == "rent")["lever"] == "pyeong"
+
+
+# ---------------------------------------------------------------- 숫자 없는 거짓 주장 (claim guard) + 강사용 보기 기본 잠금
+def _reply_for(s, why0, why1=None, how=None):
+    _, _, cands, fixes = C.build(s)
+    return {"causes": [{"id": cands[0]["id"], "why": why0},
+                       {"id": cands[1]["id"], "why": why1 or "가장 약한 부분이라 다음 판에 먼저 볼 곳이에요."}],
+            "next": [{"id": fixes[0]["key"], "how": how or "한 가지만 바꿔 다시 해 보세요."}]}
+
+
+@pytest.mark.parametrize("s,why0,why1,how", [
+    # 인건비가 업계보다 큰데 낮다고 함
+    (summary(labor=0.46), "인건비는 업계보다 낮아서 문제가 아니에요.", None, None),
+    # 인건비가 큰데 '높지 않다' (부정 = 낮다는 주장)
+    (summary(labor=0.46), "인건비가 높지 않으니 다른 곳을 봐야 해요.", None, None),
+    # 월세가 업계보다 큰데 낮다고 함
+    (summary(labor=0.46, rent=0.30), "임차료가 낮은 편이라 부담이 없어요.", None, None),
+    # 후보에 없는 비용 영역(재료비)을 원인으로 댐 (재료비는 업계보다 낮다)
+    (summary(labor=0.46), "인건비도 문제지만 재료비가 높아 이익이 남지 않아요.", None, None),
+    # 후보에 없는 원인 (월세는 업계 수준)
+    (summary(labor=0.46), "손님 수에 비해 월세 부담이 너무 커요.", None, None),
+    # facts에 없는 비용 영역
+    (summary(labor=0.46), "광고비가 너무 많아서 이익이 줄었어요.", None, None),
+    # 모든 달이 흑자인데 적자라고 함 (원인 문장)
+    (summary(cogs=0.36, labor=0.28, rent=0.07, mgmt=0.10), "여섯 달 내내 적자였어요.", None, None),
+    # 모든 달이 흑자인데 적자라고 함 (다음 판 문장)
+    (summary(cogs=0.36, labor=0.28, rent=0.07, mgmt=0.10), "인건비가 커서 이익을 깎아요.", None, "적자를 냈으니 직원을 줄여 보세요."),
+    # 폐업하지 않았는데 폐업했다고 함
+    (summary(labor=0.46), "인건비가 커서 결국 폐업했어요.", None, None),
+    # 평점이 시작보다 높은데 떨어졌다고 함
+    (summary(labor=0.46, rating=4.3), "인건비가 크고 평점도 많이 떨어졌어요.", None, None),
+    # 현금이 바닥났던 판을 넉넉했다고 함
+    (summary(labor=0.46, cash=1_000_000), "인건비는 크지만 현금이 넉넉해서 버틸 수 있었어요.", None, None),
+])
+def test_coach_rejects_number_free_false_claims(s, why0, why1, how):
+    out = C.coach(s, call=lambda _: _reply_for(s, why0, why1, how))
+    assert out["source"] == "rule", out
+    assert "사실과 다른 주장" in out["fallback_reason"]
+    assert out["causes"] == C.rule_text(*C.build(s)[2:])["causes"]          # 대체는 규칙 문장 그대로
+
+
+def test_coach_accepts_true_directional_claims():
+    s = summary(labor=0.46, rent=0.30, cash=1_000_000)
+    _, _, cands, fixes = C.build(s)
+    ids = [c["id"] for c in cands]
+    assert {"labor", "rent"} <= set(ids)
+    reply = {"causes": [{"id": "labor", "why": "손님 수에 비해 인건비가 커서 매달 이익을 깎아요. 재료비는 높지 않아요."},
+                        {"id": "rent", "why": "임차료가 업계보다 커요. 월세가 높으면 손님이 늘어도 남는 돈이 적어요."}],
+            "next": [{"id": fixes[0]["key"], "how": "월세가 낮은 자리로 옮기거나 교대 인원을 줄여 보세요."}]}
+    out = C.coach(s, call=lambda _: reply)
+    assert out["source"] == "llm", out
+    assert [c["id"] for c in out["causes"]] == ["labor", "rent"]
+
+
+def test_claim_guard_never_rejects_rule_text():
+    """규칙이 만든 원인 제목·근거·설명은 언제나 사실과 맞아야 한다 (가드가 정상 문장을 막으면 모델 문장이 늘 버려진다)."""
+    import itertools
+    n = 0
+    for ind in ("bbq", "cafe", "chicken"):
+        for cogs, labor, rent, cash, rating, loan, closed in itertools.product(
+                (0.30, 0.46), (0.15, 0.48), (0.05, 0.20), (1_000_000, 40_000_000), (3.4, 4.1), (0, 80_000_000), (False, True)):
+            s = summary(ind, n=3 if closed else 6, closed=closed, loan=loan, cogs=cogs, labor=labor, rent=rent, cash=cash, rating=rating)
+            _, _, cands, fixes = C.build(s)
+            F, ids = SC.facts(s), {c["id"] for c in cands}
+            for c in cands:
+                assert C.claim_errors(f"{c['title']}. {c['evidence']}. {c['why']}", F, ids) == [], (ind, c)
+                n += 1
+            for f in fixes:
+                assert C.claim_errors(f"{f['text']} {f['expected']}", F, ids, topics=False) == [], (ind, f)
+    assert n > 100
+
+
+def _admin_env(monkeypatch, key=None, open_local=None):
+    for k, v in (("LAB_ADMIN_KEY", key), ("LAB_ADMIN_OPEN_LOCAL", open_local)):
+        if v is None:
+            monkeypatch.delenv(k, raising=False)
+        else:
+            monkeypatch.setenv(k, v)
+
+
+def test_admin_closed_by_default(client, monkeypatch):
+    from api import lab_score as L
+    _admin_env(monkeypatch)
+    for params in ({}, {"class_code": "SDIC-1"}, {"key": "anything"}):
+        r = client.get("/score/admin", params=params)
+        assert r.status_code == 403 and r.json()["detail"] == L.ADMIN_CLOSED
+
+
+def test_admin_open_local_needs_flag_and_loopback(client, monkeypatch, tmp_path):
+    from api.changeup import app
+    local = TestClient(app, client=("127.0.0.1", 50000))
+    _admin_env(monkeypatch)
+    assert local.get("/score/admin").status_code == 403                       # 로컬이어도 플래그 없으면 닫힘
+    _admin_env(monkeypatch, open_local="1")
+    assert local.get("/score/admin").status_code == 200
+    assert TestClient(app, client=("::1", 50000)).get("/score/admin").status_code == 200
+    assert client.get("/score/admin").status_code == 403                      # 원격 주소
+    assert TestClient(app, client=("192.168.0.7", 50000)).get("/score/admin").status_code == 403
+    assert local.get("/score/admin", headers={"X-Forwarded-For": "203.0.113.9"}).status_code == 403   # 프록시를 거친 요청
+    assert local.get("/score/admin", headers={"Forwarded": "for=203.0.113.9"}).status_code == 403
+    _admin_env(monkeypatch, open_local="true")
+    assert local.get("/score/admin").status_code == 403                       # 정확히 1일 때만
+
+
+def test_admin_key_wins_over_open_local(client, monkeypatch):
+    from api import lab_score as L
+    from api.changeup import app
+    local = TestClient(app, client=("127.0.0.1", 50000))
+    _admin_env(monkeypatch, key="k1", open_local="1")
+    r = local.get("/score/admin")
+    assert r.status_code == 403 and r.json()["detail"] == L.ADMIN_BAD_KEY
+    assert local.get("/score/admin", params={"key": "k2"}).status_code == 403
+    assert client.get("/score/admin", params={"key": "k1"}).status_code == 200

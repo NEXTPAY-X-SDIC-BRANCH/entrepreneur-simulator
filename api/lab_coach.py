@@ -8,6 +8,8 @@
   (요청처럼 보이는 입력이 모델에 닿지 않게).
 - 원인 제목·근거 숫자와 다음 판 레버는 규칙이 만든 후보다. 모델은 후보 id를 고르고 설명(why/how)만 쓴다.
 - 모델 출력은 후보 id, 길이, 한글 여부, 금지 패턴, 숫자 근거(프롬프트에 있던 숫자만)를 검사하고, 하나라도 어긋나면 규칙 문장을 쓴다.
+- 숫자 없는 주장도 본다 (claim_errors): "인건비가 높아요"·"월세가 낮아요"·"적자였어요"처럼 facts와 방향이 반대이거나,
+  규칙 후보에 없는 비용 영역을 원인으로 대면 거절하고 규칙 문장을 쓴다.
 - 점수는 요청의 score를 믿지 않고 summary로 다시 계산한다.
 """
 from __future__ import annotations
@@ -30,7 +32,7 @@ router = APIRouter()
 OLLAMA = os.environ.get("LAB_OLLAMA_URL", "http://127.0.0.1:11434")
 MODEL = os.environ.get("LAB_COACH_MODEL", "qwen3.6:35b")
 TIMEOUT = float(os.environ.get("LAB_COACH_TIMEOUT", "60"))
-VERSION = "coach-v1"
+VERSION = "coach-v2"   # v2: 방향·비교 주장 검사 (claim_errors)
 _CACHE: dict[str, dict] = {}
 _SEM = threading.Semaphore(1)   # 로컬 모델은 한 번에 하나. 같은 판의 중복 요청은 기다렸다가 캐시를 받는다
 BUSY_WAIT = float(os.environ.get("LAB_COACH_BUSY_WAIT", "20"))
@@ -196,8 +198,117 @@ def _check_text(t: Any, lo: int, hi: int, ok: set[float]) -> str:
     return t
 
 
-def validate(out: Any, lines: list[str], cands: list[dict], fixes: list[dict]) -> dict:
-    """모델 출력 검사: 후보 id만, 중복 없이, 길이·한글·금지 패턴·숫자 근거. 통과하면 화면용 dict, 아니면 ValueError."""
+# ---------------------------------------------------------------- claim guard (숫자 없는 방향·비교 주장)
+# 숫자 검사는 '37%' 같은 지어낸 수를 막지만, "인건비가 높아요"처럼 숫자 없이 사실과 반대로 말하는 문장은 못 막는다.
+# 그래서 문장에서 주제어(재료비·인건비·월세…)를 찾고, 그 뒤 첫 방향어(높/많/크 ↔ 낮/적/작/부족, 늘/줄)를 facts의 실제 방향과
+# 맞춰 본다. 확실히 어긋날 때만 거절한다 (가정문 '높으면', 부정 '높지 않아요', 추천 '낮은 자리로'는 주장으로 보지 않는다).
+_TOPICS = {
+    "cogs": r"재료비|원가|식자재", "labor": r"인건비", "staff": r"직원|알바|일손|인원|인력",
+    "rent": r"임차료|임대료|월세", "other_cost": r"관리비|광고비|마케팅비|수수료|배달비",
+    "customer": r"손님|고객|매출|방문객", "profit": r"영업이익률|이익률|영업이익|이익|마진",
+    "cash": r"운영\s?자금|현금", "loan": r"대출", "rating": r"평점|별점|만족도|만족",
+}
+_TOPIC_RE = re.compile("|".join(f"(?P<{k}>{v})" for k, v in _TOPICS.items()))
+_COMPARATOR = re.compile(r"(?:이나|와|과)?(?:\s*수)?\s*(?:에\s*비해|에\s*비하면|보다|대비)")   # "손님 수에 비해", "재료비보다": 비교 기준일 뿐
+_STOP = re.compile(r"[.!?;](?!\d)|,(?!\d)|\n")
+_UP_TREND = re.compile(r"늘었|늘어|증가|올랐|올라|상승|회복")
+_DOWN_TREND = re.compile(r"줄었|줄어|감소|떨어|하락|빠졌")
+_UP_LEVEL = re.compile(r"높(?![여이였])|많(?!이)|크(?!기)|커(?!피)|컸|비싸|과하|과다|넉넉|충분|좋")
+_DOWN_LEVEL = re.compile(r"낮(?![추춰])|적(?![자정용절극])|작(?:아|은|고|다|게|았|지|네)|부족|모자|저렴|나빠|나쁘")
+_NEG_AFTER = re.compile(r"^\S*\s*(?:않|아니|못|안\s)|^\S*(?:지않|진않|지못)")
+_NEG_BEFORE = re.compile(r"(?:안|못|덜)\s*$")
+_ADVICE_NOUN = re.compile(r"^\s*(?:곳|자리|매장|가게|동네|쪽|메뉴|시간대|상권)")
+_LOSS_CLAIM = re.compile(r"적자(?:였|였어|예요|입니다|이에요|가\s*났|를\s*냈|를\s*봤|가\s*이어|가\s*계속|로\s*끝|로\s*돌|\s*상태|인\s*가게|가\s*심|가\s*컸|를\s*기록)")
+_ALL_LOSS = re.compile(r"(?:매달|매월|계속|내내|모든\s*달|줄곧)\s*적자")
+_PROFIT_CLAIM = re.compile(r"흑자(?:였|예요|입니다|이에요|를\s*냈|를\s*기록|로\s*끝|로\s*돌|를\s*유지)")
+_CLOSED_CLAIM = re.compile(r"폐업(?:했|해서|하고|한\s*것|으로\s*끝|하게\s*됐|을\s*했)|문을\s*닫았")
+
+
+def _direction(seg: str) -> str | None:
+    """주제어 뒤 구간에서 첫 방향어 → 'up' | 'down' | None (방향 없음, 부정, 가정, 추천 수식)."""
+    hits = []
+    for rx, d, trend in ((_UP_TREND, "up", 1), (_DOWN_TREND, "down", 1), (_UP_LEVEL, "up", 0), (_DOWN_LEVEL, "down", 0)):
+        m = rx.search(seg)
+        if m:
+            hits.append((m.start(), -trend, d, m))
+    if not hits:
+        return None
+    trend_hits = [h for h in hits if h[1] == -1]
+    _, neg_trend, d, m = min(trend_hits or hits)   # '많이 줄었어요'처럼 정도어가 앞서면 추세어를 따른다
+    word_end = re.search(r"[\s.,!?]|$", seg[m.end():]).start() + m.end()
+    word, rest = seg[m.start():word_end], seg[word_end:]
+    if (word.endswith("면") and not word.endswith("면서")) or word.endswith(("수록", "라도", "다면", "어도", "아도", "해도")):
+        return None   # 가정·양보: "월세가 높으면 …", "손님이 늘어도 …"
+    if _NEG_AFTER.search(seg[m.end():][:12]) or _NEG_BEFORE.search(seg[:m.start()][-3:]):
+        # "높지 않아요"는 낮다는 주장으로 본다. 추세 부정("안 늘었어요")은 '그대로'일 수 있어 주장으로 보지 않는다
+        return None if neg_trend else ("down" if d == "up" else "up")
+    if _ADVICE_NOUN.search(rest):
+        return None   # "월세가 낮은 자리로 옮겨요"는 이 가게에 대한 주장이 아니다
+    return d
+
+
+def _segments(text: str):
+    """(주제, 주제어 뒤 문장 구간). 비교 기준('…보다', '…에 비해')인 주제어는 건너뛰고 앞 주제에 붙인다."""
+    ms = [m for m in _TOPIC_RE.finditer(text) if not _COMPARATOR.match(text, m.end())]
+    for i, m in enumerate(ms):
+        end = ms[i + 1].start() if i + 1 < len(ms) else len(text)
+        stop = _STOP.search(text, m.end(), end)
+        yield m.lastgroup, text[m.end():stop.start() if stop else end]
+
+
+def claim_errors(text: str, F: dict, cand_ids: set[str], *, topics: bool = True) -> list[str]:
+    """문장 하나가 facts와 반대로 말하는 곳. 빈 리스트면 통과. topics=False면 판 전체 주장(적자·흑자·폐업)만 본다."""
+    b, errs = F["bench"], []
+    if F["loss_months"] == 0 and not F["closed"] and _LOSS_CLAIM.search(text):
+        errs.append("적자가 없던 판을 적자라고 함")
+    if 0 < F["months"] and F["loss_months"] < F["months"] and _ALL_LOSS.search(text):
+        errs.append("흑자인 달이 있는데 계속 적자라고 함")
+    if F["loss_months"] == F["months"] and _PROFIT_CLAIM.search(text):
+        errs.append("모든 달이 적자인데 흑자라고 함")
+    if not F["closed"] and _CLOSED_CLAIM.search(text):
+        errs.append("폐업하지 않은 판을 폐업했다고 함")
+    if not topics:
+        return errs
+    gap = {"cogs": F["cogs_ratio"] - b["cogs"], "labor": F["labor_ratio"] - b["labor"], "rent": F["rent_ratio"] - b["rent"]}
+    for topic, seg in _segments(text):
+        d = _direction(seg)
+        if d is None:
+            continue
+        bad = False
+        if topic in gap:
+            # 높다: 규칙 후보이거나 업계보다 2%p 넘게 클 때만 (후보에 없는 비용 영역을 원인으로 대는 것도 여기서 막힌다)
+            # 낮다: 업계보다 실제로 낮거나 같을 때만
+            g = gap[topic]
+            bad = (not (topic in cand_ids or g > 0.02 or ("weak_cost" in cand_ids and g > 0.005))) if d == "up" else g > 0.005
+        elif topic == "staff":
+            bad = d == "up" and not ("labor" in cand_ids or gap["labor"] > 0.02)   # 직원이 '모자라다'는 바쁜 시간 얘기일 수 있어 보지 않는다
+        elif topic == "other_cost":
+            bad = True   # facts에 없는 비용 영역
+        elif topic == "customer":
+            if _UP_TREND.search(seg) or _DOWN_TREND.search(seg):   # 손님 수준(많다·적다)은 상대적이라 추세만 본다
+                bad = (d == "down" and F["covers_trend"] > 0.05) or (d == "up" and F["covers_trend"] < -0.05)
+        elif topic == "profit":
+            if _UP_TREND.search(seg) or _DOWN_TREND.search(seg):
+                t = F["margin_last2"] - F["margin_first2"]
+                bad = (d == "down" and t > 0.005) or (d == "up" and t < -0.005)
+            else:
+                bad = (d == "down" and F["margin"] > b["margin"] + 0.005) or (d == "up" and F["margin"] < b["margin"] - 0.005)
+        elif topic == "cash":
+            short = "cash" in cand_ids or F["closed"] or F["cash_months"] < 3
+            bad = (d == "down" and not short) or (d == "up" and short)
+        elif topic == "loan":
+            bad = (d == "up" and F["loan_share"] < 0.3) or (d == "down" and F["loan_share"] > 0.4)
+        elif topic == "rating":
+            r = F["rating_end"]
+            bad = r is None or (d == "down" and r >= 4.0) or (d == "up" and r < 3.8)
+        if bad:
+            errs.append(f"{topic} {d}: {seg.strip()[:30]}")
+    return errs
+
+
+def validate(out: Any, lines: list[str], cands: list[dict], fixes: list[dict], F: dict | None = None) -> dict:
+    """모델 출력 검사: 후보 id만, 중복 없이, 길이·한글·금지 패턴·숫자 근거, 그리고 F가 있으면 방향·비교 주장(claim_errors).
+    통과하면 화면용 dict, 아니면 ValueError."""
     if not isinstance(out, dict):
         raise ValueError("JSON 객체가 아님")
     causes, nxt = out.get("causes"), out.get("next")
@@ -215,7 +326,10 @@ def validate(out: Any, lines: list[str], cands: list[dict], fixes: list[dict]) -
             continue
         seen.add(c["id"])
         cd = by_c[c["id"]]
-        res_c.append({"id": cd["id"], "title": cd["title"], "evidence": cd["evidence"], "why": _check_text(c.get("why"), 10, 160, ok)})
+        why = _check_text(c.get("why"), 10, 160, ok)
+        if F is not None and (errs := claim_errors(why, F, set(by_c))):
+            raise ValueError(f"사실과 다른 주장 {errs[:2]}")
+        res_c.append({"id": cd["id"], "title": cd["title"], "evidence": cd["evidence"], "why": why})
     if len(res_c) < min(2, len(cands)):
         raise ValueError("원인 id")
     seen = set()
@@ -224,8 +338,11 @@ def validate(out: Any, lines: list[str], cands: list[dict], fixes: list[dict]) -
             continue
         seen.add(n["id"])
         fx = by_f[n["id"]]
-        res_n.append({"id": fx["key"], "lever": fx["lever"], "text": fx["text"], "expected": fx["expected"],
-                      "how": _check_text(n.get("how"), 6, 120, ok)})
+        how = _check_text(n.get("how"), 6, 120, ok)
+        # 다음 판 문장은 명령형("월세가 낮은 자리로")이라 주제 방향은 보지 않고, 판 전체 주장(적자·폐업)만 본다
+        if F is not None and (errs := claim_errors(how, F, set(by_c), topics=False)):
+            raise ValueError(f"사실과 다른 주장 {errs[:2]}")
+        res_n.append({"id": fx["key"], "lever": fx["lever"], "text": fx["text"], "expected": fx["expected"], "how": how})
     # 다음 판 문장은 덧붙임일 뿐이라, 모델이 맞는 id를 하나도 못 골라도 원인 진단은 살린다 (레버는 규칙 것을 그대로 쓴다)
     # 모델이 고르지 않은 레버도 빠뜨리지 않는다: 규칙 순서대로 전부, 모델 문장은 고른 것에만
     how = {n["id"]: n["how"] for n in res_n}
@@ -258,6 +375,7 @@ def build(summary: dict) -> tuple[dict, list[str], list[dict], list[dict]]:
 
 def coach(summary: dict, *, llm: bool = True, call=None) -> dict:
     sc, lines, cands, fixes = build(summary)
+    F = score_facts(summary)
     base = {"total": sc["total"], "band": sc["band"], "version": VERSION}
     rule = {**base, "source": "rule", **rule_text(cands, fixes)}
     if not llm:
@@ -271,17 +389,17 @@ def coach(summary: dict, *, llm: bool = True, call=None) -> dict:
     try:
         if call is None and key in _CACHE:
             return _CACHE[key]
-        return _run(msgs, key, base, rule, lines, cands, fixes, call)
+        return _run(msgs, key, base, rule, lines, cands, fixes, call, F)
     finally:
         if call is None:
             _SEM.release()
 
 
-def _run(msgs, key, base, rule, lines, cands, fixes, call) -> dict:
+def _run(msgs, key, base, rule, lines, cands, fixes, call, F=None) -> dict:
     raw: Any = None
     try:
         raw = (call or _ollama)(msgs)
-        res = {**base, "source": "llm", "model": MODEL, **validate(raw, lines, cands, fixes)}
+        res = {**base, "source": "llm", "model": MODEL, **validate(raw, lines, cands, fixes, F)}
     except Exception as e:  # noqa: BLE001 — any failure (down, timeout, bad JSON, ungrounded) → rule text
         log.warning("coach fallback: %s: %s | raw=%s", type(e).__name__, str(e)[:120], json.dumps(raw, ensure_ascii=False)[:400])
         return {**rule, "fallback_reason": f"{type(e).__name__}: {str(e)[:120]}"}

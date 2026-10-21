@@ -4,7 +4,9 @@
     POST /score/submit          {nickname, class_code, summary} → 점수를 서버에서 다시 계산해 저장, 반 순위 돌려줌
     GET  /score/rank            ?class_code=&industry= → 반 랭킹 (사람마다 최고 점수, 같은 점수면 먼저 낸 사람)
     GET  /score/me              ?class_code=&nickname= → 내 기록 (회차별)
-    GET  /score/admin           ?class_code= → 관리자 보기 (반 목록, 반별 학습자·시도·최고 점수)
+    GET  /score/admin           ?class_code=&key= → 관리자 보기 (반 목록, 반별 학습자·시도·최고 점수)
+                                기본은 닫혀 있다: LAB_ADMIN_KEY 를 두면 ?key= 가 맞아야 하고, 키가 없으면
+                                LAB_ADMIN_OPEN_LOCAL=1 이면서 이 컴퓨터(127.0.0.1/::1)에서 온 요청만 연다 (강사 시연용).
 
 시연용 예시 반: `python -m api.lab_score --seed-demo` 가 반 코드 DEMO 에 예시 기록(demo=1)을 넣는다. 예시 줄은 응답에
 demo: true 로 표시되고 화면에 '예시' 꼬리표가 붙는다. 실제 제출(demo=0)과 섞여도 구분된다.
@@ -14,7 +16,9 @@ demo: true 로 표시되고 화면에 '예시' 꼬리표가 붙는다. 실제 �
 """
 from __future__ import annotations
 
+import hmac
 import json
+import logging
 import os
 from contextlib import contextmanager
 import re
@@ -25,7 +29,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, HTTPException, Query, Request
 
 from sim.score import score as score_fn
 
@@ -34,6 +38,11 @@ ROOT = Path(__file__).resolve().parents[1]
 _LOCK = threading.Lock()
 CLASS_RE = re.compile(r"^[A-Z0-9-]{3,16}$")
 MAX_MONTHS = 24
+LOCAL_HOSTS = {"127.0.0.1", "::1", "localhost", "::ffff:127.0.0.1"}
+FORWARD_HEADERS = ("x-forwarded-for", "x-real-ip", "forwarded")
+ADMIN_CLOSED = "강사용 보기는 잠겨 있어요. 강사님 컴퓨터에서만 열 수 있어요"
+ADMIN_BAD_KEY = "강사용 키가 맞지 않아요. 강사님께 받은 키로 다시 열어 주세요"
+log = logging.getLogger("uvicorn.error")
 
 
 def db_path() -> Path:
@@ -179,13 +188,31 @@ def me_api(class_code: str = Query(...), nickname: str = Query(...), industry: s
     return {"class_code": cls, "nickname": nick, "attempts": rows, "best": max((r["total"] for r in rows), default=None)}
 
 
-@router.get("/score/admin")
-def admin_api(class_code: str | None = Query(None), key: str | None = Query(None)) -> dict:
-    """관리자 보기 (모의, 읽기 전용). 닉네임과 점수만 있고 개인정보는 없다.
-    환경변수 LAB_ADMIN_KEY 를 두면 ?key= 가 맞아야 한다 (시연 기본값은 열려 있음)."""
+def _is_local(request: Request) -> bool:
+    """이 컴퓨터에서 바로 온 요청인가. 프록시를 거친 요청(전달 헤더가 붙은 것)은 원래 주소를 믿을 수 없어 로컬로 보지 않는다."""
+    if any(h in request.headers for h in FORWARD_HEADERS):
+        return False
+    return bool(request.client) and request.client.host in LOCAL_HOSTS
+
+
+def admin_allowed(request: Request, key: str | None) -> None:
+    """닫힌 것이 기본. 키가 설정돼 있으면 키만 본다. 키가 없으면 LAB_ADMIN_OPEN_LOCAL=1 + 로컬 요청일 때만 연다."""
     need = os.environ.get("LAB_ADMIN_KEY")
-    if need and key != need:
-        raise HTTPException(403, "강사용 키가 필요해요")
+    if need:
+        if not key or not hmac.compare_digest(key.encode(), need.encode()):
+            raise HTTPException(403, ADMIN_BAD_KEY)
+        return
+    if os.environ.get("LAB_ADMIN_OPEN_LOCAL") == "1" and _is_local(request):
+        return
+    log.warning("score/admin 403: LAB_ADMIN_KEY 가 없고 LAB_ADMIN_OPEN_LOCAL=1 로컬 요청도 아님 (client=%s)",
+                request.client.host if request.client else None)
+    raise HTTPException(403, ADMIN_CLOSED)
+
+
+@router.get("/score/admin")
+def admin_api(request: Request, class_code: str | None = Query(None), key: str | None = Query(None)) -> dict:
+    """관리자 보기 (모의, 읽기 전용). 닉네임과 점수만 있고 개인정보는 없다. 열리는 조건은 admin_allowed."""
+    admin_allowed(request, key)
     with _conn() as c:
         if not class_code:
             rows = c.execute("""SELECT class_code, COUNT(DISTINCT nickname) learners, COUNT(*) attempts, MAX(total) best,
