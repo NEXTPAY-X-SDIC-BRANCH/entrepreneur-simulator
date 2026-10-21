@@ -35,7 +35,7 @@ export function DiffTable({ prev, cur }: { prev: Attempt; cur: Attempt }) {
   return (
     <section className="lm-sec">
       <h2>지난 판과 바뀐 것</h2>
-      {changed.length === 0 && <p className="lm-quiet">입력은 그대로예요. {prev.summary.mode === cur.summary.mode ? "같은 입력이면 이지 모드 결과도 같아요." : "모드만 바뀌었어요."}</p>}
+      {changed.length === 0 && <p className="lm-quiet">입력은 그대로예요. {prev.summary.mode !== cur.summary.mode ? "모드만 바뀌었어요." : cur.summary.mode === "easy" ? "같은 입력이면 이지 모드 결과도 같아요." : "하드 모드는 달마다 고른 운영과 사건 대응, 판마다 다른 사건 때문에 입력이 같아도 결과가 달라질 수 있어요."}</p>}
       <table className="lm-tbl">
         <thead><tr><th scope="col">입력</th><th scope="col">{prev.n}판</th><th scope="col">{cur.n}판</th></tr></thead>
         <tbody>
