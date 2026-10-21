@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import re
 import urllib.request
@@ -30,6 +31,7 @@ MODEL = os.environ.get("LAB_COACH_MODEL", "qwen3.6:35b")
 TIMEOUT = float(os.environ.get("LAB_COACH_TIMEOUT", "60"))
 VERSION = "coach-v1"
 _CACHE: dict[str, dict] = {}
+log = logging.getLogger("uvicorn.error")
 
 SCHEMA = {
     "type": "object",
@@ -201,21 +203,26 @@ def validate(out: Any, lines: list[str], cands: list[dict], fixes: list[dict]) -
     by_c = {c["id"]: c for c in cands}
     by_f = {f["key"]: f for f in fixes}
     ok = allowed_numbers(lines + [c["title"] + " " + c["evidence"] for c in cands] + [f["text"] + " " + f["expected"] for f in fixes])
+    # 후보에 없는 id나 중복은 버린다 (모델이 원인 id를 다음 판 칸에 쓰는 일이 있다). 남은 항목의 문장은 하나라도 어긋나면 전체 거절.
     res_c, res_n, seen = [], [], set()
     for c in causes:
         if not isinstance(c, dict) or c.get("id") not in by_c or c["id"] in seen:
-            raise ValueError("원인 id")
+            continue
         seen.add(c["id"])
         cd = by_c[c["id"]]
         res_c.append({"id": cd["id"], "title": cd["title"], "evidence": cd["evidence"], "why": _check_text(c.get("why"), 10, 160, ok)})
+    if len(res_c) < min(2, len(cands)):
+        raise ValueError("원인 id")
     seen = set()
     for n in nxt:
         if not isinstance(n, dict) or n.get("id") not in by_f or n["id"] in seen:
-            raise ValueError("다음 판 id")
+            continue
         seen.add(n["id"])
         fx = by_f[n["id"]]
         res_n.append({"id": fx["key"], "lever": fx["lever"], "text": fx["text"], "expected": fx["expected"],
                       "how": _check_text(n.get("how"), 6, 120, ok)})
+    if fixes and not res_n:
+        raise ValueError("다음 판 id")
     return {"causes": res_c, "next": res_n}
 
 
@@ -251,9 +258,12 @@ def coach(summary: dict, *, llm: bool = True, call=None) -> dict:
     key = hashlib.sha256((json.dumps(msgs, ensure_ascii=False) + MODEL).encode()).hexdigest()
     if call is None and key in _CACHE:
         return _CACHE[key]
+    raw: Any = None
     try:
-        res = {**base, "source": "llm", "model": MODEL, **validate((call or _ollama)(msgs), lines, cands, fixes)}
+        raw = (call or _ollama)(msgs)
+        res = {**base, "source": "llm", "model": MODEL, **validate(raw, lines, cands, fixes)}
     except Exception as e:  # noqa: BLE001 — any failure (down, timeout, bad JSON, ungrounded) → rule text
+        log.warning("coach fallback: %s: %s | raw=%s", type(e).__name__, str(e)[:120], json.dumps(raw, ensure_ascii=False)[:400])
         return {**rule, "fallback_reason": f"{type(e).__name__}: {str(e)[:120]}"}
     if call is None:
         _CACHE[key] = res

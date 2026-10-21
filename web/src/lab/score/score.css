@@ -41,7 +41,7 @@
 .ls-now { border-color: var(--ls-ink); z-index: 2; }
 .ls-best { border-inline-start: 2px dashed var(--ls-blue); inset-block-start: 23px; block-size: 36px; }
 .ls-top { border-inline-start: 2px dotted var(--ls-ink2); inset-block-start: 23px; block-size: 36px; }
-.ls-legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-block-start: 26px; font-size: 13px; color: var(--ls-ink2); font-variant-numeric: tabular-nums; }
+.ls-card .ls-legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-block-start: 26px; font-size: 13px; color: var(--ls-ink2); font-variant-numeric: tabular-nums; }
 .ls-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .ls-legend span::before { content: ""; inline-size: 0; block-size: 14px; border-inline-start: 2px solid var(--ls-ink); }
 .ls-legend .lg-best::before { border-inline-start-style: dashed; border-color: var(--ls-blue); }
@@ -83,11 +83,11 @@
 .ls-login p { font-size: 14px; color: var(--ls-ink2); line-height: 1.5; }
 .ls-login label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; }
 .ls-login input { padding: 9px 12px; border: 1px solid #c9d1dc; border-radius: 10px; font-size: 16px; background: #fff; }
-.ls-btn { padding: 10px 16px; border: 0; border-radius: 10px; background: var(--ls-blue); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+.ls-card .ls-btn { padding: 10px 16px; border: 0; border-radius: 10px; background: var(--ls-blue); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
   transition-property: scale, background-color; transition-duration: 150ms; transition-timing-function: ease-out; }
-.ls-btn:active { scale: 0.96; }
-.ls-btn:disabled { background: #b8c3d6; cursor: not-allowed; }
-.ls-link { justify-self: start; padding: 2px 0; border: 0; background: none; color: var(--ls-blue); font-size: 14px; font-weight: 600; cursor: pointer; }
+.ls-card .ls-btn:active { scale: 0.96; }
+.ls-card .ls-btn:disabled { background: #b8c3d6; cursor: not-allowed; }
+.ls-card .ls-link { justify-self: start; padding: 2px 0; border: 0; background: none; color: var(--ls-blue); font-size: 14px; font-weight: 600; cursor: pointer; }
 .ls-admin { display: grid; gap: 8px; font-size: 14px; }
 .ls-admin table { inline-size: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
 .ls-admin th, .ls-admin td { padding: 6px 8px; text-align: start; border-block-end: 1px solid var(--ls-rule); font-variant-numeric: tabular-nums; }

@@ -254,12 +254,14 @@ def _risk(F: dict) -> dict:
     b = F["bench"]["margin"]
     gain = F["margin_last2"] - F["margin_first2"]
     s_g = 4.0 if F["margin_last2"] >= b else _lerp(gain, [(0.0, 0.0), (0.05, 4.0)])
+    if F["margin_last2"] < 0:   # 좋아졌어도 아직 적자면 회복 점수는 절반까지만
+        s_g = min(s_g, 2.0)
     s_w = _lerp(F["worst_margin"], [(-0.30, 0.0), (0.0, 3.0)])
     s_l = _lerp(F["loan_share"], [(LOAN_OK, 3.0), (LOAN_ZERO, 0.0)])
     wm = f"{F['worst_month']}월" if F["worst_month"] else "가장 나쁜 달"
     why = (f"첫 두 달 이익률 {pct(F['margin_first2'])} → 마지막 두 달 {pct(F['margin_last2'])}, "
            f"가장 나빴던 달({wm}) {pct(F['worst_margin'])}, 창업 자금 중 대출 {pct(F['loan_share'])}. "
-           "회복 4점 + 최악의 달 3점 + 대출 비중 3점 (기준은 가정).")
+           "회복 4점(아직 적자면 2점까지) + 최악의 달 3점 + 대출 비중 3점 (기준은 가정).")
     return {"key": "risk", "label": "위험 대응", "max": 10, "raw": s_g + s_w + s_l, "why": why}
 
 

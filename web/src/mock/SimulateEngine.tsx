@@ -154,6 +154,7 @@ function recommend(last: Done | undefined, plan: Plan): Rec[] {
     n = { ...lp, meat_grade: GRADES[gi - 1] };
     rec("meat_grade", n, `재료비가 매출의 ${Math.round((k.cogs / k.revenue) * 100)}%예요. 한 단계 낮춰 원가를 줄여 보세요.`);
   } else rec("meat_grade", lp, "바꿀 신호가 없어요. 바꾸면 단골이 조금 빠져요.");
+  for (const lv of LEVERS) if (!out.some((r) => r.lever.key === lv.key)) rec(lv.key, lp, ""); // lab:finance bugfix: 배달 추천이 없어 2달째 계획 화면이 멈췄다 (main에도 있음)
   return LEVERS.map((l) => out.find((r) => r.lever.key === l.key)!);
 }
 

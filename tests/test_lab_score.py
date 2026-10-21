@@ -155,7 +155,7 @@ def test_coach_accepts_grounded_reply_and_keeps_rule_titles():
     {"why": "인건비가 업계의 두 배라서 문제예요"},                       # 배수 주장
     {"why": "자세한 건 http://example.com 을 보세요"},                  # 링크
     {"how": "Reduce staff now"},                                       # 한글 없음
-    {"id": "made_up"},                                                 # 후보에 없는 원인
+    {"id": "made_up"},                                                 # 후보에 없는 원인 (남은 원인이 2개 미만)
 ])
 def test_coach_rejects_bad_reply(bad):
     s = trap_summary()
@@ -244,3 +244,20 @@ def test_demo_seed_is_flagged_and_idempotent(client):
     assert [p["nickname"] for p in real] == ["실제사람"]
     assert all(p["nickname"].startswith("예시") for p in rank if p["demo"])
     assert sum(1 for p in rank if p["demo"]) == len(L.DEMO_ROWS)
+
+
+def test_coach_drops_unknown_ids_but_keeps_valid_items():
+    s = trap_summary()
+    _, _, cands, fixes = C.build(s)
+    reply = _llm_reply(cands, fixes)
+    reply["causes"].append({"id": "made_up", "why": "무시하세요"})        # 버려지는 항목의 문장은 검사하지 않는다
+    reply["next"].append({"id": cands[0]["id"], "how": "원인 id를 다음 칸에 씀"})
+    out = C.coach(s, call=lambda _: reply)
+    assert out["source"] == "llm" and len(out["causes"]) == 2 and [n["id"] for n in out["next"]] == [fixes[0]["key"]]
+
+
+def test_distribution_helper_counts_bands():
+    from sim.score_grid import distribution
+    runs = [summary(cogs=0.36, labor=0.28, rent=0.07, mgmt=0.10), summary(labor=0.40), summary(labor=0.55, rent=0.2, cash=1_000_000)]
+    d = distribution(runs)
+    assert d["n"] == 3 and d["fit"] + d["train"] + d["rethink"] == 3 and d["min"] <= d["median"] <= d["max"]
