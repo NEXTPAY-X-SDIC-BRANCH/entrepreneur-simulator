@@ -372,6 +372,14 @@ export const COVERS_PER_STAFF = 15;   // 가정
 // opening every day means four more shifts a month to pay for (가정: 급여가 영업일에 비례)
 export const staffPay = (staff: number, days: 26 | 30) => staff * STAFF_COST * (days === 30 ? 30 / 26 : 1);
 
+// lab:cost calibrated to engine (2026-10-21). 하루 손님 = 수요·좌석·일손 세 한계의 부드러운 최솟값:
+//   covers = ((0.92 × 수요)^−2.3 + (2.10 × 좌석)^−2.3 + (34 × (직원 + 1))^−2.3)^(−1/2.3)
+// sim.season 을 자리 잡은 가게(opening=False)로 6개월 돌린 평균 매출에 맞춘 값이다. 격자: 마포·강남·관악 × 12~25평 × 직원 0~4명
+// (75점), 최대 오차 9.9%, 평균 5.0%. 예전 식 min(수요, 좌석 × 1.5, (직원 + 1) × 15)은 최대 36% 어긋났다 (관악은 높게, 직원 0명은 낮게).
+// 엔진은 직원이 늘어도 매출이 조금만 늘어서, 예전 식은 직원을 늘리면 매출이 크게 는다고 보고 큰 가게를 추천했다.
+export const engineCovers = (demand: number, seats: number, staff: number) =>
+  demand <= 0 || seats <= 0 ? 0 : ((0.92 * demand) ** -2.3 + (2.1 * seats) ** -2.3 + (34 * (staff + 1)) ** -2.3) ** (-1 / 2.3);
+
 export type MonthRow = { m: number; demand: number; capacity: number; covers: number; revenue: number; cost: number; op: number; cash: number };
 export type Run = { rows: MonthRow[]; start: number; opening: number; capMonthly: number };
 
@@ -391,7 +399,7 @@ export function simulate(profile: Profile, store: Store, lv: Levers, shocks: Sho
   let cash = start;
   const rows = OPEN_CURVE.map((r, i) => {
     const demand = settled * r * priceFx * shockFx * demandMult * (lv.days === 30 ? 0.96 : 1);
-    const covers = Math.min(demand, capacity);
+    const covers = s.hasKitchen ? engineCovers(demand, s.seats, staff) : 0; // lab:cost calibrated to engine
     const revenue = (covers * ticket * lv.days) / 10000;
     const cost = revenue * (food + FEE_SHARE) + staffPay(staff, lv.days) + st.rent * store.pyeong + mgmtOf(store.pyeong); // lab:cost
     const op = revenue - cost;
@@ -433,7 +441,8 @@ export function recommend(profile: Profile): { store: Store; staff: number; safe
     for (let tables = 2; tables <= slots; tables++) {
       const store = starterStore(pyeong, "basic", 0, tables);
       if (cashLeft(profile, store) < 0) break;
-      for (let staff = 0; staff <= 6; staff++) {
+      // lab:cost — 알바 1명부터 (가정): 엔진에서 사장 혼자인 가게는 이익이 나도 '평소의 60% 매출' 규칙으로 폐업 처리되는 일이 있다
+      for (let staff = 1; staff <= 6; staff++) {
         const lv = { ...DEFAULT_LEVERS, staff };
         const low = simulate(profile, store, lv, [], LOW);
         const safe = low.rows.every((r) => r.cash >= 0);
