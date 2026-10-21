@@ -20,6 +20,8 @@ import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, storeStats, type Lever
 import MenuEditor, { MenuSummary } from "../lab/menu/MenuEditor"; // lab:menu
 import { fetchTemplate, recompute, toEngine, type EngineMenuItem, type MenuDoc } from "../lab/menu/api"; // lab:menu
 import { roomDims, shapeOf } from "../lab/layout/plan"; // lab:layout
+import ScoreCard from "../lab/score/ScoreCard"; // lab:score
+import { bbqSummary } from "../lab/score/summary"; // lab:score
 
 const API = (import.meta.env.VITE_ENGINE_API as string | undefined) ?? "http://127.0.0.1:8010";
 const SHIRTS = ["#e0735a", "#43648a", "#d4a032", "#5679a3", "#ec8a4f", "#35614a"];
@@ -622,6 +624,10 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   // lab:menu  메뉴판이 있으면 가격 추천은 메뉴판에서
   const recs = useMemo(() => recommend(cur, plan).map((r) => (r.lever.key === "meat_price" && plan.menu
     ? { ...r, change: false, last: `메뉴 ${plan.menu.length}개`, why: "메뉴판이 있어서 가격은 메뉴판에서 고쳐요." } : r)), [cur, plan]);
+  const scoreSummary = useMemo(() => (view === "report" && done.length ? bbqSummary(done, { // lab:score
+    startCash, openingCost: cost.total * 1e4, loan: store.loan * 1e4, loanRate: LOAN_RATE,
+    inputs: { gu: profile.gu, dong: profile.dong?.name ?? null, pyeong: store.pyeong, tables: stats.tables, seats: stats.seats, capital: profile.capital * 1e4, start_month: startMonth, owner_wage_month: imputed },
+  }) : null), [view, done]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 챗봇이 "내 가게는 몇 달째부터 남아요?"에 답할 수 있도록 지금까지의 결과를 넘긴다
   useEffect(() => {
@@ -995,6 +1001,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
             {view === "report" && (
               <>
                 <div className="sx-scroll">
+                  {scoreSummary && <ScoreCard summary={scoreSummary} />}{/* lab:score */}
                   <h1>{done.length}개월 결과</h1>
                   {!ledger ? <p>계산 중이에요.</p> : (
                     <>

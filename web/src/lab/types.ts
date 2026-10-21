@@ -13,7 +13,7 @@ export interface MonthLine {
   rent: number;
   mgmt: number;
   fees: number; // 원 (mgmt = 매장 운영비 total)
-  opex_detail?: Record<string, number>; // cost lane: 공과금, 소모품, 수선, 보험, 마케팅 ... (원)
+  opex_detail?: Record<string, number>; // cost lane: 공과금, 소모품, 수선, 보험, 마케팅 ... (원). "depreciation" = 현금이 안 나가는 감가상각 (score가 현금 고정비에서 뺌)
   rent_card_fee?: number; // finance lane
   cash_after: number;
   satisfaction?: number;
@@ -61,4 +61,6 @@ export interface Score {
   parts: ScorePart[];
   fixes: ScoreFix[];
   version: string; // "score-v1"
+  band_text?: string; // 구간 설명 한 줄 (존댓말)
+  to_fit?: number; // 90점까지 남은 점수
 }
