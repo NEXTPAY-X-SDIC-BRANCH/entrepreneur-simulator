@@ -10,6 +10,10 @@ import CafeSim from "./CafeSim";
 import type { CafeCfg } from "./cafeChecks";
 import "./mock.css";
 import "./analysis.css";
+import ModePick, { type Mode } from "../lab/modes/ModePick"; // lab:modes
+import Easy, { type HardSeed } from "../lab/modes/Easy"; // lab:modes
+import HardTools from "../lab/modes/HardTools"; // lab:modes
+import { starterStore } from "./model"; // lab:modes
 
 const Builder = lazy(() => import("./Builder"));
 const Simulate = lazy(() => import("./SimulateEngine"));
@@ -33,6 +37,7 @@ export default function Mock() {
   const [ready, setReady] = useState(false);
   const [chat, setChat] = useState(false);
   const [cafeCfg, setCafeCfg] = useState<CafeCfg | null>(null);
+  const [mode, setMode] = useState<Mode | null>(null); // lab:modes 이지/하드 (null = 아직 안 고름)
 
   const ind = profile.industry;
   useEffect(() => {
@@ -64,6 +69,12 @@ export default function Mock() {
     scrollTo({ top: 0 });
   };
   const idx = STEPS.findIndex((s) => s.key === step);
+  const toHard = (h: HardSeed) => { // lab:modes 이지 결과를 하드 모드 가게 꾸미기로 넘긴다 (평수, 테이블, 대출, 가격, 알바 그대로)
+    setMode("hard");
+    if (h.industry === "bbq") { setStore(starterStore(h.pyeong, "basic", h.loan_man, h.tables)); setLevers({ price: h.price, staff: h.staff, days: 26 }); }
+    else setCafeCfg({ pyeong: h.pyeong, grade: "basic", staff: h.staff });
+    go("build");
+  };
   setRentInput(profile.rent && profile.rent.gu === profile.gu ? profile.rent : null); // 하위 화면이 읽기 전에 맞춰 둔다
   setAreaInput(profile.dong && profile.dong.gu === profile.gu ? profile.dong : null);
 
@@ -71,7 +82,9 @@ export default function Mock() {
     <div className={`m-app m-step-${step}`}>
       <header className="m-top">
         <a className="m-brand" href="#/" onClick={() => go("profile")}>ChangeUp</a>
-        <nav aria-label="진행 단계">
+        {mode === "easy" && <span className="m-modehead">이지 모드 <button type="button" className="m-link" onClick={() => { setMode(null); go("profile"); }}>연습 방식 바꾸기</button></span> /* lab:modes */}
+        {mode === "hard" && <HardTools profile={profile} store={store} levers={levers} cafeCfg={cafeCfg} step={step} onRetry={() => go("build")} /> /* lab:modes */}
+        {mode !== "easy" && <nav aria-label="진행 단계">
           <ol>
             {STEPS.map((s, i) => (
               <li key={s.key}>
@@ -81,7 +94,7 @@ export default function Mock() {
               </li>
             ))}
           </ol>
-        </nav>
+        </nav>}
         {idx >= 1 && (
           <button type="button" className="m-chatbtn" aria-expanded={chat} onClick={() => setChat((c) => !c)}>
             {chat ? "질문 창 닫기" : "궁금한 것 물어보기"}
@@ -90,7 +103,9 @@ export default function Mock() {
       </header>
 
       {!ready && <p className="m-loading">자료를 불러오는 중이에요</p>}
-      {ready && step === "profile" && <ProfileStep profile={profile} setProfile={setProfile} gus={gus} onDone={() => go("area")} />}
+      {step === "profile" && !mode && <ModePick initial={mode} onPick={setMode} /> /* lab:modes */}
+      {step === "profile" && mode === "easy" && <Easy profile={profile} setProfile={setProfile} gus={gus} onHard={toHard} onModes={() => setMode(null)} /> /* lab:modes */}
+      {ready && step === "profile" && mode === "hard" /* lab:modes */ && <ProfileStep profile={profile} setProfile={setProfile} gus={gus} onDone={() => go("area")} />}
       {ready && step === "area" && <Analysis profile={profile} setProfile={setProfile} gus={gus} onNext={() => go("build")} />}
       {ready && ind === "cafe" && step === "build" && <CafeBuild profile={profile} cfg={cafeCfg} setCfg={setCafeCfg} onNext={() => go("sim")} />}
       {ready && ind === "cafe" && step === "sim" && <CafeSim profile={profile} cfg={cafeCfg ?? { pyeong: 20, grade: "basic", staff: 1 }} onBack={() => go("build")} />}

@@ -53,6 +53,7 @@ CAFE_BURN = 3 * 550               # CafeBuild: cafeEstimate(profile, 3 * 550)
 CAFE_DEFAULT_CODE = "3120012"
 STAFF_MAX_ENGINE = 4              # 엔진 교대당 알바 상한 (SimulateEngine Plan과 같음)
 WORKING_MONTHS = 3                # 모자란 돈을 빌릴 때 석 달 고정비를 더 빌린다 (가정, 카페 엔진의 운전자금 규칙과 같은 개월 수)
+OV_BASIS = "직접 정한 값 (다시 해보기에서는 지난 판 값이 이어짐)"
 EASY_SEED = 42                    # 이지 모드는 시드를 고정: 판마다 점수가 바뀌면 그건 입력을 바꿨기 때문이다
 CAFE_SEED = 7                     # cafeChecks.engineBody 와 같음
 
@@ -317,14 +318,15 @@ def easy_bbq(gu: str, capital_man: float, dong: str | None = None, pyeong: int |
            "band_runs": 10}
     shown = [
         {"key": "pyeong", "label": "평수", "value": store["pyeong"], "unit": "평",
-         "src": "입력" if pyeong else "가정", "basis": "직접 고른 평수" if pyeong else
+         "src": "입력" if pyeong else "가정", "basis": OV_BASIS if pyeong else
          "가진 돈으로 열 수 있고 손님이 20% 적어도 6개월을 버티는 크기 중 가장 많이 남는 것 (화면의 추천 배치와 같은 규칙)"},
         {"key": "tables", "label": "4인 테이블", "value": store["tables"], "unit": "개", "src": "입력" if ov.get("tables") else "가정",
-         "basis": f"{store['pyeong']}평에 놓을 수 있는 자리 {len(table_slots(store['pyeong']))}곳 중 추천 규칙으로 고른 수"},
+         "basis": OV_BASIS if ov.get("tables") else
+         f"{store['pyeong']}평에 놓을 수 있는 자리 {len(table_slots(store['pyeong']))}곳 중 추천 규칙으로 고른 수"},
         {"key": "staff", "label": "교대당 알바", "value": staff, "unit": "명", "src": "입력" if ov.get("staff") is not None else "가정",
-         "basis": "추천 규칙 (알바 1명 하루 15명 응대, 가정)"},
+         "basis": OV_BASIS if ov.get("staff") is not None else "추천 규칙 (알바 1명 하루 15명 응대, 가정)"},
         {"key": "price", "label": "삼겹살 1인분", "value": price, "unit": "원", "src": "입력" if ov.get("price") else "업계 자료",
-         "basis": "기준 고깃집(대학로) 가격, 팀 조사"},
+         "basis": OV_BASIS if ov.get("price") else "기준 고깃집(대학로) 가격, 팀 조사"},
         {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": st["rent"], "unit": "만원",
          "src": "공공 통계" if st["rent_src"].startswith("R-ONE") else "가정",
          "basis": f"한국부동산원 상가 임대료 ({st['rent_src']}), 보증금 환산분을 뺀 현금 월세"},
@@ -398,10 +400,10 @@ def easy_cafe(gu: str, capital_man: float, dong: str | None = None, pyeong: int 
         {"key": "dong", "label": "동네", "value": dname or "대학로 기준 상권", "unit": "", "src": "가정" if auto_dong else "입력",
          "basis": "동을 안 골라 구 안에서 점포당 매출이 구 평균에 가장 가까운 동을 씀" if auto_dong else "직접 고른 동"},
         {"key": "pyeong", "label": "평수", "value": p, "unit": "평", "src": "입력" if (ov.get("pyeong") or pyeong) else "업계 자료",
-         "basis": "직접 고른 평수" if (ov.get("pyeong") or pyeong) else
+         "basis": OV_BASIS if (ov.get("pyeong") or pyeong) else
          "독립 카페 면적 중앙값 20평에서 시작, 여는 비용 + 석 달 운영비(1,650만원, 가정)를 못 맞추면 줄임"},
         {"key": "staff", "label": "바쁜 시간 직원 (사장님 빼고)", "value": staff, "unit": "명", "src": "입력" if ov.get("staff") is not None else "가정",
-         "basis": "가게 꾸미기 화면의 기본값"},
+         "basis": OV_BASIS if ov.get("staff") is not None else "가게 꾸미기 화면의 기본값"},
         {"key": "seats", "label": "테이블 / 의자", "value": f"{body['tables']} / {body['chairs']}", "unit": "", "src": "업계 자료",
          "basis": "독립 카페 평당 테이블 0.36개, 좌석 1.27석"},
         {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": st["rent"], "unit": "만원",
