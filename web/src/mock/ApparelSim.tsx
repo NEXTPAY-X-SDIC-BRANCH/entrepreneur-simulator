@@ -4,7 +4,7 @@
 // 계산은 apparel.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 옷가게의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
-  BUY_MODES, BUY_MODE_ASSUME, CATS, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
+  BUY_MODES, BUY_MODE_ASSUME, CATS, MARKET, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
   playMonth, startState, stateAfter, stockValue,
   type ApMonth, type ApPlan, type ApState, type ApStratId, type ApparelCfg, type Cat,
 } from "./apparel";
@@ -299,6 +299,9 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                     <p className="sx-note"><b>옷가게는 재고가 현금을 묶어요.</b> 많이 사 두면 사이즈가 덜 빠지지만 돈이 선반에 묶이고, 적게 사면 찾는 사이즈가 없어 손님이 그냥 나가요.
                       {" "}재고는 상의·하의·아우터·잡화로 나뉘고, 계절마다 잘 팔리는 품목이 바뀌어요. 오래 둔 옷은 값이 떨어져요.
                       {" "}매입 방식은 <b>{BUY_MODES[cfg.buyMode].label}</b>이에요: {BUY_MODES[cfg.buyMode].desc}.<Assume what={BUY_MODE_ASSUME} />
+                      {" "}올해 패션 구매의 {Math.round(MARKET.online_share * 100)}%는 온라인이에요. 1~7월 의복 판매액은 1년 전보다 {(MARKET.indicators.apparel_retail_yoy_1_7 * 100).toFixed(1)}% 늘었고,
+                      {monthSeq.some((x) => x >= 9 && x <= 11) ? ` 올가을 의복 소비 전망 지수는 ${MARKET.fall_outlook.index_apparel}(100이 보합)로 줄이겠다는 사람(${MARKET.fall_outlook.decrease}%)이 늘리겠다는 사람(${MARKET.fall_outlook.increase}%)보다 많아요.` : " 시뮬레이션의 매출은 2025년 카드 매출 기준이에요."}
+                      {" "}(한국섬유산업연합회 패션 소비 실태조사·경기지표, 2026)
                       {" "}{profile.gu} 일반의류 가게는 1년에 10곳 중 {(st.closure / 10).toFixed(1)}곳이 문을 닫아요 (2025년).</p>
                   </section>
                   <fieldset className="sx-mode">

@@ -49,11 +49,20 @@ export type Cat = "top" | "bottom" | "outer" | "acc";
 export const CATS: { id: Cat; label: string }[] = [
   { id: "top", label: "상의" }, { id: "bottom", label: "하의" }, { id: "outer", label: "아우터" }, { id: "acc", label: "잡화" },
 ];
-// 가정: 달마다 팔리는 품목 비중. 하의 25%, 잡화 12%는 일 년 내내 같고, 아우터가 겨울에 늘면 상의가 그만큼 준다
+// 달마다 팔리는 품목 비중. 잡화는 패션 소비 실태조사 2026 SS의 가방/지갑+기타잡화 ÷ 신발을 뺀 패션 구매액 = 11.1% (fashion_market.json).
+// 하의 25%와 아우터의 달별 비중은 가정이다 (실태조사는 상의·하의·아우터로 나누지 않는다). 아우터가 겨울에 늘면 상의가 그만큼 준다
+// 옷가게 시장 자료 (pipelines/build_fashion_market.py): 잡화 비중, 수입 의류 원화 단가 상승, 온라인 구매 비중, 가을 소비 전망, SPA 점유
+export type FashionMarket = { acc_share: number; online_share: number; spa_casual_share: number; import_cost: { krw_yoy_1_8: number; krw_yoy_aug: number; usd_yoy_1_8: number; fx_2025_1_8: number; fx_2026_1_8: number };
+  fall_outlook: { index_apparel: number; decrease: number; increase: number }; indicators: { apparel_retail_yoy_1_7: number; apparel_inventory_yoy_1_7: number } };
+export const MARKET: FashionMarket = { acc_share: 0.111, online_share: 0.523, spa_casual_share: 0.212,
+  import_cost: { krw_yoy_1_8: 0.045, krw_yoy_aug: 0.064, usd_yoy_1_8: 0.003, fx_2025_1_8: 1416.1, fx_2026_1_8: 1475.1 },
+  fall_outlook: { index_apparel: 99.7, decrease: 27.1, increase: 10.1 }, indicators: { apparel_retail_yoy_1_7: 0.092, apparel_inventory_yoy_1_7: -0.073 } };
+export function setFashionMarket(d: Partial<FashionMarket> | null) { if (d) Object.assign(MARKET, d); }
 const OUTER: Record<number, number> = { 1: 0.30, 2: 0.18, 3: 0.12, 4: 0.06, 5: 0.03, 6: 0.02, 7: 0.02, 8: 0.03, 9: 0.10, 10: 0.22, 11: 0.32, 12: 0.35 };
 const OUTER_AVG = Object.values(OUTER).reduce((a, b) => a + b, 0) / 12;
-export const mixOf = (m: number): Record<Cat, number> => ({ top: 0.63 - OUTER[m], bottom: 0.25, outer: OUTER[m], acc: 0.12 });
-const MIX_AVG: Record<Cat, number> = { top: 0.63 - OUTER_AVG, bottom: 0.25, outer: OUTER_AVG, acc: 0.12 };
+const BOTTOM = 0.25;
+export const mixOf = (m: number): Record<Cat, number> => ({ top: 1 - BOTTOM - MARKET.acc_share - OUTER[m], bottom: BOTTOM, outer: OUTER[m], acc: MARKET.acc_share });
+const mixAvg = (): Record<Cat, number> => ({ top: 1 - BOTTOM - MARKET.acc_share - OUTER_AVG, bottom: BOTTOM, outer: OUTER_AVG, acc: MARKET.acc_share });
 export const AGES = 7;    // 나이 칸 0~6달, 마지막 칸은 6달 넘은 옷
 export const OLD_AGE = 3; // 석 달 넘게 안 팔린 옷 = 오래된 옷
 export type Inv = Record<Cat, number[]>; // 원가 기준 금액(만원). 기준 원가율로 샀을 때 값이라 매입 방식과 상관없이 '옷의 양'이다
@@ -114,7 +123,7 @@ export type ApPlan = { buy: number; discount: number; staff: number; marketing: 
 export const DEFAULT_PLAN: ApPlan = { buy: 1, discount: 0, staff: 0, marketing: 0, markdownAge: 3, markdown: 0.3, focus: "none" };
 // costAvg = 지금 선반 재고를 산 평균 원가 배수 (매입 방식·재주문에 따라 1 근처). 재고를 돈으로 셀 때 곱한다
 export type ApState = { cash: number; inv: Inv; costAvg: number; awareness: number; negMonths: number; closed: boolean };
-export type Fx = { demand?: number; buy?: number; discount?: number; cost?: number; awareness?: number; clear?: number; clearCut?: number };
+export type Fx = { demand?: number; buy?: number; discount?: number; cost?: number; awareness?: number; clear?: number; clearCut?: number; buyCost?: number }; // buyCost: 이달 매입 단가 배수
 // 품목별 한 달 (원가 기준 만원, demand·lostStock만 정가 매출 기준)
 export type CatMonth = { demand: number; bought: number; sold: number; mdSold: number; fill: number; lostStock: number; stock: number; old: number };
 export type ApMonth = {
@@ -160,14 +169,14 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   for (const { id: c } of CATS) {
     const want = demand * mix[c] * cogsR;
     const fresh = invOf(inv, c, 0, mdAge);
-    let need = 0, price = bm.cost;
+    let need = 0, price = bm.cost * (fx.buyCost ?? 1);
     if (ordered) {
       // 다음 석 달 예상 판매를 한 번에 (이달 사건·할인 효과는 이달 몫에만)
       const later = [1, 2].reduce((a, k) => { const mm = ((month - 1 + k) % 12) + 1; return a + baseAt(mm) * s.awareness * mixOf(mm)[c] * cogsR; }, 0);
       need = (want + later) * buyMul * tilt(c) - fresh;
     } else if (cfg.buyMode === "pre") {
       // 선발주 사이 달: 반 달치 밑으로 떨어진 품목만 한 달치까지 소량 재주문
-      if (fresh < want * 0.5) { need = want * buyMul * tilt(c) - fresh; price = bm.reorder; }
+      if (fresh < want * 0.5) { need = want * buyMul * tilt(c) - fresh; price = bm.reorder * (fx.buyCost ?? 1); }
     } else {
       need = want * buyMul * cfg.stockMonths * tilt(c) - fresh;
     }
@@ -193,7 +202,7 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   // 세일 칸부터: 세일 폭이 클수록, 제철 품목일수록 빨리 빠진다. 사건 대응의 정리 세일은 두 달 넘은 옷 중 남은 것의 일부를 판다
   const mdSold = {} as Record<Cat, number>;
   for (const { id: c } of CATS) {
-    const fit = Math.max(0.3, Math.min(1.5, mix[c] / MIX_AVG[c]));
+    const fit = Math.max(0.3, Math.min(1.5, mix[c] / mixAvg()[c]));
     const rate = Math.min(0.9, (MD_BASE + ELASTIC * plan.markdown) * fit);
     let md = 0, cleared = 0;
     for (let a = mdAge; a < AGES; a++) { const x = inv[c][a] * rate; inv[c][a] -= x; md += x; }
@@ -291,8 +300,20 @@ export function eventOf(month: number, seed: number): ApEvent {
       keep,
     ],
   };
+  if ([4, 10].includes(month) && seed % 4 === 1) {
+    const up = MARKET.import_cost.krw_yoy_1_8;
+    return {
+      id: "import_cost", title: "수입 의류 도매가 상승", prompt: `환율이 올라 수입 옷의 원화 값이 1년 전보다 ${(up * 100).toFixed(1)}% 비싸졌어요 (달러 단가 ${(MARKET.import_cost.usd_yoy_1_8 * 100).toFixed(1)}% × 원/달러 ${Math.round(MARKET.import_cost.fx_2025_1_8).toLocaleString("ko-KR")}→${Math.round(MARKET.import_cost.fx_2026_1_8).toLocaleString("ko-KR")}원). 이번 달 들이는 옷 값이 그만큼 올라요.`,
+      note: "원가 상승폭은 2026년 1~8월 의류 수입실적(섬유류 수출입실적)과 환율로 계산했어요. 대응의 효과 크기는 가정이에요",
+      options: [
+        { id: "absorb", label: "그대로 들인다", pro: "고를 옷이 그대로예요", con: `이달 매입 원가 +${(up * 100).toFixed(1)}%`, fx: { buyCost: 1 + up } },
+        { id: "local", label: "동대문 국내 생산 비중 늘리기", pro: "환율 영향을 덜 받아요 (원가 그대로)", con: "고를 옷이 줄어 손님 −2%", fx: { buyCost: 1, demand: 0.98 } },
+        { id: "price", label: "정가 3% 올리기", pro: "오른 원가를 손님과 나눠요", con: `원가는 +${(up * 100).toFixed(1)}%, 팔리는 양 −4.5%`, fx: { buyCost: 1 + up, discount: -0.03 } },
+      ],
+    };
+  }
   if ([4, 10].includes(month) || seed % 4 === 0) return {
-    id: "spa", title: "근처에 SPA 브랜드 매장 오픈", prompt: "큰 의류 브랜드 매장이 근처에 열었어요. 이번 달 손님 −9%예요.", demand: 0.91, note: "손님 −9%는 고깃집 시뮬의 경쟁점 개점 효과(S20)를 빌려 썼어요",
+    id: "spa", title: "근처에 SPA 브랜드 매장 오픈", prompt: `큰 의류 브랜드 매장이 근처에 열었어요. 이번 달 손님 −9%예요. 캐주얼 옷을 산 사람의 ${Math.round(MARKET.spa_casual_share * 100)}%가 유니클로·탑텐·자라에서 샀어요 (패션 소비 실태조사 2026 SS).`, demand: 0.91, note: "손님 −9%는 고깃집 시뮬의 경쟁점 개점 효과(S20)를 빌려 썼어요",
     options: [
       { id: "cut10", label: "10% 할인 행사", pro: "가격으로 맞서 팔리는 양 +15%", con: "한 벌에 남는 돈이 줄어요", fx: { discount: 0.1 } },
       { id: "regular", label: "단골에게 쿠폰 문자", pro: "단골을 붙잡아 +4%", con: "문자·쿠폰 비용 20만원", fx: { demand: 1.04, cost: 20 } },
