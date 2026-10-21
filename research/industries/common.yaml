@@ -1,0 +1,104 @@
+# 새 업종 엔진(sim/generic)의 공통 값 (lab:industry). 값마다 {value, grade, source, note}.
+# 등급: H 공식, M 업계·여러 출처, L 한 출처나 우리가 계산한 값, 가정 출처 없음. 카페 엔진(research/cafe/params.yaml)과 같은 값은 그 출처를 그대로 적었다.
+
+demand:
+  seoul_uplift:
+    value: 1.217
+    grade: M
+    source: "농식품부·농경연 「2025 외식업체 경영실태 조사」 원자료, 전 업종 서울 표본(491곳) 가중 평균 매출 ÷ 전국 가중 평균 매출 (research/industries/krei.json _meta)"
+    note: "업종별 서울 표본은 20~60곳이라 업종마다 따로 쓰지 않고 전 업종 배율 하나를 씀"
+  dong_rel_range:
+    value: [0.5, 2.0]
+    grade: 가정
+    source: "none"
+    note: "동네를 고르면 구 값에 곱하는 동네 위치(rel, 서울시 상권분석서비스 행정동) 범위를 이 안으로 자름 (model.ts guStat의 0.4~2와 비슷하게)"
+  open_curve:
+    value: [0.55, 0.7, 0.82, 0.9, 0.96, 1.0]
+    grade: 가정
+    source: "none"
+    note: "개업 1~6개월째 손님이 자리 잡힌 가게의 몇 %인가. 고깃집·카페 미리보기(model.ts OPEN_CURVE)와 같은 값"
+  price_elasticity:
+    value: 1.2
+    grade: 가정
+    source: "GAP (업종별 가격 탄력성 자료 없음)"
+    note: "가격 1% 인상 = 손님 1.2% 감소. 카페 1.5보다 조금 낮게 (식사는 대체재가 카페보다 적다고 봄)"
+  price_level_range: {value: [0.8, 1.3], grade: 가정, source: "none", note: "처음 가격 대비 누적 범위"}
+  delivery_off_to_takeout:
+    value: 0.3
+    grade: 가정
+    source: "none"
+    note: "배달을 끄면 배달 손님 중 포장으로 옮겨 오는 비율. 나머지는 잃음"
+  hours_shift_share:
+    value: 0.5
+    grade: 가정
+    source: "none (카페 엔진 hours_shift_share와 같은 값)"
+    note: "문을 닫은 시간대 손님 중 영업시간으로 옮겨 오는 비율"
+  marketing_max_lift: {value: 0.12, grade: 가정, source: "none", note: "마케팅으로 늘릴 수 있는 손님 최대 12%"}
+  marketing_half_krw: {value: 1500000, grade: 가정, source: "none", note: "효과 = 최대 x (1 - exp(-예산 ÷ 이 값))"}
+
+dynamics:
+  rating_start: {value: 4.0, grade: 가정, source: "none (카페 엔진과 같음)"}
+  rating_range: {value: [3.0, 4.9], grade: 가정, source: "none"}
+  rating_speed: {value: 0.35, grade: 가정, source: "none (카페 엔진과 같음)", note: "별점이 목표값에 다가가는 한 달 비율"}
+  rating_per_satisfaction: {value: 0.8, grade: 가정, source: "none (카페 엔진과 같음)"}
+  rating_demand_per_star: {value: 0.15, grade: 가정, source: "none (카페 엔진과 같음)", note: "별점 1점 차이 = 손님 15% 차이"}
+  satisfaction_walkaway: {value: -3.0, grade: 가정, source: "none (카페 엔진과 같음)"}
+  satisfaction_price: {value: -1.0, grade: 가정, source: "none (카페 엔진과 같음)"}
+  satisfaction_understaffed: {value: -0.05, grade: 가정, source: "none", note: "직원이 업종 중앙값보다 적을 때 (응대가 늦음)"}
+
+capacity:
+  extra_staff_cost_share:
+    value: 0.5
+    grade: 가정
+    source: "none"
+    note: "사건 대응으로 한 달만 더 쓰는 아르바이트 1명의 비용 = 직원 1명 월 인건비의 이 비율"
+
+cost:
+  card_share:
+    value: 1.0
+    grade: 가정
+    source: "none (카페 엔진 opex.card_share와 같음)"
+    note: "모든 매출에 신용카드 우대수수료율 적용 (금융위원회 2025-02-14, 연매출 구간별 0.40~1.45%, H). 배달 매출도 포함해 보수적"
+  sign_man: {value: 250, grade: 가정, source: "none (고깃집·카페 화면 SIGN과 같은 값)"}
+  first_stock_man: {value: 300, grade: 가정, source: "none (고깃집·카페 화면 FIRST_STOCK과 같은 값)"}
+  deposit_months:
+    value: 12
+    grade: M
+    source: "서울시 상가임대차 실태조사: 보증금은 월세의 11~15개월 (model.ts DEPOSIT_MONTHS와 같은 값)"
+  depreciation_months:
+    value: 60
+    grade: M
+    source: "법인세법 시행규칙 별표5 기구 및 비품 기준내용연수 5년 (카페 엔진과 같음)"
+    note: "인테리어, 주방, 홀 설비를 5년 정액으로. 보증금, 권리금, 간판, 첫 재료는 빼고"
+  rent_conv_pct_default:
+    value: 7.04
+    grade: H
+    source: "한국부동산원 R-ONE 서울 전환율 (web/public/mock/rent_gu.json conv_seoul_pct)"
+    note: "월세를 요청에서 주지 않았을 때 rent_gu.json 환산 임대료에서 보증금 환산분을 빼는 데 씀 (model.ts cashRent와 같은 식)"
+
+season:
+  months: {value: 6, grade: 가정, source: "none", note: "한 시즌 6개월 (고깃집·카페와 같음)"}
+  start_month: {value: 3, grade: 가정, source: "none"}
+  loan_rate:
+    value: 0.0438
+    grade: H
+    source: "한국은행 ECOS 예금은행 신규취급액 중소기업 대출금리 2026년 8월 4.38% (web/public/mock/ecos_rates.json loan_sme)"
+    note: "ecos_rates.json이 있으면 그 값을 읽고, 없으면 이 값"
+  loan_term_months: {value: 60, grade: 가정, source: "none (카페 엔진과 같음)", note: "5년 원리금 균등, 거치 없음"}
+  working_capital_months:
+    value: 3
+    grade: 가정
+    source: "none (카페 엔진과 같음)"
+    note: "문을 열 때 통장에 월 고정비(월세 + 인건비) 3개월치가 있도록 모자란 만큼 빌림"
+  closure_negative_months: {value: 2, grade: 가정, source: "none (카페 엔진과 같음)", note: "현금이 두 달 연속 마이너스면 폐업"}
+  rival_nearby_share:
+    value: 0.1
+    grade: 가정
+    source: "none (카페 엔진과 같음)"
+    note: "월 확률 = 1 - exp(-구의 연 개업률 x 이 값 x 12 ÷ 12). 개업률은 서울시 상권분석서비스 2025 (H)"
+  rival_demand_mult: {value: 0.93, grade: 가정, source: "none", note: "근처에 같은 업종이 생기면 손님 7% 감소, 시즌 끝까지"}
+  rent_hike_p: {value: 0.03, grade: 가정, source: "none (카페 엔진과 같음)"}
+  rent_hike_pct: {value: 0.05, grade: H, source: "상가건물 임대차보호법 시행령 제4조 차임 증액 상한 5%"}
+  breakdown_p: {value: 0.03, grade: 가정, source: "none (카페 엔진과 같음)"}
+  breakdown_repair_krw: {value: 800000, grade: 가정, source: "none (카페 엔진과 같음)"}
+  breakdown_down_days: {value: 2, grade: 가정, source: "none (카페 엔진과 같음)"}

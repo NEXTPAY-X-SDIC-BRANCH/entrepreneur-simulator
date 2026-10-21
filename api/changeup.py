@@ -33,6 +33,8 @@ app.add_middleware(
 
 from api.cafe import router as cafe_router  # 카페 엔진 (sim/cafe, docs/CAFE.md): /cafe/preview, /cafe/season ...
 app.include_router(cafe_router)
+from api.lab_industry import router as industry_router  # lab:industry 새 업종 (sim/generic): /lab/industry/...
+app.include_router(industry_router)  # lab:industry
 
 KPI = ("revenue", "op", "covers", "ticket", "cogs", "labor", "rent", "mgmt", "fees", "walkaways", "avg_wait_min",
        "table_utilization", "satisfaction", "reviews", "delivery_revenue", "delivery_fee", "delivery_orders")

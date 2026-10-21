@@ -1,0 +1,214 @@
+{
+ "_meta": {
+  "quarters": [
+   "20251",
+   "20252",
+   "20253",
+   "20254"
+  ],
+  "sbiz_snapshot": "20260630",
+  "sources": {
+   "stores": "서울시 상권분석서비스 점포-상권 OA-15577 (2025)",
+   "sales": "서울시 상권분석서비스 추정매출-상권 OA-15572 (2025)",
+   "sbiz": "소상공인시장진흥공단 상가(상권)정보 data.go.kr 15083033",
+   "krei": "농식품부·농경연 2025 외식업체 경영실태 조사 원자료 (n=3,138, 가중치 WT)"
+  },
+  "method": "pipelines/build_industry_rank.py"
+ },
+ "services": [
+  {
+   "code": "CS100001",
+   "name": "한식음식점",
+   "stores_trdar": 50586,
+   "opened_year": 7278,
+   "closed_year": 7521,
+   "open_rate": 0.144,
+   "close_rate": 0.149,
+   "franchise_share": 0.12,
+   "sales_per_store_month_man": 2481,
+   "ticket_krw": 39765,
+   "age2030_sales_share": 0.295,
+   "stores_sbiz": 51622
+  },
+  {
+   "code": "CS100002",
+   "name": "중식음식점",
+   "stores_trdar": 5488,
+   "opened_year": 742,
+   "closed_year": 891,
+   "open_rate": 0.135,
+   "close_rate": 0.162,
+   "franchise_share": 0.131,
+   "sales_per_store_month_man": 1513,
+   "ticket_krw": 35653,
+   "age2030_sales_share": 0.339,
+   "stores_sbiz": 5517
+  },
+  {
+   "code": "CS100003",
+   "name": "일식음식점",
+   "stores_trdar": 6260,
+   "opened_year": 341,
+   "closed_year": 949,
+   "open_rate": 0.054,
+   "close_rate": 0.152,
+   "franchise_share": 0.147,
+   "sales_per_store_month_man": 1425,
+   "ticket_krw": 42863,
+   "age2030_sales_share": 0.401,
+   "stores_sbiz": 7277
+  },
+  {
+   "code": "CS100004",
+   "name": "양식음식점",
+   "stores_trdar": 7978,
+   "opened_year": 1009,
+   "closed_year": 1196,
+   "open_rate": 0.126,
+   "close_rate": 0.15,
+   "franchise_share": 0.1,
+   "sales_per_store_month_man": 1458,
+   "ticket_krw": 45660,
+   "age2030_sales_share": 0.44,
+   "stores_sbiz": 6900
+  },
+  {
+   "code": "CS100005",
+   "name": "제과점",
+   "stores_trdar": 5590,
+   "opened_year": 770,
+   "closed_year": 765,
+   "open_rate": 0.138,
+   "close_rate": 0.137,
+   "franchise_share": 0.241,
+   "sales_per_store_month_man": 1171,
+   "ticket_krw": 11075,
+   "age2030_sales_share": 0.334,
+   "stores_sbiz": 6119
+  },
+  {
+   "code": "CS100006",
+   "name": "패스트푸드점",
+   "stores_trdar": 5145,
+   "opened_year": 637,
+   "closed_year": 890,
+   "open_rate": 0.124,
+   "close_rate": 0.173,
+   "franchise_share": 0.526,
+   "sales_per_store_month_man": 1024,
+   "ticket_krw": 12220,
+   "age2030_sales_share": 0.436,
+   "stores_sbiz": 5298
+  },
+  {
+   "code": "CS100007",
+   "name": "치킨전문점",
+   "stores_trdar": 4302,
+   "opened_year": 592,
+   "closed_year": 716,
+   "open_rate": 0.138,
+   "close_rate": 0.166,
+   "franchise_share": 0.62,
+   "sales_per_store_month_man": 686,
+   "ticket_krw": 35884,
+   "age2030_sales_share": 0.318,
+   "stores_sbiz": 5560
+  },
+  {
+   "code": "CS100008",
+   "name": "분식전문점",
+   "stores_trdar": 9636,
+   "opened_year": 1278,
+   "closed_year": 1577,
+   "open_rate": 0.133,
+   "close_rate": 0.164,
+   "franchise_share": 0.227,
+   "sales_per_store_month_man": 946,
+   "ticket_krw": 11415,
+   "age2030_sales_share": 0.346,
+   "stores_sbiz": 8097
+  },
+  {
+   "code": "CS100009",
+   "name": "호프-간이주점",
+   "stores_trdar": 14577,
+   "opened_year": 1378,
+   "closed_year": 2462,
+   "open_rate": 0.095,
+   "close_rate": 0.169,
+   "franchise_share": 0.109,
+   "sales_per_store_month_man": 1675,
+   "ticket_krw": 46384,
+   "age2030_sales_share": 0.458,
+   "stores_sbiz": 13639
+  },
+  {
+   "code": "CS100010",
+   "name": "커피-음료",
+   "stores_trdar": 22600,
+   "opened_year": 2985,
+   "closed_year": 3650,
+   "open_rate": 0.132,
+   "close_rate": 0.162,
+   "franchise_share": 0.255,
+   "sales_per_store_month_man": 1017,
+   "ticket_krw": 7987,
+   "age2030_sales_share": 0.446,
+   "stores_sbiz": 22739
+  }
+ ],
+ "hansik_sub": [
+  {
+   "name": "백반·한식 일반",
+   "stores_sbiz": 31700
+  },
+  {
+   "name": "한식 육류(고깃집)",
+   "stores_sbiz": 12525
+  },
+  {
+   "name": "한식 면",
+   "stores_sbiz": 3571
+  },
+  {
+   "name": "한식 해산물",
+   "stores_sbiz": 3826
+  }
+ ],
+ "krei": {
+  "n_recent": 896,
+  "n_young": 248,
+  "recent": {
+   "한식음식점": 0.3011,
+   "중식음식점": 0.032,
+   "일식음식점": 0.0256,
+   "양식음식점": 0.0275,
+   "제과점": 0.0426,
+   "패스트푸드점": 0.0413,
+   "치킨전문점": 0.0558,
+   "분식전문점": 0.0733,
+   "호프-간이주점": 0.0857,
+   "커피-음료": 0.2563,
+   "백반·한식 일반": 0.1791,
+   "한식 육류(고깃집)": 0.0844,
+   "한식 면": 0.0186,
+   "한식 해산물": 0.019
+  },
+  "young": {
+   "한식음식점": 0.1868,
+   "중식음식점": 0.029,
+   "일식음식점": 0.0286,
+   "양식음식점": 0.0401,
+   "제과점": 0.0563,
+   "패스트푸드점": 0.0515,
+   "치킨전문점": 0.0541,
+   "분식전문점": 0.0522,
+   "호프-간이주점": 0.0613,
+   "커피-음료": 0.398,
+   "백반·한식 일반": 0.0868,
+   "한식 육류(고깃집)": 0.0836,
+   "한식 면": 0.0066,
+   "한식 해산물": 0.0098
+  }
+ }
+}
