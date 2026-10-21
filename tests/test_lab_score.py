@@ -340,3 +340,13 @@ def test_coach_keeps_causes_when_no_valid_next_id():
     reply["next"] = [{"id": "not_a_fix", "how": "엉뚱한 칸"}]
     out = C.coach(s, call=lambda _: reply)
     assert out["source"] == "llm" and all(n["how"] == "" for n in out["next"]) and len(out["next"]) == len(fixes[:3])
+
+
+@pytest.mark.parametrize("ind", ["chicken", "bunsik"])
+def test_generic_industry_gets_only_generic_levers(ind):
+    s = summary(ind, labor=0.45, cogs=0.48, rent=0.25, rating=3.4, walk=200)
+    s["inputs"] = {"staff": 3, "hours": "standard"}
+    levers = {f["lever"] for f in SC.score(s)["fixes"]}
+    assert levers and levers <= {"staff", "price_change_pct", "hours", "pyeong", "capital", "loan", "location", "retry"}
+    txt = json.dumps(SC.score(s)["fixes"], ensure_ascii=False) + json.dumps(C.coach(s, llm=False), ensure_ascii=False)
+    assert "고기" not in txt and "반찬" not in txt and "교대" not in txt and "마감" not in txt
