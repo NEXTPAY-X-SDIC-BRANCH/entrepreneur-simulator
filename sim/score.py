@@ -51,15 +51,16 @@ BENCH: dict[str, dict[str, Any]] = {
         "owner_in_labor": 3_000_000,   # 엔진 인건비에 들어 있는 사장 가상 급여 (research/hero_base.yaml cst_owner_imputed_wage)
         "labor_def": "정직원·알바 인건비(사장 가상 급여 제외)를 업계 고용인 인건비와 비교해요",
         "def": ("외식업체경영실태조사 2025 사업실적(KOSIS DT_114054_028) 서울권: 매출 = 식재료 39.3 + 고용인 인건비 14.7 + 가족 3.8 "
-                "+ 대표자 인건비 13.7 + 임차료 8.5 + 세금 6.6 + 기타 6.5 + 영업이익 7.0(%)"),
+                "+ 대표자 인건비 13.7 + 임차료 8.5 + 세금 6.6 + 기타 6.5 + 영업이익 7.0(%). 서울권은 97%가 임차 매장이라 임차료는 그대로 비교"),
     },
     "cafe": {
         "label": "독립 카페 중앙값", "src": f"{KOSIS_FOOD} 원자료 독립 음료점",
-        "margin": 0.10, "cogs": 0.40, "labor": 0.11, "rent": 0.10,
+        "margin": 0.10, "cogs": 0.40, "labor": 0.11, "rent": 0.109,   # 임차료: 10% × 임차 매장 월세 103.5 / 전체 95 (자가 0 포함) = 임차 매장 기준
         "owner_wage_in_op": False, "owner_wage_month": 1_584_167, "owner_in_labor": 0,
         "labor_def": "직원 인건비(사장은 무급)를 업계 고용인 인건비와 비교해요", "labor_total": None,
         "def": ("외식업체경영실태조사 2025 원자료, 독립 음료점 중앙값: 식재료 40%, 고용인 인건비 11%, 임차료 10%, "
-                "대표자 인건비 월 158만원(별도), 영업이익률 10%(대표자 인건비를 뺀 뒤)"),
+                "대표자 인건비 월 158만원(별도), 영업이익률 10%(대표자 인건비를 뺀 뒤). 임차료 10%는 자가 매장을 0으로 넣은 값이라 "
+                "임차 매장 기준(월 103.5만원 ÷ 95만원)으로 바꿔 약 11%와 비교"),
     },
 }
 # 업종 레인이 새 업종 기준을 넣기 전까지 쓰는 기본값: 서울권 외식업 평균 (인건비에 사장 몫이 들어 있다고 가정)
@@ -68,6 +69,7 @@ SURVIVAL_1Y_SEOUL_FOOD = 69.2  # %, 통계청 기업생멸행정통계 2023, 서
 
 # 고깃집 엔진의 알바 한 명 월 인건비: 시급 10,320원(2026 최저임금) × 5시간 × 26일 × 주휴 1.33 (research/hero_base.yaml)
 PARTTIMER_MONTH = 10_320 * 5 * 26 * 1.33
+RENT_FIX_AT = 0.20   # 가정: 매출 대비 임차료가 이보다 클 때만 '평수·자리 바꾸기'를 권한다
 SIDE_STAFF = "대기 시간과 돌아간 손님 변화는 이 계산에 없어요, 다음 판 시뮬레이션에서 확인"
 CASH_MONTHS_FULL = 3.0      # 가정: 가장 낮을 때도 월 고정비 3개월치가 남아 있으면 만점 (카페 엔진 운전자금 기준과 같음)
 RATING_ZERO, RATING_MID, RATING_FULL = 3.0, 4.0, 4.5   # 가정: 엔진 시작 평점이 4.0
@@ -97,6 +99,11 @@ def _lerp(x: float, pts: list[tuple[float, float]]) -> float:
 def _r(x: float) -> int:
     """round half up, deterministic for display (no banker's rounding)."""
     return int(math.floor(x + 0.5))
+
+
+def _month(x: Any) -> int | None:
+    v = _f(x, 0.0)
+    return int(v) if v == int(v) and 1 <= v <= 12 else None
 
 
 def pct(x: float) -> str:
@@ -141,7 +148,8 @@ def facts(summary: dict) -> dict:
     cash = g("cash_after")
     start_cash = _f(summary.get("start_cash"))
     min_cash = min([start_cash] + cash) if ms else start_cash
-    fixed = (sum(g("labor")) + sum(g("rent")) + sum(g("mgmt"))) / n if n else 0.0
+    dep = sum(_f((m.get("opex_detail") or {}).get("depreciation")) for m in ms if isinstance(m.get("opex_detail"), dict))
+    fixed = (sum(g("labor")) + sum(g("rent")) + sum(g("mgmt")) - dep) / n if n else 0.0   # 감가상각은 현금이 안 나가서 뺀다
     inp = summary.get("inputs") if isinstance(summary.get("inputs"), dict) else {}
     ow = inp.get("owner_wage_month")
     owner_in_labor = float(ow) if isinstance(ow, (int, float)) and not isinstance(ow, bool) and 0 <= ow < 1e8 else b["owner_in_labor"]
@@ -157,8 +165,9 @@ def facts(summary: dict) -> dict:
         "revenue": R, "op": sum(op), "op_adj": sum(adj), "owner_wage_month": owner,
         "margin": margin, "margin_last2": margin_last2, "margin_first2": margin_first2,
         "worst_margin": min(month_margins) if month_margins else -1.0,
-        "worst_month": ms[month_margins.index(min(month_margins))].get("month") if month_margins else None,
-        "loss_months": sum(1 for o in adj if o < 0), "last2_loss": n >= 2 and all(o < 0 for o in adj[-2:]),
+        "worst_month": _month(ms[month_margins.index(min(month_margins))].get("month")) if month_margins else None,
+        # 적자 판단은 화면의 영업이익(사장 몫을 빼기 전) 그대로. 업계 비교(adj)는 수익성·위험 대응 점수에만 쓴다
+        "loss_months": sum(1 for o in op if o < 0), "last2_loss": n >= 2 and all(o < 0 for o in op[-2:]),
         "cogs_ratio": sum(g("cogs")) / R if R > 0 else 1.0,
         "labor_ratio": hired / R if R > 0 else 1.0, "labor_total_ratio": sum(g("labor")) / R if R > 0 else 1.0,
         "owner_in_labor": owner_in_labor,
@@ -185,7 +194,8 @@ def _profit(F: dict) -> dict:
              if F["owner_wage_month"] else
              f" 영업이익은 사장 가상 급여(월 {man(F['owner_in_labor'])})를 뺀 값이라 업계 영업이익(대표자 인건비를 뺀 값)과 같은 기준이에요."
              if F["owner_in_labor"] else "")
-    why = (f"6개월 영업이익률 {pct(F['margin'])}, 마지막 두 달 {pct(F['margin_last2'])}. "
+    adjtxt = " (사장 인건비를 뺀 뒤)" if F["owner_wage_month"] else ""
+    why = (f"{F['months']}개월 영업이익률{adjtxt} {pct(F['margin'])}, 마지막 두 달 {pct(F['margin_last2'])}. "
            f"{F['bench']['label']}은 {pct(b)}예요 ({F['bench']['src']}).{owner} "
            f"손익분기(0%)면 10점, 업계 평균이면 20점 (점수 곡선은 가정).")
     return {"key": "profit", "label": "수익성", "max": 25, "raw": s, "why": why}
@@ -207,7 +217,7 @@ def _survival(F: dict) -> dict:
     if F["last2_loss"]:
         s -= 4
         notes.append("마지막 두 달도 적자라 아직 버티는 중이에요 (−4점)")
-    why = f"{SEASON_MONTHS}개월을 버텼어요. " + (", ".join(notes) + ". " if notes else "") + base
+    why = f"{F['months']}개월을 버텼어요. " + (", ".join(notes) + ". " if notes else "") + base
     return {"key": "survival", "label": "생존", "max": 20, "raw": s, "why": why}
 
 
@@ -259,7 +269,8 @@ def _risk(F: dict) -> dict:
     s_w = _lerp(F["worst_margin"], [(-0.30, 0.0), (0.0, 3.0)])
     s_l = _lerp(F["loan_share"], [(LOAN_OK, 3.0), (LOAN_ZERO, 0.0)])
     wm = f"{F['worst_month']}월" if F["worst_month"] else "가장 나쁜 달"
-    why = (f"첫 두 달 이익률 {pct(F['margin_first2'])} → 마지막 두 달 {pct(F['margin_last2'])}, "
+    adjtxt = "(사장 인건비를 뺀 뒤) " if F["owner_wage_month"] else ""
+    why = (f"첫 두 달 이익률 {adjtxt}{pct(F['margin_first2'])} → 마지막 두 달 {pct(F['margin_last2'])}, "
            f"가장 나빴던 달({wm}) {pct(F['worst_margin'])}, 창업 자금 중 대출 {pct(F['loan_share'])}. "
            "회복 4점(아직 적자면 2점까지) + 최악의 달 3점 + 대출 비중 3점 (기준은 가정).")
     return {"key": "risk", "label": "위험 대응", "max": 10, "raw": s_g + s_w + s_l, "why": why}
@@ -286,7 +297,7 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
             pol = inp.get("staff_policy")
             text = ("직원 운영을 한 단계 빠듯하게, 또는 영업시간을 짧게" if pol != "lean" else "영업시간을 짧게 (손님 적은 시간 빼기)")
             add("labor", text, "staff_policy" if pol != "lean" else "hours",
-                f"인건비 비율 {pct(F['labor_ratio'])} → {pct(b['labor'])}이면 6개월 약 +{save} (단순 계산). {SIDE_STAFF}", lost["cost"] + 3)
+                f"인건비 비율 {pct(F['labor_ratio'])} → {pct(b['labor'])}이면 {F['months']}개월 약 +{save} (단순 계산). {SIDE_STAFF}", lost["cost"] + 3)
         else:
             staff = _num(inp, "staff_per_shift")
             if staff and staff >= 1:
@@ -298,18 +309,18 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
             else:
                 add("labor", "마감을 한 시간 당기거나 손님 적은 요일 영업 줄이기", "close_hour",
                     f"인건비 비율 {pct(F['labor_ratio'])}, 업계 고용인 인건비 {pct(b['labor'])}. {SIDE_STAFF}", lost["cost"] + 3)
-    if rent_gap > 0.02:
+    if F["rent_ratio"] > RENT_FIX_AT and rent_gap > 0.02:   # 엔진 월세는 시세라 첫 6개월엔 비율이 높기 쉽다: 20%를 넘을 때만 권한다
         add("rent", "평수를 줄이거나 월세가 낮은 자리로 (다음 판 가게 꾸미기에서)", "pyeong",
-            f"임차료 비율 {pct(F['rent_ratio'])} → {pct(b['rent'])}이면 6개월 약 +{man(rent_gap * R)} (단순 계산). "
-            "좌석이 줄면 손님도 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + 2)
+            f"임차료 비율 {pct(F['rent_ratio'])} → {pct(b['rent'])}이면 {F['months']}개월 약 +{man(rent_gap * R)} (단순 계산). "
+            "좌석이 줄면 손님도 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"])
     if cogs_gap > 0.02:
         if ind == "cafe":
             add("cogs", "디저트 폐기를 줄이거나 가격을 5% 올려 원가율 낮추기", "price_change_pct",
-                f"재료비 비율 {pct(F['cogs_ratio'])} → {pct(b['cogs'])}이면 6개월 약 +{man(cogs_gap * R)} (단순 계산). "
+                f"재료비 비율 {pct(F['cogs_ratio'])} → {pct(b['cogs'])}이면 {F['months']}개월 약 +{man(cogs_gap * R)} (단순 계산). "
                 "가격을 올리면 손님이 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + 1)
         else:
             add("cogs", "고기 등급을 한 단계 낮추거나 반찬 가짓수를 줄이기", "meat_grade",
-                f"재료비 비율 {pct(F['cogs_ratio'])} → {pct(b['cogs'])}이면 6개월 약 +{man(cogs_gap * R)} (단순 계산). "
+                f"재료비 비율 {pct(F['cogs_ratio'])} → {pct(b['cogs'])}이면 {F['months']}개월 약 +{man(cogs_gap * R)} (단순 계산). "
                 "맛 평가와 평점이 내려갈 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + 1)
     if lost["cash"] >= 5:
         need = CASH_MONTHS_FULL * F["fixed_month"] - F["min_cash"]
@@ -328,7 +339,8 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
                 f"평점 {F['rating_end']:.2f}점 → 4.0점 이상이 목표 (평점 1점 = 손님 약 ±7%, 엔진 가정)", lost["customer"])
     if F["margin"] < 0 and lab_gap <= 0.02 and rent_gap <= 0.02 and cogs_gap <= 0.02:
         add("demand", "비용은 업계 수준이에요. 손님이 부족하니 유동인구가 많은 동네나 작은 매장으로", "location",
-            f"6개월 적자 {man(-F['op_adj'])}를 메우려면 매출이 약 {pct(-F['op_adj'] / R if R > 0 else 1)} 더 필요해요", lost["profit"] + 2)
+            (f"{F['months']}개월 적자 {man(-F['op'])}를 메우려면 매출이 약 {pct(-F['op'] / R if R > 0 else 1)} 더 필요해요" if F["op"] < 0 else
+             f"업계 이익률 {pct(b['margin'])}까지 매출이 더 필요해요 (지금 {pct(F['margin'])})"), lost["profit"] + 2)
     if F["loan_share"] > LOAN_OK + 0.1:
         add("loan", "대출 비중 낮추기 (창업 자금 중 대출 50% 아래)", "loan",
             f"지금 대출 비중 {pct(F['loan_share'])}, 대출 {man(F['loan'])}", lost["risk"])

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import contextmanager
 import re
 import sqlite3
 import threading
@@ -39,7 +40,18 @@ def db_path() -> Path:
     return Path(os.environ.get("LAB_SCORE_DB") or ROOT / "data" / "lab" / "scores.sqlite")
 
 
-def _conn() -> sqlite3.Connection:
+@contextmanager
+def _conn():
+    """열고, 끝나면 커밋하고 닫는다 (예외면 롤백)."""
+    c = _open()
+    try:
+        with c:
+            yield c
+    finally:
+        c.close()
+
+
+def _open() -> sqlite3.Connection:
     p = db_path()
     p.parent.mkdir(parents=True, exist_ok=True)
     c = sqlite3.connect(p)
@@ -62,7 +74,7 @@ def clean_nickname(x: Any) -> str:
     s = " ".join(s.split())
     if not 1 <= len(s) <= 16:
         raise HTTPException(422, "닉네임은 1~16자예요")
-    if re.search(r"[<>{}\\/@]", s) or re.search(r"\d{6,}", s):
+    if re.search(r"[<>{}\\/@]", s) or len(re.sub(r"\D", "", s)) >= 7:
         raise HTTPException(422, "닉네임에 쓸 수 없는 글자가 있어요 (이메일·전화번호 같은 개인정보는 넣지 마세요)")
     return s
 
@@ -79,6 +91,9 @@ def clean_summary(x: Any) -> dict:
         raise HTTPException(422, "summary.months가 필요해요")
     if len(x["months"]) > MAX_MONTHS:
         raise HTTPException(422, f"months는 {MAX_MONTHS}개까지예요")
+    for m in x["months"]:
+        if not isinstance(m, dict) or isinstance(m.get("revenue"), bool) or not isinstance(m.get("revenue"), (int, float)):
+            raise HTTPException(422, "months의 각 달에는 숫자 revenue가 있어야 해요")
     return x
 
 
@@ -165,8 +180,12 @@ def me_api(class_code: str = Query(...), nickname: str = Query(...), industry: s
 
 
 @router.get("/score/admin")
-def admin_api(class_code: str | None = Query(None)) -> dict:
-    """관리자 보기 (모의, 읽기 전용). 닉네임과 점수만 있고 개인정보는 없다."""
+def admin_api(class_code: str | None = Query(None), key: str | None = Query(None)) -> dict:
+    """관리자 보기 (모의, 읽기 전용). 닉네임과 점수만 있고 개인정보는 없다.
+    환경변수 LAB_ADMIN_KEY 를 두면 ?key= 가 맞아야 한다 (시연 기본값은 열려 있음)."""
+    need = os.environ.get("LAB_ADMIN_KEY")
+    if need and key != need:
+        raise HTTPException(403, "강사용 키가 필요해요")
     with _conn() as c:
         if not class_code:
             rows = c.execute("""SELECT class_code, COUNT(DISTINCT nickname) learners, COUNT(*) attempts, MAX(total) best,

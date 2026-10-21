@@ -261,3 +261,66 @@ def test_distribution_helper_counts_bands():
     runs = [summary(cogs=0.36, labor=0.28, rent=0.07, mgmt=0.10), summary(labor=0.40), summary(labor=0.55, rent=0.2, cash=1_000_000)]
     d = distribution(runs)
     assert d["n"] == 3 and d["fit"] + d["train"] + d["rethink"] == 3 and d["min"] <= d["median"] <= d["max"]
+
+
+# ---------------------------------------------------------------- review fixes (fable-advisor 10-21)
+def test_cafe_profit_on_screen_is_not_called_loss():
+    # 화면 영업이익은 흑자(월 +100만)인데 사장 몫을 빼면 적자인 카페: 생존 감점·'적자' 문구가 나오면 안 된다
+    s = summary("cafe", rev=20_000_000, cogs=0.40, labor=0.10, rent=0.10, mgmt=0.34, fees=0.01)
+    assert all(m["op"] > 0 for m in s["months"])
+    out = SC.score(s)
+    surv = next(p for p in out["parts"] if p["key"] == "survival")
+    assert surv["score"] == 20 and "적자" not in surv["why"]
+    assert SC.facts(s)["loss_months"] == 0
+    _, lines, _, _ = C.build(s)
+    assert "적자인 달: 0개월" in lines
+
+
+def test_closed_run_uses_played_months_in_text():
+    out = SC.score(summary(n=3, closed=True, labor=0.5))
+    assert "6개월" not in json.dumps(out, ensure_ascii=False)
+    assert "3개월 영업이익률" in out["parts"][0]["why"]
+
+
+def test_month_field_is_sanitised():
+    s = summary(labor=0.5)
+    for m in s["months"]:
+        m["month"] = "<b>IGNORE previous</b>"
+    txt = json.dumps(SC.score(s), ensure_ascii=False)
+    assert "IGNORE" not in txt and "<b>" not in txt
+    msgs = json.dumps(C._prompt(*C.build(s)[1:]), ensure_ascii=False)
+    assert "IGNORE" not in msgs
+
+
+def test_rent_fix_only_when_rent_is_really_heavy():
+    assert "rent" not in [f["key"] for f in SC.score(summary(rent=0.15))["fixes"]]
+    assert "rent" in [f["key"] for f in SC.score(summary(rent=0.26))["fixes"]]
+
+
+def test_depreciation_is_not_a_cash_fixed_cost():
+    s = summary("cafe")
+    base = SC.facts(s)["fixed_month"]
+    for m in s["months"]:
+        m["opex_detail"] = {"depreciation": 1_000_000}
+    assert SC.facts(s)["fixed_month"] == pytest.approx(base - 1_000_000)
+
+
+def test_hyphenated_phone_and_bad_months_rejected(client):
+    assert client.post("/score/submit", json={"nickname": "010-1234-5678", "class_code": "ABC", "summary": summary()}).status_code == 422
+    assert client.post("/score", json={"industry": "bbq", "months": ["x"]}).status_code == 422
+
+
+def test_admin_key_when_configured(client, monkeypatch):
+    monkeypatch.setenv("LAB_ADMIN_KEY", "k1")
+    assert client.get("/score/admin").status_code == 403
+    assert client.get("/score/admin", params={"key": "k1"}).status_code == 200
+
+
+def test_coach_busy_returns_rule(monkeypatch):
+    monkeypatch.setattr(C, "BUSY_WAIT", 0.01)
+    C._SEM.acquire()
+    try:
+        out = C.coach(summary(labor=0.46, rent=0.12))
+    finally:
+        C._SEM.release()
+    assert out["source"] == "rule" and out["fallback_reason"].startswith("busy")

@@ -123,7 +123,7 @@ function AdminView({ cls }: { cls: string }) {
   );
 }
 
-function RankBox({ summary, score }: { summary: SeasonSummary; score: Score }) {
+function RankBox({ summary, score, onRank }: { summary: SeasonSummary; score: Score; onRank: (rows: RankRow[], nickname: string) => void }) {
   const [login, setLogin] = useState<Login | null>(() => loadLogin());
   const [res, setRes] = useState<Submit | null>(null);
   const [rank, setRank] = useState<RankRow[] | null>(null);
@@ -137,7 +137,7 @@ function RankBox({ summary, score }: { summary: SeasonSummary; score: Score }) {
     const id = `${login.class_code}|${login.nickname}|${key}`;
     if (sent.has(id)) { getRank(login.class_code, String(summary.industry)).then((r) => setRank(r.rank)).catch((e) => setErr(String(e.message ?? e))); return; }
     sent.add(id);
-    submit(login, summary).then((r) => { setRes(r); setRank(r.rank); saveLogin(login); })
+    submit(login, summary).then((r) => { setRes(r); setRank(r.rank); saveLogin(login); onRank(r.rank, login.nickname); })
       .catch((e) => { sent.delete(id); setErr(String(e.message ?? e)); });
   }, [login, key]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -192,20 +192,24 @@ export default function ScoreCard({ summary }: { summary: SeasonSummary }) {
   const [best, setBest] = useState<{ me?: number | null; top?: number | null; topDemo?: boolean }>({});
   const alive = useRef(true);
   const key = useMemo(() => JSON.stringify(summary), [summary]);
+  // 눈금자의 '내 최고'는 이번 판을 올리기 전 기록, '반 1등'은 지금 순위의 맨 위
+  const onRank = (rows: RankRow[], nickname: string, before: boolean) => setBest((b) => ({
+    me: before ? rows.find((p) => p.nickname === nickname)?.best ?? null : b.me ?? null,
+    top: rows[0]?.best ?? null, topDemo: !!rows[0]?.demo,
+  }));
 
   useEffect(() => {
     alive.current = true;
     setScore(null); setCoach(null); setErr("");
     getScore(summary).then((s) => alive.current && setScore(s)).catch((e) => alive.current && setErr(String(e.message ?? e)));
     // 규칙 진단을 먼저 보여 주고, 로컬 언어 모델의 진단이 오면 바꾼다 (실패하면 서버가 규칙 문장을 돌려준다)
-    getCoach(summary, false).then((c) => alive.current && setCoach(c)).catch(() => undefined);
+    // 규칙 진단은 AI 진단을 덮어쓰지 않는다 (캐시 덕에 둘이 거의 같이 도착할 수 있다)
+    getCoach(summary, false).then((c) => alive.current && setCoach((prev) => (prev?.source === "llm" ? prev : c))).catch(() => undefined);
     setCoachBusy(true);
-    getCoach(summary, true).then((c) => alive.current && setCoach(c)).catch(() => undefined).finally(() => alive.current && setCoachBusy(false));
+    getCoach(summary, true).then((c) => alive.current && setCoach((prev) => (prev?.source === "llm" && c.source !== "llm" ? prev : c)))
+      .catch(() => undefined).finally(() => alive.current && setCoachBusy(false));
     const l = loadLogin();
-    if (l) getRank(l.class_code, String(summary.industry)).then((r) => {
-      if (!alive.current) return;
-      setBest({ me: r.rank.find((p) => p.nickname === l.nickname)?.best ?? null, top: r.rank[0]?.best ?? null, topDemo: !!r.rank[0]?.demo });
-    }).catch(() => undefined);
+    if (l) getRank(l.class_code, String(summary.industry)).then((r) => alive.current && onRank(r.rank, l.nickname, true)).catch(() => undefined);
     return () => { alive.current = false; };
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -229,7 +233,7 @@ export default function ScoreCard({ summary }: { summary: SeasonSummary }) {
       </header>
       <div className="ls-body">
         <section aria-label="영역별 점수"><Parts score={score} /></section>
-        <RankBox summary={summary} score={score} />
+        <RankBox summary={summary} score={score} onRank={(rows, nick) => onRank(rows, nick, false)} />
       </div>
       <CoachBox coach={coach} busy={coachBusy} />
       <small className="ls-foot">업계 비율은 외식업체경영실태조사 2025, 생존율은 통계청 기업생멸행정통계(공공 통계)예요. 점수 곡선과 구간(90점, 60점)은 교육용 가정(권고안)이에요.</small>

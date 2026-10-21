@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import re
+import threading
 import urllib.request
 from typing import Any
 
@@ -31,6 +32,8 @@ MODEL = os.environ.get("LAB_COACH_MODEL", "qwen3.6:35b")
 TIMEOUT = float(os.environ.get("LAB_COACH_TIMEOUT", "60"))
 VERSION = "coach-v1"
 _CACHE: dict[str, dict] = {}
+_SEM = threading.Semaphore(1)   # 로컬 모델은 한 번에 하나. 같은 판의 중복 요청은 기다렸다가 캐시를 받는다
+BUSY_WAIT = float(os.environ.get("LAB_COACH_BUSY_WAIT", "20"))
 log = logging.getLogger("uvicorn.error")
 
 SCHEMA = {
@@ -58,13 +61,14 @@ def _gap(r: float, b: float) -> str:
 # ---------------------------------------------------------------- facts → prompt lines (numbers only)
 def fact_lines(F: dict, sc: dict) -> list[str]:
     b = F["bench"]
+    adj = " (사장 인건비를 뺀 뒤)" if F["owner_wage_month"] else ""
     L = [
         f"업종: {'카페' if F['industry'] == 'cafe' else '고깃집' if F['industry'] == 'bbq' else '음식점'}",
         f"진행한 달: {F['months']}개월" + (" (중간에 폐업)" if F["closed"] else " (끝까지 영업)"),
         f"총점: {sc['total']}점 / 100점 ({sc['band_label']})",
-        f"6개월 매출: {man(F['revenue'])}",
-        f"6개월 영업이익률: {pct(F['margin'])} (업계 {pct(b['margin'])})",
-        f"첫 두 달 이익률: {pct(F['margin_first2'])}, 마지막 두 달 이익률: {pct(F['margin_last2'])}",
+        f"{F['months']}개월 매출: {man(F['revenue'])}",
+        f"{F['months']}개월 영업이익률{adj}: {pct(F['margin'])} (업계 {pct(b['margin'])})",
+        f"첫 두 달 이익률{adj}: {pct(F['margin_first2'])}, 마지막 두 달 이익률: {pct(F['margin_last2'])}",
         f"적자인 달: {F['loss_months']}개월",
         f"재료비 비율: {pct(F['cogs_ratio'])} (업계 {pct(b['cogs'])}, {_gap(F['cogs_ratio'], b['cogs'])})",
         f"직원·알바 인건비 비율 (사장 몫 제외): {pct(F['labor_ratio'])} (업계 고용인 인건비 {pct(b['labor'])}, {_gap(F['labor_ratio'], b['labor'])})",
@@ -120,7 +124,7 @@ def candidates(F: dict, sc: dict) -> list[dict]:
             "돌아간 손님은 이미 문 앞까지 온 매출이에요. 바쁜 시간대의 자리와 일손이 병목이에요.")
     if F["margin"] < b["margin"] and not out:
         add("demand", lost("profit") + 1, "비용은 업계 수준인데 손님이 부족해요",
-            f"6개월 영업이익률 {pct(F['margin'])}, 업계 {pct(b['margin'])}",
+            f"{F['months']}개월 영업이익률 {pct(F['margin'])}, 업계 {pct(b['margin'])}",
             "비용 비율이 정상인데 이익이 작으면 매출 자체가 작은 거예요. 동네 수요와 가게 규모가 맞는지부터 봐야 해요.")
     if F["loan_share"] > 0.4:
         add("loan", F["loan_share"] * 10, "대출 비중이 커서 버틸 힘이 작아요",
@@ -258,6 +262,18 @@ def coach(summary: dict, *, llm: bool = True, call=None) -> dict:
     key = hashlib.sha256((json.dumps(msgs, ensure_ascii=False) + MODEL).encode()).hexdigest()
     if call is None and key in _CACHE:
         return _CACHE[key]
+    if call is None and not _SEM.acquire(timeout=BUSY_WAIT):
+        return {**rule, "fallback_reason": "busy: 다른 진단을 계산 중"}
+    try:
+        if call is None and key in _CACHE:
+            return _CACHE[key]
+        return _run(msgs, key, base, rule, lines, cands, fixes, call)
+    finally:
+        if call is None:
+            _SEM.release()
+
+
+def _run(msgs, key, base, rule, lines, cands, fixes, call) -> dict:
     raw: Any = None
     try:
         raw = (call or _ollama)(msgs)

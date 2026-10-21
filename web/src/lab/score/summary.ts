@@ -20,8 +20,9 @@ export function bbqSummary(done: BbqMonth[], o: {
     };
   });
   const last = done.at(-1);
+  // start_cash: 엔진에 넘길 때(SimulateEngine begin)와 같게 0 아래는 0
   return {
-    industry: "bbq", mode: "free", start_cash: o.startCash, opening_cost: o.openingCost, loan: o.loan, loan_rate: o.loanRate,
+    industry: "bbq", mode: "free", start_cash: Math.max(0, o.startCash), opening_cost: o.openingCost, loan: o.loan, loan_rate: o.loanRate,
     months, closed: !!last?.result.closed, closed_reason: last?.result.closed_reason ?? null,
     inputs: { ...(last?.plan ?? {}), ...o.inputs, plans: done.map((m) => m.plan) },
   };
@@ -30,11 +31,12 @@ export function bbqSummary(done: BbqMonth[], o: {
 type CafeMonth = {
   calendar_month: number; decisions: Record<string, unknown>;
   kpi: { revenue_krw: number; op_krw: number; cash_krw: number; customers: number; walkaways: number; rating: number };
-  pnl: { revenue_krw: number; lines: { key: string; krw: number }[]; op_krw: number };
+  pnl: { revenue_krw: number; lines: { key: string; krw: number }[]; op_krw: number; depreciation_krw?: number };
   closure: { closed: boolean };
 };
 
-// 카페 (CafeSim.tsx). 운영비 = 매출 − 영업이익 − 나머지 비용 (감가상각·포장재·공과금·마케팅 등 전부)
+// 카페 (CafeSim.tsx). 운영비 = 매출 − 영업이익 − 나머지 비용 (감가상각·포장재·공과금·마케팅 등 전부).
+// 감가상각은 opex_detail.depreciation 으로도 넘겨, 성적표가 현금 고정비에서 뺀다.
 export function cafeSummary(months: CafeMonth[], start: { cash_krw: number; capex_krw: number; loan_krw: number }, inputs: Record<string, unknown>): SeasonSummary {
   const lines: MonthLine[] = months.map((m) => {
     const L: Record<string, number> = Object.fromEntries(m.pnl.lines.map((x) => [x.key, x.krw]));
@@ -42,7 +44,7 @@ export function cafeSummary(months: CafeMonth[], start: { cash_krw: number; cape
     const revenue = m.pnl.revenue_krw, op = m.kpi.op_krw;
     return {
       month: m.calendar_month, revenue, op, covers: m.kpi.customers, cogs, labor, rent, fees,
-      mgmt: revenue - op - cogs - labor - rent - fees, cash_after: m.kpi.cash_krw, rating: m.kpi.rating, walkaways: m.kpi.walkaways,
+      mgmt: revenue - op - cogs - labor - rent - fees, opex_detail: { depreciation: m.pnl.depreciation_krw ?? 0 }, cash_after: m.kpi.cash_krw, rating: m.kpi.rating, walkaways: m.kpi.walkaways,
     };
   });
   const last = months.at(-1);
