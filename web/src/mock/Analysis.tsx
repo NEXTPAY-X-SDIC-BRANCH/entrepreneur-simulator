@@ -387,7 +387,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
           <div className="m-finding" key="budget">
             <h1>{profile.gu}에 {est.pyeong}평 {S}{cafe ? "를" : "을"} 열려면 <mark>{man(need)}</mark>쯤 필요해요.</h1>
             <table className="m-quote">
-              <caption>{cafe ? `독립 카페 면적 중앙값(20평)에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 값은 외식업체 경영실태조사 2025 원자료의 25%·50%·75% 분위수를 기본·중급·고급으로 놓은 거예요.` : "이 돈에 맞춘 추천 구성으로 낸 견적이에요. 다음 단계에서 직접 꾸미거나 '추천 배치'를 누르면 이 구성이 놓여요."}</caption>
+              <caption>{cafe ? `독립 카페 면적 중앙값(20평)에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 값은 외식업체 경영실태조사 2025 원자료의 25%·50%·75% 분위수를 기본·중급·고급으로 놓은 거예요. 다음 단계(가게 꾸미기)에서는 카페 엔진이 이 동네 권리금과 부가세 선납(개업 후 돌려받음)까지 넣어 다시 계산해서, 여는 비용이 이보다 커질 수 있어요.` : "이 돈에 맞춘 추천 구성으로 낸 견적이에요. 다음 단계에서 직접 꾸미거나 '추천 배치'를 누르면 이 구성이 놓여요."}</caption>
               <tbody>
                 {cost.lines.filter((l: { amount: number }) => l.amount > 0).map((l) => (
                   <tr key={l.key}><th scope="row">{l.label}<small>{l.basis}</small></th><td>{man(l.amount)}</td></tr>
