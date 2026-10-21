@@ -493,7 +493,8 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     flow: flowShape(dongCode, profile.gu), // 동네의 요일·시간대·연령 비율 (없으면 엔진이 기준 상권 값을 씀)
   });
 
-  const withCard = (p: Plan) => { const rc = rentCardPlan(); return rc ? { ...p, rent_card: rc } : p; }; // lab:finance 월세 카드 할부
+  const [porkFc, setPorkFc] = useState(false); // integrate: lab:pork 돼지고기 도매가 예측을 원가에 반영 (기본 끔)
+  const withCard = (p: Plan) => { const rc = rentCardPlan(); const q = porkFc ? { ...p, use_pork_forecast: true } : p; return rc ? { ...q, rent_card: rc } : q; }; // lab:finance 월세 카드 할부 + lab:pork
   const post = async (path: string, body: unknown) => {
     const r = await fetch(`${API}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 200)}`);
@@ -859,6 +860,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                         {LEVERS.filter((lv) => !(plan.menu && lv.key === "meat_price")).map((lv) => <Stepper key={lv.key} lv={lv} plan={plan} prev={cur?.plan} set={setPlan} />)}
                       </div>
                       <p className="sx-note">가격이나 고기를 바꾸면 그달 단골이 조금 빠져요.</p>
+                      <label className="sx-note"><input type="checkbox" checked={porkFc} onChange={(e) => setPorkFc(e.target.checked)} /> 고깃값을 돼지고기 도매가 예측대로 바꾸기 (축산물품질평가원 시세로 만든 추정, 상단 '돼지고기 시세'에서 근거 확인)</label>{/* integrate: lab:pork */}
                     </section>
                   </div>
                   {err && <p className="se-err" role="alert">{err}</p>}
