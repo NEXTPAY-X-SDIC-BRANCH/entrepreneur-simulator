@@ -79,6 +79,7 @@ export default function Mock() {
   const toHard = (h: HardSeed) => { // lab:modes 이지 결과를 하드 모드 가게 꾸미기로 넘긴다 (평수, 테이블, 대출, 가격, 알바 그대로)
     setMode("hard");
     if (h.industry === "bbq") { setStore(starterStore(h.pyeong, "basic", h.loan_man, h.tables)); setLevers({ price: h.price, staff: h.staff, days: 26 }); }
+    else if (isLab(h.industry)) setIndCfg({ industry: h.industry, pyeong: h.pyeong, tables: h.tables, staff: h.staff, grade: "basic", delivery: true }); // lab:modes 새 업종
     else setCafeCfg({ pyeong: h.pyeong, grade: "basic", staff: h.staff });
     go("build");
   };
@@ -90,7 +91,7 @@ export default function Mock() {
       <header className="m-top">
         <a className="m-brand" href="#/" onClick={() => go("profile")}>ChangeUp</a>
         {mode === "easy" && <span className="m-modehead">이지 모드 <button type="button" className="m-link" onClick={() => { setMode(null); go("profile"); }}>연습 방식 바꾸기</button></span> /* lab:modes */}
-        {mode === "hard" && <HardTools profile={profile} store={store} levers={levers} cafeCfg={cafeCfg} step={step} onRetry={() => go("build")} /> /* lab:modes */}
+        {mode === "hard" && <HardTools profile={profile} store={store} levers={levers} cafeCfg={cafeCfg} indCfg={indCfg} step={step} onRetry={() => go("build")} /> /* lab:modes */}
         {mode !== "easy" && <nav aria-label="진행 단계">
           <ol>
             {STEPS.map((s, i) => (

@@ -110,3 +110,4 @@
 @media (prefers-reduced-motion: reduce) { .lm-ctl { transition: none; } }
 .lm-months tbody th small { display: block; font-size: 13px; }
 .m-app .lm-err-inline { margin: 0; padding: 4px 10px; font-size: 13px; }
+.m-app .lm-inds { display: flex; flex-wrap: wrap; gap: 2px; }

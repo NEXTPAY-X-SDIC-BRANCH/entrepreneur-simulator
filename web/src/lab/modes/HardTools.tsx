@@ -11,6 +11,8 @@ import Compare from "./Compare";
 import { scoreOf } from "./scoreStub";
 import Sensitivity from "./Sensitivity";
 import { hardBbqSummary, type Inputs } from "./summary";
+import { isLab } from "../industry/industries";
+import { engineBody as labBody, type IndustryCfg } from "../industry/api";
 import "./modes.css";
 
 const nextMonth = () => (new Date().getMonth() + 1) % 12 + 1;
@@ -43,8 +45,14 @@ export async function cafeHardBody(profile: Profile, cfg: CafeCfg) {
   return { ...body, daily_customers: Math.min(600, Math.max(10, Math.round(p0.demand.default_daily_customers * ratio))), start_month: 3 };
 }
 
-export default function HardTools({ profile, store, levers, cafeCfg, step, onRetry }: {
-  profile: Profile; store: Store; levers: Levers; cafeCfg: CafeCfg | null; step: string; onRetry: () => void;
+/** 새 업종: IndustrySim과 같은 몸통 (가게 꾸미기 값, 비어 있으면 엔진의 업종 기본값). 시작 달은 IndustrySim 기본 3월, 시드 고정 */
+export function labHardBody(profile: Profile, cfg: IndustryCfg | null) {
+  const c: IndustryCfg = cfg ?? { industry: profile.industry as IndustryCfg["industry"], grade: "basic", delivery: true };
+  return { ...labBody(profile, c), seed: 42, start_month: 3 };
+}
+
+export default function HardTools({ profile, store, levers, cafeCfg, indCfg, step, onRetry }: {
+  profile: Profile; store: Store; levers: Levers; cafeCfg: CafeCfg | null; indCfg?: IndustryCfg | null; step: string; onRetry: () => void;
 }) {
   const [sens, setSens] = useState(false);
   const [cmp, setCmp] = useState<{ prev?: Attempt; cur: Attempt } | null>(null);
@@ -53,7 +61,6 @@ export default function HardTools({ profile, store, levers, cafeCfg, step, onRet
   const ind = profile.industry;
   const n = nextAttemptNo(ind);
   if (step !== "build" && step !== "sim") return null;
-  if (ind !== "bbq" && ind !== "cafe") return null; // integrate: 새 업종은 민감도·다시 해보기 연결 전
 
   const retry = async () => {
     const ctx = ind === "bbq" ? getEngineCtx() : null;
@@ -82,15 +89,16 @@ export default function HardTools({ profile, store, levers, cafeCfg, step, onRet
         <button type="button" className="m-btn m-btn-quiet lm-toolbtn" disabled={!cafeReady} onClick={() => setSens(true)}>민감도 보기</button>
         {step === "sim" && (
           <button type="button" className="m-btn m-btn-quiet lm-toolbtn" disabled={busy} onClick={retry}
-            title={ind === "cafe" ? "카페 하드 모드는 성적표가 결과 화면에 붙은 뒤 판 기록을 남겨요. 지금은 입력을 그대로 두고 가게 꾸미기로 돌아가요" : !finished ? "6개월을 끝까지 돌리면 이번 판 점수를 남기고 다음 판과 비교해요" : undefined}>
-            {busy ? "점수 매기는 중" : ind === "cafe" ? "다시 해보기 (점수 기록 없이)" : "다시 해보기"}
+            title={ind !== "bbq" ? "이 업종의 하드 모드는 성적표가 결과 화면에 붙은 뒤 판 기록을 남겨요. 지금은 입력을 그대로 두고 가게 꾸미기로 돌아가요" : !finished ? "6개월을 끝까지 돌리면 이번 판 점수를 남기고 다음 판과 비교해요" : undefined}>
+            {busy ? "점수 매기는 중" : ind !== "bbq" ? "다시 해보기 (점수 기록 없이)" : "다시 해보기"}
           </button>
         )}
         {err && <span className="lm-err lm-err-inline" role="alert">{err}</span>}
       </span>
       {sens && (
         <Sensitivity industry={ind} onClose={() => setSens(false)}
-          getBody={async () => (ind === "bbq" ? bbqHardBody(profile, store, levers) : cafeHardBody(profile, cafeCfg ?? { pyeong: 20, grade: "basic", staff: 1 }))} />
+          getBody={async () => (ind === "bbq" ? bbqHardBody(profile, store, levers) : isLab(ind) ? labHardBody(profile, indCfg ?? null)
+            : cafeHardBody(profile, cafeCfg ?? { pyeong: 20, grade: "basic", staff: 1 }))} />
       )}
       {cmp && (
         <div className="lm-modal" role="dialog" aria-modal="true" aria-labelledby="lm-cmp-h">
