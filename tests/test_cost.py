@@ -68,3 +68,26 @@ def test_cafe_month_line_matches_pnl(cafe_month):
     assert sum(ml["opex_detail"].values()) == ml["mgmt"]
     assert {"전기", "관리비", "소모품", "포장재"} <= set(ml["opex_detail"])
     assert all(x >= 0 for x in ml["opex_detail"].values())
+
+
+def test_cafe_owner_pay_moves_op_not_cash(monkeypatch):
+    """사장 가상 급여는 영업이익에서만 빠지고 현금 경로(와 폐업 판정)는 그대로: bbq 화면처럼 현금 장부에서는 되돌린다."""
+    from sim.cafe.params import load_params
+    body = {**CAFE, "seed": 5, "daily_customers": 90, "own_capital_krw": 80_000_000, "extra_loan_krw": 0}
+
+    def season():
+        run = CS.start(body)
+        out = []
+        while not run["state"]["closed"] and len(run["months"]) < run["months_total"]:
+            run, mo = CS.play_month(run, {})
+            out.append(mo)
+        return out
+
+    with_pay = season()
+    monkeypatch.setitem(load_params()["opex"]["owner_pay_krw"], "value", 0)
+    without = season()
+    assert len(with_pay) == len(without)
+    for a, b in zip(with_pay, without):
+        assert a["kpi"]["op_krw"] == b["kpi"]["op_krw"] - 2_110_000
+        assert a["kpi"]["cash_krw"] == b["kpi"]["cash_krw"] and a["status"] == b["status"]
+        assert a["cash"]["owner_pay_addback_krw"] == 2_110_000 and b["cash"]["owner_pay_addback_krw"] == 0

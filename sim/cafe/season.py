@@ -447,7 +447,10 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
     run["loan_balance"] = bal - principal
     vat = run["start"]["vat_refund_krw"] if i + 1 == s("vat_refund_month") else 0
     cash_start = st["cash"]
-    st["cash"] = cash_start + e["op_krw"] + e["depreciation_krw"] - interest - principal + vat
+    # lab:cost — 사장 가상 급여 is in OP (survey basis) but not a cash outflow here: added back like depreciation, so the
+    # cash path (and closure) is exactly what it was before the OP basis change
+    owner_back = next((x["krw"] for x in e["cost_lines"] if x["key"] == "owner"), 0)
+    st["cash"] = cash_start + e["op_krw"] + owner_back + e["depreciation_krw"] - interest - principal + vat
     st["negative_months"] = st["negative_months"] + 1 if st["cash"] < 0 else 0
     st["closed"] = st["negative_months"] >= s("closure_negative_months")
 
@@ -493,6 +496,7 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
                 "depreciation_krw": e["depreciation_krw"], "op_krw": e["op_krw"],
                 "grade": weakest(*(x["grade"] for x in e["cost_lines"]))},
         "cash": {"start_krw": cash_start, "op_krw": e["op_krw"], "depreciation_addback_krw": e["depreciation_krw"],
+                 "owner_pay_addback_krw": owner_back,   # lab:cost
                  "loan_interest_krw": interest, "loan_principal_krw": principal, "vat_refund_krw": vat,
                  "end_krw": st["cash"], "loan_balance_krw": run["loan_balance"],
                  "negative_months": st["negative_months"], "grade": "L"},

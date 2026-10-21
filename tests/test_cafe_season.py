@@ -94,7 +94,8 @@ def test_cash_identity_and_loan_line():
     prev_bal = run["start"]["loan_krw"]
     for mo in months:
         c = mo["cash"]
-        assert c["end_krw"] == (c["start_krw"] + c["op_krw"] + c["depreciation_addback_krw"] - c["loan_interest_krw"]
+        assert c["end_krw"] == (c["start_krw"] + c["op_krw"] + c["owner_pay_addback_krw"]   # lab:cost
+                                + c["depreciation_addback_krw"] - c["loan_interest_krw"]
                                 - c["loan_principal_krw"] + c["vat_refund_krw"])
         assert c["loan_balance_krw"] == prev_bal - c["loan_principal_krw"] and c["loan_interest_krw"] > 0
         assert mo["kpi"]["loan_payment_krw"] == c["loan_interest_krw"] + c["loan_principal_krw"]
@@ -115,9 +116,7 @@ def test_closure_after_two_negative_months_only():
     rep = S.report(run)
     assert rep["survived"] is False and rep["closed_month"] == 2 and rep["status"] == "closed"
     # one negative month (before the VAT refund lands) is survivable
-    # lab:cost: 80 -> 100/day. OP now has 사장 가상 급여 (₩2.11M, survey basis) taken out, so the old 80/day store
-    # closes; 100/day is the same story (month 1 negative, VAT refund in month 2 brings it back).
-    run, months = run_season(own_capital_krw=80_000_000, extra_loan_krw=0, daily_customers=100, seed=0)
+    run, months = run_season(own_capital_krw=80_000_000, extra_loan_krw=0, daily_customers=80, seed=0)
     assert months[0]["kpi"]["cash_krw"] < 0 and months[1]["kpi"]["cash_krw"] >= 0
     assert not run["state"]["closed"] and len(months) == N and S.report(run)["survived"]
 
