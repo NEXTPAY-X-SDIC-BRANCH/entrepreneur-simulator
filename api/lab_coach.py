@@ -65,7 +65,7 @@ def fact_lines(F: dict, sc: dict) -> list[str]:
         f"첫 두 달 이익률: {pct(F['margin_first2'])}, 마지막 두 달 이익률: {pct(F['margin_last2'])}",
         f"적자인 달: {F['loss_months']}개월",
         f"재료비 비율: {pct(F['cogs_ratio'])} (업계 {pct(b['cogs'])}, {_gap(F['cogs_ratio'], b['cogs'])})",
-        f"인건비 비율: {pct(F['labor_ratio'])} (업계 {pct(b['labor'])}, {_gap(F['labor_ratio'], b['labor'])})",
+        f"직원·알바 인건비 비율 (사장 몫 제외): {pct(F['labor_ratio'])} (업계 고용인 인건비 {pct(b['labor'])}, {_gap(F['labor_ratio'], b['labor'])})",
         f"임차료 비율: {pct(F['rent_ratio'])} (업계 {pct(b['rent'])}, {_gap(F['rent_ratio'], b['rent'])})",
         f"가장 낮았던 현금: {man(F['min_cash'])}, 월 고정비: {man(F['fixed_month'])} (고정비의 {max(0.0, F['cash_months']):.1f}개월치)",
         f"자리나 일손이 모자라 들어오지 못하고 돌아간 손님: {pct(F['walk_share'])}",
@@ -93,7 +93,7 @@ def candidates(F: dict, sc: dict) -> list[dict]:
             "폐업은 한 달의 적자보다 적자를 버틸 현금이 먼저 떨어져서 생겨요. 적자 폭과 남은 현금을 함께 봐야 해요.")
     if F["labor_ratio"] - b["labor"] > 0.02:
         add("labor", (F["labor_ratio"] - b["labor"]) * 100, "손님 수에 비해 일손과 영업시간이 많아요",
-            f"인건비가 매출의 {pct(F['labor_ratio'])}로 업계 {pct(b['labor'])}보다 커요",
+            f"직원·알바 인건비가 매출의 {pct(F['labor_ratio'])}로 업계 고용인 인건비 {pct(b['labor'])}보다 커요",
             ("인건비는 손님이 적은 시간에도 그대로 나가요. 손님이 몰리는 시간에 맞춰 직원 운영과 영업시간을 정해야 해요." if cafe else
              "인건비는 손님이 적은 날에도 그대로 나가요. 교대 인원과 마감 시간을 실제 손님 수에 맞춰야 해요."))
     if F["rent_ratio"] - b["rent"] > 0.02:

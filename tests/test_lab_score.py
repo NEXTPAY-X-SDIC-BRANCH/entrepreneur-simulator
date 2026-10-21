@@ -233,3 +233,14 @@ def test_nickname_rejects_personal_data_and_markup(client, nick):
 @pytest.mark.parametrize("cls", ["", "ab", "반코드", "A" * 17, "a b"])
 def test_class_code_rules(client, cls):
     assert client.post("/score/submit", json={"nickname": "가나", "class_code": cls, "summary": summary()}).status_code == 422
+
+
+def test_demo_seed_is_flagged_and_idempotent(client):
+    from api import lab_score as L
+    assert L.seed_demo() == L.seed_demo()
+    _submit(client, "실제사람", 0.30, cls="DEMO")
+    rank = client.get("/score/rank", params={"class_code": "DEMO"}).json()["rank"]
+    real = [p for p in rank if not p["demo"]]
+    assert [p["nickname"] for p in real] == ["실제사람"]
+    assert all(p["nickname"].startswith("예시") for p in rank if p["demo"])
+    assert sum(1 for p in rank if p["demo"]) == len(L.DEMO_ROWS)

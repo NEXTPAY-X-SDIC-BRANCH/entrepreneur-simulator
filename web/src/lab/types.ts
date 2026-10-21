@@ -61,4 +61,6 @@ export interface Score {
   parts: ScorePart[];
   fixes: ScoreFix[];
   version: string; // "score-v1"
+  band_text?: string; // 구간 설명 한 줄 (존댓말)
+  to_fit?: number; // 90점까지 남은 점수
 }

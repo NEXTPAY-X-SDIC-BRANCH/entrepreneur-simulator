@@ -11,6 +11,8 @@ import { guStat, man, type Profile } from "./model";
 import { IconBattery, IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "./SimulateEngine";
 import "./simulate-engine.css";
 import "./cafe-sim.css";
+import ScoreCard from "../lab/score/ScoreCard"; // lab:score
+import { cafeSummary } from "../lab/score/summary"; // lab:score
 
 const wman = (krw: number) => man(krw / 10000);
 const sgn = (krw: number) => `${krw >= 0 ? "+" : "−"}${man(Math.abs(krw / 10000))}`;
@@ -248,6 +250,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const prevPlan = months.length > 1 ? months[months.length - 2].decisions : undefined;
   const occupancy = view === null && sched[hourIdx] ? (sched[hourIdx].orders / maxOrders) * 0.9 : 0;
   const recs = view === "plan" ? recommend(cur, plan) : [];
+  const scoreSummary = view === "report" && start && months.length ? cafeSummary(months, start.start, { gu: profile.gu, dong: profile.dong?.name ?? null, pyeong: cfg.pyeong, grade: cfg.grade, staff: cfg.staff }) : null; // lab:score
   const nextMonth: number = cur ? (cur.calendar_month % 12) + 1 : start?.start_month ?? startMonth;
   const place = `${profile.gu} ${profile.dong?.name ?? ""}`;
 
@@ -517,6 +520,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
             {view === "report" && (
               <>
                 <div className="sx-scroll">
+                  {scoreSummary && <ScoreCard summary={scoreSummary} />}{/* lab:score */}
                   <h1>{months.length}개월 결과</h1>
                   {!report ? <p>계산 중이에요.</p> : (
                     <>

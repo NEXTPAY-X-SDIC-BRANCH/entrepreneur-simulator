@@ -6,6 +6,9 @@
     GET  /score/me              ?class_code=&nickname= → 내 기록 (회차별)
     GET  /score/admin           ?class_code= → 관리자 보기 (반 목록, 반별 학습자·시도·최고 점수)
 
+시연용 예시 반: `python -m api.lab_score --seed-demo` 가 반 코드 DEMO 에 예시 기록(demo=1)을 넣는다. 예시 줄은 응답에
+demo: true 로 표시되고 화면에 '예시' 꼬리표가 붙는다. 실제 제출(demo=0)과 섞여도 구분된다.
+
 로그인은 모의: 닉네임 + 반 코드만. 비밀번호와 개인정보는 받지 않는다. 저장은 data/lab/scores.sqlite (gitignore).
 점수는 요청에 실린 값을 믿지 않고 summary로 다시 계산한다.
 """
@@ -44,7 +47,9 @@ def _conn() -> sqlite3.Connection:
     c.execute("""CREATE TABLE IF NOT EXISTS attempts (
         id INTEGER PRIMARY KEY AUTOINCREMENT, class_code TEXT NOT NULL, nickname TEXT NOT NULL, industry TEXT NOT NULL,
         mode TEXT NOT NULL, attempt INTEGER, total INTEGER NOT NULL, band TEXT NOT NULL, parts TEXT NOT NULL,
-        created_at TEXT NOT NULL)""")
+        created_at TEXT NOT NULL, demo INTEGER NOT NULL DEFAULT 0)""")
+    if "demo" not in {r[1] for r in c.execute("PRAGMA table_info(attempts)")}:   # 이전 파일 호환
+        c.execute("ALTER TABLE attempts ADD COLUMN demo INTEGER NOT NULL DEFAULT 0")
     c.execute("CREATE INDEX IF NOT EXISTS attempts_class ON attempts(class_code, industry)")
     return c
 
@@ -92,7 +97,8 @@ def ranking(c: sqlite3.Connection, class_code: str, industry: str | None) -> lis
     people: dict[str, dict] = {}
     for r in rows:
         p = people.setdefault(r["nickname"], {"nickname": r["nickname"], "best": -1, "best_id": 0, "attempts": 0,
-                                              "last": 0, "first": None, "industry": r["industry"], "band": r["band"]})
+                                              "last": 0, "first": None, "industry": r["industry"], "band": r["band"],
+                                              "demo": bool(r["demo"])})
         p["attempts"] += 1
         p["last"] = r["total"]
         p["first"] = r["total"] if p["first"] is None else p["first"]
@@ -181,3 +187,31 @@ def admin_api(class_code: str | None = Query(None)) -> dict:
     n = max(1, len(weak))
     return {"class_code": cls, "learners": rank, "bands": bands,
             "weakest": sorted(({"key": k, "lost_share": round(v / n, 3)} for k, v in lost.items()), key=lambda x: -x["lost_share"])}
+
+
+# ---------------------------------------------------------------- 시연용 예시 반
+DEMO_CLASS = "DEMO"
+DEMO_ROWS = [  # (닉네임, 업종, [회차별 총점]) 예시 값. 실제 학습자 기록이 아니다.
+    ("예시 고깃집A", "bbq", [48, 71, 93]), ("예시 고깃집B", "bbq", [62, 77]), ("예시 고깃집C", "bbq", [41, 58]),
+    ("예시 고깃집D", "bbq", [84]), ("예시 카페A", "cafe", [55, 66, 88]), ("예시 카페B", "cafe", [91]),
+]
+
+
+def seed_demo() -> int:
+    from sim.score import band_for
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    n = 0
+    with _LOCK, _conn() as c:
+        c.execute("DELETE FROM attempts WHERE class_code = ? AND demo = 1", (DEMO_CLASS,))   # 예시 줄만 다시 넣는다
+        for nick, ind, totals in DEMO_ROWS:
+            for i, t in enumerate(totals, 1):
+                c.execute("INSERT INTO attempts (class_code, nickname, industry, mode, attempt, total, band, parts, created_at, demo) "
+                          "VALUES (?,?,?,?,?,?,?,?,?,1)", (DEMO_CLASS, nick, ind, "free", i, t, band_for(t)[0], "{}", now))
+                n += 1
+    return n
+
+
+if __name__ == "__main__":
+    import sys
+    if "--seed-demo" in sys.argv:
+        print(f"{db_path()}: DEMO 반에 예시 기록 {seed_demo()}줄")
