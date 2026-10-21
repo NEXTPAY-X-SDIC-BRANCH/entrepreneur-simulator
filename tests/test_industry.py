@@ -158,3 +158,50 @@ def test_default_layout_fits_every_size():
             p = gm.preview({"industry": ind, "gu": "마포구", "pyeong": py})
             assert p["room"] is not None and all(x["fits"] for x in p["layout"]), (ind, py)
             assert p["seats"]["total"] == sum(1 for x in p["layout"] if x["type"] == "chair")
+
+
+# ---------------------------------------------------------------------------------------------- 결정의 방향 (돌연변이 테스트용)
+
+def _ctx(ind: str = "hansik"):
+    ctx = gm.context(gm.normalize({"industry": ind, "gu": _avg_gu(ind), "pyeong": 30, "tables": 14, "staff": 4}))
+    ctx["dep_krw"] = 0
+    return ctx
+
+
+@pytest.mark.parametrize("ind", IDS)
+def test_levers_move_the_right_way(ind):
+    ctx = _ctx(ind)
+    base = gm.evaluate(ctx, gm.factors(season=1.0))
+    up = gm.evaluate(ctx, gm.factors(season=1.0, price=1.1))
+    assert up["covers"] < base["covers"] and up["ticket"] > base["ticket"]               # 가격을 올리면 손님은 줄고 객단가는 는다
+    low = gm.evaluate(ctx, gm.factors(season=1.0, rating=3.0))
+    assert low["covers"] < base["covers"]                                                   # 별점이 낮으면 손님이 준다
+    mk = gm.evaluate(ctx, gm.factors(season=1.0, marketing=1_000_000))
+    assert mk["covers"] > base["covers"] and mk["lines"]["marketing"] == 1_000_000          # 마케팅은 손님을 늘리고 비용이 든다
+    short = gm.evaluate(ctx, gm.factors(season=1.0, hours="short"))
+    assert short["lines"]["labor"] < base["lines"]["labor"] and short["covers"] <= base["covers"]  # 짧게 열면 인건비와 손님이 준다
+    rival = gm.evaluate(ctx, gm.factors(season=1.0, rival=0.93))
+    assert rival["covers"] < base["covers"]
+
+
+def test_walkaways_hurt_rating():
+    run = gs.start({"industry": "bunsik", "gu": "강남구", "seed": 0, "staff": 0, "pyeong": 10, "tables": 1})
+    run, mo = gs.play_month(run, {})
+    assert mo["kpi"]["walkaway_share"] > 0.05 and mo["kpi"]["rating"] < 4.0
+
+
+def test_invest_ref_matches_survey():
+    """화면(industries.ts INVEST)의 개업 투자 분위수가 krei.json과 같다."""
+    import re
+    ts = (ROOT / "web" / "src" / "lab" / "industry" / "industries.ts").read_text(encoding="utf-8")
+    for ind in IDS:
+        m = re.search(ind + r": \{ p25: (\d+), p50: (\d+), p75: (\d+), n: (\d+)", ts)
+        v = KREI[ind]["values"]["invest"]
+        assert m and [int(x) for x in m.groups()] == [round(v["p25"]), round(v["p50"]), round(v["p75"]), v["n"]], ind
+
+
+def test_month_retry_returns_same_month_and_token():
+    s = client.post("/lab/industry/season", json={"industry": "pub", "gu": "마포구", "seed": 4}).json()
+    a = client.post("/lab/industry/season/month", json={"state_token": s["state_token"], "month_index": 0}).json()
+    b = client.post("/lab/industry/season/month", json={"state_token": a["state_token"], "month_index": 0}).json()
+    assert a["kpi"] == b["kpi"] and a["state_token"] == b["state_token"]

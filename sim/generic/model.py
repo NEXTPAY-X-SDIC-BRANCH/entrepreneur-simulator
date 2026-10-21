@@ -4,7 +4,7 @@
 좌석과 사람이 받을 수 있는 만큼만 손님을 받고, 비용은 업종 비중과 동네 월세로 뺀다. 같은 입력이면 같은 결과다.
 값의 출처는 research/industries/*.yaml (값마다 등급), 설명은 docs/INDUSTRY.md.
 
-  수요(인분/월) = 업종 연매출 중앙값 ÷ 12 × 서울 배율 × 구 지수 × 동네 위치 × (평수 ÷ 중앙 평수)^면적 탄력성 ÷ 객단가
+  수요(인분/월) = 업종 연매출 평균 ÷ 12 (평균 평수 가게 기준, 카페 엔진과 같은 '업종 평균' 기준점) × 서울 배율 × 구 지수 × 동네 위치 × (평수 ÷ 평균 평수)^면적 탄력성 ÷ 객단가
                   × 분기 지수 × 개업 곡선 × 별점 × 가격^(-탄력성) × 마케팅 × 영업시간 × 경쟁 × 사건
   받는 손님 = min(홀 수요, 좌석 × 하루 회전 상한 × 영업일) + 배달 + 포장, 전체가 (직원 + 사장님) × 1인 처리 상한 × 영업일을 넘으면 줄임
   영업이익 = 매출 − 식재료 − 카드 − 배달 − 세금과 공과 − 기타 − 월세 − 인건비 − 마케팅 − 수리 − 감가상각 (사장님 인건비는 빼지 않음)
@@ -249,7 +249,8 @@ def evaluate(ctx: dict, f: dict) -> dict:
     op_before_dep = revenue - sum(lines.values())
     understaffed = staff < ctx["default_staff"]
     sat = P.cv("dynamics", "satisfaction_walkaway") * walk_share + P.cv("dynamics", "satisfaction_price") * (price * e["ticket"] - 1) \
-        + e["satisfaction"] + (P.cv("dynamics", "satisfaction_understaffed") if understaffed else 0.0)
+        + e["satisfaction"] + (P.cv("dynamics", "satisfaction_understaffed") if understaffed else 0.0) \
+        + (P.cv("dynamics", "satisfaction_wellstaffed") if staff > ctx["default_staff"] else 0.0)
     return {
         "revenue": revenue, "delivery_revenue": dlv_rev, "lines": lines, "depreciation": dep, "op": op_before_dep - dep,
         "op_before_dep": op_before_dep, "covers": served, "hall": s_hall, "delivery_units": s_dlv, "takeout_units": s_take,
@@ -351,6 +352,8 @@ def preview(body: dict) -> dict:
         "benchmark": {"op_share_survey": P.iv(ind, "cost", "op_share_survey"), "rent_share_survey": P.iv(ind, "cost", "rent_share_survey"),
                       "krei_label": k["krei_label"], "owner_family_share_survey": P.iv(ind, "cost", "owner_family_share_survey"),
                       "sales_p25_month_krw": round(P.iv(ind, "demand", "annual_sales_p25_man") * 1e4 / 12),
+                      "sales_p50_month_krw": round(P.iv(ind, "demand", "annual_sales_p50_man") * 1e4 / 12),
+                      "sales_mean_month_krw": round(P.iv(ind, "demand", "annual_sales_mean_man") * 1e4 / 12),
                       "sales_p75_month_krw": round(P.iv(ind, "demand", "annual_sales_p75_man") * 1e4 / 12),
                       "note_ko": f"경영실태조사 2025 {k['krei_label']} (전국): 영업이익 {P.iv(ind, 'cost', 'op_share_survey'):.1%}는 대표자·가족 인건비 "
                                  f"{P.iv(ind, 'cost', 'owner_family_share_survey'):.1%}를 뺀 뒤의 값이에요. 이 화면의 영업이익은 사장님 몫을 빼기 전이라 둘을 더한 값과 견줘요."},

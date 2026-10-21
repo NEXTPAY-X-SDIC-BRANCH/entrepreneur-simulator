@@ -125,7 +125,8 @@ def derived(d: pd.DataFrame) -> dict:
     w = d["WT"]
     out["pay_per_hired_month_man"] = {"n": int((hired > 0).sum()),
                                       "value": round(float((num("c1a4").fillna(0) * w).sum() / (hired * w).sum() / 12), 1),
-                                      "hired_mean": round(float(np.average(hired, weights=w)), 2)}
+                                      "hired_mean": round(float(np.average(hired, weights=w)), 2),
+                                      "hired_p50": wq(hired.to_numpy(float), w.to_numpy(float), 0.5)}
     # 배달 비용: 배달 대행 + 배달앱 월 비용 ÷ 배달 대행 건수 (대행을 쓰는 가게), 매출 대비 비중 (전체 가게)
     m = num("b19b") > 0
     cost = num("b19a").fillna(0) + num("b18c").fillna(0)

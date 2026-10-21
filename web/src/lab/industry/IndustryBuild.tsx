@@ -137,7 +137,7 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
           <h1>{p.rough_month.op_krw <= 0
             ? <>이 구성으로는 자리가 잡혀도 한 달에 <mark>{wman(-p.rough_month.op_krw)}씩 줄어요.</mark></>
             : <>자리가 잡히면 한 달에 <mark>{wman(p.rough_month.op_krw)}</mark>이 남아요.</>}</h1>
-          <p className="m-sub">{profile.gu}{p.input.dong ? ` ${p.input.dong}` : ""}, {p.input.pyeong}평, {p.seats.total}석, 직원 {p.input.staff}명 기준이에요. 자리 잡힌 달 매출 {wman(p.rough_month.revenue_krw)}, 사장님 몫을 빼기 전 영업이익 {sgn(p.rough_month.op_krw)}. 바꾸면 바로 다시 계산해요.</p>
+          <p className="m-sub">{profile.gu}{p.input.dong ? ` ${p.input.dong}` : ""}, {p.input.pyeong}평, {p.seats.total}석, 직원 {p.input.staff}명 기준이에요. 자리 잡힌 달 매출 {wman(p.rough_month.revenue_krw)}(같은 업종 전국 중앙값은 {wman(p.benchmark.sales_p50_month_krw)}, 평균은 {wman(p.benchmark.sales_mean_month_krw)}), 사장님 몫을 빼기 전 영업이익 {sgn(p.rough_month.op_krw)}. 바꾸면 바로 다시 계산해요.</p>
           <ul className="m-checklist">
             {list.map((c) => (
               <li key={c.key}>

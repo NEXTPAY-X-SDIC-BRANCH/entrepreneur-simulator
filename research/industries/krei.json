@@ -327,7 +327,8 @@
     "pay_per_hired_month_man": {
      "n": 316,
      "value": 207.7,
-     "hired_mean": 1.61
+     "hired_mean": 1.61,
+     "hired_p50": 1.0
     },
     "delivery_cost_per_order_krw": {
      "n": 106,
@@ -618,7 +619,8 @@
     "pay_per_hired_month_man": {
      "n": 155,
      "value": 210.9,
-     "hired_mean": 1.14
+     "hired_mean": 1.14,
+     "hired_p50": 1.0
     },
     "delivery_cost_per_order_krw": {
      "n": 28,
@@ -905,7 +907,8 @@
     "pay_per_hired_month_man": {
      "n": 117,
      "value": 171.0,
-     "hired_mean": 1.1
+     "hired_mean": 1.1,
+     "hired_p50": 0.0
     },
     "delivery_cost_per_order_krw": {
      "n": 108,
@@ -1196,7 +1199,8 @@
     "pay_per_hired_month_man": {
      "n": 126,
      "value": 159.7,
-     "hired_mean": 2.31
+     "hired_mean": 2.31,
+     "hired_p50": 1.0
     },
     "delivery_cost_per_order_krw": {
      "n": 79,
@@ -1487,7 +1491,8 @@
     "pay_per_hired_month_man": {
      "n": 104,
      "value": 218.6,
-     "hired_mean": 1.05
+     "hired_mean": 1.05,
+     "hired_p50": 1.0
     },
     "delivery_cost_per_order_krw": {
      "n": 123,
@@ -1778,7 +1783,8 @@
     "pay_per_hired_month_man": {
      "n": 224,
      "value": 157.2,
-     "hired_mean": 2.49
+     "hired_mean": 2.49,
+     "hired_p50": 2.0
     },
     "delivery_cost_per_order_krw": {
      "n": 35,
@@ -2065,7 +2071,8 @@
     "pay_per_hired_month_man": {
      "n": 175,
      "value": 146.2,
-     "hired_mean": 1.85
+     "hired_mean": 1.85,
+     "hired_p50": 1.0
     },
     "delivery_cost_per_order_krw": {
      "n": 103,

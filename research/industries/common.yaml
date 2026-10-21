@@ -4,9 +4,9 @@
 demand:
   seoul_uplift:
     value: 1.217
-    grade: M
+    grade: L
     source: "농식품부·농경연 「2025 외식업체 경영실태 조사」 원자료, 전 업종 서울 표본(491곳) 가중 평균 매출 ÷ 전국 가중 평균 매출 (research/industries/krei.json _meta)"
-    note: "업종별 서울 표본은 20~60곳이라 업종마다 따로 쓰지 않고 전 업종 배율 하나를 씀"
+    note: "업종별 서울 표본은 20~60곳이라 업종마다 따로 쓰지 않고 전 업종 배율 하나를 씀. 한 출처에서 우리가 계산한 값이고 서울의 업종 구성 차이가 섞여 있어 L"
   dong_rel_range:
     value: [0.5, 2.0]
     grade: 가정
@@ -45,6 +45,7 @@ dynamics:
   satisfaction_walkaway: {value: -3.0, grade: 가정, source: "none (카페 엔진과 같음)"}
   satisfaction_price: {value: -1.0, grade: 가정, source: "none (카페 엔진과 같음)"}
   satisfaction_understaffed: {value: -0.05, grade: 가정, source: "none", note: "직원이 업종 중앙값보다 적을 때 (응대가 늦음)"}
+  satisfaction_wellstaffed: {value: 0.05, grade: 가정, source: "none", note: "직원이 업종 중앙값보다 많을 때 (응대가 빠름). 별점이 오를 수 있는 길"}
 
 capacity:
   extra_staff_cost_share:

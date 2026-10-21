@@ -89,7 +89,8 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
   const begin = () => {
     if (!p) return;
     setBusy(true); setErr("");
-    const body = { ...engineBody(profile, { ...cfg, pyeong: p.input.pyeong, tables: p.input.tables, staff: p.input.staff }), seed: 7, start_month: startMonth };
+    const seed = Math.floor(Math.random() * 1_000_000); // 판마다 무작위 사건(경쟁 가게, 고장)이 달라진다. 같은 판 안에서는 엔진이 시드로 고정
+    const body = { ...engineBody(profile, { ...cfg, pyeong: p.input.pyeong, tables: p.input.tables, staff: p.input.staff }), seed, start_month: startMonth };
     post<Start>("/season", body).then((s) => {
       setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setChoice(s.next_event.default);
       setPlan({ price_change_pct: 0, hours: "standard", staff: s.decisions.staff, marketing_krw: 0, delivery: s.decisions.delivery });

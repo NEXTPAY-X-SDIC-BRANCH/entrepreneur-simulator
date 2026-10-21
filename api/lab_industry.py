@@ -158,8 +158,9 @@ def industry_month(body: MonthIn):
     run = _replay(state)
     played = len(run["months"])
     if i is not None and i != played:
-        if i < played and all(run["months"][i]["decisions"].get(k) == v for k, v in sent.items() if k in ("hours", "staff", "marketing_krw", "delivery", "choice")):
-            return {**gs.public_month(gs.replay(state["b"], state["d"][:i + 1]), run["months"][i]), "state_token": body.state_token}
+        if i < played and state["d"][i] == sent:   # 같은 달을 같은 결정으로 다시 보낸 것(시간 초과 뒤 재시도): 그 달과 그 달 뒤의 토큰
+            prior = {**state, "d": state["d"][:i + 1]}
+            return {**gs.public_month(_replay(prior), run["months"][i]), "state_token": encode_token(prior)}
         raise HTTPException(409, {"error": "month_mismatch", "month_index": i, "months_played": played})
     try:
         run, month = gs.play_month(run, sent)

@@ -49,9 +49,11 @@ IND_Q: list[tuple[str, re.Pattern]] = [
 ]
 
 
-def industry_of(q: str) -> str | None:  # lab:industry
-    hit = [i for i, rx in IND_Q if rx.search(q)]
-    return hit[0] if len(hit) == 1 else None
+def industries_of(q: str) -> list[str]:  # lab:industry 질문에 나온 새 업종 (여럿일 수 있다)
+    return [i for i, rx in IND_Q if rx.search(q)]
+
+
+IND_ONLY = {"industry", "sales", "competition", "cost"}  # lab:industry 이 주제들만이면 새 업종 근거로 답한다 (월세·대출·지원사업은 원래 근거)
 
 
 TOPIC_RE: list[tuple[str, re.Pattern]] = [
@@ -629,15 +631,28 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
         if OWN.search(q):
             here = [f for f in pool if f["id"].startswith("live_")]
             pool = here or pool
-    ind_hit = industry_of(q)  # lab:industry 새 업종을 물으면 그 업종 근거만 (구를 말하면 그 구 문장, 아니면 서울·전국 문장)
-    if ind_hit:
+    ind_hits = industries_of(q)  # lab:industry 새 업종 질문
+    if ind_hits:
         gq = GU.search(q)
-        mine = [f for f in pool if f["id"].startswith(f"ind_{ind_hit}_") and ("_gu_" not in f["id"] or (gq and f.get("gu") == gq.group()))]
-        if gq and tps & {"sales", "competition"}:
-            mine = [f for f in mine if f.get("gu") == gq.group()] or mine
-        pool = mine + [f for f in pool if f["id"].startswith("live_")] if mine else pool
+        def ours(f: dict) -> bool:
+            return f["id"].startswith(tuple(f"ind_{i}_" for i in ind_hits)) and ("_gu_" not in f["id"] or bool(gq and f.get("gu") == gq.group()))
+        if tps <= IND_ONLY:   # 매출·경쟁·비용 질문: 그 업종 문장만 (구를 말하면 그 구 문장 먼저)
+            mine = [f for f in pool if ours(f)]
+            if gq and tps & {"sales", "competition"}:
+                mine = [f for f in mine if f.get("gu") == gq.group()] or mine
+            pool = mine + [f for f in pool if f["id"].startswith("live_")] if mine else pool
+            if len(ind_hits) > 1 and mine:   # 두 업종을 견주는 질문: 업종마다 가장 맞는 문장 하나씩
+                best = [C._rank_facts(q, [f for f in mine if f["id"].startswith(f"ind_{i}_")])[0][1] for i in ind_hits
+                        if any(f["id"].startswith(f"ind_{i}_") for f in mine)]
+                cites = [{"id": sid, "title": sources[sid]["title"], "publisher": sources[sid]["publisher"], "year": sources[sid]["period"],
+                          "type": "공공 API", "url": sources[sid]["url"], "note": f"호출 식별자: {sources[sid]['api']}"}
+                         for sid in dict.fromkeys(x for f in best for x in f["sources"]) if sid in sources]
+                return {"answer": "\n".join(f"• {f['text']}" for f in best),
+                        "facts": [{"text": f["text"], "source_ids": f["sources"], "similarity": None} for f in best], "citations": cites}
+        else:                 # 월세·대출·지원사업·배달 같은 다른 주제: 원래 근거는 두고 다른 업종 문장만 뺀다
+            pool = [f for f in pool if not f["id"].startswith("ind_") or (ours(f) and "_gu_" not in f["id"])]
     cafe_q, meat_q = bool(CAFE_Q.search(q)), bool(MEAT_Q.search(q))
-    if ind_hit:  # lab:industry
+    if ind_hits:  # lab:industry 새 업종 질문은 고깃집·카페 거르기를 하지 않는다
         pass
     elif cafe_q and not meat_q:
         pool = [f for f in pool if not MEAT_ID.match(f["id"]) and not MEAT_TEXT.search(f["text"])]

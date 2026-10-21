@@ -77,7 +77,10 @@ def build_one(ind: str, g: dict) -> dict:
             "pay_per_staff_month_krw": ent(round(dv["pay_per_hired_month_man"]["value"] * 1e4 * 10320 / 9860), "L",
                                            f"{s}, 고용인 인건비 합 ÷ 유급 고용인 수 합 ÷ 12 = {dv['pay_per_hired_month_man']['value']}만원 (2024년)",
                                            "최저임금 2024년 9,860원 → 2026년 10,320원 (고용노동부 고시, H) 비율 1.047을 곱함. 상용·임시·일용이 섞인 평균 1명"),
-            "default_staff": ent(max(0, int(round(v["workers"]["p50"])) - 1), "L", f"{s}, 근로자 수 중앙값 {v['workers']['p50']:.0f}명 (대표자 포함)에서 사장님을 뺀 수"),
+            "default_staff": ent(max(1, int(round(dv["pay_per_hired_month_man"]["hired_mean"]))), "L",
+                                 f"{s}, 유급 고용인 수(상용·임시·일용, 대표자와 무급 가족 제외) 가중 평균 {dv['pay_per_hired_month_man']['hired_mean']}명을 반올림",
+                                 f"수요 기준점이 업종 평균 매출이라 사람 수도 평균에 맞춤 (중앙값 {dv['pay_per_hired_month_man']['hired_p50']:.0f}명, "
+                                 f"대표자·무급 가족을 포함한 근로자 전체 중앙값 {v['workers']['p50']:.0f}명). 무급 가족은 엔진에 없음"),
             "owner_pay_month_krw": ent(round(pl["labor_owner"] / 12 * 1e4), "H", f"{s}, 대표자 인건비 연 {pl['labor_owner']:,}만원 ÷ 12",
                                        "영업이익에 넣지 않고 '사장님 몫 (참고)'로만 보임 (카페 엔진과 같음)"),
             "op_share_survey": ent(sh["profit"], "H", f"{s}, 영업이익 ÷ 매출액 (대표자·가족 인건비를 뺀 뒤)"),

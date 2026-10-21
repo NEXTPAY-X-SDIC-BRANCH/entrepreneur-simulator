@@ -24,7 +24,7 @@ export type Preview = {
   monthly_fixed: { rent_krw: number; labor_krw: number; depreciation_krw: number; total_krw: number };
   rough_month: { revenue_krw: number; op_krw: number; op_margin: number | null; lines: Line[]; covers: number; walkaways: number; owner_pay_ref_krw: number; note_ko: string };
   breakeven_units_day: number | null;
-  benchmark: { op_share_survey: number; rent_share_survey: number; krei_label: string; owner_family_share_survey: number; sales_p25_month_krw: number; sales_p75_month_krw: number; note_ko: string };
+  benchmark: { op_share_survey: number; rent_share_survey: number; krei_label: string; owner_family_share_survey: number; sales_p25_month_krw: number; sales_p50_month_krw: number; sales_mean_month_krw: number; sales_p75_month_krw: number; note_ko: string };
   area: { opening_rate: number; closure_rate: number; rent_source: string };
 };
 export type EventOpt = { id: string; label: string; hint: string; downside: string };

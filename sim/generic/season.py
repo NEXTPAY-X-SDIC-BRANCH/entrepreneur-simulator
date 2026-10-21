@@ -22,6 +22,11 @@ class SeasonOver(Exception):
     """폐업했거나 모든 달을 돌았다."""
 
 
+def _josa(word: str, pair: str) -> str:
+    ch = word[-1]
+    return word + (pair[0] if "가" <= ch <= "힣" and (ord(ch) - 0xAC00) % 28 else pair[1])
+
+
 def _rng(seed: int, i: int, tag: str) -> random.Random:
     return random.Random(f"{seed}:{i}:{tag}")
 
@@ -286,7 +291,7 @@ def report(run: dict) -> dict:
     s = run["state"]
     name = INDUSTRIES[run["body"]["industry"]]["name"]
     if s["closed"]:
-        summary = f"{name}은 {len(ms)}개월째 문을 닫았어요. {s['closed_reason']}."
+        summary = f"{_josa(name, '은는')} {len(ms)}개월째 문을 닫았어요. {s['closed_reason']}."
     elif ms:
         summary = f"{name} {len(ms)}개월 동안 영업이익 합계 {won(sum(ops))}, 남은 현금 {won(s['cash'])}이에요."
     else:

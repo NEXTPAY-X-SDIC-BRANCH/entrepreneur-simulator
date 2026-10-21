@@ -87,18 +87,18 @@ def build() -> dict:
             f"{josa(name, '을를')} 열 때 시설 투자(보증금·권리금 빼고) 중앙값은 {man(v['invest']['p50'])}이에요 (4분의 1~4분의 3: {man(v['invest']['p25'])}~{man(v['invest']['p75'])}). "
             f"권리금을 낸 곳의 중앙값은 {man(v['key_money']['p50'])}, 보증금 중앙값은 {man(v['deposit']['p50'])}이에요 (경영실태조사 2025, 전국).", ["krei_raw"])
         s = gu[ind]["seoul"]
-        row = next(r for r in rank["services"] if r["code"] == k["service"])
+        svc_name = next(r["name"] for r in rank["services"] if r["code"] == k["service"])
         add("seoul", ["서울", "가게 수", "몇 곳", "점포 수", "폐업률", "개업", "경쟁"],
             f"서울의 {name}({k['sbiz_label']}){josa(name, '은는')[len(name):]} {s['count']:,}곳이에요 (소상공인 상가정보 2026년 6월). "
-            f"상권분석서비스 {k['base']} 기준 2025년 한 해 {row['opened_year']:,}곳이 새로 열고 {row['closed_year']:,}곳이 닫아 개업률 {pct(row['open_rate'])}, 폐업률 {pct(row['close_rate'])}예요"
+            f"서울시 상권분석서비스 2025년 {k['base']} 기준 1년 개업률은 {pct(s['opening_rate'])}, 폐업률은 {pct(s['closure_rate'])}예요"
             f"{' (한식음식점 전체 값)' if ind == 'hansik' else ''}.", ["sbiz_store", "seoul_store"])
         top = sorted(gu[ind]["gu"].items(), key=lambda kv: -kv[1]["demand_index"])[:3]
         add("top_gu", ["어느 구", "가장", "매출이 높은", "잘 되는", "추천"],
             f"{name} 점포당 매출이 서울 평균보다 높은 구는 " + ", ".join(f"{n}({r['demand_index']:.2f}배)" for n, r in top)
             + f" 순이에요. 카드 추정 매출이라 배달 비중이 큰 업종은 낮게 잡혀요 (서울시 상권분석서비스 2025, {k['base']}).", ["seoul_store"])
         add("why", ["왜", "고른", "추가", "업종", "청년"],
-            f"{josa(name, '은는')} 서울에서 가게가 많고 새로 여는 곳이 많은 업종이라 넣었어요. 2021년 이후 연 가게 중 {pct(rank['krei']['recent'][row['name'] if ind != 'hansik' else '백반·한식 일반'])}, "
-            f"40세 미만이 연 가게 중 {pct(rank['krei']['young'][row['name'] if ind != 'hansik' else '백반·한식 일반'])}가 이 업종이에요 (경영실태조사 2025 원자료, 전국).", ["krei_raw"])
+            f"{josa(name, '은는')} 서울에서 가게가 많고 새로 여는 곳이 많은 업종이라 넣었어요. 2021년 이후 연 가게 중 {pct(rank['krei']['recent'][svc_name if ind != 'hansik' else '백반·한식 일반'])}, "
+            f"40세 미만이 연 가게 중 {pct(rank['krei']['young'][svc_name if ind != 'hansik' else '백반·한식 일반'])}가 이 업종이에요 (경영실태조사 2025 원자료, 전국).", ["krei_raw"])
         for gname, r in gu[ind]["gu"].items():
             facts.append({"id": f"ind_{ind}_gu_{gname}", "gu": gname, "tags": w + [gname, gname[:-1], "가게 수", "몇 곳", "폐업률", "매출", "경쟁"],
                           "text": f"{gname}의 {josa(name, '은는')} {r['count']:,}곳이에요 (소상공인 상가정보). 상권 안 {k['base']}의 1년 폐업률은 {pct(r['closure_rate'])}, "

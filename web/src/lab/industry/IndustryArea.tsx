@@ -63,11 +63,11 @@ export default function IndustryArea({ profile, setProfile, gus, onNext }: { pro
           )}
         </div>
         <p className="ia-lead">
-          {p ? <>{st.area ?? profile.gu}에서 {josa(t.shop, "이가")} 자리를 잡으면 한 달에 <mark>{wman(p.rough_month.revenue_krw)}</mark>쯤 팔 거라고 엔진이 봐요.</> : pv.err || "엔진에서 계산하는 중이에요."}
+          {p ? <>{st.area ?? profile.gu}에서 {josa(t.shop, "이가")} 자리를 잡으면 한 달에 <mark>{wman(p.rough_month.revenue_krw)}</mark>쯤 팔 거라고 엔진이 봐요 (업종 평균 가게 기준).</> : pv.err || "엔진에서 계산하는 중이에요."}
         </p>
 
         <div className="ia-kpis">
-          <div className="ia-kpi"><span>자리 잡힌 달 매출</span><strong>{p ? wman(p.rough_month.revenue_krw) : "-"}</strong><small>엔진 추정, {p?.input.pyeong ?? "-"}평 기준</small></div>
+          <div className="ia-kpi"><span>자리 잡힌 달 매출</span><strong>{p ? wman(p.rough_month.revenue_krw) : "-"}</strong><small>업종 평균에서 옮긴 엔진 추정, {p?.input.pyeong ?? "-"}평</small></div>
           <div className="ia-kpi"><span>{t.kind} 수</span><strong>{(st.area ? st.areaPork ?? 0 : st.pork).toLocaleString("ko-KR")}<i>곳</i></strong><small>{st.area ? `${st.area} 안` : "구 전체"}</small></div>
           <div className="ia-kpi"><span>평당 월세</span><strong>{st.rent}<i>만원</i></strong><small>{st.rentSrc}, 현금 월세</small></div>
           <div className="ia-kpi"><span>1년 폐업률</span><strong>{d?.close_rate != null ? (d.close_rate * 100).toFixed(1) : st.closure}<i>%</i></strong><small>{d?.close_rate != null ? "이 동네" : "구 안 상권"}, 2025년</small></div>
@@ -79,6 +79,7 @@ export default function IndustryArea({ profile, setProfile, gus, onNext }: { pro
           <div><dt>가게 수 흐름<small>연 개업률 − 연 폐업률, 0보다 작으면 가게가 줄어드는 중</small></dt><dd>{st.netOpen != null ? `${st.netOpen > 0 ? "+" : ""}${st.netOpen}%p` : "-"}</dd></div>
           {d?.open_rate != null && d.close_rate != null && <div><dt>이 동네 개업률과 폐업률<small>{st.area}, 2025년 (상권분석서비스 행정동)</small></dt><dd>{pct(d.open_rate, 1)} / {pct(d.close_rate, 1)}</dd></div>}
           {g?.franchise != null && <div><dt>프랜차이즈 비중<small>구 안 상권의 {t.base} 중 가맹점</small></dt><dd>{pct(g.franchise)}</dd></div>}
+          {p && <div><dt>같은 업종 한 달 매출 (전국)<small>경영실태조사 2025: 평균 {wman(p.benchmark.sales_mean_month_krw)}, 4분의 1~4분의 3은 {wman(p.benchmark.sales_p25_month_krw)}~{wman(p.benchmark.sales_p75_month_krw)}. 엔진은 평균을 서울과 이 동네로 옮겨요</small></dt><dd>중앙값 {wman(p.benchmark.sales_p50_month_krw)}</dd></div>}
           {p && <div><dt>객단가<small>경영실태조사 2025 {t.shop} 1인 평균 (전국)</small></dt><dd>{p.demand.ticket_krw.toLocaleString("ko-KR")}원</dd></div>}
           {p && <div><dt>홀 / 배달 / 포장<small>매출 비중 (경영실태조사 2025, 전국)</small></dt><dd>{pct(p.demand.channels.hall)} / {pct(p.demand.channels.delivery)} / {pct(p.demand.channels.takeout)}</dd></div>}
         </dl>
