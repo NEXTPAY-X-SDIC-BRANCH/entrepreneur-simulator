@@ -6,6 +6,8 @@ import { addAttempt, nextAttemptNo } from "./attempts";
 import { scoreOf } from "./scoreStub";
 
 const done = new Set<string>();
+/** 다시 해보기를 누르면 부른다: 시드가 고정이라 같은 입력의 다음 판은 같은 결과가 나오는데, 그것도 새 판으로 남겨야 한다 */
+export const forgetRecorded = () => done.clear();
 
 export default function RecordAttempt({ summary, extra }: { summary: SeasonSummary; extra?: Record<string, unknown> }) {
   const key = JSON.stringify([summary.industry, summary.start_cash, summary.months.map((m) => [m.month, m.op, m.cash_after])]);

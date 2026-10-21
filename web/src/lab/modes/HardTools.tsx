@@ -9,6 +9,7 @@ import { ENGINE, netErr, post } from "./api";
 import { fetchTemplate, recompute, toEngine } from "../menu/api";
 import { addAttempt, attemptsOf, nextAttemptNo, type Attempt } from "./attempts";
 import Compare from "./Compare";
+import { forgetRecorded } from "./RecordAttempt";
 import { scoreOf } from "./scoreStub";
 import Sensitivity from "./Sensitivity";
 import { hardBbqSummary, type Inputs } from "./summary";
@@ -71,7 +72,7 @@ export default function HardTools({ profile, store, levers, cafeCfg, indCfg, ste
   const [cmp, setCmp] = useState<{ prev?: Attempt; cur: Attempt } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [shown, setShown] = useState(0); // 카페: 비교 창을 이미 보여 준 판 번호
+  const [shown, setShown] = useState(() => attemptsOf(profile.industry).at(-1)?.n ?? 0); // 카페: 비교 창을 이미 보여 준 판 번호 (새로 고침 전 판은 다시 안 띄움)
   const ind = profile.industry;
   const n = nextAttemptNo(ind);
   if (step !== "build" && step !== "sim") return null;
@@ -80,7 +81,7 @@ export default function HardTools({ profile, store, levers, cafeCfg, indCfg, ste
     if (ind === "cafe") { // 카페: 결과 화면이 판을 이미 남겼다 (RecordAttempt). 아직 안 보여 준 판이면 비교부터
       const list = attemptsOf(ind), last = list.at(-1);
       if (last && last.summary.mode === "hard" && last.n !== shown) { setShown(last.n); setCmp({ prev: list.at(-2), cur: last }); return; }
-      onRetry(); return;
+      forgetRecorded(); onRetry(); return;
     }
     const ctx = ind === "bbq" ? getEngineCtx() : null;
     if (!ctx || !ctx.months.length || !(ctx.finished || ctx.closed)) { onRetry(); return; }
@@ -133,7 +134,7 @@ export default function HardTools({ profile, store, levers, cafeCfg, indCfg, ste
             </header>
             <Compare prev={cmp.prev} cur={cmp.cur} />
             <div className="lm-actions">
-              <button type="button" className="m-btn" onClick={() => { setCmp(null); onRetry(); }}>가게 고치러 가기 ({cmp.cur.n + 1}판)</button>
+              <button type="button" className="m-btn" onClick={() => { setCmp(null); forgetRecorded(); onRetry(); }}>가게 고치러 가기 ({cmp.cur.n + 1}판)</button>
               <small>가게 배치, 대출, 가격과 알바는 그대로 남아 있어요. 고친 뒤 다시 돌리면 이번 판과 비교해 드려요.</small>
             </div>
           </div>
