@@ -12,7 +12,8 @@ import { flowRatioNote } from "./DongFlow";
 import { flowShape, profileOf } from "./area";
 import "./simulate-engine.css";
 import { setEngineCtx } from "./chatContext";
-import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, roomSize, storeStats, type Levers, type Profile, type Store } from "./model";
+import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, storeStats, type Levers, type Profile, type Store } from "./model";
+import { roomDims, shapeOf } from "../lab/layout/plan"; // lab:layout
 
 const API = (import.meta.env.VITE_ENGINE_API as string | undefined) ?? "http://127.0.0.1:8010";
 const SHIRTS = ["#e0735a", "#43648a", "#d4a032", "#5679a3", "#ec8a4f", "#35614a"];
@@ -575,7 +576,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
 
   const idx = done.length; // 지금 정하거나 재생 중인 달의 순번 (0부터)
   const curDay = cur ? cur.days[Math.min(dayIdx, cur.days.length - 1)] : null;
-  const { w, d } = roomSize(store.pyeong);
+  const { w, d } = roomDims(store); // lab:layout: the room's 가로:세로
   const state = cur?.result.state_after;
   const cashNow = view === null || view === "settle" || view === "report" ? curDay?.cash ?? startCash : (cashAtStart.current[done.length] ?? startCash);
   const planMonth = monthSeq[Math.min(idx, TURNS - 1)];
@@ -625,7 +626,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
         <GLGuard>
           <Canvas key={gfx} frameloop={gfxFrameloop(gfx)} shadows={gfxShadows(gfx)} camera={{ position: [w * 0.7, Math.max(w, d) * 1.2, d * 1.6], fov: 38 }} dpr={gfxDpr(gfx)}>
             <StoreLights w={w} d={d} r={Math.max(w, d) / 2 + 3} dim={!curDay || curDay.open ? 1 : 0.45} />
-            <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} items={store.items} />
+            <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} items={store.items} shape={shapeOf(store)} /> {/* lab:layout */}
             <Items items={store.items} />
             <Guests store={store} filled={view === "intro" || view === "plan" || view === "scenario" ? 0 : filled} />
             <FitControls box={[-w / 2, -d / 2, w / 2, d / 2 + 0.6]} dir={[0.7, 1.2, 1.6]} />

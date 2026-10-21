@@ -1,32 +1,39 @@
 // Step 3. A rough build mode: pick from the catalog bar, click the floor to place, click a piece to turn, move or
 // remove it. Spending is capped by the cash on hand (own money + loan − opening costs), shown top right.
 // The five checks sit below the stage and recompute as the store changes.
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { GLGuard } from "../shared/GLGuard";
 import Checks from "./Checks";
 import { Items, Piece, Room } from "./Parts3D";
-import { FitControls, StoreLights, ViewBar, gfxDpr, gfxFrameloop, gfxShadows, useGfx } from "./Scene3D";
+import { FitControls, StoreLights, ViewBar, gfxDpr, gfxFrameloop, gfxShadows, setView, useGfx } from "./Scene3D";
+// lab:layout: room shape (가로:세로, 출입문, 창문), door-aware placement and re-layout, 손님 동선
+import { FlowArrows } from "../lab/layout/Arrows3D";
+import { FlowCard, ShapePanel } from "../lab/layout/ShapePanel";
+import { BBQ_DOOR_MARGIN, BBQ_SHAPE, ratioSteps, type RoomShape } from "../lab/layout/shape";
+import { bbqFlow, changeLine, fitsIn, kitchenSpotFor, ratioOk, relayout, roomDims, shapeOf, tableRoom, withShape, type Flow } from "../lab/layout/plan";
 import {
-  CATALOG, DEPOSIT_MONTHS, GRADES, ITEM, LOAN_RATE, cashLeft, ecosRates, eul, ymKo, fits, footprint, guStat, kitchenSpot, man, nextUid, openingCost, roomSize, snap,
+  CATALOG, DEPOSIT_MONTHS, GRADES, ITEM, LOAN_RATE, cashLeft, ecosRates, eul, ymKo, footprint, guStat, man, nextUid, openingCost, snap,
   recommend, storeStats, type CatalogItem, type Grade, type Levers, type Placed, type Profile, type Store,
 } from "./model";
 
 type Tool = { kind: "new"; id: string; rot: 0 | 1 } | { kind: "move"; uid: number; id: string; rot: 0 | 1 } | null;
 
-function Scene({ portal, store, tool, selected, ghost, onFloorMove, onFloorClick, onPick, onTurn, onMove, onRemove }: {
+function Scene({ portal, store, tool, selected, ghost, flow, onFloorMove, onFloorClick, onPick, onTurn, onMove, onRemove }: {
   portal: RefObject<HTMLDivElement | null>; store: Store; tool: Tool; selected: number | null; ghost: { x: number; z: number; ok: boolean } | null;
+  flow: Flow | null; // lab:layout
   onFloorMove: (x: number, z: number) => void; onFloorClick: () => void; onPick: (uid: number) => void;
   onTurn: () => void; onMove: () => void; onRemove: () => void;
 }) {
-  const { w, d } = roomSize(store.pyeong);
+  const { w, d } = roomDims(store); // lab:layout
   const gf = tool ? footprint(tool) : null;
   const sel = store.items.find((i) => i.uid === selected);
   return (
     <>
       <StoreLights w={w} d={d} r={Math.max(w, d) / 2 + 3} />
-      <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} items={store.items.filter((i) => !(tool?.kind === "move" && tool.uid === i.uid))} />
+      <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} items={store.items.filter((i) => !(tool?.kind === "move" && tool.uid === i.uid))} shape={shapeOf(store)} portal={portal} />
+      {flow && <FlowArrows inPath={flow.inPath} outPath={flow.outPath} portal={portal} stops={flow.stops.map((s) => ({ label: s.label, x: s.x, z: s.z }))} /> /* lab:layout */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} visible={false}
         onPointerMove={(e: ThreeEvent<PointerEvent>) => onFloorMove(e.point.x, e.point.z)}
         onClick={(e) => { if (e.delta < 5) onFloorClick(); }}>
@@ -78,14 +85,16 @@ function Stamp({ it }: { it: CatalogItem }) {
   );
 }
 
-const CATS: { key: CatalogItem["cat"]; label: string }[] = [{ key: "seat", label: "좌석" }, { key: "equip", label: "설비" }, { key: "deco", label: "꾸밈" }];
+type Cat = CatalogItem["cat"] | "room"; // lab:layout: 문·창문 tab
+const CATS: { key: Cat; label: string }[] = [{ key: "seat", label: "좌석" }, { key: "equip", label: "설비" }, { key: "deco", label: "꾸밈" }, { key: "room", label: "문·창문" }];
 const LOAN_STEP = 500;
 
 export default function Builder({ profile, store, setStore, levers, setLevers, onNext }: {
   profile: Profile; store: Store; setStore: (s: Store) => void; levers: Levers; setLevers: (l: Levers) => void; onNext: () => void;
 }) {
   const gfx = useGfx();
-  const [cat, setCat] = useState<CatalogItem["cat"]>("seat");
+  const [cat, setCat] = useState<Cat>("seat");
+  const [flowOn, setFlowOn] = useState(false); // lab:layout
   const [tool, setTool] = useState<Tool>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [ghost, setGhost] = useState<{ x: number; z: number; ok: boolean } | null>(null);
@@ -95,14 +104,16 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
   const stats = storeStats(store);
   const cost = openingCost(store, profile.gu, profile.keyMoney ?? 0);
   const left = cashLeft(profile, store);
-  const { w, d } = roomSize(store.pyeong);
+  const { w, d } = roomDims(store); // lab:layout
+  const shape = shapeOf(store);
+  const flow = useMemo(() => (flowOn ? bbqFlow(store) : null), [flowOn, store]);
   const count = (id: string) => store.items.filter((i) => i.id === id).length;
   const perPyeong = (g: Grade) => guStat(profile.gu).rent * DEPOSIT_MONTHS + GRADES[g].perPyeong; // 보증금 + 공사, 1평당
 
   const place = (x: number, z: number, t: NonNullable<Tool>) => {
     const f = footprint(t);
     const c = { id: t.id, rot: t.rot, x: snap(x, f.w), z: snap(z, f.d) };
-    return { ...c, ok: fits(store, c, t.kind === "move" ? t.uid : undefined) };
+    return { ...c, ok: fitsIn(store, c, t.kind === "move" ? t.uid : undefined) }; // lab:layout: room shape + door clearance
   };
   const onFloorMove = (x: number, z: number) => {
     if (!tool) return;
@@ -112,7 +123,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
   const onFloorClick = () => {
     if (!tool) return setSelected(null);
     if (!ghost) return;
-    if (!ghost.ok) return setMsg("여기에는 놓을 수 없어요. 벽 안쪽의 빈 칸을 골라 주세요.");
+    if (!ghost.ok) return setMsg("여기에는 놓을 수 없어요. 벽 안쪽의 빈 칸을 골라 주세요. 출입문 앞 1.2m는 비워 둬요.");
     if (tool.kind === "move") {
       setStore({ ...store, items: store.items.map((i) => (i.uid === tool.uid ? { ...i, x: ghost.x, z: ghost.z, rot: tool.rot } : i)) });
       setSelected(tool.uid);
@@ -140,7 +151,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
     const rot = (sel.rot ? 0 : 1) as 0 | 1;
     const f = footprint({ id: sel.id, rot });
     const c = { ...sel, rot, x: snap(sel.x, f.w), z: snap(sel.z, f.d) };
-    if (!fits(store, c, sel.uid)) return setMsg("돌릴 자리가 모자라요. 먼저 옮겨 주세요.");
+    if (!fitsIn(store, c, sel.uid)) return setMsg("돌릴 자리가 모자라요. 먼저 옮겨 주세요.");
     setStore({ ...store, items: store.items.map((i) => (i.uid === sel.uid ? c : i)) });
   };
   const remove = () => {
@@ -151,10 +162,12 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
   };
   const resize = (pyeong: number) => {
     if (pyeong > store.pyeong && perPyeong(store.grade) > left) return setMsg(`1평 넓히는 데 ${man(perPyeong(store.grade))}이 들어요. 현금이 모자라요.`);
-    const shell: Store = { ...store, pyeong, items: [] };
+    // lab:layout: keep the 가로:세로 if this size allows it, else the nearest that does; the kitchen to its corner
+    const ratio = ratioOk(pyeong, shape.ratio) ? shape.ratio : ratioSteps(BBQ_SHAPE.ratio).filter((r) => ratioOk(pyeong, r)).sort((a, b) => Math.abs(a - shape.ratio) - Math.abs(b - shape.ratio))[0] ?? shape.ratio;
+    const shell = withShape({ ...store, pyeong, items: [] }, { ...shape, ratio });
     const kitchen = store.items.find((i) => i.id === "kitchen")!;
-    shell.items.push({ ...kitchen, ...kitchenSpot(pyeong) });
-    for (const it of store.items) if (it.id !== "kitchen" && fits(shell, it)) shell.items.push(it);
+    shell.items.push({ ...kitchen, ...kitchenSpotFor(shell) });
+    for (const it of store.items) if (it.id !== "kitchen" && fitsIn(shell, it)) shell.items.push(it);
     setStore(shell);
     setSelected(null);
     const gone = store.items.length - shell.items.length;
@@ -168,6 +181,21 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
   const loan = (delta: number) => {
     if (delta < 0 && left + delta < 0) return setMsg("대출을 줄이면 현금이 0 아래로 내려가요. 먼저 물건을 치우거나 평수를 줄이세요.");
     setStore({ ...store, loan: Math.max(0, store.loan + delta) });
+  };
+
+  // lab:layout: a new 가로:세로 or door re-lays the store (kitchen, counter, tables); windows only change the walls
+  const onShape = (next: RoomShape, what: string) => {
+    if (next.ratio === shape.ratio && next.door.wall === shape.door.wall && next.door.pos === shape.door.pos) {
+      setStore(withShape(store, next));
+      return setMsg(what);
+    }
+    const r = relayout(store, next);
+    setStore(r.store);
+    setSelected(null); setTool(null);
+    const lost = r.tablesBefore - r.tablesAfter;
+    const gone = [...r.dropped, ...(lost > 0 ? [`테이블 ${lost}개`] : [])];
+    const room = r.tablesBefore === 0 ? ` 이 모양에는 4인 테이블이 ${tableRoom(r.store)}개까지 들어가요.` : "";
+    setMsg(`${what} ${changeLine(store, r.store)}.${gone.length ? ` 자리가 없어진 ${gone.join(", ")}는 치우고 돈을 돌려받았어요.` : ""}${room}`);
   };
 
   useEffect(() => {
@@ -187,7 +215,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
         <div ref={portal} className="m-canvas">
           <GLGuard>
             <Canvas key={gfx} frameloop={gfxFrameloop(gfx)} shadows={gfxShadows(gfx)} camera={{ position: [w * 0.55, Math.max(w, d) * 0.95, d * 1.25], fov: 38 }} dpr={gfxDpr(gfx)}>
-              <Scene portal={portal} store={store} tool={tool} selected={selected} ghost={ghost} onFloorMove={onFloorMove} onFloorClick={onFloorClick}
+              <Scene portal={portal} store={store} tool={tool} selected={selected} ghost={ghost} flow={flow} onFloorMove={onFloorMove} onFloorClick={onFloorClick}
                 onPick={pick} onTurn={turn} onRemove={remove}
                 onMove={() => { if (sel) { setTool({ kind: "move", uid: sel.uid, id: sel.id, rot: sel.rot }); setGhost(null); setMsg("놓을 자리를 누르세요. R 키로 돌리고 Esc로 그만둬요."); } }} />
             </Canvas>
@@ -216,8 +244,12 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
           <p>테이블 {stats.tables}개, {stats.seats}석</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={() => {
             const plan = recommend(profile);
-            setStore(plan.store); setLevers({ ...levers, staff: plan.staff }); setSelected(null); setTool(null);
-            setMsg(`추천 배치를 놓았어요. ${plan.store.pyeong}평, 테이블 ${storeStats(plan.store).tables}개, 직원 ${plan.staff}명이에요.${plan.safe ? "" : " 이 돈으로는 6개월을 버티는 구성을 찾지 못했어요."}`);
+            // lab:layout: the recommended size and table count, laid out for this store's shape and door
+            const want = storeStats(plan.store).tables;
+            const fit = relayout(withShape(plan.store, shape), shape);
+            setStore(fit.store); setLevers({ ...levers, staff: plan.staff }); setSelected(null); setTool(null);
+            const lost = want - fit.tablesAfter;
+            setMsg(`추천 배치를 놓았어요. ${plan.store.pyeong}평, 테이블 ${fit.tablesAfter}개, 직원 ${plan.staff}명이에요.${lost > 0 ? ` 이 문 위치와 가로:세로로는 테이블 ${lost}개가 덜 들어가요.` : ""}${plan.safe ? "" : " 이 돈으로는 6개월을 버티는 구성을 찾지 못했어요."}`);
           }}>추천 배치</button>
         </div>
 
@@ -239,6 +271,8 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
           {left < 0 && <p className="m-warn">이대로는 가게를 열 수 없어요. 평수나 마감을 낮추거나 대출을 받으세요.</p>}
         </div>
 
+        {flow && <FlowCard onTop={() => setView("top")} f={{ inLen: flow.inLen, outLen: flow.outLen, inLabel: "들어와서 가장 먼 자리까지", outLabel: "계산하고 나가기", hints: flow.hints,
+          note: `테이블 ${flow.tables}개 가운데 문에서 가장 먼 자리 기준이에요. 평균은 들어와서 자리까지 ${flow.avgIn.toFixed(1)}m예요. 통로 폭과 동선은 화면 배치로 잰 값이고 매출 계산에는 들어가지 않아요.` }} /> /* lab:layout */}
         <p className="m-msg" role="status">{msg}</p>
       </div>
 
@@ -249,6 +283,10 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
         <div className="m-cats" role="tablist" aria-label="물건 종류">
           {CATS.map((c) => <button type="button" role="tab" key={c.key} aria-selected={cat === c.key} onClick={() => setCat(c.key)}>{c.label}</button>)}
         </div>
+        {cat === "room" ? ( // lab:layout
+          <ShapePanel shape={shape} pyeong={store.pyeong} w={w} d={d} margin={BBQ_DOOR_MARGIN} defRatio={BBQ_SHAPE.ratio} flowOn={flowOn} setFlowOn={setFlowOn}
+            ratioAllowed={(r) => ratioOk(store.pyeong, r)} onShape={onShape} />
+        ) : (
         <ul className="m-catalog">
           {CATALOG.filter((c) => c.cat === cat && !c.fixed).map((it) => {
             const full = Boolean(it.max && count(it.id) >= it.max);
@@ -266,6 +304,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
             );
           })}
         </ul>
+        )}
         <div className="m-tray-go">
           <button type="button" className="m-btn m-btn-outline" onClick={() => document.querySelector(".m-checks")?.scrollIntoView({ behavior: "smooth", block: "start" })}>오픈 전 점검 보러가기</button>
           <button type="button" className="m-btn" disabled={left < 0 || stats.seats === 0} onClick={onNext}>시뮬레이션 하러 가기</button>

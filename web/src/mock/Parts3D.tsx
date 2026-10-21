@@ -1,12 +1,15 @@
 // The store's 3D pieces, shared by the builder and the simulation view. Colours, the Box helper and the sign textures
 // come from the existing store scene (store3d/Building, store3d/textures); the hood-and-drop exhaust follows
 // store3d/Building's Ceiling. Procedural only, no asset files.
-import { useMemo, memo } from "react";
+import { useMemo, memo, type RefObject } from "react";
 import * as THREE from "three";
 import { Box, C } from "../store3d/Building";
 import { bladeSign, cardSign, fasciaSign, grate } from "../store3d/textures";
-import { FrontFade, Pendant, Storefront, WALL_H, Wall } from "./Scene3D";
+import { Pendant, WALL_H } from "./Scene3D"; // lab:layout: walls and storefront now come from Shell3D
 import { CELL, GRADES, ITEM, kitchenSpot, type Grade, type Placed } from "./model";
+import { Shell } from "../lab/layout/Shell3D"; // lab:layout
+import { BBQ_DOOR_MARGIN, BBQ_SHAPE, DOOR_W, doorPoint, type RoomShape } from "../lab/layout/shape"; // lab:layout
+import { kitchenFlip } from "../lab/layout/plan"; // lab:layout
 
 const WOOD = "#8a5a3c", DARK = "#2b2d30", LEAF = "#4d7a4a", PARTITION = "#e9e2d4";
 const STEEL_DARK = "#5d6166", VINYL = "#b8372b", SOJU = "#2f8f5b", BEER = "#9a6a24", CREAM = "#f4f1ea";
@@ -61,9 +64,9 @@ function boardTex(title: string, rows: string[], bg = "#2b2622", fg = "#f6ead2",
   t.anisotropy = 4;
   return t;
 }
-function Board({ map, p, size, rot = [0, 0, 0], glow = 0.25 }: { map: THREE.Texture; p: [number, number, number]; size: [number, number]; rot?: [number, number, number]; glow?: number }) {
+function Board({ map, p, size, rot = [0, 0, 0], glow = 0.25, flipX = 1 }: { map: THREE.Texture; p: [number, number, number]; size: [number, number]; rot?: [number, number, number]; glow?: number; flipX?: number }) {
   return (
-    <mesh position={p} rotation={rot}>
+    <mesh position={p} rotation={rot} scale={[flipX, 1, 1]}>
       <planeGeometry args={size} />
       <meshStandardMaterial map={map} emissive="#ffffff" emissiveMap={map} emissiveIntensity={glow} roughness={0.7} />
     </mesh>
@@ -116,7 +119,9 @@ function GrillTable({ id }: { id: "table4" | "table2" }) {
 
 // The kitchen: a walled room in the back-left corner. Pass window to the front (shelf with dishes, heat lamps, the
 // POS at its right end, menu board over it), doorway with a 노렌 on the right, range + hood, prep table, shelves.
-function Kitchen() {
+// lab:layout: flip = [sx, sz] mirrors the room so its pass faces into the store and its doorway the middle; the menu
+// board is mirrored back so its text reads
+function Kitchen({ flip = [1, 1] }: { flip?: [number, number] }) {
   const { w, d } = ITEM.kitchen;
   const menu = useMemo(() => boardTex("메뉴", ["생삼겹살 · 목살 · 항정살", "된장찌개 · 물냉면 · 공기밥", "소주 · 맥주 · 음료"], "#2b2622", "#f6ead2", 768, 256), []);
   return (
@@ -126,7 +131,7 @@ function Kitchen() {
       <Box p={[0, 0.5, d / 2 - 0.05]} s={[w, 1, 0.1]} color={PARTITION} cast />
       <Box p={[0, 1.02, d / 2 - 0.05]} s={[w, 0.05, 0.34]} color={C.steel} metal={0.5} />
       <Box p={[0, 2.35, d / 2 - 0.05]} s={[w, 0.5, 0.1]} color={PARTITION} />
-      <Board map={menu} p={[-0.1, 2.35, d / 2 + 0.003]} size={[3.0, 0.44]} glow={0.35} />
+      <Board map={menu} p={[-0.1, 2.35, d / 2 + 0.003]} size={[3.0, 0.44]} glow={0.35} flipX={flip[0] * flip[1]} />
       <Box p={[-w / 2 + 0.05, 1.55, d / 2 - 0.05]} s={[0.1, 1.1, 0.1]} color={PARTITION} />
       {[-1.1, 0.1].map((x) => <Glow key={x} p={[x, 2.06, d / 2 - 0.08]} s={[0.5, 0.04, 0.12]} color="#fff2d6" glow="#ffb35c" k={1.4} />)}
       {/* plates on the pass: a 반찬 tray and a stack of plates */}
@@ -187,10 +192,10 @@ function DrinksFridge() {
 }
 
 // Pieces are drawn unrotated (item.w along x, item.d along z); the parent group turns them.
-export function Piece({ id }: { id: string }) {
+export function Piece({ id, flip }: { id: string; flip?: [number, number] }) {
   const it = ITEM[id];
   if (id === "table4" || id === "table2") return <GrillTable id={id} />;
-  if (id === "kitchen") return <Kitchen />;
+  if (id === "kitchen") return <group scale={[flip?.[0] ?? 1, 1, flip?.[1] ?? 1]}><Kitchen flip={flip} /></group>; // lab:layout
   if (id === "counter") return ( // front (+z) to the customers, POS screen to the staff side (-z)
     <group>
       <Box p={[0, 0.5, 0]} s={[it.w - 0.1, 1, it.d - 0.3]} color={C.counter} cast />
@@ -250,13 +255,16 @@ function DuctsImpl({ items, w, pyeong }: { items: Placed[]; w: number; pyeong: n
       const k = Math.round(it.z * 4) / 4;
       m.set(k, [...(m.get(k) ?? []), it.x]);
     }
-    const hasK = items.some((i) => i.id === "kitchen");
-    const k = kitchenSpot(pyeong), kw = ITEM.kitchen.w, kd = ITEM.kitchen.d;
-    return [...m.entries()].map(([z, xs]) => {
+    const kit = items.find((i) => i.id === "kitchen"); // lab:layout: the placed kitchen, not the default corner
+    const hasK = !!kit;
+    const k = kit ?? kitchenSpot(pyeong), kw = ITEM.kitchen.w, kd = ITEM.kitchen.d;
+    const right = k.x > 1e-6; // kitchen on the right: trunks run to the right wall instead (mirror of the rule above)
+    return [...m.entries()].map(([z, xs0]) => {
+      const xs = right ? xs0.map((x) => -x) : xs0, kx = right ? -k.x : k.x;
       const blocked = hasK && Math.abs(z - k.z) < kd / 2 + 0.3;
       const x1 = Math.max(...xs) + 0.25;
-      const x0 = blocked ? Math.min(Math.min(...xs) - 0.25, k.x + kw / 2 + 0.35) : -w / 2;
-      return { z, x0, x1, riser: blocked };
+      const x0 = blocked ? Math.min(Math.min(...xs) - 0.25, kx + kw / 2 + 0.35) : -w / 2;
+      return right ? { z, x0: -x1, x1: -x0, riser: blocked, rx: -x0 } : { z, x0, x1, riser: blocked, rx: x0 };
     });
   }, [items, w, pyeong]);
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#aeb4b9", metalness: 0.55, roughness: 0.4, flatShading: true }), []);
@@ -267,8 +275,8 @@ function DuctsImpl({ items, w, pyeong }: { items: Placed[]; w: number; pyeong: n
           <mesh position={[(r.x0 + r.x1) / 2, TRUNK_Y, r.z]} rotation={[0, 0, Math.PI / 2]} material={mat}>
             <cylinderGeometry args={[0.11, 0.11, r.x1 - r.x0, 12]} />
           </mesh>
-          <mesh position={[r.x1, TRUNK_Y, r.z]} rotation={[0, 0, Math.PI / 2]} material={mat}><cylinderGeometry args={[0.12, 0.12, 0.03, 12]} /></mesh>
-          {r.riser && <mesh position={[r.x0, (TRUNK_Y + WALL_H + 0.45) / 2, r.z]} material={mat}><cylinderGeometry args={[0.11, 0.11, WALL_H + 0.45 - TRUNK_Y, 12]} /></mesh>}
+          <mesh position={[r.rx === r.x0 ? r.x1 : r.x0, TRUNK_Y, r.z]} rotation={[0, 0, Math.PI / 2]} material={mat}><cylinderGeometry args={[0.12, 0.12, 0.03, 12]} /></mesh>
+          {r.riser && <mesh position={[r.rx, (TRUNK_Y + WALL_H + 0.45) / 2, r.z]} material={mat}><cylinderGeometry args={[0.11, 0.11, WALL_H + 0.45 - TRUNK_Y, 12]} /></mesh>}
           {Array.from({ length: Math.max(1, Math.floor((r.x1 - r.x0) / 1.6)) }, (_, i) => (
             <Box key={i} p={[r.x0 + 0.8 + i * 1.6, TRUNK_Y + 0.18, r.z]} s={[0.03, 0.22, 0.26]} color="#55504c" />
           ))}
@@ -345,7 +353,7 @@ export function TableLife({ items, seated }: { items: Placed[]; seated: number[]
 
 // the floor, walls, storefront and the street-side life: fascia sign, blade sign, posters, menu board, warm lights,
 // planters, an A-frame board and beer crates. `items` draws the exhaust trunks over the tables.
-function RoomImpl({ w, d, grade, pyeong, items = [] }: { w: number; d: number; grade: Grade; pyeong?: number; items?: Placed[] }) {
+function RoomImpl({ w, d, grade, pyeong, items = [], shape = BBQ_SHAPE, portal }: { w: number; d: number; grade: Grade; pyeong?: number; items?: Placed[]; shape?: RoomShape; portal?: RefObject<HTMLElement | null> }) { // lab:layout shape, portal
   const g = GRADES[grade];
   const lines = useMemo(() => {
     const pts: number[] = [];
@@ -361,61 +369,80 @@ function RoomImpl({ w, d, grade, pyeong, items = [] }: { w: number; d: number; g
   const posterB = useMemo(() => cardSign("소주 · 맥주", "#1f6b4e", "#ffffff", 384, 512, 64), []);
   const wallMenu = useMemo(() => boardTex("오늘의 고기", ["생삼겹살 180g", "목살 180g", "항정살 150g", "껍데기 200g"], "#3a2a20"), []);
   const aframe = useMemo(() => boardTex("오늘 추천", ["생삼겹살", "목살"], "#26302a", "#f2f0e6", 256, 320), []);
-  const door = { x: w / 2 - 1.2, w: 1 };
-  const kitchenRight = -w / 2 + ITEM.kitchen.w;
+  // lab:layout: walls, door and windows come from the room shape (Shell3D); wall decor dodges the kitchen, door and windows
+  const dp = doorPoint(shape, w, d, BBQ_DOOR_MARGIN);
+  const tx = dp.nx === 0 ? 1 : 0, tz = dp.nx === 0 ? 0 : -1; // along the door wall
+  const kit = items.find((i) => i.id === "kitchen");
+  const kd = ITEM.kitchen.d, kw = ITEM.kitchen.w;
+  const free = (lo: number, hi: number, blocked: [number, number][]) => { // largest open span of [lo, hi]
+    let best: [number, number] = [lo, lo], cur = lo;
+    for (const [a, b] of [...blocked].sort((p, q) => p[0] - q[0])) { if (a - cur > best[1] - best[0]) best = [cur, a]; cur = Math.max(cur, b); }
+    if (hi - cur > best[1] - best[0]) best = [cur, hi];
+    return best;
+  };
+  const backBlock: [number, number][] = [];
+  if (kit && kit.z < 0) backBlock.push([kit.x - kw / 2, kit.x + kw / 2]);
+  if (shape.door.wall === "back") backBlock.push([dp.x - DOOR_W, dp.x + DOOR_W]);
+  const back = shape.windows.includes("back") ? null : free(-w / 2, w / 2, backBlock);
+  const leftBlock: [number, number][] = [];
+  if (kit && kit.x < 0) leftBlock.push([kit.z - kd / 2, kit.z + kd / 2]);
+  if (shape.door.wall === "left") leftBlock.push([dp.z - DOOR_W, dp.z + DOOR_W]);
+  const left = shape.windows.includes("left") ? null : free(-d / 2, d / 2, leftBlock);
+  const [, ksz] = kit ? kitchenFlip(kit) : [1, 1];
   const fw = Math.min(w - 0.6, 2.8); // fasciaSign canvas is 1024x192
+  const inside = (x: number, z: number): [number, number] => [Math.max(-w / 2 + 0.4, Math.min(w / 2 - 0.4, x)), Math.max(-d / 2 + 0.4, Math.min(d / 2 - 0.4, z))];
+  const lampAtDoor = inside(dp.x + dp.nx * 0.6 - tx * 1.1, dp.z + dp.nz * 0.6 - tz * 1.1);
+  const aframeX = shape.door.wall === "front" ? dp.x - 1.7 : w / 2 - 1.5;
   return (
     <group>
       <Box p={[0, -0.05, 0]} s={[w, 0.1, d]} color={g.floor} receive />
       <lineSegments geometry={lines}><lineBasicMaterial color="#191f28" transparent opacity={0.12} /></lineSegments>
-      {/* walls hide on the camera side when seen from above; the street side is glass with the door gap */}
-      <Wall p={[0, WALL_H / 2, -d / 2 - 0.06]} s={[w + 0.24, WALL_H, 0.12]} color={g.wall} outside={(c) => c.z < -d / 2}>
-        <Box p={[0, 0.45, -d / 2 + 0.005]} s={[w, 0.9, 0.02]} color={C.wainscot} />
-        {w / 2 - kitchenRight > 2.2 && (
+      <Shell w={w} d={d} shape={shape} margin={BBQ_DOOR_MARGIN} color={g.wall} wainscot={C.wainscot} portal={portal} decor={{
+        back: back && back[1] - back[0] > 2.2 ? (
           <group>
-            <Box p={[(kitchenRight + w / 2) / 2, 1.7, -d / 2 + 0.02]} s={[1.5, 1.02, 0.03]} color="#5b4436" />
-            <Board map={wallMenu} p={[(kitchenRight + w / 2) / 2, 1.7, -d / 2 + 0.04]} size={[1.4, 0.94]} />
+            <Box p={[(back[0] + back[1]) / 2, 1.7, -d / 2 + 0.02]} s={[1.5, 1.02, 0.03]} color="#5b4436" />
+            <Board map={wallMenu} p={[(back[0] + back[1]) / 2, 1.7, -d / 2 + 0.04]} size={[1.4, 0.94]} />
+            {[back[0] + 0.6, back[1] - 0.6].map((x) => <Glow key={x} p={[x, 2.1, -d / 2 + 0.04]} s={[0.22, 0.12, 0.06]} color="#fff3d6" glow="#ffc070" k={1.6} />)}
           </group>
-        )}
-        {[kitchenRight + 0.6, w / 2 - 0.6].map((x) => <Glow key={x} p={[x, 2.1, -d / 2 + 0.04]} s={[0.22, 0.12, 0.06]} color="#fff3d6" glow="#ffc070" k={1.6} />)}
-      </Wall>
-      <Wall p={[-w / 2 - 0.06, WALL_H / 2, 0]} s={[0.12, WALL_H, d]} color={g.wall} outside={(c) => c.x < -w / 2}>
-        <Box p={[-w / 2 + 0.005, 0.45, 0]} s={[0.02, 0.9, d]} color={C.wainscot} />
-        {[[posterA, -d / 2 + ITEM.kitchen.d + 0.9], [posterB, -d / 2 + ITEM.kitchen.d + 1.8]].filter(([, z]) => (z as number) < d / 2 - 0.5).map(([map, z], i) => (
-          <Board key={i} map={map as THREE.Texture} p={[-w / 2 + 0.02, 1.6, z as number]} size={[0.6, 0.8]} rot={[0, Math.PI / 2, 0]} glow={0.2} />
-        ))}
-        {d / 2 - (-d / 2 + ITEM.kitchen.d) > 2 && <Glow p={[-w / 2 + 0.04, 2.1, d / 2 - 1]} s={[0.06, 0.12, 0.22]} color="#fff3d6" glow="#ffc070" k={1.6} />}
-      </Wall>
-      <Wall p={[w / 2 + 0.06, WALL_H / 2, 0]} s={[0.12, WALL_H, d]} color={g.wall} outside={(c) => c.x > w / 2} />
-      {/* 줌인하면 손님 쪽 앞벽(유리 전면, 간판, 네온, 돌출 간판)이 흐려져 안쪽 배치가 보인다 */}
-      <FrontFade z={d / 2 + 0.04}>
-      <Storefront x0={-w / 2} x1={w / 2} z={d / 2 + 0.04} door={door} mat={false} />
-      {/* fascia sign over the storefront, neon line under it, blade sign at the left corner */}
-      <Box p={[0, WALL_H + 0.27, d / 2 + 0.1]} s={[fw + 0.24, fw * (192 / 1024) + 0.1, 0.12]} color="#4a2a20" />
-      <mesh position={[0, WALL_H + 0.27, d / 2 + 0.165]}>
-        <planeGeometry args={[fw, fw * (192 / 1024)]} />
-        <meshStandardMaterial map={fascia.map} emissive="#ffffff" emissiveMap={fascia.emissive} emissiveIntensity={0.35} roughness={0.6} />
-      </mesh>
-      <Glow p={[0, WALL_H - 0.02, d / 2 + 0.2]} s={[w - 0.2, 0.03, 0.03]} color="#ff5a4a" glow="#ff3b2f" k={1.2} />
-      <group position={[-w / 2 + 0.25, 2.05, d / 2 + 0.55]}>
-        <Box p={[0, 0, 0]} s={[0.1, 1.3, 0.7]} color="#e9dfcc" />
-        <Board map={blade} p={[0.055, 0, 0]} size={[0.6, 1.2]} rot={[0, Math.PI / 2, 0]} glow={0.3} />
-        <Board map={blade} p={[-0.055, 0, 0]} size={[0.6, 1.2]} rot={[0, -Math.PI / 2, 0]} glow={0.3} />
-        <Box p={[0, 0.1, -0.42]} s={[0.05, 0.05, 0.16]} color="#5b5248" />
-      </group>
-      </FrontFade>
+        ) : undefined,
+        left: left && left[1] - left[0] > 1.3 ? (
+          <group>
+            {[[posterA, left[0] + 0.9], [posterB, left[0] + 1.8]].filter(([, z]) => (z as number) < left[1] - 0.4).map(([map, z], i) => (
+              <Board key={i} map={map as THREE.Texture} p={[-w / 2 + 0.02, 1.6, z as number]} size={[0.6, 0.8]} rot={[0, Math.PI / 2, 0]} glow={0.2} />
+            ))}
+            {left[1] - left[0] > 3 && <Glow p={[-w / 2 + 0.04, 2.1, left[1] - 0.6]} s={[0.06, 0.12, 0.22]} color="#fff3d6" glow="#ffc070" k={1.6} />}
+          </group>
+        ) : undefined,
+        front: (
+          <group>
+            {/* fascia sign over the storefront, neon line under it, blade sign at the left corner */}
+            <Box p={[0, WALL_H + 0.27, d / 2 + 0.1]} s={[fw + 0.24, fw * (192 / 1024) + 0.1, 0.12]} color="#4a2a20" />
+            <mesh position={[0, WALL_H + 0.27, d / 2 + 0.165]}>
+              <planeGeometry args={[fw, fw * (192 / 1024)]} />
+              <meshStandardMaterial map={fascia.map} emissive="#ffffff" emissiveMap={fascia.emissive} emissiveIntensity={0.35} roughness={0.6} />
+            </mesh>
+            <Glow p={[0, WALL_H - 0.02, d / 2 + 0.2]} s={[w - 0.2, 0.03, 0.03]} color="#ff5a4a" glow="#ff3b2f" k={1.2} />
+            <group position={[-w / 2 + 0.25, 2.05, d / 2 + 0.55]}>
+              <Box p={[0, 0, 0]} s={[0.1, 1.3, 0.7]} color="#e9dfcc" />
+              <Board map={blade} p={[0.055, 0, 0]} size={[0.6, 1.2]} rot={[0, Math.PI / 2, 0]} glow={0.3} />
+              <Board map={blade} p={[-0.055, 0, 0]} size={[0.6, 1.2]} rot={[0, -Math.PI / 2, 0]} glow={0.3} />
+              <Box p={[0, 0.1, -0.42]} s={[0.05, 0.05, 0.16]} color="#5b5248" />
+            </group>
+          </group>
+        ),
+      }} />
       {/* warm pendants by the door and over the pass */}
-      <Pendant x={door.x - 1.1} z={d / 2 - 0.6} y={1.95} color="#7d1f16" />
-      {items.some((i) => i.id === "kitchen") && [-w / 2 + 1.2, -w / 2 + 2.8].map((x) => <Pendant key={x} x={x} z={-d / 2 + ITEM.kitchen.d + 0.35} y={2.0} color="#7d1f16" />)}
+      <Pendant x={lampAtDoor[0]} z={lampAtDoor[1]} y={1.95} color="#7d1f16" />
+      {kit && [kit.x - 0.8, kit.x + 0.8].map((x) => <Pendant key={x} x={x} z={kit.z + ksz * (kd / 2 + 0.35)} y={2.0} color="#7d1f16" />)}
       <pointLight position={[0, WALL_H - 0.2, 0]} intensity={0.8} distance={Math.max(w, d) * 1.2} decay={1} color="#ffcf9a" />
-      {/* the street side: planters at the door, an A-frame board, a stack of beer crates */}
-      {[door.x - door.w / 2 - 0.35, door.x + door.w / 2 + 0.35].filter((x) => x < w / 2 + 0.6).map((x) => (
-        <group key={x} position={[x, 0, d / 2 + 0.4]}>
+      {/* outside the door: two planters; on the street: an A-frame board and a stack of beer crates */}
+      {[-1, 1].map((k) => (
+        <group key={k} position={[dp.x - dp.nx * 0.4 + tx * k * (DOOR_W / 2 + 0.35), 0, dp.z - dp.nz * 0.4 + tz * k * (DOOR_W / 2 + 0.35)]}>
           <Cyl p={[0, 0.2, 0]} r={0.17} r2={0.14} h={0.4} color="#b9836a" />
           <mesh position={[0, 0.66, 0]} castShadow><icosahedronGeometry args={[0.3, 0]} /><meshStandardMaterial color={LEAF} flatShading roughness={0.9} /></mesh>
         </group>
       ))}
-      <group position={[door.x - 1.7, 0, d / 2 + 1.0]} rotation={[0, 0.35, 0]}>
+      <group position={[aframeX, 0, d / 2 + 1.0]} rotation={[0, 0.35, 0]}>
         <group rotation={[-0.16, 0, 0]} position={[0, 0.5, 0.08]}>
           <Box p={[0, 0, 0]} s={[0.56, 1.0, 0.04]} color="#5b4436" cast />
           <Board map={aframe} p={[0, 0.02, 0.022]} size={[0.48, 0.6]} glow={0.2} />
@@ -434,7 +461,7 @@ export const Room = memo(RoomImpl);
 
 function ItemsImpl({ items, hide }: { items: Placed[]; hide?: number }) {
   return <>{items.filter((it) => it.uid !== hide).map((it) => (
-    <group key={it.uid} position={[it.x, 0, it.z]} rotation={[0, it.rot ? Math.PI / 2 : 0, 0]}><Piece id={it.id} /></group>
+    <group key={it.uid} position={[it.x, 0, it.z]} rotation={[0, it.rot ? Math.PI / 2 : 0, 0]}><Piece id={it.id} flip={it.id === "kitchen" ? kitchenFlip(it) : undefined} /></group>
   ))}</>;
 }
 // the store shell and furniture do not change between simulation ticks: skip their re-render unless props change
