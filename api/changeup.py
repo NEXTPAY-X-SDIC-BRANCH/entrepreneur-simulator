@@ -40,6 +40,8 @@ from api.lab_pork import router as lab_pork_router  # lab:pork — 돼지고기 
 app.include_router(lab_pork_router)
 from api.lab_industry import router as industry_router  # lab:industry 새 업종 (sim/generic): /lab/industry/...
 app.include_router(industry_router)  # lab:industry
+from api.lab_modes import router as lab_modes_router  # lab:modes 이지 모드, 민감도 (/lab/easy/*, /lab/sensitivity)
+app.include_router(lab_modes_router)  # lab:modes
 
 KPI = ("revenue", "op", "covers", "ticket", "cogs", "labor", "rent", "mgmt", "fees", "walkaways", "avg_wait_min",
        "table_utilization", "satisfaction", "reviews", "delivery_revenue", "delivery_fee", "delivery_orders")
