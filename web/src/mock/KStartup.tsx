@@ -20,7 +20,7 @@ const SOON = 3; // 이 날수 이하로 남으면 마감 칩을 경고색으로
 
 const where = (x: Item) => (x.gu ? `${x.gu} 공고` : x.seoul ? "서울" : "전국");
 
-export default function KStartup({ young, gu }: { young: boolean; gu: string }) {
+export default function KStartup({ young, gu, bare }: { young: boolean; gu: string; bare?: boolean }) { // bare: 감싼 박스가 제목을 달 때
   const [data, setData] = useState<Data | null>(null);
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}mock/kstartup.json`).then((r) => r.json()).then(setData).catch(() => setData(null));
@@ -37,7 +37,7 @@ export default function KStartup({ young, gu }: { young: boolean; gu: string }) 
   return (
     <div className="m-funds">
       <div>
-        <h2 className="m-sub">지금 접수 중인 창업 지원사업</h2>
+        {!bare && <h2 className="m-sub">지금 접수 중인 창업 지원사업</h2>}
         <p>{mine ? `${gu}에서 여는 공고 ${mine}건을 먼저 보여 드려요.` : `${gu}만 대상으로 한 공고는 지금 없어서, 서울과 전국 공고를 보여 드려요.`} 창업 교육과 상담은 돈이 충분해도 들어 둘 만해요.</p>
         <ul>
           {list.slice(0, SHOW).map((x) => {
