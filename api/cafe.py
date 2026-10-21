@@ -46,7 +46,25 @@ class CafeIn(BaseModel):
     staff_peak: int | None = Field(None, ge=1, le=8)                   # people at the peak, 사장님 included; None = recommended
 
 
+class MenuItemIn(BaseModel):   # lab:menu  메뉴판 한 줄 (sim/menu.py). 화면용 값(recipe 등)은 버린다
+    id: str = Field(..., min_length=1, max_length=32)
+    name: str = Field("", max_length=24)
+    kind: Literal["main", "side", "drink"]
+    price: float = Field(..., ge=100, le=300_000)
+    unit_cost: float = Field(0, ge=0)
+    mix: float = Field(0, ge=0, le=1000)
+
+
 class SeasonIn(CafeIn):
+    menu: list[MenuItemIn] | None = Field(None, max_length=30)   # lab:menu  None = 예전 그대로 (상권 객단가, 업계 원가율)
+
+    @field_validator("menu")
+    @classmethod
+    def _menu_ok(cls, x):   # lab:menu
+        if x:
+            from sim.menu import clean
+            clean([i.model_dump() for i in x], "cafe")
+        return x
     seed: int = Field(0, ge=0, le=2_147_483_647)
     start_month: int | None = Field(None, ge=1, le=12)                 # None = params season.start_month
     extra_loan_krw: int | None = Field(None, ge=0, le=500_000_000)     # 운전자금 on top of the CAPEX gap; None = enough

@@ -1,0 +1,19 @@
+# 카페 기본 메뉴판 (lab:menu). 가격은 상권의 결제 1건 금액에 맞춰 늘이거나 줄여서 보여 준다 (sim/menu.py cafe_template).
+# price: 기준 가격 (가정, 커피 전문점 대표 메뉴 커피 평균 4,118원, 농식품부·농경연 2025 외식업체 경영실태 조사 표85 근처)
+# mix: 같은 종류 안의 주문 비중 (가정). side = 디저트·푸드
+industry: cafe
+kinds:
+  drink: {label: 음료, unit: 1잔, per_cover: "결제 1건에 1.6잔 (research/cafe/params.yaml demand.cups_per_tx)"}
+  side: {label: 디저트·푸드, unit: 1개, per_cover: "디저트 매출 비중 18.5% (엠브레인 2025)를 기본 메뉴 가격으로 나눈 개수"}
+overhead:   # 레시피 재료비를 실제 식재료비로 맞추는 보정 (가정): 손실, 폐기, 시럽·얼음·휘핑, 직원 음료, 서비스 제공분
+  drink: {value: 1.00, tag: "농경연 2024;가정", note: "레시피 재료비만큼 더 든다고 봄. 기본 메뉴의 음료+디저트 원가율이 업계 평균 식재료비율 38.9% (농경연 2024 비알코올 음료점) 근처가 되게 맞춘 값"}
+  side: {value: 0.10, tag: 가정, note: "디저트 원가율 40% (농경연 2025 제과 39.7%) 근처"}
+items:
+  - {id: americano, name: 아메리카노, kind: drink, price: 3500, mix: 45, recipe: [[coffee_beans, 0.018]]}
+  - {id: latte, name: 카페라떼, kind: drink, price: 4300, mix: 25, recipe: [[coffee_beans, 0.018], [milk, 0.2]]}
+  - {id: vanilla, name: 바닐라라떼, kind: drink, price: 4800, mix: 10, recipe: [[coffee_beans, 0.018], [milk, 0.2], [vanilla_syrup, 0.02]]}
+  - {id: season, name: 시즌 에이드, kind: drink, price: 5500, mix: 10, recipe: [[fruit_base, 1], [cider, 0.15]]}
+  - {id: tea, name: 허브티, kind: drink, price: 4000, mix: 10, recipe: [[tea_bag, 1]]}
+  - {id: croffle, name: 크로플, kind: side, price: 4500, mix: 40, recipe: [[croffle_dough, 1], [sugar, 0.01], [butter, 0.01]]}
+  - {id: cake, name: 조각 케이크, kind: side, price: 6500, mix: 35, recipe: [[cake_slice, 1]]}
+  - {id: cookie, name: 쿠키, kind: side, price: 3000, mix: 25, recipe: [[flour, 0.04], [sugar, 0.02], [egg, 0.3], [butter, 0.02]]}

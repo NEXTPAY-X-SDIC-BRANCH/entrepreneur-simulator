@@ -13,6 +13,7 @@ import random
 from . import model as m
 from .ko import won
 from .params import g, load_districts, load_params, v, weakest
+from .. import menu as menu_mod   # lab:menu
 
 HOURS_KO = {"short": "짧게", "standard": "기본", "long": "길게"}
 STAFF_KO = {"lean": "빠듯하게", "standard": "기본", "generous": "넉넉하게"}
@@ -57,6 +58,9 @@ def _context(cfg: dict) -> dict:
         "dep": p["rough_month"]["depreciation_krw"],
         "day_factor": {d: dist[f"{d}_day_factor"]["value"] for d in ("weekend", "weekday")},
         "opens_per_year": meta["opens_per_year"]["value"],
+        # lab:menu  메뉴판 (시즌 시작 때 정함). 없으면 None, 엔진은 예전 그대로
+        "menu": menu_mod.cafe_ctx(menu_mod.clean(cfg.get("menu"), "cafe"), dist["ticket_krw"]["value"], s("dessert_share"),
+                                  v("demand", "cups_per_tx")),
     }
 
 
@@ -171,6 +175,8 @@ def evaluate(ctx: dict, f: dict) -> dict:
         "hours": _coverage(cfg["district"], hours), "scn": _scn_effects(f.get("scn"))["demand_mult"],
     }
     scn = _scn_effects(f.get("scn"))
+    if ctx.get("menu"):   # lab:menu  메뉴의 가격 수준이 기본 메뉴보다 높으면 손님이 준다 (같은 탄력성)
+        mult["price"] *= menu_mod.cafe_price_index(ctx["menu"], f["dessert"]) ** (-eps)
     avg_day = ctx["avg_day"] * math.prod(mult.values())
     open_share = 1 - (s("breakdown_down_days") / DAYS if f["breakdown"] else 0)
     demand = served = 0.0
@@ -196,6 +202,8 @@ def evaluate(ctx: dict, f: dict) -> dict:
     dessert_rev = revenue * ds_eff
     drink_food = (v("opex", "food_cost_share") - ds * s("dessert_food_cost_share")) / (1 - ds)
     food = served * drink_ticket / (1 - ds_eff) * ((1 - ds_eff) * drink_food + ds_eff * s("dessert_food_cost_share"))
+    if ctx.get("menu"):   # lab:menu  객단가·식재료비를 메뉴판에서 (sim/menu.py cafe_money)
+        ticket, revenue, dessert_rev, food = menu_mod.cafe_money(ctx["menu"], ds_eff, served, f["price_level"] * scn["ticket_mult"])
     rate = m.card_fee_rate(revenue * 12)
     takeout_cups = served * v("demand", "cups_per_tx") * v("opex", "takeout_share")
     paid_h, labor = _labor(ctx, f, day_rows)

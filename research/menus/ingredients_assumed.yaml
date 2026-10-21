@@ -1,0 +1,11 @@
+# 공개 자료가 없는 식자재 단가 (전부 가정). pipelines/fetch_ingredients.py가 ingredients_today.json에 stage: 가정 으로 넣는다.
+# 식자재 유통 플랫폼(식봄, 마켓보로 등)과 제휴해 납품가를 받으면 이 값들을 바꾼다.
+coffee_beans:   {name: "원두 (블렌드, 납품)", unit: kg, price: 25000, note: "개인 카페 블렌드 원두 납품가 가정. 공개 통계 없음"}
+vanilla_syrup:  {name: "바닐라 시럽", unit: L, price: 12000, note: "업소용 시럽 1L 가정"}
+fruit_base:     {name: "과일청 베이스 (시즌 음료)", unit: 잔, price: 1200, note: "시즌 음료 한 잔에 들어가는 과일청·베이스 가정"}
+tea_bag:        {name: "티백·잎차 (1잔)", unit: 잔, price: 400, note: "허브티 한 잔 분량 가정"}
+croffle_dough:  {name: "크로플 생지", unit: 개, price: 1100, note: "냉동 생지 납품가 가정"}
+cake_slice:     {name: "조각 케이크 (완제품 납품)", unit: 조각, price: 2600, note: "완제품 케이크 한 조각 납품가 가정"}
+butter:         {name: "버터 (업소용)", unit: kg, price: 16000, note: "업소용 버터 가정"}
+naengmyeon_set: {name: "냉면 사리 + 육수 (1인분)", unit: 인분, price: 1600, note: "업소용 냉면 사리와 육수 1인분 가정"}
+broth_misc:     {name: "육수·양념 기타 (1그릇)", unit: 그릇, price: 300, note: "찌개 육수와 양념 가정"}

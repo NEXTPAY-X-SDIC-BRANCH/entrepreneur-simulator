@@ -22,6 +22,7 @@ import yaml
 
 from agents.ko import man_won
 from sim.engine import simulate_month, simulate_night
+from sim import menu as menu_mod   # lab:menu
 from sim.params import ROOT, SEGMENTS, SIM_ASSUMPTIONS, clone, load_params, load_profile
 
 RESEARCH = ROOT / "research"
@@ -229,6 +230,12 @@ def quit_prob(fatigue: float, parttimers: int) -> float:
 # --- plan + state + month + events -> engine inputs -------------------------------------------------------
 def _validate(plan: dict) -> dict:
     p = {**base_plan(), **(plan or {})}
+    if "menu" in p:   # lab:menu  메뉴판이 있으면 가격 수준을 삼겹살·소주 기준으로 환산 (sim/menu.py). 없으면 예전 그대로
+        p["menu"] = menu_mod.clean(p["menu"], "bbq")
+        if p["menu"]:
+            p["meat_price"], p["soju_price"] = menu_mod.bbq_plan_prices(p["menu"], base_plan()["meat_price"], base_plan()["soju_price"])
+        else:
+            del p["menu"]
     p["meat_price"] = int(min(max(p["meat_price"], 12000), 30000))
     p["soju_price"] = int(min(max(p["soju_price"], 3000), 9000))
     p["meat_grade"] = p["meat_grade"] if p["meat_grade"] in data()["P"]["meat_grade"] else "domestic"
@@ -295,6 +302,8 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
                                        + sum(x["cost_per_cover"] for x in extras))
     a["svc_extra_per_party_min"] = v("staff.table_tasks_min") + sum(x["service_min"] for x in extras)
     a["reorder_patience_min"] = v("staff.reorder_patience_min")
+    if plan.get("menu"):   # lab:menu  메뉴판 → 1인분·1병 평균 가격과 원가, 사이드 지출과 원가율 (sim/menu.py)
+        menu_mod.apply_bbq(p, a, plan["menu"], pork, w_meat, w_alc, base["prd_side_spend_per_cover"])
 
     # service: staff grilling, staff per shift (a sudden quit removes one this month), fatigue slows service
     p["svc_staff_grilling"] = "Y" if plan["staff_grilling"] else "N"

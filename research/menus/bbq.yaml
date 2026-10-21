@@ -1,0 +1,30 @@
+# 고깃집 기본 메뉴판 (lab:menu). 학습자가 이름·가격·원가·주문 비중을 고친다. sim/menu.py가 읽는다.
+# price: 판매가 (원, 가정: 서울 고깃집 메뉴판 수준. 삼겹살 19,000원은 엔진 기준 점포 값 S23;S25)
+# mix: 같은 종류 안에서의 주문 비중 (가정). 종류마다 합을 100으로 보고 나눠 쓴다
+# recipe: [식자재 id, 양]. 양의 단위는 ingredients_today.json 품목의 단위 (kg, 개, 모, 병, L ...)
+# alt_recipe.imported: 원육을 수입 냉동으로 바꿨을 때의 재료. 숙성은 원가 × aged_cost_mult
+industry: bbq
+kinds:
+  main: {label: 고기, unit: 1인분, per_cover: "손님 1명이 1인분 (엔진 자료 S28;S74)"}
+  side: {label: 식사·사이드, unit: 1개, per_cover: "사이드 지출 1인 3,500원 (S30)을 기본 메뉴 가격으로 나눈 개수"}
+  drink: {label: 주류·음료, unit: 1병, per_cover: "1인 0.9병 (S62), 가격이 오르면 줄어듦"}
+overhead:   # 재료비에 더하는 손실 (가정): 고기 손질·굽기 손실, 사이드 조리 손실. 병 음료는 없음
+  main: {value: 0.05, tag: 가정, note: "손질·굽기 손실"}
+  side: {value: 0.05, tag: 가정, note: "조리 손실·남는 재료"}
+  drink: {value: 0.0, tag: 가정, note: "병 그대로 냄"}
+aged_cost_mult: {value: 1.333, tag: "S23;가정", note: "숙성 원가 6,000 ÷ 국내산 4,500 (research/season_params.yaml meat_grade)"}
+items:
+  - {id: samgyeopsal, name: 삼겹살, kind: main, price: 19000, mix: 55, portion: 200g,
+     recipe: [[pork_belly, 0.2]], alt_recipe: {imported: [[pork_belly_import, 0.2]]}}
+  - {id: moksal, name: 목살, kind: main, price: 19000, mix: 30, portion: 200g,
+     recipe: [[pork_neck, 0.2]], alt_recipe: {imported: [[pork_neck_import, 0.2]]}}
+  - {id: hangjeong, name: 항정살, kind: main, price: 22000, mix: 15, portion: 150g,
+     recipe: [[pork_jowl, 0.15]]}
+  - {id: doenjang, name: 된장찌개, kind: side, price: 5000, mix: 35,
+     recipe: [[doenjang, 0.04], [tofu, 0.25], [zucchini, 0.25], [onion, 0.05], [green_onion, 0.03], [chili, 0.005], [broth_misc, 1]]}
+  - {id: naengmyeon, name: 물냉면, kind: side, price: 8000, mix: 25, recipe: [[naengmyeon_set, 1], [egg, 0.5]]}
+  - {id: rice, name: 공기밥, kind: side, price: 2000, mix: 30, recipe: [[rice, 0.1]]}
+  - {id: gyeranjjim, name: 계란찜, kind: side, price: 4000, mix: 10, recipe: [[egg, 3], [green_onion, 0.01]]}
+  - {id: soju, name: 소주, kind: drink, price: 5000, mix: 60, recipe: [[soju, 1]]}
+  - {id: beer, name: 맥주, kind: drink, price: 5000, mix: 30, recipe: [[beer, 1]]}
+  - {id: soda, name: 음료수, kind: drink, price: 2000, mix: 10, recipe: [[cola, 0.25]]}

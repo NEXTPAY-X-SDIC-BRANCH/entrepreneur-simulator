@@ -1,0 +1,542 @@
+{
+ "_meta": {
+  "basis_date": "2026-10-19",
+  "generated": "2026-10-21",
+  "method": "pipelines/fetch_ingredients.py",
+  "caveat": "소매가는 마트·시장 가격이라 식당 납품가와 다르다. 도매가는 월평균. 가정은 공개 자료가 없는 품목",
+  "sources": [
+   {
+    "id": "seoul_necessities",
+    "publisher": "서울특별시 (서울 열린데이터광장)",
+    "title": "생필품 농수축산물 가격 정보 (전통시장·대형마트)",
+    "url": "https://data.seoul.go.kr/dataList/OA-1170/S/1/datasetView.do",
+    "stage": "소매",
+    "status": "cached",
+    "basis_date": "2026-10-19",
+    "note": "SEOUL_OPEN_DATA_KEY가 없어 지난 스냅샷 값을 씀",
+    "items": 23
+   },
+   {
+    "id": "kamis",
+    "publisher": "한국농수산식품유통공사 (KAMIS)",
+    "title": "농산물 일별 소매가격 (서울)",
+    "url": "https://www.kamis.or.kr",
+    "stage": "소매",
+    "status": "cached",
+    "basis_date": "2026-10-16",
+    "note": "KAMIS_API_KEY가 없어 저장된 kamis.json을 씀",
+    "items": 9
+   },
+   {
+    "id": "kape_wholesale",
+    "publisher": "축산물품질평가원 (축산유통정보)",
+    "title": "돼지 부위별 도매 식육포장가격 (전국 평균, 월)",
+    "url": "https://www.ekapepia.com",
+    "stage": "도매",
+    "status": "snapshot",
+    "basis_date": "2026-09",
+    "note": "KAPE 통계DB 화면 값을 옮긴 저장 자료 (자동 수집 API는 키 필요)",
+    "items": 6
+   },
+   {
+    "id": "kmta_import",
+    "publisher": "(사)한국육류유통수출협회",
+    "title": "월간 육류유통 2026년 10월호, 수입 돼지고기 도매가",
+    "url": "https://www.kmta.or.kr",
+    "stage": "도매",
+    "status": "snapshot",
+    "basis_date": "2026-09",
+    "note": "월간 육류유통 2026년 10월호 (9월 자료)",
+    "items": 2
+   },
+   {
+    "id": "distributor",
+    "publisher": "식자재 유통 플랫폼 (식봄, 마켓보로 등)",
+    "title": "B2B 식자재 납품가",
+    "url": null,
+    "stage": "납품",
+    "status": "not_connected",
+    "basis_date": null,
+    "note": "공개 API 없음. 유통업체 제휴 시 연결",
+    "items": 0
+   },
+   {
+    "id": "assumed",
+    "publisher": "ChangeUp 가정",
+    "title": "공개 자료가 없는 품목의 단가 (research/menus/ingredients_assumed.yaml)",
+    "url": null,
+    "stage": "가정",
+    "status": "ok",
+    "basis_date": null,
+    "note": "공개 자료 없음, 전부 가정",
+    "items": 9
+   }
+  ]
+ },
+ "items": {
+  "beef_import_retail": {
+   "name": "수입 소고기 등심 (소매)",
+   "unit": "kg",
+   "price": 40000,
+   "n": 17,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 17곳 중앙값"
+  },
+  "beef_korean_retail": {
+   "name": "한우 등심 1등급 이상 (소매)",
+   "unit": "kg",
+   "price": 130000,
+   "n": 25,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 25곳 중앙값"
+  },
+  "beer": {
+   "name": "맥주 500ml (캔)",
+   "unit": "병",
+   "price": 2300,
+   "n": 17,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 17곳 중앙값"
+  },
+  "broth_misc": {
+   "name": "육수·양념 기타 (1그릇)",
+   "unit": "그릇",
+   "price": 300,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "찌개 육수와 양념 가정"
+  },
+  "butter": {
+   "name": "버터 (업소용)",
+   "unit": "kg",
+   "price": 16000,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "업소용 버터 가정"
+  },
+  "cake_slice": {
+   "name": "조각 케이크 (완제품 납품)",
+   "unit": "조각",
+   "price": 2600,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "완제품 케이크 한 조각 납품가 가정"
+  },
+  "chicken": {
+   "name": "닭고기 (육계)",
+   "unit": "kg",
+   "price": 7950,
+   "n": 22,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 22곳 중앙값"
+  },
+  "chili": {
+   "name": "청양고추",
+   "unit": "kg",
+   "price": 10000,
+   "n": 27,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 27곳 중앙값",
+   "alt": [
+    {
+     "price": 12180,
+     "unit": "kg",
+     "source": "kamis",
+     "date": "2026-10-16",
+     "stage": "소매"
+    }
+   ]
+  },
+  "cider": {
+   "name": "사이다",
+   "unit": "L",
+   "price": 1987,
+   "n": 21,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 21곳 중앙값"
+  },
+  "coffee_beans": {
+   "name": "원두 (블렌드, 납품)",
+   "unit": "kg",
+   "price": 25000,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "개인 카페 블렌드 원두 납품가 가정. 공개 통계 없음"
+  },
+  "cola": {
+   "name": "콜라",
+   "unit": "L",
+   "price": 2067,
+   "n": 19,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 19곳 중앙값"
+  },
+  "croffle_dough": {
+   "name": "크로플 생지",
+   "unit": "개",
+   "price": 1100,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "냉동 생지 납품가 가정"
+  },
+  "doenjang": {
+   "name": "된장",
+   "unit": "kg",
+   "price": 8480,
+   "n": 19,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 19곳 중앙값"
+  },
+  "egg": {
+   "name": "계란 (특란)",
+   "unit": "개",
+   "price": 300,
+   "n": 18,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 18곳 중앙값"
+  },
+  "flour": {
+   "name": "밀가루 (중력)",
+   "unit": "kg",
+   "price": 1980,
+   "n": 19,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 19곳 중앙값"
+  },
+  "fruit_base": {
+   "name": "과일청 베이스 (시즌 음료)",
+   "unit": "잔",
+   "price": 1200,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "시즌 음료 한 잔에 들어가는 과일청·베이스 가정"
+  },
+  "garlic": {
+   "name": "깐마늘",
+   "unit": "kg",
+   "price": 10700,
+   "n": 26,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 26곳 중앙값",
+   "alt": [
+    {
+     "price": 10103,
+     "unit": "kg",
+     "source": "kamis",
+     "date": "2026-10-16",
+     "stage": "소매"
+    }
+   ]
+  },
+  "gochujang": {
+   "name": "고추장",
+   "unit": "kg",
+   "price": 15500,
+   "n": 19,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 19곳 중앙값"
+  },
+  "green_onion": {
+   "name": "대파",
+   "unit": "kg",
+   "price": 2807,
+   "source": "kamis",
+   "date": "2026-10-16",
+   "stage": "소매",
+   "note": "KAMIS 문장 kamis_파_00"
+  },
+  "lettuce": {
+   "name": "상추 (청)",
+   "unit": "kg",
+   "price": 7900,
+   "n": 19,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 19곳 중앙값",
+   "alt": [
+    {
+     "price": 9490,
+     "unit": "kg",
+     "source": "kamis",
+     "date": "2026-10-16",
+     "stage": "소매"
+    }
+   ]
+  },
+  "milk": {
+   "name": "우유",
+   "unit": "L",
+   "price": 3200,
+   "n": 19,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 19곳 중앙값"
+  },
+  "naengmyeon_set": {
+   "name": "냉면 사리 + 육수 (1인분)",
+   "unit": "인분",
+   "price": 1600,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "업소용 냉면 사리와 육수 1인분 가정"
+  },
+  "onion": {
+   "name": "양파",
+   "unit": "kg",
+   "price": 2216,
+   "source": "kamis",
+   "date": "2026-10-16",
+   "stage": "소매",
+   "note": "KAMIS 문장 kamis_양파_00"
+  },
+  "perilla": {
+   "name": "깻잎",
+   "unit": "kg",
+   "price": 15000,
+   "n": 25,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 25곳 중앙값",
+   "alt": [
+    {
+     "price": 25340,
+     "unit": "kg",
+     "source": "kamis",
+     "date": "2026-10-16",
+     "stage": "소매"
+    }
+   ]
+  },
+  "pork_belly": {
+   "name": "돼지 삼겹살 (국내산 냉장, 도매)",
+   "unit": "kg",
+   "price": 21656,
+   "source": "kape_wholesale",
+   "date": "2026-09",
+   "stage": "도매",
+   "note": "월평균, 2026-10-08 갱신 화면 캡처"
+  },
+  "pork_belly_import": {
+   "name": "수입 냉동 삼겹살 (스페인산, 도매)",
+   "unit": "kg",
+   "price": 7000,
+   "source": "kmta_import",
+   "date": "2026-09",
+   "stage": "도매",
+   "note": "협회 9월 판매제시가격 (업계 자료)"
+  },
+  "pork_belly_retail": {
+   "name": "돼지 삼겹살 (소매)",
+   "unit": "kg",
+   "price": 30455,
+   "n": 26,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 26곳 중앙값"
+  },
+  "pork_gabri": {
+   "name": "돼지 가브리살 (국내산, 도매)",
+   "unit": "kg",
+   "price": 28639,
+   "source": "kape_wholesale",
+   "date": "2026-09",
+   "stage": "도매",
+   "note": "월평균, 2026-10-08 갱신 화면 캡처"
+  },
+  "pork_galmaegi": {
+   "name": "돼지 갈매기살 (국내산, 도매)",
+   "unit": "kg",
+   "price": 21086,
+   "source": "kape_wholesale",
+   "date": "2026-09",
+   "stage": "도매",
+   "note": "월평균, 2026-10-08 갱신 화면 캡처"
+  },
+  "pork_jowl": {
+   "name": "돼지 항정살 (국내산, 도매)",
+   "unit": "kg",
+   "price": 40089,
+   "source": "kape_wholesale",
+   "date": "2026-09",
+   "stage": "도매",
+   "note": "월평균, 2026-10-08 갱신 화면 캡처"
+  },
+  "pork_neck": {
+   "name": "돼지 목심 (국내산 냉장, 도매)",
+   "unit": "kg",
+   "price": 19319,
+   "source": "kape_wholesale",
+   "date": "2026-09",
+   "stage": "도매",
+   "note": "월평균, 2026-10-08 갱신 화면 캡처"
+  },
+  "pork_neck_import": {
+   "name": "수입 목전지 (미국산, 도매)",
+   "unit": "kg",
+   "price": 5200,
+   "source": "kmta_import",
+   "date": "2026-09",
+   "stage": "도매",
+   "note": "협회 9월 판매제시가격 (업계 자료)"
+  },
+  "pork_rib": {
+   "name": "돼지 갈비 (국내산, 도매)",
+   "unit": "kg",
+   "price": 10367,
+   "source": "kape_wholesale",
+   "date": "2026-09",
+   "stage": "도매",
+   "note": "월평균, 2026-10-08 갱신 화면 캡처"
+  },
+  "potato": {
+   "name": "감자",
+   "unit": "kg",
+   "price": 3300,
+   "n": 25,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 25곳 중앙값",
+   "alt": [
+    {
+     "price": 3140,
+     "unit": "kg",
+     "source": "kamis",
+     "date": "2026-10-16",
+     "stage": "소매"
+    }
+   ]
+  },
+  "rice": {
+   "name": "쌀 (20kg, 소매)",
+   "unit": "kg",
+   "price": 3185,
+   "source": "kamis",
+   "date": "2026-10-16",
+   "stage": "소매",
+   "note": "KAMIS 문장 kamis_쌀_01"
+  },
+  "rice_brand_retail": {
+   "name": "쌀 (브랜드 10kg, 소매)",
+   "unit": "kg",
+   "price": 5700,
+   "n": 33,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 33곳 중앙값"
+  },
+  "soju": {
+   "name": "소주 360ml",
+   "unit": "병",
+   "price": 1500,
+   "n": 19,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 19곳 중앙값"
+  },
+  "sugar": {
+   "name": "설탕",
+   "unit": "kg",
+   "price": 2990,
+   "n": 22,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 22곳 중앙값"
+  },
+  "tea_bag": {
+   "name": "티백·잎차 (1잔)",
+   "unit": "잔",
+   "price": 400,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "허브티 한 잔 분량 가정"
+  },
+  "tofu": {
+   "name": "두부 (380g 한 모)",
+   "unit": "모",
+   "price": 3175,
+   "n": 18,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 18곳 중앙값"
+  },
+  "vanilla_syrup": {
+   "name": "바닐라 시럽",
+   "unit": "L",
+   "price": 12000,
+   "source": "assumed",
+   "date": null,
+   "stage": "가정",
+   "note": "업소용 시럽 1L 가정"
+  },
+  "water": {
+   "name": "생수 500ml",
+   "unit": "병",
+   "price": 600,
+   "n": 19,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 19곳 중앙값"
+  },
+  "zucchini": {
+   "name": "애호박",
+   "unit": "개",
+   "price": 1000,
+   "n": 25,
+   "source": "seoul_necessities",
+   "date": "2026-10-19",
+   "stage": "소매",
+   "note": "서울 전통시장·대형마트 25곳 중앙값",
+   "alt": [
+    {
+     "price": 1113,
+     "unit": "개",
+     "source": "kamis",
+     "date": "2026-10-16",
+     "stage": "소매"
+    }
+   ]
+  }
+ }
+}
