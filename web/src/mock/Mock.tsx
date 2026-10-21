@@ -11,8 +11,8 @@ import CafeBuild from "./CafeBuild";
 import CafeSim from "./CafeSim";
 import ApparelBuild from "./ApparelBuild";
 import ApparelSim from "./ApparelSim";
-import { DEFAULT_APPAREL, setApparelKosis, type ApparelCfg } from "./apparel";
-import { defaultQf, setDeliveryMarket, setQuickfoodKrei, type QfCfg } from "./quickfood";
+import { DEFAULT_APPAREL, setApparelKosis, setFashionMarket, type ApparelCfg } from "./apparel";
+import { defaultQf, setDeliveryMarket, setFoodCost, setQuickfoodKrei, type QfCfg } from "./quickfood";
 import QuickFoodBuild from "./QuickFoodBuild";
 import QuickFoodSim from "./QuickFoodSim";
 import type { CafeCfg } from "./cafeChecks";
@@ -69,9 +69,11 @@ export default function Mock() {
     if (qf) {
       get("quickfood_krei.json").then(setQuickfoodKrei).catch(() => null);  // 없으면 quickfood.ts의 같은 값으로 계산
       get("delivery_market.json").then(setDeliveryMarket).catch(() => null);
+      get("food_cost.json").then(setFoodCost).catch(() => null);   // 없으면 식재료 시세 배수 1
       setQfCfg((c) => (c.ind === ind ? c : defaultQf(ind)));
     }
-    if (apparel) get("apparel_kosis.json").then(setApparelKosis).catch(() => null);          // 없으면 apparel.ts의 같은 값으로 계산                                    // 없으면 대출 이자는 연 6% 가정
+    if (apparel) get("apparel_kosis.json").then(setApparelKosis).catch(() => null);
+    if (apparel) get("fashion_market.json").then(setFashionMarket).catch(() => null);   // 없으면 apparel.ts MARKET의 같은 값          // 없으면 apparel.ts의 같은 값으로 계산                                    // 없으면 대출 이자는 연 6% 가정
     Promise.all([get("seoul_gu.json"), get("gu_stats.json"), rent, dong, krei, growth, prof, geo, shops, cafeDong, trdar, flow, ecos]).then(([g, d, r, dn, k, gr, pf, ge, sh, cd, tr, fl, ec]) => {
       useIndustry(ind); // 아래 set*보다 먼저: 구 통계가 업종 블록을 고른다
       if (!alive) return; setGuData(d); setRentData(r); setDongData(dn); setKrei(k); setGrowth(gr); setAreaData(pf, ge?.dong ?? null); setShopData(sh, cd); setTrdarData(tr); setFlowData(fl); setEcos(ec); setGus(g); setReady(true);

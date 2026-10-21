@@ -157,6 +157,11 @@ season:   # step 3 월별 운영 (sim/cafe/season.py). Every effect size here is
     grade: M
     source: "S96 통계청 서비스업생산지수 커피 등 비알코올 음료점업 (KOSIS DT_1KC2020 I5622) 불변지수, 하루당, 2023~2025 평균 (web/public/mock/kosis_monthly.json)"
     note: "분기 평균 1. 전국 값이라 대학가 방학은 들어 있지 않다"
+  ingredient_index:
+    value: {1: 1.038, 2: 1.041, 3: 1.043, 4: 1.044, 5: 1.044, 6: 1.048, 7: 1.048, 8: 1.048, 9: 1.049, 10: 1.053, 11: 1.058, 12: 1.069}
+    grade: M
+    source: "S103 KOSIS 생활물가지수 커피·우유 (DT_1J22005) 최근 12개월 평균 ÷ 2024년 평균 (커피 1.152, 우유 1.005) × 달별 지수 (2021~2025), 외식업체 경영실태조사 2025 비알코올 음료점업 식재료비 중 가공식품 61.7% (DT_114054_031)"
+    note: "음료 식재료비에 곱하는 배수. 원두와 우유가 둘 다 가공식품에 묶여 있어 반반으로 봄 (가정). 식재료비율(food_cost_share)이 2024년 실적이라 그 뒤 오른 몫을 더한다. pipelines/fetch_food_cost.py"
   launch_share: {value: 0.7, grade: 가정, source: "none", note: "새 매장은 성숙 매장 손님의 70%에서 시작, 단골이 쌓이며 100%로 다가감"}
   regulars_speed: {value: 0.15, grade: 가정, source: "none", note: "단골 지수가 목표값에 다가가는 한 달 비율"}
   regulars_speed_marketing: {value: 0.15, grade: 가정, source: "none", note: "마케팅 효과가 최대일 때 더해지는 속도"}

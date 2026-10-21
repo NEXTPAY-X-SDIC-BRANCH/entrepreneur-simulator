@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Assume from "./Assume";
 import { LOAN_RATE, guStat, man, type Profile } from "./model";
 import {
-  DEFAULT_PLAN, PLAN_TEXT, QF_NAME, derived, eventOf, playMonth, qfOpeningCost, qfStrategies, startState,
+  DEFAULT_PLAN, PLAN_TEXT, QF_NAME, derived, eventOf, foodMult, playMonth, qfOpeningCost, qfStrategies, startState,
   type QfCfg, type QfMonth, type QfPlan, type QfState, type QfStratId,
 } from "./quickfood";
 import { QfFloorPlan } from "./QuickFoodBuild";
@@ -416,7 +416,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                         <h2>정산표</h2>
                         <table className="sx-table"><tbody>
                           <tr><th>매출</th><td>{man(w(c.revenue))}</td><td>주문 약 {n0(c.tx)}건, 한 건 {n0(c.ticket)}원<Assume what="평수 효과(조사 평균 면적 기준 제곱근), 새 가게 인지도, 가격 탄력 1.2" /></td></tr>
-                          <tr><th>식재료비</th><td>−{man(w(c.food))}</td><td>처음 가격 기준 매출의 {Math.round(dv.foodRatio * 100)}% (경영실태조사 식재료+인건비 비율에서 인건비를 뺀 값)</td></tr>
+                          <tr><th>식재료비</th><td>−{man(w(c.food))}</td><td>처음 가격 기준 매출의 {Math.round(dv.foodRatio * 100)}% (2024년 경영실태조사) × 이달 식재료 시세 {c.foodMult.toFixed(3)}배: {foodMult(cfg.ind, c.month).parts.map((p) => `${p.items.join("·")} ${p.factor.toFixed(2)}배(식재료비의 ${Math.round(p.share * 100)}%)`).join(", ")} (생활물가지수, 2024년 대비)</td></tr>
                           <tr className="sub"><th>매출총이익</th><td>{signed(c.revenue - c.food)}</td><td /></tr>
                           <tr><th>배달 수수료</th><td>−{man(w(fees))}</td><td>배달 {n0(c.orders.delivery)}건 × (배달앱 {n0(dv.appFee * 1e4)}원 + 배달대행 {n0(dv.agencyFee * 1e4)}원)</td></tr>
                           <tr><th>인건비</th><td>{c.staffPay ? `−${man(w(c.staffPay))}` : "0원"}</td><td>알바 {c.plan.staff}명, 한 명 월 {man(Math.round(dv.wage))} (사장 인건비 제외)</td></tr>

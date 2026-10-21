@@ -20,13 +20,16 @@ type Krei = {
   sales_month_man: number; op_margin: number; food_labor_ratio: number; sales_per_worker_year_man: number; ticket_krw: number;
   visit_per_day: number; delivery_per_day: number; takeout_per_day: number; delivery_app_fee_month_krw: number; delivery_agency_fee_month_krw: number;
   interior_total_man: number; area_m2: number; open_days: number; workers: number; family_unpaid: number; wage_month_man: number;
+  food_mix_pct?: Record<string, number>;
 };
 // 파일이 없을 때 쓰는 값도 같은 조사의 같은 값이다 (2026-10-21 받은 값)
 const FALLBACK: Record<QfInd, Krei> = {
   chicken: { sales_month_man: 1476.5, op_margin: 0.092, food_labor_ratio: 0.708, sales_per_worker_year_man: 11188, ticket_krw: 16487, visit_per_day: 26.8, delivery_per_day: 21.7, takeout_per_day: 10.2,
-    delivery_app_fee_month_krw: 555376, delivery_agency_fee_month_krw: 860806, interior_total_man: 2590.7, area_m2: 54.3, open_days: 28.5, workers: 2.56, family_unpaid: 0.51, wage_month_man: 214.3 },
+    delivery_app_fee_month_krw: 555376, delivery_agency_fee_month_krw: 860806, interior_total_man: 2590.7, area_m2: 54.3, open_days: 28.5, workers: 2.56, family_unpaid: 0.51, wage_month_man: 214.3,
+    food_mix_pct: { "쌀": 3.5, "축산물": 52.4, "가공식품(공산품)": 16.9 } },
   bunsik: { sales_month_man: 920.6, op_margin: 0.093, food_labor_ratio: 0.71, sales_per_worker_year_man: 7614, ticket_krw: 6700.5, visit_per_day: 49.6, delivery_per_day: 15.5, takeout_per_day: 24.7,
-    delivery_app_fee_month_krw: 259536, delivery_agency_fee_month_krw: 986515, interior_total_man: 2176.6, area_m2: 44, open_days: 27.5, workers: 2.64, family_unpaid: 0.53, wage_month_man: 191.3 },
+    delivery_app_fee_month_krw: 259536, delivery_agency_fee_month_krw: 986515, interior_total_man: 2176.6, area_m2: 44, open_days: 27.5, workers: 2.64, family_unpaid: 0.53, wage_month_man: 191.3,
+    food_mix_pct: { "쌀": 16.2, "축산물": 13.2, "가공식품(공산품)": 32.4 } },
 };
 let K: Record<QfInd, Krei> = FALLBACK;
 let LOADED = false;
@@ -41,6 +44,35 @@ export const quickfoodLoaded = () => LOADED;
 let DELIVERY_MONTH: Record<number, number> = { 1: 0.978, 2: 0.904, 3: 0.959, 4: 0.927, 5: 0.988, 6: 0.98, 7: 1.044, 8: 1.082, 9: 0.987, 10: 1.022, 11: 1.005, 12: 1.125 };
 export function setDeliveryMarket(d: { month_index?: Record<string, number> } | null) {
   if (d?.month_index) DELIVERY_MONTH = Object.fromEntries(Object.entries(d.month_index).map(([k, v]) => [Number(k), v]));
+}
+
+// ---------------------------------------------------------------- 식재료 시세 (food_cost.json, pipelines/fetch_food_cost.py)
+// 품목마다 level_vs_2024 (최근 12개월 평균 ÷ 2024년 평균)와 month_index (그해 평균 = 1, 2021~2025 평균)가 있다.
+// 경영실태조사 식재료비율은 2024년 실적이라, 그 뒤 오른 몫과 달별 출렁임을 식재료비 구성 비중만큼 곱한다.
+type FoodItem = { label: string; level_vs_2024: number | null; month_index: Record<string, number>; kamis?: { unit: string; latest_krw: number } };
+let FOOD: Record<string, FoodItem> | null = null;
+export function setFoodCost(d: { items?: Record<string, FoodItem> } | null) { FOOD = d?.items ?? null; }
+export const foodItems = () => FOOD;
+// 식재료비 구성(경영실태조사 DT_114054_031)의 갈래 → 생활물가지수 품목. 치킨 가공식품은 튀김유, 분식 축산물은 김밥·순대의 달걀·돼지고기,
+// 분식 가공식품은 떡·어묵으로 본다 (대응은 가정). 나머지 갈래(채소·음료 등)는 지수 없이 그대로 둔다
+const FOOD_MAP: Record<QfInd, [string, string[]][]> = {
+  chicken: [["축산물", ["chicken"]], ["가공식품(공산품)", ["oil"]], ["쌀", ["rice"]]],
+  bunsik: [["쌀", ["rice"]], ["축산물", ["egg", "pork"]], ["가공식품(공산품)", ["tteok", "fishcake"]]],
+};
+export type FoodPart = { group: string; items: string[]; share: number; factor: number };
+export function foodMult(ind: QfInd, month: number): { mult: number; parts: FoodPart[] } {
+  const mix = K[ind].food_mix_pct ?? {};
+  const parts: FoodPart[] = [];
+  let mult = 1;
+  for (const [group, items] of FOOD_MAP[ind]) {
+    const share = (mix[group] ?? 0) / 100;
+    const fs = items.map((i) => FOOD?.[i]).filter((x): x is FoodItem => !!x && x.level_vs_2024 != null);
+    if (!share || !fs.length) continue;
+    const factor = fs.reduce((a, x) => a + x.level_vs_2024! * (x.month_index[String(month)] ?? 1), 0) / fs.length;
+    mult += share * (factor - 1);
+    parts.push({ group, items: fs.map((x) => x.label), share, factor });
+  }
+  return { mult, parts };
 }
 
 // 조사값에서 바로 계산하는 값
@@ -117,7 +149,7 @@ export type Fx = { demand?: number; visit?: number; delivery?: number; takeout?:
 export type Channel = { visit: number; takeout: number; delivery: number };
 export type QfMonth = {
   month: number; revenue: number; ch: Channel; orders: Channel; food: number; staffPay: number; rent: number; other: number; marketing: number; adCost: number;
-  appFees: number; agencyFees: number; eventCost: number; op: number; interest: number; draw: number; cash: number; lost: number; demand: number; load: number;
+  appFees: number; agencyFees: number; eventCost: number; foodMult: number; op: number; interest: number; draw: number; cash: number; lost: number; demand: number; load: number;
   tx: number; ticket: number; awareness: number; closed: boolean; plan: QfPlan; event: string; choice: string;
 };
 
@@ -145,7 +177,8 @@ export function playMonth(profile: Profile, cfg: QfCfg, s: QfState, month: numbe
   const orders: Channel = { visit: (ch.visit * 1e4) / ticket, takeout: (ch.takeout * 1e4) / ticket, delivery: (ch.delivery * 1e4) / ticket };
   const appFees = orders.delivery * (d.appFee + (fx.feeAdd ?? 0));
   const agencyFees = orders.delivery * d.agencyFee;
-  const food = (revenue / level) * d.foodRatio * (ev.fx?.food ?? 1) * (fx.food ?? 1);   // 가격을 올려도 식재료는 그대로
+  const fm = foodMult(cfg.ind, month).mult;
+  const food = (revenue / level) * d.foodRatio * fm * (ev.fx?.food ?? 1) * (fx.food ?? 1);   // 가격을 올려도 식재료는 그대로. fm = 이달 식재료 시세
   const staffPay = d.wage * plan.staff;
   const rent = st.rent * cfg.pyeong;
   const other = revenue * OTHER;
@@ -157,7 +190,7 @@ export function playMonth(profile: Profile, cfg: QfCfg, s: QfState, month: numbe
   const negMonths = cash < 0 ? s.negMonths + 1 : 0;
   const awareness = Math.min(1.3, s.awareness + (1 - s.awareness) * 0.15 + (plan.marketing / 100) * 0.15 + (fx.awareness ?? 0));
   const m: QfMonth = {
-    month, revenue, ch, orders, food, staffPay, rent, other, marketing: plan.marketing, adCost, appFees, agencyFees, eventCost, op, interest, draw: OWNER_DRAW, cash,
+    month, revenue, ch, orders, food, staffPay, rent, other, marketing: plan.marketing, adCost, appFees, agencyFees, eventCost, foodMult: fm, op, interest, draw: OWNER_DRAW, cash,
     lost: need - served, demand: need, load: Math.min(1.5, need / capacity), tx: orders.visit + orders.takeout + orders.delivery, ticket, awareness,
     closed: negMonths >= 2, plan, event: ev.title, choice: opt.label,
   };
@@ -188,7 +221,7 @@ export function eventOf(ind: QfInd, month: number, seed: number): QfEvent {
   if ([6, 7].includes(month)) return rain;
   if (ind === "chicken") {
     if (month === 8) return {
-      id: "boknal", title: "복날 · 닭값 상승", prompt: "복날 앞뒤로 닭 주문이 몰려 주문이 8% 늘지만 닭값이 올라 식재료비가 8% 늘어요.", fx: { demand: 1.08, food: 1.08 }, note: "복날 효과와 닭값 +8%는 가정이에요 (육계 시세 자료 연결 전)",
+      id: "boknal", title: "복날", prompt: `복날 앞뒤로 닭 주문이 몰려 주문이 8% 늘어요. 닭고기 값은 8월이 한 해 중 가장 비싸요 (그해 평균의 ${(FOOD?.chicken?.month_index["8"] ?? 1).toFixed(2)}배, 생활물가지수 2021~2025).`, fx: { demand: 1.08 }, note: "복날 주문 +8%는 가정이에요. 닭값은 식재료 시세 데이터로 계산해요",
       options: [
         { id: "raise", label: "가격 3% 올리기", pro: "오른 닭값을 손님과 나눠요", con: "주문이 조금 줄어요", fx: { price: 1.03 } },
         { id: "parts", label: "순살·부분육 메뉴 밀기", pro: "식재료비 3% 절감", con: "통닭을 찾는 손님 일부가 빠져요 (−2%)", fx: { food: 0.97, demand: 0.98 } },
@@ -229,7 +262,7 @@ export function eventOf(ind: QfInd, month: number, seed: number): QfEvent {
       ],
     };
     if (month === 11 || month === 4) return {
-      id: "rice", title: "쌀·떡값 상승", prompt: "쌀과 떡 값이 올라 식재료비가 6% 늘어요.", fx: { food: 1.06 }, note: "식재료비 +6%는 가정이에요 (분식은 쌀·곡류가 식재료비의 22%, 경영실태조사)",
+      id: "rice", title: "쌀·떡값 부담", prompt: `쌀값이 2024년보다 ${Math.round(((FOOD?.rice?.level_vs_2024 ?? 1) - 1) * 100)}%, 떡값이 ${Math.round(((FOOD?.tteok?.level_vs_2024 ?? 1) - 1) * 100)}% 높아요. 이번 달 식재료비는 2024년 기준보다 ${Math.round((foodMult("bunsik", month).mult - 1) * 100)}% 많이 들어요 (생활물가지수).`, note: "대응의 효과 크기는 가정이에요. 오른 값은 식재료 시세 데이터로 이미 계산돼요",
       options: [
         { id: "raise", label: "대표 메뉴 500원 올리기", pro: "오른 값을 손님과 나눠요 (가격 +4%로 계산)", con: "주문이 조금 줄어요", fx: { price: 1.04 } },
         { id: "portion", label: "사이드 구성 줄이기", pro: "식재료비 3% 절감", con: "만족이 떨어져 주문 −2%", fx: { food: 0.97, demand: 0.98 } },

@@ -18,10 +18,10 @@ HOURS_KO = {"short": "짧게", "standard": "기본", "long": "길게"}
 STAFF_KO = {"lean": "빠듯하게", "standard": "기본", "generous": "넉넉하게"}
 DECISION_KEYS = ("price_change_pct", "hours", "staff_policy", "marketing_krw", "dessert")
 # waterfall: factors are switched from the reference month to this month one at a time, in this order
-STEPS = (("season", "계절"), ("reputation", "별점과 단골"), ("price", "가격"), ("hours", "영업시간"),
+STEPS = (("season", "계절"), ("ingredient", "원두·우유 시세"), ("reputation", "별점과 단골"), ("price", "가격"), ("hours", "영업시간"),
          ("staff", "직원 운영"), ("marketing", "마케팅"), ("dessert", "디저트"), ("rival", "경쟁 카페"),
          ("viral", "SNS 화제"), ("breakdown", "설비 고장"), ("rent", "임대료 인상"), ("scn", "이번 달 대응"))
-STEP_FACTORS = {"season": ("season",), "reputation": ("rating", "maturity"), "price": ("price_level",),
+STEP_FACTORS = {"season": ("season",), "ingredient": ("ingredient",), "reputation": ("rating", "maturity"), "price": ("price_level",),
                 "hours": ("hours",), "staff": ("staff",), "marketing": ("marketing_krw",), "dessert": ("dessert",),
                 "rival": ("rival",), "viral": ("viral",), "breakdown": ("breakdown",), "rent": ("rent_mult",), "scn": ("scn",)}
 DAYS = m.DAYS_PER_MONTH_DATA
@@ -195,6 +195,7 @@ def evaluate(ctx: dict, f: dict) -> dict:
     revenue = served * ticket
     dessert_rev = revenue * ds_eff
     drink_food = (v("opex", "food_cost_share") - ds * s("dessert_food_cost_share")) / (1 - ds)
+    drink_food *= f.get("ingredient", 1.0)   # 원두·우유 시세 (2024년 대비, 달별)
     food = served * drink_ticket / (1 - ds_eff) * ((1 - ds_eff) * drink_food + ds_eff * s("dessert_food_cost_share"))
     rate = m.card_fee_rate(revenue * 12)
     takeout_cups = served * v("demand", "cups_per_tx") * v("opex", "takeout_share")
@@ -430,7 +431,7 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
          "maturity": _maturity(st["regulars_idx"]), "price_level": st["price_level"], "hours": dec["hours"],
          "staff": dec["staff_policy"], "marketing_krw": dec["marketing_krw"], "dessert": dec["dessert"],
          "rival": st["rival"], "viral": viral, "breakdown": "breakdown" in keys, "rent_mult": st["rent_mult"],
-         "scn": scn}
+         "scn": scn, "ingredient": s("ingredient_index")[cal]}
     e = evaluate(ctx, f)
 
     # cash: OP + depreciation (non-cash) - loan interest and principal + VAT refund
