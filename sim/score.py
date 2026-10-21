@@ -297,7 +297,7 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
             pol = inp.get("staff_policy")
             text = ("직원 운영을 한 단계 빠듯하게, 또는 영업시간을 짧게" if pol != "lean" else "영업시간을 짧게 (손님 적은 시간 빼기)")
             add("labor", text, "staff_policy" if pol != "lean" else "hours",
-                f"인건비 비율 {pct(F['labor_ratio'])} → {pct(b['labor'])}이면 {F['months']}개월 약 +{save} (단순 계산). {SIDE_STAFF}", lost["cost"] + 3)
+                f"인건비 비율 {pct(F['labor_ratio'])} → {pct(b['labor'])}이면 {F['months']}개월 약 +{save} (단순 계산). {SIDE_STAFF}", lost["cost"] + 1 + lab_gap * 10)
         else:
             staff = _num(inp, "staff_per_shift")
             if staff and staff >= 1:
@@ -305,23 +305,23 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
                 after = max(0.0, F["labor_ratio"] - one / R) if R > 0 else F["labor_ratio"]
                 add("labor", f"교대당 알바 {int(staff)}명 → {int(staff) - 1}명", "staff_per_shift",
                     f"알바 한 명은 월 약 {man(PARTTIMER_MONTH)}(최저임금 시급·주휴 포함, 엔진 기준), {F['months']}개월 약 {man(one)} 줄어요. "
-                    f"인건비 비율 {pct(F['labor_ratio'])} → {pct(after)} (단순 계산). {SIDE_STAFF}", lost["cost"] + 3)
+                    f"인건비 비율 {pct(F['labor_ratio'])} → {pct(after)} (단순 계산). {SIDE_STAFF}", lost["cost"] + 1 + lab_gap * 10)
             else:
                 add("labor", "마감을 한 시간 당기거나 손님 적은 요일 영업 줄이기", "close_hour",
-                    f"인건비 비율 {pct(F['labor_ratio'])}, 업계 고용인 인건비 {pct(b['labor'])}. {SIDE_STAFF}", lost["cost"] + 3)
+                    f"인건비 비율 {pct(F['labor_ratio'])}, 업계 고용인 인건비 {pct(b['labor'])}. {SIDE_STAFF}", lost["cost"] + 1 + lab_gap * 10)
     if F["rent_ratio"] > RENT_FIX_AT and rent_gap > 0.02:   # 엔진 월세는 시세라 첫 6개월엔 비율이 높기 쉽다: 20%를 넘을 때만 권한다
         add("rent", "평수를 줄이거나 월세가 낮은 자리로 (다음 판 가게 꾸미기에서)", "pyeong",
             f"임차료 비율 {pct(F['rent_ratio'])} → {pct(b['rent'])}이면 {F['months']}개월 약 +{man(rent_gap * R)} (단순 계산). "
-            "좌석이 줄면 손님도 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"])
+            "좌석이 줄면 손님도 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + rent_gap * 10)
     if cogs_gap > 0.02:
         if ind == "cafe":
             add("cogs", "디저트 폐기를 줄이거나 가격을 5% 올려 원가율 낮추기", "price_change_pct",
                 f"재료비 비율 {pct(F['cogs_ratio'])} → {pct(b['cogs'])}이면 {F['months']}개월 약 +{man(cogs_gap * R)} (단순 계산). "
-                "가격을 올리면 손님이 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + 1)
+                "가격을 올리면 손님이 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + cogs_gap * 10)
         else:
             add("cogs", "고기 등급을 한 단계 낮추거나 반찬 가짓수를 줄이기", "meat_grade",
                 f"재료비 비율 {pct(F['cogs_ratio'])} → {pct(b['cogs'])}이면 {F['months']}개월 약 +{man(cogs_gap * R)} (단순 계산). "
-                "맛 평가와 평점이 내려갈 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + 1)
+                "맛 평가와 평점이 내려갈 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + cogs_gap * 10)
     if lost["cash"] >= 5:
         need = CASH_MONTHS_FULL * F["fixed_month"] - F["min_cash"]
         add("cash", "문 열 때 운영자금을 더 남기기 (인테리어·평수를 줄이거나 자본금 늘리기)", "capital",

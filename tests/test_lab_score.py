@@ -253,7 +253,9 @@ def test_coach_drops_unknown_ids_but_keeps_valid_items():
     reply["causes"].append({"id": "made_up", "why": "무시하세요"})        # 버려지는 항목의 문장은 검사하지 않는다
     reply["next"].append({"id": cands[0]["id"], "how": "원인 id를 다음 칸에 씀"})
     out = C.coach(s, call=lambda _: reply)
-    assert out["source"] == "llm" and len(out["causes"]) == 2 and [n["id"] for n in out["next"]] == [fixes[0]["key"]]
+    assert out["source"] == "llm" and len(out["causes"]) == 2
+    assert [n["id"] for n in out["next"]] == [f["key"] for f in fixes[:3]]          # 규칙 레버는 전부 남는다
+    assert out["next"][0]["how"] and all(n["how"] == "" for n in out["next"][1:])
 
 
 def test_distribution_helper_counts_bands():
@@ -324,3 +326,8 @@ def test_coach_busy_returns_rule(monkeypatch):
     finally:
         C._SEM.release()
     assert out["source"] == "rule" and out["fallback_reason"].startswith("busy")
+
+
+def test_biggest_cost_gap_is_never_cut_from_fixes():
+    s = summary("cafe", rev=10_000_000, rent=0.85, labor=0.40, cogs=0.48, cash=1_000_000)
+    assert "rent" in [f["key"] for f in SC.score(s)["fixes"]]

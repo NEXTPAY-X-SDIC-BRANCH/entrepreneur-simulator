@@ -227,6 +227,10 @@ def validate(out: Any, lines: list[str], cands: list[dict], fixes: list[dict]) -
                       "how": _check_text(n.get("how"), 6, 120, ok)})
     if fixes and not res_n:
         raise ValueError("다음 판 id")
+    # 모델이 고르지 않은 레버도 빠뜨리지 않는다: 규칙 순서대로 전부, 모델 문장은 고른 것에만
+    how = {n["id"]: n["how"] for n in res_n}
+    res_n = [{"id": f["key"], "lever": f["lever"], "text": f["text"], "expected": f["expected"], "how": how.get(f["key"], "")}
+             for f in fixes[:3]]
     return {"causes": res_c, "next": res_n}
 
 
