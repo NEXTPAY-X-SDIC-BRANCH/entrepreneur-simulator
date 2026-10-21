@@ -9,6 +9,8 @@ import CafeRoom3D from "./CafeRoom3D";
 import { ENGINE, type Preview } from "./useCafePreview";
 import { guStat, man, type Profile } from "./model";
 import { IconBattery, IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "./SimulateEngine";
+import CardMonthLine, { CardSeasonLine, type CardMonth } from "../lab/finance/CardMonthLine"; // lab:finance
+import { cafeFinance } from "../lab/finance/finance"; // lab:finance
 import "./simulate-engine.css";
 import "./cafe-sim.css";
 
@@ -48,7 +50,7 @@ type Month = {
   drivers?: { maturity: number; peak_util: number; bottleneck_label_ko: string };
   kpi: { revenue_krw: number; op_krw: number; cash_krw: number; customers: number; walkaways: number; walkaway_share: number; rating: number; regulars: number };
   pnl: { revenue_krw: number; lines: { key: string; item_ko: string; krw: number }[]; op_krw: number };
-  cash: { start_krw: number; op_krw: number; depreciation_addback_krw: number; loan_interest_krw: number; loan_principal_krw: number; vat_refund_krw: number; end_krw: number };
+  cash: { start_krw: number; op_krw: number; depreciation_addback_krw: number; loan_interest_krw: number; loan_principal_krw: number; vat_refund_krw: number; end_krw: number; rent_card?: CardMonth }; // lab:finance rent_card
   events: { key: string; label_ko: string; effect_ko: string }[];
   waterfall: { steps: { key: string; label_ko: string; krw: number }[] };
   closure: { closed: boolean; reason_ko: string };
@@ -191,7 +193,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const begin = () => {
     if (!body || daily.current == null) return;
     setBusy(true); setErr("");
-    post("/cafe/season", { ...body, daily_customers: daily.current, start_month: startMonth })
+    post("/cafe/season", { ...body, daily_customers: daily.current, start_month: startMonth, ...cafeFinance() }) // lab:finance 고른 금리, 월세 카드 할부
       .then((s) => { hist.current = []; setAlts({}); setAltPick({}); setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setPlan({ price_change_pct: 0, hours: s.decisions.hours, staff_policy: s.decisions.staff_policy, marketing_krw: 0, dessert: true }); setView("plan"); })
       .catch((e) => setErr(netErr(e))).finally(() => setBusy(false));
   };
@@ -503,7 +505,8 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                     </section>
                     <section className="sx-sec"><h2>지난달과 달라진 이유</h2>
                       <ul className="sx-wf">{cur.waterfall.steps.filter((s) => Math.abs(s.krw) >= 10000).map((s) => <li key={s.key}><span>{s.label_ko}</span><b className={tone(s.krw)}>{sgn(s.krw)}</b></li>)}</ul>
-                      <p className="sx-note">현금 변화: 영업이익 {sgn(cur.cash.op_krw)}, 감가상각 되돌림 +{wman(cur.cash.depreciation_addback_krw)}, 대출 이자 −{wman(cur.cash.loan_interest_krw)}, 원금 −{wman(cur.cash.loan_principal_krw)}{cur.cash.vat_refund_krw ? `, 부가세 환급 +${wman(cur.cash.vat_refund_krw)}` : ""}.</p>
+                      <p className="sx-note">현금 변화: 영업이익 {sgn(cur.cash.op_krw)}, 감가상각 되돌림 +{wman(cur.cash.depreciation_addback_krw)}, 대출 이자 −{wman(cur.cash.loan_interest_krw)}, 원금 −{wman(cur.cash.loan_principal_krw)}{cur.cash.vat_refund_krw ? `, 부가세 환급 +${wman(cur.cash.vat_refund_krw)}` : ""}{cur.cash.rent_card ? `, 월세 카드 할부 ${cur.cash.rent_card.cash_delta >= 0 ? "+" : "−"}${wman(Math.abs(cur.cash.rent_card.cash_delta))}` : ""}.</p>
+                      <CardMonthLine rc={cur.cash.rent_card} />{/* lab:finance */}
                     </section>
                   </div>
                   {cur.closure.closed && <p className="se-err">가게를 닫았어요. {cur.closure.reason_ko}</p>}
@@ -527,6 +530,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                         { label: "가장 나빴던 달", value: `${report.worst_month.calendar_month}월 ${sgn(report.worst_month.op_krw)}` },
                       ]} />
                       <p className="sx-note">{report.survived ? `${TOTAL}개월을 버텼어요. ` : <b>가게를 닫게 됐어요. </b>}{report.summary_ko}</p>
+                      <CardSeasonLine items={months.map((m) => m.cash.rent_card)} />{/* lab:finance */}
                       <section className="sx-sec"><h2>남은 현금</h2><Cash start={startCash} months={months} total={TOTAL} /></section>
                       <section className="sx-sec"><h2>월별</h2>
                         <table className="sx-table"><thead><tr><th>달</th><th>매출</th><th>영업이익</th><th>월말 현금</th></tr></thead>

@@ -320,7 +320,9 @@ export let LOAN_RATE = 0.06;
 export type EcosRate = { month: string; rate: number };
 export type EcosData = { latest: Partial<Record<"base_rate" | "loan_sme" | "loan_corp" | "loan_avg", EcosRate>> };
 let ECOS: EcosData | null = null;
-export const setEcos = (d: EcosData | null) => { ECOS = d; LOAN_RATE = d?.latest.loan_sme ? d.latest.loan_sme.rate / 100 : 0.06; };
+let LOAN_OVERRIDE: number | null = null; // lab:finance 학습자가 고른 은행·정책자금 금리 (web/src/lab/finance)
+export const setEcos = (d: EcosData | null) => { ECOS = d; LOAN_RATE = LOAN_OVERRIDE ?? (d?.latest.loan_sme ? d.latest.loan_sme.rate / 100 : 0.06); }; // lab:finance
+export const setLoanOverride = (r: number | null) => { LOAN_OVERRIDE = r; setEcos(ECOS); }; // lab:finance
 export const ecosRates = () => ECOS?.latest ?? null;
 export const ymKo = (ym: string) => `${ym.slice(0, 4)}년 ${+ym.slice(4, 6)}월`;
 export const cashLeft = (profile: Profile, store: Store) => profile.capital + store.loan - openingCost(store, profile.gu, profile.keyMoney ?? 0).total;

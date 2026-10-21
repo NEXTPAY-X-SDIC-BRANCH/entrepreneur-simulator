@@ -13,6 +13,7 @@ import random
 from . import model as m
 from .ko import won
 from .params import g, load_districts, load_params, v, weakest
+from sim import rent_card  # lab:finance
 
 HOURS_KO = {"short": "짧게", "standard": "기본", "long": "길게"}
 STAFF_KO = {"lean": "빠듯하게", "standard": "기본", "generous": "넉넉하게"}
@@ -269,12 +270,16 @@ def baseline_factors(decisions: dict) -> dict:
             "dessert": decisions["dessert"], "rival": False, "viral": 1.0, "breakdown": False, "rent_mult": 1.0, "scn": {}}
 
 
-def _loan(principal: int) -> dict:
-    r, n = s("loan_rate") / 12, s("loan_term_months")
-    pay = round(principal * r / (1 - (1 + r) ** -n)) if principal > 0 else 0
-    return {"principal_krw": principal, "rate": s("loan_rate"), "term_months": n, "monthly_payment_krw": pay,
-            "grade": g("season", "loan_rate"),
-            "note_ko": f"연 {s('loan_rate') * 100:.1f}% 원리금 균등 {n}개월, 거치 없음 (가정, 정책자금 금리는 GAP)"}
+def _loan(principal: int, rate: float | None = None) -> dict:
+    # lab:finance rate: 학습자가 고른 은행·정책자금 금리 (없으면 params의 loan_rate)
+    picked = rate is not None
+    rate = float(rate) if picked else s("loan_rate")
+    r, n = rate / 12, s("loan_term_months")
+    pay = (round(principal * r / (1 - (1 + r) ** -n)) if r > 0 else round(principal / n)) if principal > 0 else 0
+    return {"principal_krw": principal, "rate": rate, "term_months": n, "monthly_payment_krw": pay,
+            "grade": "가정" if picked else g("season", "loan_rate"),
+            "note_ko": (f"연 {rate * 100:.2f}% (고른 금리) 원리금 균등 {n}개월, 거치 없음" if picked else
+                        f"연 {s('loan_rate') * 100:.1f}% 원리금 균등 {n}개월, 거치 없음 (가정, 정책자금 금리는 GAP)")}
 
 
 def _vat_refund(p: dict) -> int:
@@ -288,6 +293,8 @@ def start(body: dict) -> dict:
     seed = int(body.pop("seed", 0))
     start_month = int(body.pop("start_month", None) or s("start_month"))
     extra = body.pop("extra_loan_krw", None)
+    loan_rate = body.pop("loan_rate", None)                       # lab:finance
+    rc = rent_card.normalize(body.pop("rent_card", None))         # lab:finance 월세 카드 할부
     ctx = _context(body)
     p, cfg = ctx["preview"], ctx["cfg"]
     capex = p["capex"]["total_krw"]
@@ -310,7 +317,8 @@ def start(body: dict) -> dict:
                   "extra_loan_krw": extra, "working_capital_target_krw": reserve, "working_capital_note_ko": wc_note,
                   "cash_krw": cash, "vat_refund_krw": _vat_refund(p),
                   "vat_refund_month": s("vat_refund_month")},
-        "loan": _loan(loan_amt), "loan_balance": loan_amt,
+        "loan": _loan(loan_amt, loan_rate), "loan_balance": loan_amt,  # lab:finance loan_rate
+        **({"rent_card": rc, "rent_card_queue": []} if rc else {}),  # lab:finance
         "state": {"cash": cash, "rating": s("rating_start"), "regulars_idx": 0.0, "price_level": 1.0,
                   "rival": False, "rent_mult": 1.0, "viral_last": False, "negative_months": 0, "closed": False,
                   "decisions": decisions},
@@ -347,7 +355,8 @@ def public_start(run: dict) -> dict:
     return {"season_id": run.get("id"), "seed": run["seed"], "start_month": run["start_month"],
             "months_total": run["months_total"], "start": run["start"], "loan": run["loan"],
             "baseline": run["baseline"], "decisions": run["state"]["decisions"], "options": options(),
-            "status": "open", "assumptions": assumptions()}
+            "status": "open", "assumptions": assumptions(),
+            **({"rent_card": run["rent_card"]} if run.get("rent_card") else {})}  # lab:finance
 
 
 def _month_summary(e: dict) -> dict:
@@ -434,13 +443,18 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
     e = evaluate(ctx, f)
 
     # cash: OP + depreciation (non-cash) - loan interest and principal + VAT refund
-    bal, r = run["loan_balance"], s("loan_rate") / 12
+    bal, r = run["loan_balance"], run["loan"]["rate"] / 12  # lab:finance (기본값은 params loan_rate 그대로)
     interest = round(bal * r)
     principal = min(bal, run["loan"]["monthly_payment_krw"] - interest) if bal > 0 else 0
     run["loan_balance"] = bal - principal
     vat = run["start"]["vat_refund_krw"] if i + 1 == s("vat_refund_month") else 0
     cash_start = st["cash"]
     st["cash"] = cash_start + e["op_krw"] + e["depreciation_krw"] - interest - principal + vat
+    rent_now = next((x["krw"] for x in e["cost_lines"] if x["key"] == "rent"), 0)  # lab:finance 월세 카드 할부
+    rc = rent_card.step(run.get("rent_card_queue"), run.get("rent_card"), rent_now)  # lab:finance
+    if rc is not None:  # lab:finance
+        st["cash"] = round(st["cash"] + rc["cash_delta"])
+        run["rent_card_queue"] = rc["queue"]
     st["negative_months"] = st["negative_months"] + 1 if st["cash"] < 0 else 0
     st["closed"] = st["negative_months"] >= s("closure_negative_months")
 
@@ -487,7 +501,10 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
         "cash": {"start_krw": cash_start, "op_krw": e["op_krw"], "depreciation_addback_krw": e["depreciation_krw"],
                  "loan_interest_krw": interest, "loan_principal_krw": principal, "vat_refund_krw": vat,
                  "end_krw": st["cash"], "loan_balance_krw": run["loan_balance"],
-                 "negative_months": st["negative_months"], "grade": "L"},
+                 "negative_months": st["negative_months"], "grade": "L",
+                 **({"rent_card": {k: round(rc[k]) if k in ("paid", "charged", "fee", "balance", "cash_delta") else rc[k]
+                                   for k in ("paid", "charged", "fee", "balance", "months", "fee_rate", "cash_delta")}}
+                    if rc is not None else {})},  # lab:finance
         "drivers": {"season_index": f["season"], "maturity": round(f["maturity"], 3),
                     "rating_mult": round(e["mult"]["rating"], 3), "price_mult": round(e["mult"]["price"], 3),
                     "hours_coverage": round(e["mult"]["hours"], 3), "marketing_lift": round(e["marketing_lift"], 3),

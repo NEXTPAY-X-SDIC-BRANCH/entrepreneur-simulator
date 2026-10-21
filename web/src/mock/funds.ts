@@ -49,4 +49,4 @@ export const BANKS: { name: string; url: string }[] = [
 ];
 export const BANK_GUARANTEE_URL = "https://www.koreg.or.kr/adit/onTact/onTact_01.html";
 // 은행연합회 소비자포털: 은행별 중소기업(개인사업자) 운전자금 대출금리 비교공시 (보증서담보·신용·마이너스)
-export const BANK_COMPARE_URL = "https://portal.kfb.or.kr/compare/loan_snmindustry_4.php";
+export const BANK_COMPARE_URL = "https://portal.kfb.or.kr/compare/loan_snmindustry.php"; // lab:finance _4는 2015.9~2019.6 보관 페이지였다

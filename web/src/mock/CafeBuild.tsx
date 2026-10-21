@@ -5,6 +5,8 @@ import { Mark } from "./Checks";
 import { CAFE_GRADES, CAFE_PYEONG, cafeEstimate, cafeOpeningCost } from "./cafe";
 import { cafeChecks, cafeLayoutOf, type CafeCfg } from "./cafeChecks";
 import CafeRoom3D from "./CafeRoom3D";
+import FinanceBox from "../lab/finance/FinanceBox"; // lab:finance
+import { CAFE_DEFAULT_RATE } from "../lab/finance/finance"; // lab:finance
 import { useCafePreview } from "./useCafePreview";
 import { STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
 
@@ -83,6 +85,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
           <p><span>{left < 0 ? "모자란 현금" : "현금"}</span><strong>{man(Math.abs(left))}</strong></p>
           <small>가진 돈 {man(profile.capital)} 중 {man(open.total)}을 썼어요.</small>
           {left < 0 && <p className="m-warn">가진 돈보다 여는 비용이 커요. 시뮬레이션에서는 모자란 만큼을 대출로 계산해요. 평수나 마감을 낮추면 줄어요.</p>}
+          <FinanceBox loanMan={Math.max(0, -left)} rentMan={st.rent * cfg.pyeong} fallback={CAFE_DEFAULT_RATE} />{/* lab:finance 은행별 가상 금리, 월세 카드 할부 */}
         </div>
 
         <p className="m-msg" role="status">{msg}</p>

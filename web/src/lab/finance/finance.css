@@ -1,0 +1,50 @@
+/* lab:finance — 은행별 금리 표, 월세 카드 할부. mock.css 토큰을 그대로 쓴다 (.m-app 안). */
+.lf-banks, .lf-card { display: grid; gap: 10px; min-inline-size: 0; }
+.lf-card { margin-block-start: 28px; }
+.lf-anchor, .lf-frame { padding: 12px 16px; border-radius: 14px; background: var(--soft); font-size: 15px; line-height: 1.6; color: var(--ink2); }
+.lf-frame { background: var(--blue-wash); color: var(--blue-deep); }
+.lf-h3 { margin: 14px 0 0; font-size: 16px; font-weight: 700; color: var(--ink); }
+.lf-empty { color: var(--pencil); font-size: 15px; }
+.lf-scroll { overflow-x: auto; }
+.lf-table { inline-size: 100%; border-collapse: collapse; font-size: 15px; }
+.lf-table :is(th, td) { padding: 10px 6px; border-block-end: 1px solid var(--rule); text-align: start; vertical-align: middle; white-space: nowrap; }
+.lf-table thead th { font-size: 13px; font-weight: 600; color: var(--pencil); }
+.lf-table tbody th { font-weight: 400; white-space: normal; min-inline-size: 9em; }
+.lf-table tbody th b { font-weight: 700; }
+.lf-table tbody th small { font-size: 13px; }
+.lf-table .lf-num { text-align: end; font-variant-numeric: tabular-nums; }
+.lf-table tr.is-on { background: var(--blue-wash); }
+.lf-table td.lf-rate { font-variant-numeric: tabular-nums; font-weight: 600; white-space: normal; min-inline-size: 11em; }
+.lf-table td small { font-size: 12px; font-weight: 400; color: var(--pencil); }
+.lf-tag { display: inline-block; margin-inline-start: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; vertical-align: 1px; }
+.lf-tag.is-virtual { background: #fff4dc; color: var(--warn-ink); }
+.lf-tag.is-posted { background: #e3f6ec; color: #11633b; }
+.lf-na { font-weight: 400; font-size: 14px; color: var(--pencil); }
+.lf-bar { position: relative; display: block; inline-size: 96px; block-size: 6px; border-radius: 3px; background: var(--soft); }
+.lf-bar i { position: absolute; inset-block-start: -4px; inline-size: 14px; block-size: 14px; margin-inline-start: -7px; border-radius: 50%; background: var(--blue); }
+.lf-bar b { position: absolute; inset-block: -6px; inline-size: 0; border-inline-start: 2px dashed var(--pencil); }
+.lf-pick { padding: 5px 11px; border: 1px solid var(--blue); border-radius: 10px; background: var(--bg); color: var(--blue-deep); font-size: 14px; font-weight: 600; }
+.lf-pick[aria-pressed="true"] { background: var(--blue); color: #fff; }
+.lf-table a { color: var(--blue-deep); font-size: 14px; }
+.lf-choose { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.lf-check { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--ink2); }
+.lf-line { font-size: 15px; color: var(--ink2); max-inline-size: 46em; }
+.lf-sched td.is-up { color: var(--ok-ink); }
+.lf-sched td.is-down { color: var(--weak-ink); }
+.lf-src summary { cursor: pointer; font-size: 14px; color: var(--pencil); }
+.lf-src ul { display: grid; gap: 4px; margin-block-start: 6px; padding-inline-start: 18px; list-style: disc; font-size: 13px; color: var(--pencil); }
+
+/* 가게 꾸미기 현금 상자 안 */
+.lf-box { display: grid; gap: 4px; padding-block-start: 8px; border-block-start: 1px solid var(--rule); }
+.lf-box .lf-open { margin-block-start: 4px; padding: 9px 12px; border-radius: 12px; font-size: 14px; }
+.lf-dialog { inline-size: min(1080px, calc(100vw - 32px)); max-block-size: calc(100dvh - 48px); padding: 0; border: 0; border-radius: 20px; background: var(--bg); color: var(--ink); box-shadow: 0 12px 48px rgba(25, 31, 40, 0.22); }
+.lf-dialog::backdrop { background: rgba(25, 31, 40, 0.35); }
+.lf-dialog-in { padding: 22px 26px 26px; font: 400 16px/1.6 var(--text); }
+.lf-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-block-end: 12px; }
+.lf-dialog h1 { margin: 0; font-size: 22px; }
+.lf-x { padding: 6px 14px; border: 0; border-radius: 10px; background: var(--soft); color: var(--ink2); font-size: 15px; }
+@media (max-width: 720px) {
+  .lf-dialog-in { padding: 16px; }
+  .lf-bar { inline-size: 70px; }
+}
+.lf-monthline { margin-block-start: 6px; padding: 8px 12px; border-radius: 10px; background: var(--blue-wash); color: var(--blue-deep); }

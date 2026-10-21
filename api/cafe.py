@@ -46,11 +46,18 @@ class CafeIn(BaseModel):
     staff_peak: int | None = Field(None, ge=1, le=8)                   # people at the peak, 사장님 included; None = recommended
 
 
+class RentCardIn(BaseModel):  # lab:finance sim/rent_card.py
+    months: Literal[0, 2, 3, 6] = 0
+    fee_rate: float | None = Field(None, ge=0, le=0.2)
+
+
 class SeasonIn(CafeIn):
     seed: int = Field(0, ge=0, le=2_147_483_647)
     start_month: int | None = Field(None, ge=1, le=12)                 # None = params season.start_month
     extra_loan_krw: int | None = Field(None, ge=0, le=500_000_000)     # 운전자금 on top of the CAPEX gap; None = enough
                                                                        # to open with 3 months of fixed costs in cash
+    loan_rate: float | None = Field(None, ge=0, le=0.2)               # lab:finance 고른 은행·정책자금 금리 (연, 0.0438 = 4.38%)
+    rent_card: RentCardIn | None = None                                # lab:finance 월세 카드 할부; None = 현금
 
 
 class MonthIn(BaseModel):
