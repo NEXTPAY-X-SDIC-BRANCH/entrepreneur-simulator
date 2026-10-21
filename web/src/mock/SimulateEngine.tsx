@@ -62,7 +62,7 @@ type Ledger = {
 type View = "intro" | "plan" | "menu" | "scenario" | "settle" | "report" | null; // lab:menu "menu"
 
 const won = (x: number) => Math.round(x / 1e4);
-const signed = (v: number) => `${v >= 0 ? "+" : "−"}${man(Math.abs(v))}`;
+const signed = (v: number) => (Math.round(v) === 0 ? "0원" : `${v >= 0 ? "+" : "−"}${man(Math.abs(v))}`);
 const fmt = (n: number) => n.toLocaleString("ko-KR");
 
 // ---------------------------------------------------------------- 운영 계획 변수

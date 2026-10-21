@@ -88,5 +88,5 @@ export const wman = (krw: number) => {
   const s = a >= 10000 ? `${Math.floor(a / 10000)}억${a % 10000 ? ` ${(a % 10000).toLocaleString("ko-KR")}만원` : "원"}` : `${a.toLocaleString("ko-KR")}만원`;
   return v < 0 ? `−${s}` : s;
 };
-export const sgn = (krw: number) => `${krw >= 0 ? "+" : "−"}${wman(Math.abs(krw))}`;
+export const sgn = (krw: number) => (Math.round(krw / 1e4) === 0 ? "0원" : `${krw >= 0 ? "+" : "−"}${wman(Math.abs(krw))}`);
 export const pct = (x: number, d = 0) => `${(x * 100).toFixed(d)}%`;

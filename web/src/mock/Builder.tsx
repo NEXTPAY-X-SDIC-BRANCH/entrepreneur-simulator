@@ -261,7 +261,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
 
         <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>
           <p><span>{left < 0 ? "모자란 현금" : "현금"}</span><strong>{man(Math.abs(left))}</strong></p>
-          <small>가진 돈 {man(profile.capital)}{store.loan > 0 ? ` + 대출 ${man(store.loan)}` : ""} 중 {man(cost.total)}을 썼어요.</small>
+          <small>{left < 0 ? `여는 데 ${man(cost.total)}이 들어서 가진 돈 ${man(profile.capital)}${store.loan > 0 ? ` + 대출 ${man(store.loan)}` : ""}보다 ${man(-left)} 모자라요.` : `가진 돈 ${man(profile.capital)}${store.loan > 0 ? ` + 대출 ${man(store.loan)}` : ""} 중 ${man(cost.total)}을 썼어요.`}</small>
           <div className="m-stepper">
             <span id="loan">대출</span>
             <button type="button" aria-label={`대출 ${LOAN_STEP}만원 줄이기`} disabled={store.loan <= 0} onClick={() => loan(-LOAN_STEP)}>−</button>

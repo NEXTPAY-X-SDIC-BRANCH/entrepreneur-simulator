@@ -491,7 +491,7 @@ export function checks(profile: Profile, store: Store, lv: Levers): Check[] {
   const base = last.cash;
   const shockRows = (Object.keys(SHOCKS) as ShockId[]).map((k) => {
     const end = simulate(profile, store, lv, [k]).rows[5].cash;
-    return { label: `${SHOCKS[k].label}: ${SHOCKS[k].detail}`, value: `6개월 뒤 ${man(end)} (${man(end - base)})`, ok: end >= 0 };
+    return { label: `${SHOCKS[k].label}: ${SHOCKS[k].detail}`, value: `6개월 뒤 ${man(end)} (${end - base > 0 ? "+" : ""}${man(end - base)})`, ok: end >= 0 };
   });
   const bad = shockRows.filter((r) => !r.ok).length;
 
