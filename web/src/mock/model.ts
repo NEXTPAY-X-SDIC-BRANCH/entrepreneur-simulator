@@ -500,7 +500,7 @@ export function checks(profile: Profile, store: Store, lv: Levers): Check[] {
     fit.line = `${cap}명까지 받을 수 있는데 하루 ${want}명쯤 와요. 자리의 ${Math.round((1 - want / cap) * 100)}%가 비어요.`;
     fit.todo = "빈자리에도 월세가 나가요. 평수를 줄이면 다달이 나가는 돈이 줄어요.";
   } else {
-    fit.line = `하루 ${want}명쯤 올 텐데 ${cap}명까지 받을 수 있어요. 금요일처럼 붐비는 날에도 대부분 받아요.`;
+    fit.line = `하루 ${want}명쯤 올 텐데 ${cap}명까지 받을 수 있어요. 손님이 저녁과 주말에 몰려서 실제로 받는 손님은 하루 ${Math.round(last.covers)}명쯤이에요.`; // lab:cost
   }
   if (s.seats > 0 && lv.staff > 0 && lv.staff * COVERS_PER_STAFF >= want * 1.15 && lv.staff * COVERS_PER_STAFF >= Math.min(bySeat, want * 1.15)) {
     fit.status = fit.status === "ok" ? "warn" : fit.status;
