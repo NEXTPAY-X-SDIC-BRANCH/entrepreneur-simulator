@@ -1,7 +1,7 @@
 // lab:modes — season results → SeasonSummary (web/src/lab/types.ts, the score lane's input). All amounts 원.
 import type { MonthLine, SeasonSummary } from "../types";
 import type { EngineCtx } from "../../mock/chatContext";
-import type { BbqRun, CafeRun, EasyInputs } from "./api";
+import type { BbqRun, CafeRun, EasyInputs, GenericRun } from "./api";
 
 // What the learner chose, flattened for the coach and for the retry diff. Keys are shared across modes so a diff
 // between an easy attempt and a hard attempt still lines up.
@@ -10,7 +10,11 @@ export type Inputs = {
   tables?: number; price?: number; daily_customers?: number; start_month?: number; grade?: string;
 };
 
-export function easyInputsOf(i: EasyInputs): Inputs {
+export function easyInputsOf(i: EasyInputs, g?: GenericRun): Inputs {
+  if (g) {
+    return { gu: i.gu, dong: i.dong, capital_man: i.capital_man, pyeong: i.pyeong ?? 0, tables: i.tables, staff: i.staff,
+      loan_man: Math.round(g.start.loan.principal_krw / 1e4), start_month: i.run.start_month, grade: "basic" };
+  }
   if (i.industry === "cafe") {
     return { gu: i.gu, dong: i.dong, capital_man: i.capital_man, pyeong: i.pyeong ?? 0, staff: i.staff, loan_man: 0,
       daily_customers: i.run.daily_customers, start_month: i.run.start_month, grade: "basic" };
@@ -56,6 +60,17 @@ export function cafeSummary(run: CafeRun, inputs: Inputs, mode: SeasonSummary["m
   };
 }
 
+// 새 업종 (lab:industry): 엔진 결과의 season_summary를 그대로 쓰고 mode, attempt, inputs만 바꾼다. 그 엔진의 영업이익은
+// 감가상각을 뺀 값이라 카페와 같이 감가상각을 운영비(mgmt)에 넣어 매출 − 비용 = 영업이익이 맞게 한다.
+export function genericSummary(run: GenericRun, inputs: Inputs, mode: SeasonSummary["mode"], attempt: number): SeasonSummary {
+  const ss = run.report.season_summary;
+  const months = ss.months.map((m, i) => {
+    const dep = run.months[i]?.cash.depreciation_addback_krw ?? 0;
+    return dep ? { ...m, mgmt: m.mgmt + dep, opex_detail: { ...(m.opex_detail ?? {}), 감가상각: dep } } : m;
+  });
+  return { ...ss, months, mode, attempt, inputs: { ...inputs } };
+}
+
 // 하드 모드 고깃집: SimulateEngine이 챗봇용으로 넘기는 결과(chatContext)를 그대로 읽는다. SimulateEngine은 고치지 않는다.
 export function hardBbqSummary(ctx: EngineCtx, startCash: number, openingCost: number, loanWon: number, loanRate: number,
   inputs: Inputs, attempt: number): SeasonSummary {
@@ -83,10 +98,11 @@ const LABEL: Record<string, [string, (v: any) => string]> = {
 };
 export type DiffRow = { key: string; label: string; before: string; after: string; changed: boolean };
 export function diffInputs(a: Record<string, unknown>, b: Record<string, unknown>, industry: string): DiffRow[] {
-  const keys = Object.keys(LABEL).filter((k) => (a[k] !== undefined || b[k] !== undefined));
+  // 두 판 중 한쪽에만 있는 값(예: 이지 판의 바쁜 날 주문 수, 하드 판에는 없음)은 비교할 수 없어 뺀다
+  const keys = Object.keys(LABEL).filter((k) => a[k] !== undefined && a[k] !== null && b[k] !== undefined && b[k] !== null || (k === "dong" && (k in a) && (k in b)));
   return keys.map((k) => {
     const [label, f] = LABEL[k];
-    const shown = industry === "cafe" && k === "staff" ? "바쁜 시간 직원" : label;
+    const shown = industry === "bbq" ? label : k === "staff" ? (industry === "cafe" ? "바쁜 시간 직원" : "직원 (사장님 빼고)") : k === "tables" ? "테이블" : label;
     const fa = a[k] === undefined ? "없음" : f(a[k]), fb = b[k] === undefined ? "없음" : f(b[k]);
     return { key: k, label: shown, before: fa, after: fb, changed: fa !== fb };
   });

@@ -19,6 +19,7 @@
 """
 from __future__ import annotations
 
+import contextvars
 import functools
 import json
 import math
@@ -34,12 +35,14 @@ OPEN_DAYS = 26
 SIDE_TICKET = 8000
 FOOD_SHARE = 0.31
 STAFF_COST = 199          # 만원/월
-MGMT_PER_PYEONG = 12.8    # 만원/월
+UTIL_PER_PYEONG, OTHER_OPEX = 6.8, 150   # 만원/월, model.ts mgmtOf (lab:cost: 공과금은 평수 비례 + 기타 운영비 고정)
 FEE_SHARE = 0.0084
 OWNER_DRAW = 300          # 만원/월
 OPEN_CURVE = [0.55, 0.7, 0.82, 0.9, 0.96, 1.0]
-SEAT_TURN = 1.5
-COVERS_PER_STAFF = 15
+SEAT_TURN = 2.1           # model.ts (lab:cost 엔진에 맞춘 값)
+COVERS_PER_STAFF = 34     # 사장님 포함 일하는 사람 1명당 하루 손님 (lab:cost)
+SOFT_MIN_P = 2.3          # engineCovers 부드러운 최솟값 지수
+DEMAND_FX = 0.92
 LOW = 0.8
 BASE_PRICE = 19000        # DEFAULT_LEVERS.price
 SIGN, FIRST_STOCK = 250, 300
@@ -228,18 +231,29 @@ def opening_cost(store: dict, rent: float, key_money: float = 0) -> list[dict]:
     return lines
 
 
+def mgmt_of(pyeong: float) -> float:
+    return UTIL_PER_PYEONG * pyeong + OTHER_OPEX
+
+
+def engine_covers(demand: float, seats: int, staff: int) -> float:
+    """model.ts engineCovers: 수요, 좌석, 일손 세 한계의 부드러운 최솟값 (엔진 6개월 평균에 맞춘 식, lab:cost)."""
+    if demand <= 0 or seats <= 0:
+        return 0.0
+    p = SOFT_MIN_P
+    return ((DEMAND_FX * demand) ** -p + (SEAT_TURN * seats) ** -p + (COVERS_PER_STAFF * (staff + 1)) ** -p) ** (-1 / p)
+
+
 def _mock_season(st: dict, store: dict, staff: int, capital: float, demand_mult: float = 1.0) -> dict:
     """model.ts simulate (목업 공식, 대출 0): 추천 배치를 고를 때만 쓴다. 결과는 엔진이 다시 계산한다."""
     opening = sum(x["amount"] for x in opening_cost(store, st["rent"]))
     cash = capital - opening
-    capacity = min(store["seats"] * SEAT_TURN, (staff + 1) * COVERS_PER_STAFF)
     ticket = BASE_PRICE + SIDE_TICKET
     settled = (st["sales"] * 10000) / (PERSON_TICKET * OPEN_DAYS)
     rows = []
     for r in OPEN_CURVE:
-        covers = min(settled * r * demand_mult, capacity)
+        covers = engine_covers(settled * r * demand_mult, store["seats"], staff)
         revenue = covers * ticket * OPEN_DAYS / 10000
-        cost = revenue * (FOOD_SHARE + FEE_SHARE) + staff * STAFF_COST + st["rent"] * store["pyeong"] + MGMT_PER_PYEONG * store["pyeong"]
+        cost = revenue * (FOOD_SHARE + FEE_SHARE) + staff * STAFF_COST + st["rent"] * store["pyeong"] + mgmt_of(store["pyeong"])
         op = revenue - cost
         cash += op - OWNER_DRAW
         rows.append({"op": op, "cash": cash})
@@ -256,7 +270,7 @@ def recommend(st: dict, capital: float, pyeong: int | None = None) -> dict:
             store = starter_store(p, tables)
             if capital - sum(x["amount"] for x in opening_cost(store, st["rent"])) < 0:
                 break
-            for staff in range(0, 7):
+            for staff in range(1, 7):   # model.ts: 알바 1명부터 (lab:cost)
                 low = _mock_season(st, store, staff, capital, LOW)
                 safe = all(r["cash"] >= 0 for r in low["rows"])
                 score = _mock_season(st, store, staff, capital)["rows"][5]["op"] - OWNER_DRAW if safe else low["rows"][5]["cash"]
@@ -268,12 +282,55 @@ def recommend(st: dict, capital: float, pyeong: int | None = None) -> dict:
 
 
 def _fixed_month(st: dict, store: dict, staff: int) -> float:
-    return st["rent"] * store["pyeong"] + MGMT_PER_PYEONG * store["pyeong"] + staff * STAFF_COST + OWNER_DRAW
+    return st["rent"] * store["pyeong"] + mgmt_of(store["pyeong"]) + staff * STAFF_COST + OWNER_DRAW
+
+
+GENERIC = ("hansik", "pub", "bunsik", "bakery", "chicken")   # lab:industry 새 업종 (sim/generic)
+INDUSTRY_IDS = ("bbq", "cafe", *GENERIC)
+
+
+def rent_row(value: float, src: str) -> dict:
+    """월세 줄. R-ONE 근사/동네 = 공공 통계. R-ONE 채움(자료 없는 구를 비슷한 구로 채운 값)과 예시값 = 가정."""
+    row = {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": value, "unit": "만원"}
+    if src in ("R-ONE 근사", "R-ONE 동네"):
+        return {**row, "src": "공공 통계", "basis": f"한국부동산원 상가 임대료 ({src}), 보증금 환산분을 뺀 현금 월세"}
+    if src == "R-ONE 채움":
+        return {**row, "src": "가정", "basis": "한국부동산원 자료가 없는 구라 비슷한 구 값으로 채운 월세"}
+    if src == "입력":
+        return {**row, "src": "입력", "basis": "직접 넣은 월세"}
+    return {**row, "src": "가정", "basis": "이 구의 임대료 자료가 없어 넣은 예시값"}
+
+
+ENGINE_MENU_KEYS = ("id", "name", "kind", "price", "unit_cost", "mix")   # web/src/lab/menu/api.ts toEngine
+
+
+def default_menu(industry: str, price: int = BASE_PRICE, district: str | None = None) -> tuple[list[dict], float | None, dict]:
+    """하드 모드와 같은 기본 메뉴판 (lab:menu, /lab/menu/template). 원가 = 오늘 시세(ingredients_today.json).
+    고깃집: SimulateEngine처럼 삼겹살 가격이 19,000원이 아니면 주메뉴 가격만 같은 비율로 (100원 단위) 바꾸고 원가를 다시 계산,
+    기본 상차림 원가(table_cost)를 함께 넘긴다. 카페: CafeSim처럼 상권 객단가에 맞춘 배율로 판매가를 맞춘다.
+    돌려주는 값: (엔진에 넘길 메뉴, 상차림 원가 또는 None, 화면 요약)."""
+    from sim import menu as M
+    if industry == "bbq":
+        items = M.template_menu("bbq", "domestic", 1.0)
+        k = price / BASE_PRICE
+        if abs(k - 1) > 1e-6:
+            items = M.with_costs([{**x, "price": js_round(x["price"] * k / 100) * 100} if x["kind"] == "main" else x for x in items],
+                                 "bbq", "domestic", 1.0)
+        table = M.table_setting("bbq")
+        tcost = float(table["cost"]) if table else None
+    else:
+        from sim.cafe.params import load_districts, v as cv
+        d = load_districts()[district]
+        scale = M.cafe_scale(d["ticket_krw"]["value"], cv("season", "dessert_share"), cv("demand", "cups_per_tx"))
+        items, tcost = M.template_menu("cafe", "domestic", scale), None
+    menu = [{k: x[k] for k in ENGINE_MENU_KEYS} for x in items]
+    snap = M.snapshot()["_meta"].get("basis_date")
+    return menu, tcost, {"n": len(menu), "basis_date": snap}
 
 
 def _check(industry: str, capital_man: float, pyeong: float | None) -> None:
-    if industry not in ("bbq", "cafe"):
-        raise ValueError("업종은 bbq 또는 cafe 입니다")
+    if industry not in INDUSTRY_IDS:
+        raise ValueError("업종을 확인해 주세요 (bbq, cafe, " + ", ".join(GENERIC) + ")")
     if not (500 <= float(capital_man) <= 200_000):
         raise ValueError("자본금은 500만원 이상 20억원 이하로 적어 주세요")
     if pyeong is not None and not (10 <= float(pyeong) <= 40):
@@ -314,6 +371,10 @@ def easy_bbq(gu: str, capital_man: float, dong: str | None = None, pyeong: int |
             "start_month": int(start_month), "flow": flow_shape(code, gu)}
     plan = {"meat_price": price, "staff_per_shift": staff, "close_hour": 24, "marketing_budget": 0,
             "meat_grade": "domestic", "banchan": 5, "delivery": "none"}
+    menu, tcost, msum = default_menu("bbq", price)   # 하드 모드 시뮬레이션 첫 계획과 같은 메뉴판 + 기본 상차림
+    plan["menu"] = menu
+    if tcost is not None:
+        plan["table_cost"] = tcost
     run = {"seed": EASY_SEED, "opening": True, "store": spec, "plan": plan,
            "invest": {x["key"]: x["amount"] * 1e4 for x in lines},
            "own_capital": float(capital_man) * 1e4, "owner_draw": OWNER_DRAW * 1e4,
@@ -327,13 +388,10 @@ def easy_bbq(gu: str, capital_man: float, dong: str | None = None, pyeong: int |
          "basis": OV_BASIS if ov.get("tables") else
          f"{store['pyeong']}평에 놓을 수 있는 자리 {len(table_slots(store['pyeong']))}곳 중 추천 규칙으로 고른 수"},
         {"key": "staff", "label": "교대당 알바", "value": staff, "unit": "명", "src": "입력" if ov.get("staff") is not None else "가정",
-         "basis": OV_BASIS if ov.get("staff") is not None else "추천 규칙 (알바 1명 하루 15명 응대, 가정)"},
+         "basis": OV_BASIS if ov.get("staff") is not None else "추천 규칙 (일하는 사람 1명이 하루 손님 34명쯤, 엔진에 맞춘 가정)"},
         {"key": "price", "label": "삼겹살 1인분", "value": price, "unit": "원", "src": "입력" if ov.get("price") else "업계 자료",
          "basis": OV_BASIS if ov.get("price") else "기준 고깃집(대학로) 가격, 팀 조사"},
-        {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": st["rent"], "unit": "만원",
-         "src": "공공 통계" if st["rent_src"].startswith("R-ONE") else "가정",
-         "basis": f"한국부동산원 상가 임대료 ({st['rent_src']}), 보증금 환산분을 뺀 현금 월세" if st["rent_src"] != "예시값"
-         else "이 구의 임대료 자료가 없어 넣은 예시값"},
+        rent_row(st["rent"], st["rent_src"]),
         {"key": "sales", "label": "구 한식음식점 점포당 월매출", "value": st["sales_hansik"], "unit": "만원", "src": "공공 통계",
          "basis": "서울시 상권분석서비스 2025" + (f", {st['dong']} 상대 위치 반영" if st["dong"] else "")},
         {"key": "loan", "label": "대출", "value": loan, "unit": "만원", "src": loan_src,
@@ -342,6 +400,8 @@ def easy_bbq(gu: str, capital_man: float, dong: str | None = None, pyeong: int |
         {"key": "start_month", "label": "여는 달", "value": int(start_month), "unit": "월", "src": "가정", "basis": "다음 달에 연다고 봄"},
         {"key": "plan", "label": "운영", "value": "밤 12시 마감, 반찬 5가지, 국내산, 배달 안 함", "unit": "", "src": "가정",
          "basis": "엔진의 기준 운영 (하드 모드 첫 달 계획과 같음)"},
+        {"key": "menu", "label": "메뉴판", "value": f"기본 메뉴 {msum['n']}가지 + 기본 상차림", "unit": "", "src": "가정",
+         "basis": f"하드 모드와 같은 기본 메뉴판, 원가는 {msum['basis_date'] or '최근'} 시세로 계산 (메뉴 구성과 판매가는 가정)"},
     ]
     return {"industry": "bbq", "gu": gu, "dong": st["dong"], "capital_man": float(capital_man), "store": store,
             "staff": staff, "price": price, "loan_man": loan, "loan_rate": rate, "opening": lines, "opening_total": opening,
@@ -400,6 +460,8 @@ def easy_cafe(gu: str, capital_man: float, dong: str | None = None, pyeong: int 
     pv = cafe_model.preview({k: x for k, x in body.items() if k not in ("seed", "start_month", "extra_loan_krw")})
     ratio = (st["sales"] * area_fx * 10000) / pv["rough_month"]["revenue_krw"] if pv["rough_month"]["revenue_krw"] else 1.0
     body["daily_customers"] = min(600, max(10, js_round(pv["demand"]["default_daily_customers"] * ratio)))
+    menu, _, msum = default_menu("cafe", district=code)   # CafeSim과 같은 기본 메뉴판 (상권 가격에 맞춤)
+    body["menu"] = menu
     shown = [
         {"key": "dong", "label": "동네", "value": dname or "대학로 기준 상권", "unit": "", "src": "가정" if auto_dong else "입력",
          "basis": "동을 안 골라 구 안에서 점포당 매출이 구 평균에 가장 가까운 동을 씀" if auto_dong else "직접 고른 동"},
@@ -410,23 +472,88 @@ def easy_cafe(gu: str, capital_man: float, dong: str | None = None, pyeong: int 
          "basis": OV_BASIS if ov.get("staff") is not None else "가게 꾸미기 화면의 기본값"},
         {"key": "seats", "label": "테이블 / 의자", "value": f"{body['tables']} / {body['chairs']}", "unit": "", "src": "업계 자료",
          "basis": "독립 카페 평당 테이블 0.36개, 좌석 1.27석"},
-        {"key": "rent", "label": "평당 월세 (보증금 빼고)", "value": st["rent"], "unit": "만원",
-         "src": "공공 통계" if st["rent_src"].startswith("R-ONE") else "가정",
-         "basis": f"한국부동산원 상가 임대료 ({st['rent_src']})" if st["rent_src"] != "예시값" else "이 구의 임대료 자료가 없어 넣은 예시값"},
+        rent_row(st["rent"], st["rent_src"]),
         {"key": "sales", "label": "이 동네 보통 카페 월매출", "value": st["sales"], "unit": "만원", "src": "가정",
          "basis": "서울시 상권분석서비스 카드 추정매출(공공 통계)에 보정 배율과 전국 독립 카페 중앙값/평균 비율을 곱한 추정"},
         {"key": "daily", "label": "바쁜 날 주문 수", "value": body["daily_customers"], "unit": "건", "src": "가정",
          "basis": "위 월매출에 맞춘 값 (카페 시뮬레이션 화면과 같은 규칙)"},
+        {"key": "menu", "label": "메뉴판", "value": f"기본 메뉴 {msum['n']}가지", "unit": "", "src": "가정",
+         "basis": f"하드 모드와 같은 기본 메뉴판(상권 가격에 맞춤), 원가는 {msum['basis_date'] or '최근'} 시세로 계산"},
         {"key": "start_month", "label": "여는 달", "value": int(start_month), "unit": "월", "src": "가정", "basis": "다음 달에 연다고 봄"},
     ]
     return {"industry": "cafe", "gu": gu, "dong": dname, "capital_man": float(capital_man), "pyeong": p, "staff": staff,
             "run": body, "shown": shown, "opening": cafe_opening(p, st["rent"])}
 
 
+def easy_generic(industry: str, gu: str, capital_man: float, dong: str | None = None, pyeong: int | None = None,
+                 start_month: int = 3, overrides: dict | None = None) -> dict:
+    """새 업종 이지 입력 (lab:industry 엔진 sim/generic). 가게는 엔진의 업종 기본값 그대로다: 평수 = 경영실태조사 면적 중앙값,
+    테이블 = 평당 좌석, 직원 = 업종 기본 인원. 하드 모드 가게 꾸미기(IndustryBuild)의 첫 화면과 같은 가게다.
+    모자란 돈과 석 달 고정비는 엔진이 빌린다고 본다 (카페 엔진과 같은 규칙)."""
+    from sim.generic import model as gm
+    from sim.generic import params as gp
+    from sim.generic.registry import INDUSTRIES
+    _check(industry, capital_man, pyeong)
+    if dong and not any(d["name"] == dong for d in ((gp.dong_data(industry) or {}).get("gu", {}).get(gu) or [])):
+        raise ValueError(f"{gu}에 {dong} 자료가 없어요")
+    ov = overrides or {}
+    body = {"industry": industry, "gu": gu, "dong": dong or None, "grade": "basic", "delivery": True,
+            "own_capital_krw": js_round(float(capital_man) * 10000), "seed": EASY_SEED, "start_month": int(start_month)}
+    for k, x in (("pyeong", ov.get("pyeong") or pyeong), ("tables", ov.get("tables")), ("staff", ov.get("staff"))):
+        if x is not None:
+            body[k] = int(x)
+    if ov.get("loan_man") is not None:
+        body["extra_loan_krw"] = max(0, js_round(float(ov["loan_man"]) * 10000))
+    try:
+        pv = gm.preview({k: x for k, x in body.items() if k not in ("seed", "start_month", "extra_loan_krw")})
+    except ValueError as e:
+        raise ValueError(f"입력 오류: {e}") from e
+    inp, k = pv["input"], INDUSTRIES[industry]
+    body.update({"pyeong": inp["pyeong"], "tables": inp["tables"], "staff": inp["staff"]})
+    given = lambda key: ov.get(key) is not None or (key == "pyeong" and pyeong)  # noqa: E731
+    shown = [
+        {"key": "pyeong", "label": "평수", "value": inp["pyeong"], "unit": "평", "src": "입력" if given("pyeong") else "업계 자료",
+         "basis": OV_BASIS if given("pyeong") else f"경영실태조사 2025 {k['krei_label']} 매장 면적 중앙값"},
+        {"key": "tables", "label": "테이블", "value": inp["tables"], "unit": "개", "src": "입력" if given("tables") else "업계 자료",
+         "basis": OV_BASIS if given("tables") else f"평당 좌석 수로 어림 (경영실태조사), 테이블당 {pv['seats']['per_table']}석"},
+        {"key": "staff", "label": "직원 (사장님 빼고)", "value": inp["staff"], "unit": "명", "src": "입력" if given("staff") else "업계 자료",
+         "basis": OV_BASIS if given("staff") else "업종 기본 인원 (경영실태조사 종사자 수)"},
+        rent_row(pv["rent"]["man_per_pyeong"], str(pv["rent"]["source"])),
+        {"key": "sales", "label": "자리 잡힌 달 매출", "value": round(pv["demand"]["anchor_month_krw"] / 1e4), "unit": "만원", "src": "가정",
+         "basis": "경영실태조사 연매출 평균(전국) × 서울 배율 × 구 매출 지수(서울시 상권분석서비스) × 면적 효과(탄력성 추정), 추정"},
+        {"key": "ticket", "label": "객단가", "value": pv["demand"]["ticket_krw"], "unit": "원", "src": "업계 자료",
+         "basis": "경영실태조사 2025 원자료 1인 평균"},
+        {"key": "delivery", "label": "배달", "value": "함" if pv["demand"]["delivery_available"] else "거의 없음", "unit": "",
+         "src": "업계 자료", "basis": f"매출 중 배달 {pv['demand']['channels']['delivery']:.0%} (경영실태조사)"},
+        {"key": "loan", "label": "대출", "value": "모자란 돈 + 석 달 고정비" if ov.get("loan_man") is None else f"운전자금 {float(ov['loan_man']):,.0f}만원",
+         "unit": "", "src": "가정" if ov.get("loan_man") is None else "입력", "basis": "5년 원리금 균등, 금리는 한국은행 중소기업 대출금리"},
+        {"key": "start_month", "label": "여는 달", "value": int(start_month), "unit": "월", "src": "가정", "basis": "다음 달에 연다고 봄"},
+    ]
+    return {"industry": industry, "gu": gu, "dong": inp.get("dong"), "capital_man": float(capital_man), "pyeong": inp["pyeong"],
+            "tables": inp["tables"], "staff": inp["staff"], "run": body, "shown": shown,
+            "opening": [{"key": x["key"], "label": x["item_ko"], "amount": x["krw"] / 1e4} for x in pv["capex"]["lines"]]}
+
+
 def easy_inputs(industry: str, gu: str, capital_man: float, **kw) -> dict:
-    if industry not in ("bbq", "cafe"):
-        raise ValueError("업종은 bbq 또는 cafe 입니다")
+    if industry not in INDUSTRY_IDS:
+        raise ValueError("업종을 확인해 주세요 (bbq, cafe, " + ", ".join(GENERIC) + ")")
+    if industry in GENERIC:
+        return easy_generic(industry, gu, capital_man, **kw)
     return (easy_cafe if industry == "cafe" else easy_bbq)(gu, capital_man, **kw)
+
+
+def _public(month: dict) -> dict:
+    return {k: x for k, x in month.items() if not k.startswith("_")}
+
+
+def run_generic(body: dict) -> dict:
+    """새 업종 6개월을 기본 결정으로 (이달의 사건은 기본 대응). 결과의 report.season_summary 가 SeasonSummary 모양이다."""
+    from sim.generic import season as gs
+    run = gs.start(dict(body))
+    start = gs.public_start(run)
+    while not run["state"]["closed"] and len(run["months"]) < run["months_total"]:
+        run, _ = gs.play_month(run, {})
+    return {"start": start, "months": [_public(x) for x in run["months"]], "report": gs.report(run)}
 
 
 def run_cafe(body: dict, months: int | None = None) -> dict:
@@ -446,6 +573,7 @@ FACTORS = {
     "bbq": [("customers", "손님 수", "drv_arrival_rate"), ("meat", "고깃값", "cst_meat_cost_per_portion"),
             ("rent", "월세", "drv_rent"), ("labor", "인건비 (시급)", "sto_parttime_wage")],
     "cafe": [("customers", "손님 수", None), ("food", "재료비", "food"), ("rent", "월세", "rent"), ("labor", "인건비", "labor")],
+    "generic": [("customers", "손님 수", None), ("food", "재료비", "food"), ("rent", "월세", "rent"), ("labor", "인건비", "labor")],
 }
 DEFAULT_RANGES = {"customers": 15, "meat": 20, "food": 20, "rent": 10, "labor": 10}
 MAX_RANGE = 50
@@ -548,20 +676,25 @@ def _cafe_cash(run: dict, months: list[dict], mult: dict[str, float]) -> dict:
     """비용 줄(food, rent, labor)에 배율을 곱한 영업이익으로 현금과 폐업(현금 마이너스 연속 N달)을 다시 계산한다.
     현금 흐름은 엔진과 같다: 영업이익 + 감가상각(현금 아님) - 대출 이자와 원금 + 부가세 환급."""
     from sim.cafe.season import s as cs_s
-    cash = low = run["start"]["cash_krw"]
+    return _recash(run["start"]["cash_krw"], months, mult, cs_s("closure_negative_months"))
+
+
+def _recash(start_cash: float, months: list[dict], mult: dict[str, float], closure_n: int) -> dict:
+    """카페와 새 업종 공통: 그달 비용 줄에 배율을 곱하고 현금 장부와 폐업 규칙을 엔진 식 그대로 다시 돈다."""
+    cash = low = start_cash
     neg, ops, rev, closed_at = 0, [], 0, None
     for m in months:
-        lines = {x["key"]: x["krw"] for x in m["pnl"]["lines"]}
+        lines = m.get("_lines_raw") or {x["key"]: x["krw"] for x in m["pnl"]["lines"]}
         op = m["kpi"]["op_krw"] - sum(lines.get(k, 0) * (f - 1) for k, f in mult.items())
         c = m["cash"]
         cash = (cash + op + c["depreciation_addback_krw"] + c.get("owner_pay_addback_krw", 0)  # integrate: lab:cost 사장 가상 급여는 현금 아님
-                - c["loan_interest_krw"] - c["loan_principal_krw"] + c["vat_refund_krw"]
+                - c["loan_interest_krw"] - c["loan_principal_krw"] + c.get("vat_refund_krw", 0)
                 + (c.get("rent_card") or {}).get("cash_delta", 0))  # integrate: lab:finance 월세 카드 할부
         low = min(low, cash)
         ops.append(round(op))
         rev += m["kpi"]["revenue_krw"]
         neg = neg + 1 if cash < 0 else 0
-        if neg >= cs_s("closure_negative_months"):
+        if neg >= closure_n:
             closed_at = m["month"]
             break
     return {"ops": ops, "revenue": round(rev), "cum_op": round(sum(ops)), "end_cash": round(cash),
@@ -579,6 +712,59 @@ def sensitivity_cafe(body: dict, ranges: dict | None = None) -> dict:
             runs[cm] = _cafe_months(body, cm)
         return _cafe_cash(*runs[cm], {k: f for k, f in m.items() if k != "customers"})
     return _assemble("cafe", r, cell)
+
+
+# 새 업종 손님 배율: sim.generic.model.context 의 매출 기준(anchor_krw)에 곱한다. ContextVar라 요청(스레드)마다 따로이고,
+# 값을 넣지 않은 다른 요청(하드 모드 시즌, 미리보기)에는 영향이 없다. 처음 쓸 때 한 번만 감싼다.
+_GEN_DEMAND: contextvars.ContextVar[float] = contextvars.ContextVar("lab_modes_generic_demand", default=1.0)
+
+
+def _generic_demand_hook() -> None:
+    from sim.generic import model as gm
+    if getattr(gm.context, "_lab_modes", False):
+        return
+    orig = gm.context
+
+    def context(cfg: dict) -> dict:
+        ctx = orig(cfg)
+        f = _GEN_DEMAND.get()
+        return {**ctx, "anchor_krw": ctx["anchor_krw"] * f} if f != 1.0 else ctx
+    context._lab_modes = True  # type: ignore[attr-defined]
+    context.__wrapped_orig__ = orig  # type: ignore[attr-defined]
+    gm.context = context
+
+
+def _generic_months(body: dict, customers_mult: float) -> tuple[dict, list[dict]]:
+    """새 업종 6개월을 기본 결정으로, 엔진의 폐업 판정과 상관없이 끝까지 (현금과 폐업은 _recash가 다시 계산)."""
+    from sim.generic import season as gs
+    _generic_demand_hook()
+    token = _GEN_DEMAND.set(float(customers_mult))
+    try:
+        run = gs.start(dict(body))
+        for _ in range(run["months_total"]):
+            if run["state"]["closed"]:
+                run["state"].update({"closed": False, "closed_reason": None, "neg_months": 0})
+            run, _m = gs.play_month(run, {})
+    finally:
+        _GEN_DEMAND.reset(token)
+    return run, run["months"]
+
+
+def sensitivity_generic(body: dict, ranges: dict | None = None) -> dict:
+    """body = sim.generic.season.start 몸통. 손님은 다시 돌리고, 재료비·월세·인건비는 그달 비용 줄에 배율 (카페와 같은 방식)."""
+    from sim.generic import params as gp
+    r = clean_ranges("generic", ranges)
+    runs: dict[float, tuple] = {}
+    n = gp.cv("season", "closure_negative_months")
+
+    def cell(m: dict[str, float]) -> dict:
+        cm = round(m.get("customers", 1.0), 6)
+        if cm not in runs:
+            runs[cm] = _generic_months(body, cm)
+        run, months = runs[cm]
+        return _recash(run["start_cash_krw"], months, {k: f for k, f in m.items() if k != "customers"}, n)
+    out = _assemble("generic", r, cell)
+    return {**out, "industry": body.get("industry")}
 
 
 def _assemble(industry: str, r: dict[str, float], cell) -> dict:

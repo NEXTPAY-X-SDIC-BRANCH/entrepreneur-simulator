@@ -5,13 +5,13 @@ import { netErr, sensitivity, type Cell, type Sens } from "./api";
 import { manWon, signedMan } from "./Compare";
 import "./modes.css";
 
-const KEYS = { bbq: ["customers", "meat", "rent", "labor"], cafe: ["customers", "food", "rent", "labor"] } as const;
+const KEYS = { bbq: ["customers", "meat", "rent", "labor"], other: ["customers", "food", "rent", "labor"] } as const; // other = 카페, 새 업종
 const LABEL: Record<string, string> = { customers: "손님 수", meat: "고깃값", food: "재료비 (원두, 우유, 디저트)", rent: "월세", labor: "인건비" };
 const LABEL_BBQ: Record<string, string> = { labor: "알바 시급" }; // 고깃집 엔진은 알바 시급만 바꾼다 (사장님 몫은 그대로)
 const HINT: Record<string, string> = {
   customers: "동네 손님이 생각보다 적거나 많을 때",
   meat: "돼지고기 도매가가 오르내릴 때 (질병, 계절)",
-  food: "원두와 우유값이 오르내릴 때",
+  food: "식재료값이 오르내릴 때",
   rent: "재계약 때 월세가 바뀔 때",
   labor: "시급이 오르거나 사람을 구하기 어려울 때",
 };
@@ -19,11 +19,11 @@ const DEFAULT: Record<string, number> = { customers: 15, meat: 20, food: 20, ren
 
 const cellText = (c: Cell) => (c.closed ? `${c.closed_month}개월째 폐업` : manWon(c.end_cash));
 
-export default function Sensitivity({ industry, getBody, onClose }: {
-  industry: "bbq" | "cafe"; getBody: () => Promise<Record<string, unknown>>; onClose: () => void;
+export default function Sensitivity({ industry, getBody, onClose, note }: {
+  industry: string; note?: string; getBody: () => Promise<Record<string, unknown>>; onClose: () => void;
 }) {
-  const keys = KEYS[industry];
-  const lab = (k: string) => (industry === "bbq" && LABEL_BBQ[k]) || LABEL[k];
+  const keys = KEYS[industry === "bbq" ? "bbq" : "other"];
+  const lab = (k: string) => (industry === "bbq" && LABEL_BBQ[k]) || (industry !== "cafe" && k === "food" ? "재료비" : LABEL[k]);
   const [ranges, setRanges] = useState<Record<string, number>>(() => Object.fromEntries(keys.map((k) => [k, DEFAULT[k]])));
   const [out, setOut] = useState<Sens | null>(null);
   const [busy, setBusy] = useState(false);
@@ -65,12 +65,12 @@ export default function Sensitivity({ industry, getBody, onClose }: {
           <h2 id="lm-sens-h">민감도: 이 계획은 얼마나 흔들리나요</h2>
           <button type="button" className="m-btn m-btn-quiet lm-close" onClick={onClose}>닫기</button>
         </header>
-        <p className="lm-quiet">가게 꾸미기에서 정한 가게{industry === "bbq" ? "와 가격, 알바" : ", 직원"}로 기본 운영을 6개월 그대로 둔 계획을, 아래 값만 바꿔 여러 번 돌려요.
-          매달 바꾼 운영 계획은 들어가지 않아요. 범위는 직접 정하는 가정이고, 사건 순서(시드)를 고정해서 칸끼리의 차이는 바꾼 값 때문이에요.</p>
+        <p className="lm-quiet">가게 꾸미기에서 정한 가게{industry === "bbq" ? "와 가격, 알바" : "와 직원"}로 기본 운영을 6개월 그대로 둔 계획을, 아래 값만 바꿔 여러 번 돌려요.
+          매달 바꾼 운영 계획은 들어가지 않아요. 범위는 직접 정하는 가정이고, 사건 순서(시드)를 고정해서 칸끼리의 차이는 바꾼 값 때문이에요.{note ? ` ${note}` : ""}</p>
         <div className="lm-ranges">
           {keys.map((k) => (
             <div key={k} className="lm-range">
-              <span className="lm-ctl-l">{lab(k)}<small>{HINT[k]}</small></span>
+              <span className="lm-ctl-l">{lab(k)}<small>{industry === "cafe" && k === "food" ? "원두와 우유값이 오르내릴 때" : HINT[k]}</small></span>
               <div className="m-stepper">
                 <output>±{ranges[k]}%</output>
                 <button type="button" aria-label={`${lab(k)} 범위 줄이기`} disabled={ranges[k] <= 0} onClick={() => setRanges({ ...ranges, [k]: Math.max(0, ranges[k] - 5) })}>−</button>

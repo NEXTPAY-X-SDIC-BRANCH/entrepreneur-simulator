@@ -170,3 +170,83 @@ def test_api_easy_run_cafe_and_sensitivity(client):
     assert client.post("/lab/sensitivity", json={"industry": "bbq", "body": {}}).status_code == 422
     bad = {**body, "district": "0000000"}
     assert client.post("/lab/sensitivity", json={"industry": "cafe", "body": bad}).status_code == 422
+
+
+# ---- 새 업종 (lab:industry, sim/generic) ------------------------------------------------------------------
+@pytest.mark.parametrize("ind", list(E.GENERIC))
+def test_easy_generic_matches_hard_defaults_and_runs(ind):
+    from sim.generic import model as gm
+    a = E.easy_inputs(ind, "마포구", 8000, start_month=11)
+    assert a == E.easy_inputs(ind, "마포구", 8000, start_month=11)
+    # 하드 모드 가게 꾸미기 첫 화면 = 엔진의 업종 기본값 (평수, 테이블, 직원)
+    hard = gm.normalize({"industry": ind, "gu": "마포구"})
+    assert (a["pyeong"], a["tables"], a["staff"]) == (hard["pyeong"], hard["tables"], hard["staff"])
+    assert a["run"]["seed"] == E.EASY_SEED and all(x["src"] in ("공공 통계", "업계 자료", "가정", "입력") for x in a["shown"])
+    out = E.run_generic(a["run"])
+    ss = out["report"]["season_summary"]
+    assert ss["industry"] == ind and 1 <= len(ss["months"]) <= 6 and len(out["months"]) == len(ss["months"])
+    assert all(not k.startswith("_") for m in out["months"] for k in m)
+
+
+def test_easy_generic_overrides():
+    a = E.easy_inputs("bunsik", "관악구", 6000, overrides={"pyeong": 20, "tables": 6, "staff": 2, "loan_man": 1000})
+    assert (a["pyeong"], a["tables"], a["staff"]) == (20, 6, 2) and a["run"]["extra_loan_krw"] == 10_000_000
+    with pytest.raises(ValueError):
+        E.easy_inputs("bunsik", "없는구", 6000)
+
+
+def test_sensitivity_generic_shape_and_no_leak():
+    from sim.generic import model as gm
+    a = E.easy_inputs("chicken", "마포구", 8000)
+    out = E.sensitivity_generic(a["run"])
+    _shape(out, ["customers", "food", "rent", "labor"])
+    f = {x["key"]: x for x in out["factors"]}
+    assert f["customers"]["high"]["revenue"] > out["base"]["revenue"] > f["customers"]["low"]["revenue"]
+    for k in ("food", "rent", "labor"):
+        assert f[k]["high"]["end_cash"] < out["base"]["end_cash"] < f[k]["low"]["end_cash"], k
+    run = E.run_generic(a["run"])
+    if run["report"]["survived"]:   # 엔진은 원 단위 실수로, 다시 계산은 달마다 반올림한 값으로 쌓는다 (몇 원 차이)
+        assert out["base"]["end_cash"] == pytest.approx(run["report"]["end_cash_krw"], abs=10)
+        assert out["base"]["cum_op"] == pytest.approx(run["report"]["cumulative_op_krw"], abs=10)
+    # 손님 배율은 그 계산 안에서만: 다른 요청의 매출 기준은 그대로
+    cfg = gm.normalize(a["run"])
+    assert E._GEN_DEMAND.get() == 1.0
+    assert gm.context(cfg)["anchor_krw"] == gm.context.__wrapped_orig__(cfg)["anchor_krw"]
+
+
+def test_api_generic_run_and_sensitivity(client):
+    r = client.post("/lab/easy/run", json={"industry": "pub", "gu": "마포구", "capital_man": 9000, "start_month": 3})
+    assert r.status_code == 200 and r.json()["generic"]["report"]["season_summary"]["industry"] == "pub"
+    s = client.post("/lab/sensitivity", json={"industry": "pub", "body": r.json()["inputs"]["run"]})
+    assert s.status_code == 200 and s.json()["industry"] == "pub"
+    assert client.post("/lab/sensitivity", json={"industry": "pub", "body": {"gu": "없는구"}}).status_code == 422
+
+
+def test_easy_generic_rejects_unknown_dong_and_labels_rent():
+    with pytest.raises(ValueError):
+        E.easy_inputs("chicken", "마포구", 8000, dong="없는동")
+    assert E.rent_row(17.1, "R-ONE 근사")["src"] == "공공 통계"
+    assert E.rent_row(17.1, "R-ONE 채움")["src"] == "가정"
+    assert E.rent_row(12.0, "가정 (월세 자료 없음)")["src"] == "가정"
+
+
+# ---- 기본 메뉴판: 이지 = 하드 (lab:menu) -----------------------------------------------------------------
+def test_easy_uses_hard_mode_default_menu(client):
+    keys = ("id", "name", "kind", "price", "unit_cost", "mix")
+    a = E.easy_inputs("bbq", "마포구", 12000)
+    t = client.get("/lab/menu/template", params={"industry": "bbq", "grade": "domestic"}).json()
+    assert a["run"]["plan"]["menu"] == [{k: x[k] for k in keys} for x in t["items"]]
+    assert a["run"]["plan"]["table_cost"] == t["table_setting"]["cost"]
+    c = E.easy_inputs("cafe", "마포구", 12000)
+    tc = client.get("/lab/menu/template", params={"industry": "cafe", "grade": "domestic", "district": c["run"]["district"]}).json()
+    assert c["run"]["menu"] == [{k: x[k] for k in keys} for x in tc["items"]]
+
+
+def test_easy_bbq_price_override_rescales_main_menu(client):
+    a = E.easy_inputs("bbq", "마포구", 12000, overrides={"price": 20900})
+    base = E.easy_inputs("bbq", "마포구", 12000)
+    for x, y in zip(a["run"]["plan"]["menu"], base["run"]["plan"]["menu"]):
+        if x["kind"] == "main":
+            assert x["price"] == E.js_round(y["price"] * 20900 / 19000 / 100) * 100
+        else:
+            assert x == y

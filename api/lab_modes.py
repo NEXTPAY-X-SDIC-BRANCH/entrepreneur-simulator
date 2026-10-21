@@ -4,6 +4,8 @@
     POST /lab/easy/run        같은 입력 -> 채운 입력 + 6개월 결과 (고깃집 = /season/run 응답, 카페 = start/months/report)
     POST /lab/sensitivity     같은 계획을 손님·고깃값(재료비)·월세·인건비 ±로 여러 번 -> 토네이도 + 3x3 격자
 
+업종: bbq, cafe, 새 업종 5개(hansik, pub, bunsik, bakery, chicken; sim/generic, 결과는 report.season_summary).
+
 상태는 서버에 저장하지 않는다. 판 기록(다시 해보기)은 화면이 들고 있다.
 """
 from __future__ import annotations
@@ -26,8 +28,11 @@ class Overrides(BaseModel):
     loan_man: float | None = Field(None, ge=0, le=100_000)
 
 
+Ind = Literal["bbq", "cafe", "hansik", "pub", "bunsik", "bakery", "chicken"]   # 새 업종 5개 = lab:industry (sim/generic)
+
+
 class EasyIn(BaseModel):
-    industry: Literal["bbq", "cafe"]
+    industry: Ind
     gu: str = Field(..., min_length=2, max_length=10)
     dong: str | None = Field(None, max_length=30)
     capital_man: float = Field(..., ge=500, le=200_000)
@@ -37,7 +42,7 @@ class EasyIn(BaseModel):
 
 
 class SensIn(BaseModel):
-    industry: Literal["bbq", "cafe"]
+    industry: Ind
     body: dict[str, Any]
     ranges: dict[str, float] | None = None
 
@@ -60,6 +65,8 @@ def easy_run(b: EasyIn) -> dict:
     inp = _inputs(b)
     if b.industry == "cafe":
         return {"inputs": inp, "cafe": E.run_cafe(inp["run"])}
+    if b.industry in E.GENERIC:
+        return {"inputs": inp, "generic": E.run_generic(inp["run"])}
     from api import changeup as C   # 지연 import: changeup.py가 이 라우터를 include 한다
     return {"inputs": inp, "bbq": C.season_run(inp["run"])}
 
@@ -75,6 +82,16 @@ def sensitivity(b: SensIn) -> dict:
         if not body.get("daily_customers"):
             raise HTTPException(422, "카페 민감도에는 daily_customers가 필요합니다")
         return E.sensitivity_cafe(body, b.ranges)
+    if b.industry in E.GENERIC:
+        from api.lab_industry import SeasonIn as GenIn
+        try:
+            body = GenIn(**{**b.body, "industry": b.industry}).model_dump()
+        except Exception as e:
+            raise HTTPException(422, f"업종 입력 오류: {e}") from e
+        try:
+            return E.sensitivity_generic(body, b.ranges)
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from e
     from api import changeup as C
     if not isinstance(b.body.get("store"), dict):
         raise HTTPException(422, "store가 필요합니다 (/season/run 과 같은 몸통)")
