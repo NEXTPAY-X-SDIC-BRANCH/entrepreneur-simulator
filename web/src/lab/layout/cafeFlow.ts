@@ -90,7 +90,7 @@ export function cafeFlow(room: CafeRoom, layout: CafeItem[]): CafeFlow {
   const narrow = narrowLen(g, trimPath(out.inPath, 0.6, 0.6)) + narrowLen(g, trimPath(out.outPath, 0.6, 0.6));
   if (out.unreachable) out.hints.push({ level: "weak", text: `문에서 갈 수 없는 테이블이 ${out.unreachable}개 있어요.` });
   if (qLen > 0.5) out.hints.push({ level: "warn", text: `나가는 손님이 주문 줄 앞을 ${m1(qLen)} 가로질러요. 붐비는 시간에는 줄과 부딪혀요.` });
-  if (narrow > 0.5) out.hints.push({ level: "warn", text: `통로 폭이 ${AISLE_OK * 100}cm보다 좁은 곳을 ${m1(narrow)} 지나가요. 권장 간격은 90~120cm예요.` });
+  if (narrow > 0.5) out.hints.push({ level: "warn", text: `통로 폭이 ${AISLE_OK * 100}cm보다 좁은 곳을 ${m1(narrow)} 지나가요. 권장 간격은 90~120cm예요(업계 자료).` });
   if (!out.hints.length) out.hints.push({ level: "ok", text: "문에서 주문, 픽업, 자리까지 막히는 곳 없이 이어져요." });
   return out;
 }

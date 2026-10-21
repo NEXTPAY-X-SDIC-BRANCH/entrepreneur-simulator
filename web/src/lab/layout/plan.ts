@@ -3,15 +3,17 @@
 // ratio changes, and the customer route (입구 → 자리 → 계산 → 출구) with its length and congestion hints.
 // The Store type stays model.ts's; the shape rides along as an extra `shape` field (absent = the old room).
 // Tables and seats stay plain items, so storeStats → engine inputs (tables, seats) pick up every change.
-import { ITEM, footprint, snap, storeStats, type Placed, type Store } from "../../mock/model";
+import { ITEM, fits, footprint, snap, storeStats, type Placed, type Store } from "../../mock/model";
 import { AISLE_OK, field, lenWhere, makeGrid, narrowLen, nearestWalk, overlaps, polyLen, reachRect, rectOf, simplify, trace, trimPath, type Field, type Grid, type Pt, type Rect } from "./flow";
 import { BBQ_DOOR_MARGIN, BBQ_SHAPE, DOOR_W, WALL_KO, doorPoint, type RoomShape } from "./shape";
 
 // want: the table counts asked for before a re-layout dropped some (a4/a2 = what that re-layout placed). While the
 // store still has exactly a4/a2 tables, the next re-layout asks for n4/n2 again, so stepping the ratio or the door
-// through a tight shape and back does not lose tables for good. Any manual change of the tables ends it.
+// through a tight shape and back does not lose tables for good. Changing the table count by hand ends it.
 export type LabStore = Store & { shape?: RoomShape; want?: { n4: number; n2: number; a4: number; a2: number } };
 export const shapeOf = (s: Store): RoomShape => (s as LabStore).shape ?? BBQ_SHAPE;
+// a store nobody has shaped yet keeps the old rules (model.fits, no door clearance), so its numbers do not move
+export const isShaped = (s: Store) => (s as LabStore).shape !== undefined;
 export const withShape = (s: Store, shape: RoomShape): Store => ({ ...s, shape }) as LabStore;
 
 // model.roomSize generalised: same 0.5 m rounding, ratio 1.45 gives the old room exactly
@@ -64,6 +66,7 @@ type Cand = { id: string; x: number; z: number; rot: 0 | 1 };
 export const itemRect = (c: Cand, pad = 0) => { const f = footprint(c); return rectOf(c.x, c.z, f.w, f.d, pad); };
 // model.fits with this room's size, plus: nothing may stand in the door's clearance
 export function fitsIn(s: Store, cand: Cand, ignore?: number): boolean {
+  if (!isShaped(s)) return fits(s, cand, ignore);
   const { w, d } = roomDims(s);
   const r = itemRect(cand);
   if (r.x0 < -w / 2 - 1e-6 || r.x1 > w / 2 + 1e-6 || r.z0 < -d / 2 - 1e-6 || r.z1 > d / 2 + 1e-6) return false;
@@ -142,7 +145,7 @@ export function bbqFlow(s: Store): Flow {
   if (unreachable) hints.push({ level: "weak", text: `문에서 갈 수 없는 테이블이 ${unreachable}개 있어요. 테이블 사이를 띄워 길을 내 주세요.` });
   if (pay?.at === "kitchen" && passLen > 0.3) hints.push({ level: "warn", text: `계산대가 없어서 주방 배식구 앞에서 계산해요. 나가는 손님이 배식 통로를 ${m1(passLen)} 지나가요. 계산대를 문 옆에 두면 줄어요.` });
   else if (passLen > 0.5) hints.push({ level: "warn", text: `손님 동선이 주방 앞 배식 통로를 ${m1(passLen)} 지나가요. 서빙하는 직원과 부딪히기 쉬워요.` });
-  if (narrow > 0.5) hints.push({ level: "warn", text: `통로 폭이 ${AISLE_OK * 100}cm보다 좁은 곳을 ${m1(narrow)} 지나가요. 테이블 사이 권장 간격은 90~120cm예요.` });
+  if (narrow > 0.5) hints.push({ level: "warn", text: `통로 폭이 ${AISLE_OK * 100}cm보다 좁은 곳을 ${m1(narrow)} 지나가요. 테이블 사이 권장 간격은 90~120cm예요(업계 자료).` });
   if (!hints.length) hints.push({ level: "ok", text: "문에서 자리, 계산, 출구까지 막히는 곳 없이 이어져요." });
   const stops: Flow["stops"] = [{ key: "door", label: `입구·출구 (${WALL_KO[shapeOf(s).door.wall]})`, x: door.x, z: door.z }, { key: "seat", label: "가장 먼 자리", x: far.t.x, z: far.t.z }];
   if (pay && payCell >= 0) stops.push({ key: "pay", label: pay.at === "counter" ? "계산대" : "계산 (주방 POS)", x: pay.p[0], z: pay.p[1] });

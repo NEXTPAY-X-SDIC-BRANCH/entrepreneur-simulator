@@ -61,7 +61,8 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
     const tables = dd.layout.filter((i) => i.type === "table" && i.fits).length, route = flow ? Math.round(flow.total) : 0;
     const parts = [p.tables === tables ? `테이블 ${tables}개 그대로` : `테이블 ${p.tables}→${tables}개`, p.seats === dd.seats.total ? `${dd.seats.total}석 그대로` : `${p.seats}→${dd.seats.total}석`];
     if (p.route || route) parts.push(`손님 동선 ${p.route}m→${route}m`);
-    setNote(`${p.what} ${parts.join(", ")}.${tables < s.tables ? ` 테이블 ${s.tables - tables}개는 자리가 없어 가게 밖(빨간색)에 있어요.` : ""}`);
+    const over = dd.space.overflow.length ? ` 공간이 모자라요: ${dd.space.overflow.map((o) => `${o.type} ${o.count}개`).join(", ")}.` : "";
+    setNote(`${p.what} ${parts.join(", ")}.${tables < s.tables ? ` 테이블 ${s.tables - tables}개는 자리가 없어 가게 밖(빨간색)에 있어요.` : ""}${over}`);
   }, [pv.data]); // eslint-disable-line react-hooks/exhaustive-deps
   const onShape = (next: RoomShape, what: string) => {
     const dd = pv.data;
@@ -118,7 +119,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
         </div>
 
         {flowOn && flow && <FlowCard onTop={() => setView("top")} f={{ inLen: flow.inLen, outLen: flow.outLen, inLabel: "주문하고 가장 먼 자리까지", outLabel: "나가기", hints: flow.hints,
-          note: `테이블 ${flow.tables}개 가운데 문에서 가장 먼 자리 기준이에요. 통로 폭과 동선은 엔진 배치도로 잰 값이고 매출 계산에는 들어가지 않아요. 좌석 수 변화는 엔진 계산에 들어가요.` }} /> /* lab:layout */}
+          note: `테이블 ${flow.tables}개 가운데 문에서 가장 먼 자리 기준이에요. 통로 폭과 동선은 엔진 배치도로 잰 값이고 매출 계산에는 들어가지 않아요. 좌석 수 변화는 엔진 계산에 들어가요. 문 폭과 주문 줄 깊이 1.2m는 엔진의 가정, 통로 권장 90~120cm는 업계 자료(AJD 인테리어 가이드)예요.` }} /> /* lab:layout */}
         <p className="m-msg" role="status">{msg}</p>
       </div>
 

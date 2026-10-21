@@ -8,7 +8,7 @@ const assert = {
   deepEqual(a: unknown, b: unknown, msg = "") { if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error(`${msg} ${JSON.stringify(a)} != ${JSON.stringify(b)}`); },
   notDeepEqual(a: unknown, b: unknown, msg = "") { if (JSON.stringify(a) === JSON.stringify(b)) throw new Error(`${msg} values are equal`); },
 };
-import { ITEM, starterStore, storeStats, type Store } from "../../mock/model";
+import { ITEM, fits, starterStore, storeStats, type Store } from "../../mock/model";
 import { overlaps } from "./flow";
 import { BBQ_SHAPE, WALLS, ratioSteps, type RoomShape, type Wall } from "./shape";
 import { bbqDims, bbqFlow, doorInfo, fitsIn, itemRect, kitchenFlip, packTables, ratioOk, relayout, roomDims, shapeOf, withShape } from "./plan";
@@ -44,6 +44,16 @@ t("old stores (no shape) keep the old room and door", () => {
 });
 
 const walls = WALLS as Wall[];
+t("an unshaped store keeps model.fits exactly (numbers do not move until the learner shapes the room)", () => {
+  for (const p of [12, 20, 30]) {
+    const s = starterStore(p, "basic", 0, 3), { w, d } = roomDims(s);
+    for (let x = -w / 2; x <= w / 2; x += 0.5) for (let z = -d / 2; z <= d / 2; z += 0.5) for (const id of ["table4", "plant", "counter"]) {
+      const c = { id, x, z, rot: 0 as const };
+      assert.equal(fitsIn(s, c), fits(s, c), `${p}평 ${id} ${x},${z}`);
+    }
+  }
+});
+
 t("door on every wall, several positions and ratios: plan valid, seats ≥ 0, route exists", () => {
   for (const pyeong of [12, 20, 30]) for (const ratio of ratioSteps(1.45)) {
     if (!ratioOk(pyeong, ratio)) continue;

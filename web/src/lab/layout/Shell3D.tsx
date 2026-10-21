@@ -58,8 +58,8 @@ function Strip({ len, opens, color, wainscot, inward }: { len: number; opens: Op
 }
 
 // the door in a strip: posts, header, a glass leaf standing open to the outside, a mat inside, the tag
-function DoorPiece({ at, len, inward, portal, label }: { at: number; len: number; inward: 1 | -1; portal?: RefObject<HTMLElement | null>; label: string }) {
-  const x = at - len / 2, hw = DOOR_W / 2;
+function DoorPiece({ at, len, inward, portal, label, dw = DOOR_W }: { at: number; len: number; inward: 1 | -1; portal?: RefObject<HTMLElement | null>; label: string; dw?: number }) {
+  const x = at - len / 2, hw = dw / 2, DOOR_W = dw;
   return (
     <group>
       {[-1, 1].map((s) => <Box key={s} p={[x + s * (hw + 0.03), 1.05, 0]} s={[0.06, 2.1, T + 0.04]} color={FRAME} />)}
@@ -90,10 +90,11 @@ function GlassRun({ x0, x1, z }: { x0: number; x1: number; z: number }) {
   );
 }
 
-export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, portal, storefrontMat = false }: {
+export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, portal, storefrontMat = false, doorW = DOOR_W }: {
   w: number; d: number; shape: RoomShape; margin: number; color: string; wainscot?: string;
-  decor?: Partial<Record<Wall, ReactNode>>; portal?: RefObject<HTMLElement | null>; storefrontMat?: boolean;
+  decor?: Partial<Record<Wall, ReactNode>>; portal?: RefObject<HTMLElement | null>; storefrontMat?: boolean; doorW?: number;
 }) {
+  const DOOR_W = doorW;
   const dw = shape.door.wall, at = doorAlong(shape, w, d, margin);
   const doorSpan: [number, number] = [at - DOOR_W / 2, at + DOOR_W / 2];
   const label = "출입문";
@@ -122,7 +123,7 @@ export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, portal
               {(door ? [[0, door[0]], [door[1], len]] : [[0, len]]).filter(([a, b]) => b - a > 0.02).map(([a, b]) => (
                 <Box key={a} p={[(a + b) / 2 - len / 2, 0.06, 0]} s={[b - a, 0.12, T]} color={color} />
               ))}
-              {door && <DoorPiece at={(door[0] + door[1]) / 2} len={len} inward={s.inward} portal={portal} label={label} />}
+              {door && <DoorPiece at={(door[0] + door[1]) / 2} len={len} inward={s.inward} portal={portal} label={label} dw={DOOR_W} />}
             </group>
             {decor[s.wall] && <Hide outside={s.outside}>{decor[s.wall]}</Hide>}
           </group>
@@ -141,7 +142,7 @@ export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, portal
       </FrontFade>
       {dw === "front" && (
         <group position={[0, 0, d / 2 + T / 2]}>
-          {!frontGlass && <DoorPiece at={at} len={w} inward={-1} portal={portal} label={label} />}
+          {!frontGlass && <DoorPiece at={at} len={w} inward={-1} portal={portal} label={label} dw={DOOR_W} />}
           {frontGlass && (
             <group>
               <Box p={[-w / 2 + at, 0.008, -0.5]} s={[DOOR_W, 0.014, 0.8]} color="#3d4a63" />

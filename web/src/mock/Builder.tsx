@@ -12,7 +12,7 @@ import { FitControls, StoreLights, ViewBar, gfxDpr, gfxFrameloop, gfxShadows, se
 import { FlowArrows } from "../lab/layout/Arrows3D";
 import { FlowCard, ShapePanel } from "../lab/layout/ShapePanel";
 import { BBQ_DOOR_MARGIN, BBQ_SHAPE, ratioSteps, type RoomShape } from "../lab/layout/shape";
-import { bbqFlow, changeLine, fitsIn, kitchenSpotFor, ratioOk, relayout, roomDims, shapeOf, tableRoom, withShape, type Flow } from "../lab/layout/plan";
+import { bbqFlow, changeLine, fitsIn, isShaped, kitchenSpotFor, ratioOk, relayout, roomDims, shapeOf, tableRoom, withShape, type Flow } from "../lab/layout/plan";
 import {
   CATALOG, DEPOSIT_MONTHS, GRADES, ITEM, LOAN_RATE, cashLeft, ecosRates, eul, ymKo, footprint, guStat, man, nextUid, openingCost, snap,
   recommend, storeStats, type CatalogItem, type Grade, type Levers, type Placed, type Profile, type Store,
@@ -123,7 +123,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
   const onFloorClick = () => {
     if (!tool) return setSelected(null);
     if (!ghost) return;
-    if (!ghost.ok) return setMsg("여기에는 놓을 수 없어요. 벽 안쪽의 빈 칸을 골라 주세요. 출입문 앞 1.2m는 비워 둬요.");
+    if (!ghost.ok) return setMsg(isShaped(store) ? "여기에는 놓을 수 없어요. 벽 안쪽의 빈 칸을 골라 주세요. 출입문 앞 1.2m는 비워 둬요(가정)." : "여기에는 놓을 수 없어요. 벽 안쪽의 빈 칸을 골라 주세요.");
     if (tool.kind === "move") {
       setStore({ ...store, items: store.items.map((i) => (i.uid === tool.uid ? { ...i, x: ghost.x, z: ghost.z, rot: tool.rot } : i)) });
       setSelected(tool.uid);
@@ -164,7 +164,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
     if (pyeong > store.pyeong && perPyeong(store.grade) > left) return setMsg(`1평 넓히는 데 ${man(perPyeong(store.grade))}이 들어요. 현금이 모자라요.`);
     // lab:layout: keep the 가로:세로 if this size allows it, else the nearest that does; the kitchen to its corner
     const ratio = ratioOk(pyeong, shape.ratio) ? shape.ratio : ratioSteps(BBQ_SHAPE.ratio).filter((r) => ratioOk(pyeong, r)).sort((a, b) => Math.abs(a - shape.ratio) - Math.abs(b - shape.ratio))[0] ?? shape.ratio;
-    const shell = withShape({ ...store, pyeong, items: [] }, { ...shape, ratio });
+    const shell: Store = isShaped(store) ? withShape({ ...store, pyeong, items: [] }, { ...shape, ratio }) : { ...store, pyeong, items: [] };
     const kitchen = store.items.find((i) => i.id === "kitchen")!;
     shell.items.push({ ...kitchen, ...kitchenSpotFor(shell) });
     for (const it of store.items) if (it.id !== "kitchen" && fitsIn(shell, it)) shell.items.push(it);
@@ -246,10 +246,15 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
             const plan = recommend(profile);
             // lab:layout: the recommended size and table count, laid out for this store's shape and door
             const want = storeStats(plan.store).tables;
+            if (!isShaped(store)) { // untouched room: the recommendation as before, numbers unchanged
+              setStore(plan.store); setLevers({ ...levers, staff: plan.staff }); setSelected(null); setTool(null);
+              return setMsg(`추천 배치를 놓았어요. ${plan.store.pyeong}평, 테이블 ${want}개, 직원 ${plan.staff}명이에요.${plan.safe ? "" : " 이 돈으로는 6개월을 버티는 구성을 찾지 못했어요."}`);
+            }
             const fit = relayout(withShape(plan.store, shape), shape);
             setStore(fit.store); setLevers({ ...levers, staff: plan.staff }); setSelected(null); setTool(null);
             const lost = want - fit.tablesAfter;
-            setMsg(`추천 배치를 놓았어요. ${plan.store.pyeong}평, 테이블 ${fit.tablesAfter}개, 직원 ${plan.staff}명이에요.${lost > 0 ? ` 이 문 위치와 가로:세로로는 테이블 ${lost}개가 덜 들어가요.` : ""}${plan.safe ? "" : " 이 돈으로는 6개월을 버티는 구성을 찾지 못했어요."}`);
+            // the 6-month check behind the recommendation used `want` tables; with fewer it no longer holds, so say so
+            setMsg(`추천 배치를 놓았어요. ${plan.store.pyeong}평, 테이블 ${fit.tablesAfter}개, 직원 ${plan.staff}명이에요.${lost > 0 ? ` 이 문 위치와 가로:세로로는 테이블 ${lost}개가 덜 들어가서, 추천을 고른 6개월 계산과 달라요. 아래 오픈 전 점검을 다시 보세요.` : plan.safe ? "" : " 이 돈으로는 6개월을 버티는 구성을 찾지 못했어요."}`);
           }}>추천 배치</button>
         </div>
 
@@ -272,7 +277,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
         </div>
 
         {flow && <FlowCard onTop={() => setView("top")} f={{ inLen: flow.inLen, outLen: flow.outLen, inLabel: "들어와서 가장 먼 자리까지", outLabel: "계산하고 나가기", hints: flow.hints,
-          note: `테이블 ${flow.tables}개 가운데 문에서 가장 먼 자리 기준이에요. 평균은 들어와서 자리까지 ${flow.avgIn.toFixed(1)}m예요. 통로 폭과 동선은 화면 배치로 잰 값이고 매출 계산에는 들어가지 않아요.` }} /> /* lab:layout */}
+          note: `테이블 ${flow.tables}개 가운데 문에서 가장 먼 자리 기준이에요. 평균은 들어와서 자리까지 ${flow.avgIn.toFixed(1)}m예요. 통로 폭과 동선은 화면 배치로 잰 값이고 매출 계산에는 들어가지 않아요. 문 폭 1m, 문 앞 비움 1.2m, 문에서 1.8m 통로는 가정, 통로 권장 90~120cm는 업계 자료(AJD 인테리어 가이드)예요.` }} /> /* lab:layout */}
         <p className="m-msg" role="status">{msg}</p>
       </div>
 

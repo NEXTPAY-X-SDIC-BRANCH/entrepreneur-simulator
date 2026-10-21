@@ -14,7 +14,7 @@ import { FitControls, Pendant, People, StoreLights, ViewBar, gfxDpr, gfxFrameloo
 import { FlowArrows } from "../lab/layout/Arrows3D";
 import { FRAME_ROT, realDims, shapeFromRoom, toReal, type CafeFlow } from "../lab/layout/cafeFlow";
 import { Hide, Shell } from "../lab/layout/Shell3D";
-import { CAFE_DOOR_MARGIN, DOOR_W, doorPoint, type RoomShape, type Wall } from "../lab/layout/shape";
+import { CAFE_DOOR_MARGIN, doorPoint, type RoomShape, type Wall } from "../lab/layout/shape";
 
 export type LayoutItem = { id: string; type: string; x: number; z: number; rot_deg: number; fits: boolean; w: number; d: number; unassigned?: boolean };
 export type RosterItem = { id: string; role: string; label_ko: string; x: number; z: number; fits: boolean };
@@ -267,7 +267,8 @@ export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, h
   const wall: Wall = room.frame?.wall ?? "front";
   const turn = FRAME_ROT[wall];
   const { w: Wr, d: Dr } = realDims(room);
-  const shp = shape ?? shapeFromRoom(room);
+  // walls follow the plan the engine solved (door wall, position, ratio); only the windows come from the prop
+  const shp = shapeFromRoom(room, shape?.windows);
   const portal = useRef<HTMLDivElement>(null); // tags (출입문, 동선 번호) render into the canvas box, not a detached root
   // 엔진 좌표 -> 장면 좌표
   const sx = (x: number) => x - W / 2;
@@ -365,9 +366,9 @@ export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, h
           <Floor W={Wr} D={Dr} />
 
           {/* lab:layout: 벽·출입문·창문 (Shell3D), 문 밖 화분 두 개 */}
-          <Shell w={Wr} d={Dr} shape={shp} margin={CAFE_DOOR_MARGIN} color={ROOM.wall} wainscot={ROOM.wainscot} storefrontMat portal={portal} />
+          <Shell w={Wr} d={Dr} shape={shp} margin={CAFE_DOOR_MARGIN} color={ROOM.wall} wainscot={ROOM.wainscot} storefrontMat portal={portal} doorW={room.door.w} />
           {[-1, 1].map((k) => (
-            <group key={k} position={[dp.x - dp.nx * 0.35 + tx * k * (DOOR_W / 2 + 0.35), 0, dp.z - dp.nz * 0.35 + tz * k * (DOOR_W / 2 + 0.35)]}>
+            <group key={k} position={[dp.x - dp.nx * 0.35 + tx * k * (room.door.w / 2 + 0.35), 0, dp.z - dp.nz * 0.35 + tz * k * (room.door.w / 2 + 0.35)]}>
               <Cy p={[0, 0.2, 0]} r={0.17} r2={0.14} h={0.4} color="#b9836a" />
               <mesh position={[0, 0.66, 0]} castShadow><icosahedronGeometry args={[0.3, 0]} /><meshStandardMaterial color="#4d7a4a" flatShading roughness={0.9} /></mesh>
             </group>
