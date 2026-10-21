@@ -5,7 +5,7 @@ import RentCard from "./RentCard";
 import { loadBankRates, loanRateInfo, useFinance, type RateInfo } from "./finance";
 import "./finance.css";
 
-export default function FinanceBox({ loanMan, rentMan, loanNote, fallback }: { loanMan: number; rentMan: number; loanNote?: string; fallback?: RateInfo }) {
+export default function FinanceBox({ loanMan, rentMan, loanNote, fallback, young = true }: { loanMan: number; rentMan: number; loanNote?: string; fallback?: RateInfo; young?: boolean }) {
   const fin = useFinance();
   const [open, setOpen] = useState(false);
   const dlg = useRef<HTMLDialogElement>(null);
@@ -32,7 +32,7 @@ export default function FinanceBox({ loanMan, rentMan, loanNote, fallback }: { l
             <h1 id="lf-dlg-h">대출 금리와 월세 내는 방법</h1>
             <button type="button" className="lf-x" onClick={() => setOpen(false)}>닫기</button>
           </header>
-          <BankRates loanMan={loanMan} />
+          <BankRates loanMan={loanMan} young={young} />
           <RentCard rentMan={rentMan} />
         </div>
       </dialog>

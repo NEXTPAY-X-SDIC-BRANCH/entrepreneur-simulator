@@ -199,7 +199,7 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
       if (ctx.interest > 0) ticks.push({ label: "대출 이자", amount: -ctx.interest });
       for (const e of r.events) notes.push(`일어난 일 · ${e.label}`);
     }
-    if (i === 13 && r.rent_card && r.rent_card.paid > 0) ticks.push({ label: "카드 할부 대금 (월세)", amount: -r.rent_card.paid }); // lab:finance 결제일 14일 가정
+    if (i === 13 && r.rent_card && r.rent_card.paid > 0) ticks.push({ label: "카드 할부 대금 (월세, 결제일 14일 가정)", amount: -r.rent_card.paid }); // lab:finance
     if (i === 9) ticks.push({ label: "직원 급여", amount: -laborCash });
     if (i === 24) ticks.push({ label: "사장 생활비", amount: -ctx.draw });
     if (dt.getDate() === firstSat) {
@@ -564,7 +564,8 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
         const L: Ledger = await post("/venture", {
           monthly_op: ops, invest, own_capital: profile.capital * 1e4, owner_draw: draw, imputed_owner_wage: imputed,
           loan: store.loan > 0 ? { principal: store.loan * 1e4, annual_rate: LOAN_RATE, term_months: 60, grace_months: 60 } : null,
-          rent_card: rentCardPlan(), monthly_rent: done.map((m) => m.result.kpis.rent), // lab:finance
+          // lab:finance 장부는 같은 plan으로 할부를 다시 계산한다. 시뮬레이션 화면이 열린 뒤에는 할부 선택이 바뀌지 않아 달마다의 result.rent_card와 같다
+          rent_card: rentCardPlan(), monthly_rent: done.map((m) => m.result.kpis.rent),
         });
         setLedger(L);
       } catch (e) { setErr(String(e)); }

@@ -86,6 +86,9 @@ def test_bbq_api_slim_passes_rent_card():
                                        "band_runs": 1}).json()
     assert out["result"]["rent_card"]["months"] == 2
     assert out["state"]["rent_card_queue"]
+    plain = c.post("/season/play", json={"state": st, "night": False, "band_runs": 1}).json()
+    assert "rent_card" not in plain["result"]
+    assert out["state"]["cash"] - plain["state"]["cash"] == pytest.approx(out["result"]["rent_card"]["charged"], abs=1)
 
 
 # ---------------------------------------------------------------- 투자·대출 장부
@@ -143,7 +146,10 @@ def test_cafe_api_accepts_and_validates():
     assert ok.status_code == 200, ok.text
     assert ok.json()["rent_card"]["months"] == 3 and ok.json()["loan"]["rate"] == pytest.approx(0.0418)
     m = c.post("/cafe/season/month", json={"state_token": ok.json()["state_token"]}).json()
-    assert m["cash"]["rent_card"]["paid"] == 0
+    assert m["cash"]["rent_card"]["paid"] == 0 and m["cash"]["rent_card"]["charged"] > 0
+    plain = c.post("/cafe/season", json=CAFE).json()
+    m0 = c.post("/cafe/season/month", json={"state_token": plain["state_token"]}).json()
+    assert m["cash"]["end_krw"] - m0["cash"]["end_krw"] == m["cash"]["rent_card"]["charged"]
     assert c.post("/cafe/season", json={**CAFE, "rent_card": {"months": 4}}).status_code == 422
     assert c.post("/cafe/season", json={**CAFE, "loan_rate": 0.9}).status_code == 422
 
