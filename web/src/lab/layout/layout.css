@@ -31,7 +31,6 @@
 .ly-flowcard details .m-link { justify-self: start; font-size: 13px; }
 
 /* tags in the 3D scene (drei Html) */
-.ly-door-tag { display: inline-block; padding: 2px 8px; border-radius: 8px; background: #1f6b4e; color: #fff; font: 600 12px/1.5 var(--text, system-ui); white-space: nowrap; box-shadow: 0 1px 4px rgba(25, 31, 40, 0.25); pointer-events: none; }
 .ly-stop { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 3px; border-radius: 999px; background: var(--ink, #191f28); color: #fff; font: 600 12px/1.5 var(--text, system-ui); white-space: nowrap; pointer-events: none; }
 .ly-stop b { display: inline-grid; place-items: center; inline-size: 18px; block-size: 18px; border-radius: 50%; background: #fff; color: var(--ink, #191f28); font-size: 11px; }
 

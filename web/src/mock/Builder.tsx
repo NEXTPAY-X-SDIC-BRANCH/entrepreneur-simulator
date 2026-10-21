@@ -32,7 +32,7 @@ function Scene({ portal, store, tool, selected, ghost, flow, onFloorMove, onFloo
   return (
     <>
       <StoreLights w={w} d={d} r={Math.max(w, d) / 2 + 3} />
-      <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} items={store.items.filter((i) => !(tool?.kind === "move" && tool.uid === i.uid))} shape={shapeOf(store)} portal={portal} />
+      <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} items={store.items.filter((i) => !(tool?.kind === "move" && tool.uid === i.uid))} shape={shapeOf(store)} />
       {flow && <FlowArrows inPath={flow.inPath} outPath={flow.outPath} portal={portal} stops={flow.stops.map((s) => ({ label: s.label, x: s.x, z: s.z }))} /> /* lab:layout */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} visible={false}
         onPointerMove={(e: ThreeEvent<PointerEvent>) => onFloorMove(e.point.x, e.point.z)}

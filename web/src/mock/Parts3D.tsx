@@ -1,7 +1,7 @@
 // The store's 3D pieces, shared by the builder and the simulation view. Colours, the Box helper and the sign textures
 // come from the existing store scene (store3d/Building, store3d/textures); the hood-and-drop exhaust follows
 // store3d/Building's Ceiling. Procedural only, no asset files.
-import { useMemo, memo, type RefObject } from "react";
+import { useMemo, memo } from "react";
 import * as THREE from "three";
 import { Box, C } from "../store3d/Building";
 import { bladeSign, cardSign, fasciaSign, grate } from "../store3d/textures";
@@ -353,7 +353,7 @@ export function TableLife({ items, seated }: { items: Placed[]; seated: number[]
 
 // the floor, walls, storefront and the street-side life: fascia sign, blade sign, posters, menu board, warm lights,
 // planters, an A-frame board and beer crates. `items` draws the exhaust trunks over the tables.
-function RoomImpl({ w, d, grade, pyeong, items = [], shape = BBQ_SHAPE, portal }: { w: number; d: number; grade: Grade; pyeong?: number; items?: Placed[]; shape?: RoomShape; portal?: RefObject<HTMLElement | null> }) { // lab:layout shape, portal
+function RoomImpl({ w, d, grade, pyeong, items = [], shape = BBQ_SHAPE }: { w: number; d: number; grade: Grade; pyeong?: number; items?: Placed[]; shape?: RoomShape }) { // lab:layout shape
   const g = GRADES[grade];
   const lines = useMemo(() => {
     const pts: number[] = [];
@@ -397,7 +397,7 @@ function RoomImpl({ w, d, grade, pyeong, items = [], shape = BBQ_SHAPE, portal }
     <group>
       <Box p={[0, -0.05, 0]} s={[w, 0.1, d]} color={g.floor} receive />
       <lineSegments geometry={lines}><lineBasicMaterial color="#191f28" transparent opacity={0.12} /></lineSegments>
-      <Shell w={w} d={d} shape={shape} margin={BBQ_DOOR_MARGIN} color={g.wall} wainscot={C.wainscot} portal={portal} decor={{
+      <Shell w={w} d={d} shape={shape} margin={BBQ_DOOR_MARGIN} color={g.wall} wainscot={C.wainscot} decor={{
         back: back && back[1] - back[0] > 2.2 ? (
           <group>
             <Box p={[(back[0] + back[1]) / 2, 1.7, -d / 2 + 0.02]} s={[1.5, 1.02, 0.03]} color="#5b4436" />

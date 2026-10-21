@@ -1,12 +1,11 @@
 // lab:layout — the four walls of a store with its door and windows, for both 3D stores (고깃집 Room, 카페 CafeRoom3D).
 // Scene frame: room centred on the origin, front (street) wall at +z. Each wall is built in its own strip frame
 // (x along the wall from its start corner: front/back from the left, left/right from the front) and placed by a group.
-// A real gap is cut for the door (frame, an open glass leaf, a mat and a small "출입문" tag that reads in every view),
+// A real gap is cut for the door (frame, an open glass leaf, a mat and a "출입문" sprite tag that reads in every view),
 // windows are glass panes in the wall (sill 0.9 m). The front wall with a window is the glass storefront (Scene3D's
 // Storefront when the door is in it). Back, left and right walls hide on the camera side like Scene3D's Wall.
-import { useRef, type ReactNode, type RefObject } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import { Box, C } from "../../store3d/Building";
 import { FrontFade, Storefront, WALL_H } from "../../mock/Scene3D";
@@ -57,8 +56,31 @@ function Strip({ len, opens, color, wainscot, inward }: { len: number; opens: Op
   );
 }
 
+// "출입문" tag: a sprite drawn on a canvas (no DOM, so it survives any camera and unmounts cleanly), always on top
+export function DoorTag({ p, text = "출입문" }: { p: [number, number, number]; text?: string }) {
+  const tex = useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = 256; c.height = 96;
+    const g = c.getContext("2d")!;
+    g.fillStyle = "#1f6b4e";
+    g.beginPath(); g.roundRect(4, 8, 248, 80, 22); g.fill();
+    g.fillStyle = "#ffffff";
+    g.font = `700 46px "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif`;
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(text, 128, 50);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }, [text]);
+  return (
+    <sprite position={p} scale={[0.95, 0.36, 1]} renderOrder={10}>
+      <spriteMaterial map={tex} depthTest={false} transparent />
+    </sprite>
+  );
+}
+
 // the door in a strip: posts, header, a glass leaf standing open to the outside, a mat inside, the tag
-function DoorPiece({ at, len, inward, portal, label, dw = DOOR_W }: { at: number; len: number; inward: 1 | -1; portal?: RefObject<HTMLElement | null>; label: string; dw?: number }) {
+function DoorPiece({ at, len, inward, label, dw = DOOR_W }: { at: number; len: number; inward: 1 | -1; label: string; dw?: number }) {
   const x = at - len / 2, hw = dw / 2, DOOR_W = dw;
   return (
     <group>
@@ -70,9 +92,7 @@ function DoorPiece({ at, len, inward, portal, label, dw = DOOR_W }: { at: number
         <Box p={[-DOOR_W * 0.78, 1.0, -inward * 0.04]} s={[0.025, 0.45, 0.025]} color={C.steel} metal={0.6} />
       </group>
       <Box p={[x, 0.008, inward * 0.5]} s={[DOOR_W, 0.014, 0.8]} color="#3d4a63" />
-      <Html portal={portal as RefObject<HTMLElement> | undefined} position={[x, 2.5, -inward * 0.25]} center zIndexRange={[8, 0]}>
-        <span className="ly-door-tag">{label}</span>
-      </Html>
+      <DoorTag p={[x, 2.55, -inward * 0.25]} text={label} />
     </group>
   );
 }
@@ -90,9 +110,9 @@ function GlassRun({ x0, x1, z }: { x0: number; x1: number; z: number }) {
   );
 }
 
-export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, portal, storefrontMat = false, doorW = DOOR_W }: {
+export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, storefrontMat = false, doorW = DOOR_W }: {
   w: number; d: number; shape: RoomShape; margin: number; color: string; wainscot?: string;
-  decor?: Partial<Record<Wall, ReactNode>>; portal?: RefObject<HTMLElement | null>; storefrontMat?: boolean; doorW?: number;
+  decor?: Partial<Record<Wall, ReactNode>>; storefrontMat?: boolean; doorW?: number;
 }) {
   const DOOR_W = doorW;
   const dw = shape.door.wall, at = doorAlong(shape, w, d, margin);
@@ -123,7 +143,7 @@ export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, portal
               {(door ? [[0, door[0]], [door[1], len]] : [[0, len]]).filter(([a, b]) => b - a > 0.02).map(([a, b]) => (
                 <Box key={a} p={[(a + b) / 2 - len / 2, 0.06, 0]} s={[b - a, 0.12, T]} color={color} />
               ))}
-              {door && <DoorPiece at={(door[0] + door[1]) / 2} len={len} inward={s.inward} portal={portal} label={label} dw={DOOR_W} />}
+              {door && <DoorPiece at={(door[0] + door[1]) / 2} len={len} inward={s.inward} label={label} dw={DOOR_W} />}
             </group>
             {decor[s.wall] && <Hide outside={s.outside}>{decor[s.wall]}</Hide>}
           </group>
@@ -142,13 +162,11 @@ export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, portal
       </FrontFade>
       {dw === "front" && (
         <group position={[0, 0, d / 2 + T / 2]}>
-          {!frontGlass && <DoorPiece at={at} len={w} inward={-1} portal={portal} label={label} dw={DOOR_W} />}
+          {!frontGlass && <DoorPiece at={at} len={w} inward={-1} label={label} dw={DOOR_W} />}
           {frontGlass && (
             <group>
               <Box p={[-w / 2 + at, 0.008, -0.5]} s={[DOOR_W, 0.014, 0.8]} color="#3d4a63" />
-              <Html portal={portal as RefObject<HTMLElement> | undefined} position={[-w / 2 + at, 2.5, 0.3]} center zIndexRange={[8, 0]}>
-                <span className="ly-door-tag">{label}</span>
-              </Html>
+              <DoorTag p={[-w / 2 + at, 2.55, 0.3]} text={label} />
             </group>
           )}
         </group>
