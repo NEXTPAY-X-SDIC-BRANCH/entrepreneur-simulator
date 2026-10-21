@@ -3,7 +3,7 @@ import type { ScoreFix } from "../types";
 import type { Attempt } from "./attempts";
 import { cumOp, diffInputs } from "./summary";
 
-export const manWon = (won: number) => `${Math.round(won / 1e4).toLocaleString("ko-KR")}만원`;
+export const manWon = (won: number) => { const v = Math.round(won / 1e4); return v === 0 ? "0원" : `${v < 0 ? "−" : ""}${Math.abs(v).toLocaleString("ko-KR")}만원`; };
 export const signedMan = (won: number) => { const v = Math.round(won / 1e4); return v === 0 ? "0원" : `${v > 0 ? "+" : "−"}${Math.abs(v).toLocaleString("ko-KR")}만원`; };
 
 export function ScoreRow({ prev, cur }: { prev?: Attempt; cur: Attempt }) {
@@ -29,9 +29,11 @@ export function ScoreRow({ prev, cur }: { prev?: Attempt; cur: Attempt }) {
   );
 }
 
-export function DiffTable({ prev, cur }: { prev: Attempt; cur: Attempt }) {
+/** derived: 학습자가 고치지 않았는데 다른 값에 따라 자동으로 다시 정해진 입력 (예: 이지 모드에서 대출이 '자동'일 때) */
+export function DiffTable({ prev, cur, derived = [] }: { prev: Attempt; cur: Attempt; derived?: string[] }) {
   const rows = diffInputs(prev.summary.inputs, cur.summary.inputs, cur.summary.industry);
-  const changed = rows.filter((r) => r.changed);
+  const auto = (k: string) => derived.includes(k);
+  const changed = rows.filter((r) => r.changed && !auto(r.key));
   return (
     <section className="lm-sec">
       <h2>지난 판과 바뀐 것</h2>
@@ -40,7 +42,8 @@ export function DiffTable({ prev, cur }: { prev: Attempt; cur: Attempt }) {
         <thead><tr><th scope="col">입력</th><th scope="col">{prev.n}판</th><th scope="col">{cur.n}판</th></tr></thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.key} className={r.changed ? "is-changed" : ""}><th scope="row">{r.label}</th><td>{r.before}</td><td>{r.changed ? <b>{r.after}</b> : r.after}</td></tr>
+            <tr key={r.key} className={r.changed ? (auto(r.key) ? "is-derived" : "is-changed") : ""}><th scope="row">{r.label}</th><td>{r.before}</td>
+              <td>{r.changed && auto(r.key) ? <>{r.after}<small className="lm-autotag">자동으로 바뀜</small></> : r.changed ? <b>{r.after}</b> : r.after}</td></tr>
           ))}
         </tbody>
       </table>
@@ -89,12 +92,12 @@ export function AttemptLine({ list }: { list: Attempt[] }) {
   );
 }
 
-export default function Compare({ prev, cur, onFix }: { prev?: Attempt; cur: Attempt; onFix?: (control: string) => void }) {
+export default function Compare({ prev, cur, onFix, derived }: { prev?: Attempt; cur: Attempt; onFix?: (control: string) => void; derived?: string[] }) {
   return (
     <div className="lm-compare">
       <ScoreRow prev={prev} cur={cur} />
       <div className="lm-two">
-        {prev ? <DiffTable prev={prev} cur={cur} /> : <Parts cur={cur} />}
+        {prev ? <DiffTable prev={prev} cur={cur} derived={derived} /> : <Parts cur={cur} />}
         <Fixes fixes={cur.scored.score.fixes} onFix={onFix} />
       </div>
     </div>

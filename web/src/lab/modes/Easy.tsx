@@ -40,6 +40,71 @@ const CTLS: Record<Kind, Ctl[]> = {
   ],
 };
 
+// ---- 돈이 모자란 판, 현금이 영업이익과 다르게 움직이는 이유 (엔진 응답에 이미 있는 값만 읽는다) ----------------------------
+const man0 = (v: number) => (Math.round(v) === 0 ? "0원" : man(v));
+type Funding = { own: number; opening: number; loan: number; share: number }; // 원
+function fundingOf(res: EasyRes, s: { opening_cost: number; loan: number }): Funding {
+  const own = res.inputs.capital_man * 1e4;
+  let opening = s.opening_cost, loan = s.loan;
+  if (res.generic) {
+    const st = res.generic.start as unknown as { capex?: { total_krw: number } };
+    opening = st.capex?.total_krw ?? opening;
+    loan = res.generic.start.loan.principal_krw;
+  }
+  return { own, opening, loan, share: own + loan > 0 ? loan / (own + loan) : 0 };
+}
+
+type Move = { label: string; won: number };
+type CashBits = { depreciation_addback_krw?: number; owner_pay_addback_krw?: number; loan_interest_krw?: number; loan_principal_krw?: number; vat_refund_krw?: number };
+/** i번째 달에 영업이익 말고 현금을 움직인 것 (원). 엔진이 주는 항목으로 설명이 안 되는 차이는 '그 밖의 현금 움직임'으로 남긴다. */
+function movesOf(res: EasyRes, i: number, op: number, delta: number): Move[] {
+  const out: Move[] = [];
+  if (res.bbq) {
+    const r = res.bbq.ledger.rows[i] as { interest?: number; principal?: number } | undefined;
+    const debt = (r?.interest ?? 0) + (r?.principal ?? 0);
+    if (debt) out.push({ label: r?.principal ? "대출 원리금" : "대출 이자", won: -debt });
+  } else {
+    const c = ((res.cafe ?? res.generic)?.months[i] as unknown as { cash?: CashBits } | undefined)?.cash ?? {};
+    if (c.vat_refund_krw) out.push({ label: "부가세 환급", won: c.vat_refund_krw });
+    if (c.owner_pay_addback_krw) out.push({ label: "사장님 몫 되돌림", won: c.owner_pay_addback_krw });
+    if (c.depreciation_addback_krw) out.push({ label: "감가상각 되돌림", won: c.depreciation_addback_krw });
+    const debt = (c.loan_interest_krw ?? 0) + (c.loan_principal_krw ?? 0);
+    if (debt) out.push({ label: "대출 원리금", won: -debt });
+  }
+  const rest = delta - op - out.reduce((a, m) => a + m.won, 0);
+  if (Math.abs(rest) >= 1e4) out.push({ label: "그 밖의 현금 움직임", won: rest });
+  return out;
+}
+
+/** 6개월 흐름 표 밑 설명: 업종 엔진마다 남은 현금을 계산하는 방식이 달라서 나눠 쓴다 */
+function cashNote(res: EasyRes): string {
+  const m0 = (k: keyof CashBits) => {
+    const c = ((res.cafe ?? res.generic)?.months[0] as unknown as { cash?: CashBits } | undefined)?.cash ?? {};
+    return c[k] ?? 0;
+  };
+  if (res.bbq) {
+    const r = res.bbq.ledger.rows[0] as { interest?: number; principal?: number } | undefined;
+    const owner = (res.bbq.months[0]?.kpis.labor_owner as number | undefined) ?? 0;
+    const debt = r ? (r.interest ?? 0) + (r.principal ?? 0) : 0;
+    return `남은 현금은 영업이익에서 ${debt ? `대출 ${r?.principal ? "원리금" : "이자"}(월 ${manWon(debt)})만 더 뺀 값이에요` : "더하거나 뺀 것 없이 그대로 쌓은 값이에요"}.`
+      + (owner ? ` 사장님 생활비 월 ${manWon(owner)}은 영업이익의 인건비에서 이미 뺐어요 (가정).` : "");
+  }
+  const parts: string[] = [];
+  const dep = m0("depreciation_addback_krw"), own = m0("owner_pay_addback_krw");
+  const debt = m0("loan_interest_krw") + m0("loan_principal_krw");
+  if (dep) parts.push(`감가상각(월 ${manWon(dep)})은 실제로 나가는 돈이 아니라서 되돌려 더해요`);
+  if (own) parts.push(`사장님 몫(월 ${manWon(own)})은 영업이익에서는 비용으로 뺐지만 현금에서는 빼지 않았어요 (생활비는 가게 돈에서 쓰지 않는다고 봄, 가정)`);
+  if (debt) parts.push(`대출 원리금(월 ${manWon(debt)})은 빼요`);
+  const months = (res.cafe ?? res.generic)?.months ?? [];
+  const vi = months.findIndex((m) => ((m as unknown as { cash?: CashBits }).cash?.vat_refund_krw ?? 0) > 0);
+  if (vi >= 0) {
+    const m = months[vi];
+    parts.push(`${m.calendar_month}월에는 가게를 열 때 낸 부가세 ${manWon((m as unknown as { cash: CashBits }).cash.vat_refund_krw ?? 0)}을 돌려받아요`);
+  }
+  if (!own) parts.push("사장님 생활비는 영업이익에서도 남은 현금에서도 빼지 않았어요 (가정)");
+  return `남은 현금은 영업이익과 똑같이 움직이지 않아요. ${parts.join(". ")}.`;
+}
+
 function valuesOf(i: EasyInputs): Record<string, number | undefined> {
   if (kindOf(i.industry) === "generic") return { pyeong: i.pyeong, tables: i.tables, staff: i.staff, loan: undefined };
   return i.industry === "cafe"
@@ -167,13 +232,38 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
   const suggested: Record<string, string> = {};
   for (const f of cur.scored.score.fixes) { const c = controlOf(f.lever); if (c && !suggested[c]) suggested[c] = f.text; }
   const changedNext = Object.entries(valuesOf(inp)).some(([k, v]) => next[k] !== v) || next.loan !== undefined;
+  // 카페·새 업종의 대출 칸은 가게 비용 대출 외 운전자금이라 자동값도 운전자금만 보여 준다 (전체 대출을 보여 주면 + 한 번에 대출이 두 배가 된다)
+  const autoLoanWon = res.cafe ? ((res.cafe.start.start as { extra_loan_krw?: number }).extra_loan_krw ?? 0)
+    : res.generic ? ((res.generic.start.loan as { extra_krw?: number }).extra_krw ?? 0) : s.loan ?? 0;
+  const loanAuto = kind === "bbq" ? inp.shown.find((x) => x.key === "loan")?.src !== "입력" : inp.run.extra_loan_krw === undefined;
+  const fund = fundingOf(res, s);
+  const short = fund.opening - fund.own;
+  const pyeongAuto = inp.shown.find((x) => x.key === "pyeong")?.src !== "입력";
+  const basisOf = (x: EasyInputs["shown"][number]) => {
+    if (x.key !== "pyeong" || !pyeongAuto) return x.basis;
+    if (kind === "bbq" && inp.fits_capital === false)
+      return `가진 돈으로 열 수 있는 크기가 없어서 가장 작은 가게(${inp.store?.pyeong}평, 테이블 ${inp.store?.tables}개)로 정하고, 모자란 돈은 빌린다고 봤어요`;
+    if (kind === "bbq" && inp.safe_by_rule === false)
+      return "가진 돈으로 열 수 있는 크기 중 손님이 20% 적어도 6개월을 버티는 크기는 없어서, 그때 6개월 끝 현금이 가장 많이 남는 크기를 골랐어요";
+    if (kind === "cafe" && short > 0)
+      return "독립 카페 면적 중앙값 20평에서 시작해 여는 비용 + 석 달 운영비(1,650만원, 가정)에 맞춰 줄였는데, 가장 작은 10평도 가진 돈으로는 모자라서 모자란 돈은 빌린다고 봤어요";
+    return x.basis;
+  };
   return (
     <main className="lm-result">
       <header className="lm-head">
         <h1 className="lm-h1">{cur.n}판째 결과예요</h1>
         <p className="lm-sub">{IND_KO(ind)}, {inp.gu}{inp.dong ? ` ${inp.dong}` : ""}, 가진 돈 {man(inp.capital_man)}, {s.months[0]?.month}월에 열어 6개월</p>
       </header>
-      <Compare prev={prev} cur={cur} onFix={focusCtl} />
+      {short > 0 && (
+        <aside className="lm-short" role="note" aria-label="가진 돈으로는 열 수 없는 계획">
+          <b>가진 돈으로는 이 가게를 열 수 없어요</b>
+          <p>가진 돈 {man0(inp.capital_man)}으로는 여는 비용 {manWon(fund.opening)}을 낼 수 없어서, {manWon(fund.loan)}(창업 자금의 {Math.round(fund.share * 100)}%)을 빌린다고 보고 돌렸어요.
+            {kind === "bbq" ? " 하드 모드에서는 대출을 직접 정해야 문을 열 수 있어요." : " 하드 모드에서도 모자란 돈은 대출로 계산해요."}
+            {" "}빌린 돈이 클수록 다달이 나가는 {kind === "bbq" ? "이자가" : "원리금이"} 커져요. 가진 돈을 바꿔 보려면 맨 아래 조건부터 다시 정하기를 눌러 주세요.</p>
+        </aside>
+      )}
+      <Compare prev={prev} cur={cur} onFix={focusCtl} derived={loanAuto ? ["loan_man"] : []} />
       <AttemptLine list={list} />
 
       <section className="lm-sec">
@@ -182,15 +272,25 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
           <thead><tr><th scope="col">달</th><th scope="col">매출</th><th scope="col">영업이익</th><th scope="col">남은 현금</th></tr></thead>
           <tbody>
             <tr><th scope="row">문 열 때<small>여는 비용 {manWon(s.opening_cost)}{s.loan > 0 ? `, 대출 ${manWon(s.loan)}` : ""}</small></th><td></td><td></td><td>{manWon(s.start_cash)}</td></tr>
-            {s.months.map((m, i) => (
-              <tr key={i}><th scope="row">{m.month}월</th><td>{manWon(m.revenue)}</td><td className={m.op < 0 ? "is-neg" : ""}>{signedMan(m.op)}</td>
-                <td className={m.cash_after < 0 ? "is-neg" : ""}>{manWon(m.cash_after)}</td></tr>
-            ))}
+            {s.months.map((m, i) => {
+              const delta = m.cash_after - (i ? s.months[i - 1].cash_after : s.start_cash);
+              const o = Math.round(m.op / 1e4), d = Math.round(delta / 1e4);
+              const opposite = o !== 0 && Math.sign(o) !== Math.sign(d);
+              const moves = opposite ? movesOf(res, i, m.op, delta) : [];
+              return [
+                <tr key={i} className={opposite ? "has-why" : ""}><th scope="row">{m.month}월</th><td>{manWon(m.revenue)}</td><td className={m.op < 0 ? "is-neg" : ""}>{signedMan(m.op)}</td>
+                  <td className={m.cash_after < 0 ? "is-neg" : ""}>{manWon(m.cash_after)}</td></tr>,
+                opposite && (
+                  <tr key={`${i}-why`} className="lm-why"><td colSpan={4}>
+                    <small>{o < 0 ? `영업이익은 ${signedMan(m.op)}인데 현금은 ${manWon(delta)} 늘었어요` : `영업이익은 ${signedMan(m.op)}인데 현금은 ${manWon(-delta)} 줄었어요`}. 현금 변화 이유: {moves.map((x) => `${x.label} ${signedMan(x.won)}`).join(", ")}</small>
+                  </td></tr>
+                ),
+              ];
+            })}
           </tbody>
         </table>
         {s.closed && <p className="lm-closed">{s.months.length}개월째 문을 닫았어요. {s.closed_reason ?? ""}</p>}
-        {kind === "bbq" ? <small>남은 현금은 사장님 생활비 월 300만원과 대출 이자를 뺀 값이에요 (가정).</small>
-          : <small>남은 현금은 대출 원리금을 뺀 값이고, 사장님 생활비는 빼지 않았어요 (고깃집과 다른 점, 가정).</small>}
+        <small className="lm-cashnote">{cashNote(res)}</small>
       </section>
 
       {prev && <div className="lm-two"><Parts cur={cur} /><div /></div>}
@@ -202,9 +302,9 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
             {inp.shown.map((x) => (
               <tr key={x.key}>
                 <th scope="row">{x.label}</th>
-                <td>{typeof x.value === "number" ? `${x.value.toLocaleString("ko-KR")}${x.unit}` : `${x.value}${x.unit}`}</td>
+                <td>{typeof x.value === "number" ? (x.value === 0 && x.unit === "만원" ? "0원" : `${x.value.toLocaleString("ko-KR")}${x.unit}`) : `${x.value}${x.unit}`}</td>
                 <td><span className={`lm-src lm-src-${x.src === "가정" ? "a" : x.src === "입력" ? "i" : "d"}`}>{x.src}</span></td>
-                <td><small>{x.basis}</small></td>
+                <td><small>{basisOf(x)}</small></td>
               </tr>
             ))}
           </tbody>
@@ -219,19 +319,19 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
             const k = c.key as string;
             const v = next[k];
             const auto = k === "loan" && v === undefined;
-            const base = k === "loan" ? Math.round((s.loan ?? 0) / 1e4) : (v ?? c.min);
+            const base = k === "loan" ? Math.round(autoLoanWon / 1e4) : (v ?? c.min);
             const cur0 = auto ? base : (v as number);
             return (
               <div key={k} id={`lm-ctl-${k}`} className={`lm-ctl${flash === k ? " is-flash" : ""}${suggested[k] ? " is-suggested" : ""}`} data-suggested={suggested[k] ? "1" : undefined}>
                 <span className="lm-ctl-l">{c.label}</span>
                 {suggested[k] && <small className="lm-sugg">성적표 제안: {suggested[k]}</small>}
                 <div className="m-stepper">
-                  <output>{auto ? `자동 (${man(base)})` : c.fmt(cur0)}</output>
+                  <output>{auto ? `자동 (${man0(base)})` : c.key === "loan" ? man0(cur0) : c.fmt(cur0)}</output>
                   <button type="button" aria-label={`${c.label} 줄이기`} disabled={cur0 - c.step < c.min} onClick={() => setNext({ ...next, [k]: Math.max(c.min, cur0 - c.step) })}>−</button>
                   <button type="button" aria-label={`${c.label} 늘리기`} disabled={cur0 + c.step > c.max} onClick={() => setNext({ ...next, [k]: Math.min(c.max, cur0 + c.step) })}>+</button>
                 </div>
                 {k === "loan" && !auto && <button type="button" className="m-link" onClick={() => setNext({ ...next, loan: undefined })}>자동으로</button>}
-                {k === "loan" && auto && <small>모자란 돈 + 석 달 고정비만큼 (가정)</small>}
+                {k === "loan" && auto && <small>{kind === "bbq" ? "모자란 돈 + 석 달 고정비만큼 (가정)" : "석 달 고정비만큼 (가정). 가게 비용 대출은 따로 자동으로 정해요"}</small>}
               </div>
             );
           })}

@@ -113,3 +113,13 @@
 .m-app .lm-inds { display: flex; flex-wrap: wrap; gap: 2px; }
 .m-app .lm-ctl.is-suggested { box-shadow: inset 0 0 0 1.5px var(--blue); }
 .m-app .lm-sugg { color: var(--blue-deep); }
+/* 가진 돈으로 열 수 없는 계획 경고, 현금 변화 이유, 판 비교의 자동으로 바뀐 값 (easy-fix 10-22) */
+.m-app .lm-short { margin-block-start: 20px; padding: 14px 18px; border-radius: 14px; background: #fff7e0; border: 1px solid #f3dc9a; color: var(--ink); max-inline-size: 60em; }
+.m-app .lm-short b { display: block; margin-block-end: 4px; font-size: 16px; color: var(--warn-ink); }
+.m-app .lm-short p { margin: 0; font-size: 15px; line-height: 1.6; }
+.lm-months tr.has-why th, .lm-months tr.has-why td { border-block-end: 0; }
+.lm-months tr.lm-why td { padding-block: 0 9px; text-align: start; }
+.lm-months tr.lm-why small { display: block; color: var(--ink2); font-size: 13px; }
+.m-app .lm-cashnote { display: block; margin-block-start: 8px; line-height: 1.6; }
+.lm-tbl tr.is-derived { background: none; }
+.m-app .lm-autotag { display: inline-block; margin-inline-start: 8px; padding: 0 6px; border-radius: 6px; background: var(--soft); color: var(--pencil); font-size: 12px; }
