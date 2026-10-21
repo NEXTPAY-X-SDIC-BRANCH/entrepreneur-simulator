@@ -22,6 +22,7 @@ import { fetchTemplate, recompute, toEngine, type EngineMenuItem, type MenuDoc }
 import { roomDims, shapeOf } from "../lab/layout/plan"; // lab:layout
 import ScoreCard from "../lab/score/ScoreCard"; // lab:score
 import { bbqSummary } from "../lab/score/summary"; // lab:score
+import RecordAttempt from "../lab/modes/RecordAttempt"; // lab:modes 하드 모드 판 기록 (카페·새 업종과 같은 방식: 결과 화면이 판을 남긴다)
 
 const API = (import.meta.env.VITE_ENGINE_API as string | undefined) ?? "http://127.0.0.1:8010";
 const SHIRTS = ["#e0735a", "#43648a", "#d4a032", "#5679a3", "#ec8a4f", "#35614a"];
@@ -1002,6 +1003,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
               <>
                 <div className="sx-scroll">
                   {scoreSummary && <ScoreCard summary={scoreSummary} />}{/* lab:score */}
+                  {scoreSummary && <RecordAttempt summary={scoreSummary} extra={{ capital_man: profile.capital, staff: Math.min(4, levers.staff), price: levers.price, tables: stats.tables, pyeong: store.pyeong, grade: store.grade }} />}{/* lab:modes */}
                   <h1>{done.length}개월 결과</h1>
                   {!ledger ? <p>계산 중이에요.</p> : (
                     <>

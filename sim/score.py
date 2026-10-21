@@ -64,7 +64,7 @@ BENCH: dict[str, dict[str, Any]] = {
         # test_cafe_op_is_after_owner_pay). 그래서 여기서 대표자 인건비를 또 빼면 두 번 빠진다 (2026-10-22까지 158만원을 더 뺐다)
         "owner_wage_in_op": True, "owner_wage_month": 0, "owner_in_labor": 0,
         "owner_note": " 카페 영업이익은 사장 가상 급여(월 211만원)를 뺀 값이라 업계 영업이익(대표자 인건비를 뺀 뒤)과 같은 기준이에요.",
-        "labor_def": "직원 인건비(사장은 무급)를 업계 고용인 인건비와 비교해요", "labor_total": None,
+        "labor_def": "직원 인건비(사장 가상 급여 제외)를 업계 고용인 인건비와 비교해요", "labor_total": None,
         "def": ("외식업체경영실태조사 2025 원자료, 독립 음료점 중앙값: 식재료 40%, 고용인 인건비 11%, 임차료 10%, "
                 "대표자 인건비 월 158만원(별도), 영업이익률 10%(대표자 인건비를 뺀 뒤, 엔진도 사장 가상 급여를 뺌). 임차료 10%는 자가 매장을 0으로 넣은 값이라 "
                 "임차 매장 기준(월 103.5만원 ÷ 95만원)으로 바꿔 약 11%와 비교"),
@@ -355,7 +355,7 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
                 add("labor", "마감을 한 시간 당기거나 손님 적은 요일 영업 줄이기", "close_hour",
                     f"인건비 비율 {pct(F['labor_ratio'])}, 업계 고용인 인건비 {pct(b['labor'])}. {SIDE_STAFF}", lost["cost"] + 1 + lab_gap * 10)
     if F["rent_ratio"] > RENT_FIX_AT and rent_gap > 0.02:   # 엔진 월세는 시세라 첫 6개월엔 비율이 높기 쉽다: 20%를 넘을 때만 권한다
-        add("rent", "평수를 줄이거나 월세가 낮은 자리로 (다음 판 가게 꾸미기에서)", "pyeong",
+        add("rent", "평수를 줄이거나 월세가 낮은 자리로 (다음 판 입력에서)", "pyeong",
             f"임차료 비율 {pct(F['rent_ratio'])} → {pct(b['rent'])}이면 {F['months']}개월 약 +{man(rent_gap * R)} (단순 계산). "
             "좌석이 줄면 손님도 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["cost"] + rent_gap * 10)
     if cogs_gap > 0.02:
@@ -397,7 +397,7 @@ def _fixes(F: dict, parts: list[dict]) -> list[dict]:
         add("loan", "대출 비중 낮추기 (창업 자금 중 대출 50% 아래)", "loan",
             f"지금 대출 비중 {pct(F['loan_share'])}, 대출 {man(F['loan'])}", lost["risk"])
     if not out and F["margin"] < b["margin"] and rent_gap > 0.02:   # 흑자지만 업계 이익률 아래이고 임차료가 업계보다 크면, 막연한 '다시 해 보세요' 대신 평수·자리
-        add("rent", "평수를 줄이거나 월세가 낮은 자리로 (다음 판 가게 꾸미기에서)", "pyeong",
+        add("rent", "평수를 줄이거나 월세가 낮은 자리로 (다음 판 입력에서)", "pyeong",
             f"임차료 비율 {pct(F['rent_ratio'])}, 업계 {pct(b['rent'])}. 업계 수준이면 {F['months']}개월 약 +{man(rent_gap * R)} (단순 계산). "
             "좌석이 줄면 손님도 줄 수 있어요, 다음 판 시뮬레이션에서 확인", lost["profit"])
     if F["closed"] and not out:

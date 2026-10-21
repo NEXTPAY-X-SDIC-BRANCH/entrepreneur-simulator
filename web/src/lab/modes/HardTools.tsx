@@ -1,18 +1,16 @@
 // lab:modes — 하드 모드 머리글 도구: 민감도 보기, 다시 해보기 (판 기록 + 지난 판 비교).
-// SimulateEngine/CafeSim은 고치지 않는다. 고깃집 결과는 SimulateEngine이 챗봇용으로 내보내는 chatContext에서 읽는다.
+// 판 기록은 모든 업종에서 결과 화면의 RecordAttempt가 남긴다. 여기서는 비교 창을 띄우고, 고깃집 시즌 중간이면 그만둘지 묻는다.
 import { useState } from "react";
 import { getEngineCtx } from "../../mock/chatContext";
 import { flowShape, profileOf } from "../../mock/area";
 import { areaFx, engineBody, type CafeCfg } from "../../mock/cafeChecks";
 import { LOAN_RATE, OWNER_DRAW, guStat, openingCost, storeStats, type Levers, type Profile, type Store } from "../../mock/model";
-import { ENGINE, netErr, post } from "./api";
+import { ENGINE, post } from "./api";
 import { fetchTemplate, recompute, toEngine } from "../menu/api";
-import { addAttempt, attemptsOf, nextAttemptNo, type Attempt } from "./attempts";
+import { attemptsOf, useAttempts, type Attempt } from "./attempts";
 import Compare from "./Compare";
 import { forgetRecorded, recordPending } from "./RecordAttempt";
-import { scoreOf } from "./scoreStub";
 import Sensitivity from "./Sensitivity";
-import { hardBbqSummary, type Inputs } from "./summary";
 import { isLab } from "../industry/industries";
 import { engineBody as labBody, type IndustryCfg } from "../industry/api";
 import "./modes.css";
@@ -71,37 +69,24 @@ export default function HardTools({ profile, store, levers, cafeCfg, indCfg, ste
   const [sens, setSens] = useState(false);
   const [cmp, setCmp] = useState<{ prev?: Attempt; cur: Attempt } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
   // 카페·새 업종: 비교 창은 이 화면이 뜬 뒤에 남긴 판만, 한 번씩 띄운다 (새로 고침 전 판은 다시 안 띄움).
   // 판 번호가 아니라 기록 시각으로 본다: 번호는 업종마다 1부터라, 업종을 바꾸면 다른 업종의 번호와 겹친다
   const [since] = useState(() => Date.now());
   const [shown] = useState(() => new Set<number>());
   const ind = profile.industry;
-  const n = nextAttemptNo(ind);
+  const recorded = useAttempts(ind); // 판이 기록되면 머리글의 몇 판째 표시도 바로 바뀐다
+  const n = (recorded.at(-1)?.n ?? 0) + 1;
   if (step !== "build" && step !== "sim") return null;
 
   const retry = async () => {
-    if (ind === "cafe" || isLab(ind)) { // 카페·새 업종: 결과 화면이 판을 이미 남겼다 (RecordAttempt). 아직 안 보여 준 판이면 비교부터
-      setBusy(true); await recordPending(); setBusy(false);
-      const list = attemptsOf(ind), last = list.at(-1);
-      if (last && last.summary.mode === "hard" && last.at >= since && !shown.has(last.at)) { shown.add(last.at); setCmp({ prev: list.at(-2), cur: last }); return; }
-      forgetRecorded(); onRetry(); return;
-    }
+    // 모든 업종: 결과 화면(성적표 옆 RecordAttempt)이 판을 남긴다. 아직 비교를 안 보여 준 판이면 비교부터 (성적표와 같은 요약이라 점수도 같다)
+    setBusy(true); await recordPending(); setBusy(false);
+    const list = attemptsOf(ind), last = list.at(-1);
+    if (last && last.summary.mode === "hard" && last.at >= since && !shown.has(last.at)) { shown.add(last.at); setCmp({ prev: list.at(-2), cur: last }); return; }
     const ctx = ind === "bbq" ? getEngineCtx() : null;
-    if (!ctx || !ctx.months.length || !(ctx.finished || ctx.closed)) { onRetry(); return; }
-    setBusy(true); setErr("");
-    try {
-      const cost = openingCost(store, profile.gu, profile.keyMoney ?? 0);
-      const st = storeStats(store);
-      const inputs: Inputs = { gu: profile.gu, dong: profile.dong?.gu === profile.gu ? profile.dong.name : null, capital_man: profile.capital,
-        pyeong: store.pyeong, tables: st.tables, staff: Math.min(4, levers.staff), price: levers.price, loan_man: store.loan, start_month: ctx.start_month, grade: store.grade };
-      const summary = hardBbqSummary(ctx, (profile.capital + store.loan - cost.total) * 1e4, cost.total * 1e4, store.loan * 1e4, LOAN_RATE, inputs, n);
-      const scored = await scoreOf(summary);
-      const before = attemptsOf(ind).at(-1);
-      const cur = addAttempt(summary, scored);
-      setCmp({ prev: before, cur });
-    } catch (e) { setErr(netErr(e)); }
-    setBusy(false);
+    const midSeason = ind === "bbq" ? !!ctx && ctx.months.length > 0 && !ctx.finished && !ctx.closed : false;
+    if (midSeason && !window.confirm("아직 6개월이 끝나지 않았어요. 이번 판은 기록하지 않고 가게 꾸미기로 돌아갈까요?")) return;
+    forgetRecorded(); onRetry();
   };
 
   const cafeReady = ind !== "cafe" || !!cafeCfg;
@@ -117,7 +102,6 @@ export default function HardTools({ profile, store, levers, cafeCfg, indCfg, ste
             {busy ? "점수 매기는 중" : "다시 해보기"}
           </button>
         )}
-        {err && <span className="lm-err lm-err-inline" role="alert">{err}</span>}
       </span>
       {sens && (
         <Sensitivity industry={ind} onClose={() => setSens(false)}
