@@ -2,6 +2,7 @@
 // 3D는 엔진(/cafe/preview)이 준 배치를 상자로만 그린 목업이고, 실제 3D 장면이 이 자리를 대체한다. 물건은 고깃집처럼 놓는 게 아니라 개수로 정한다.
 import { useMemo, useState } from "react";
 import { Mark } from "./Checks";
+import SettledStack, { cafeSettled } from "../lab/cost/SettledStack"; // lab:cost
 import { CAFE_GRADES, CAFE_PYEONG, cafeEstimate, cafeOpeningCost } from "./cafe";
 import { cafeChecks, cafeLayoutOf, type CafeCfg } from "./cafeChecks";
 import CafeRoom3D from "./CafeRoom3D";
@@ -123,6 +124,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
         <p className="m-eyebrow" id="checks-h">열기 전 점검</p>
         <h1>{headline}</h1>
         <p className="m-sub">{profile.gu}, {cfg.pyeong}평, {seats}석, 직원 {cfg.staff}명 기준이에요. 여는 데 {man(open.total)}이 들어요(보증금 {man(open.lines.find((l) => l.key === "deposit")?.amount ?? 0)} 포함). 바꾸면 바로 다시 계산해요.</p>
+        <SettledStack stack={cafeSettled(profile, cfg)} note="헤드라인의 금액은 아래 비용을 모두 뺀 값이에요." />{/* lab:cost */}
         <ul className="m-checklist">
           {list.map((c) => (
             <li key={c.key}>

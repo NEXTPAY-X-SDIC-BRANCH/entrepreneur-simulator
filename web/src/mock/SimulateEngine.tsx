@@ -1,7 +1,7 @@
 // Step 4 (engine). 시즌 엔진(sim.season)이 한 달에 한 번 계산하고, 화면은 그 한 달을 날마다 풀어서 보여 준다.
 // 화면 전체가 3D 가게이고, 위에는 지표 줄, 오른쪽에는 영수증 형태의 현금 흐름 기록이 있다.
 // 한 달의 순서: 운영 계획 팝업 → (이달의 사건 대응 팝업) → 하루씩 재생 → 정산 팝업 → 다음 달 운영 계획.
-// 날마다의 값은 엔진이 만든 밤별 매출·손님을 그달 합계에 맞춰 나눈 것이고, 월세·급여·생활비·이자는 지급일에 빠진다.
+// 날마다의 값은 엔진이 만든 밤별 매출·손님을 그달 합계에 맞춰 나눈 것이고, 월세·이자는 첫날에, 인건비·사장 생활비·매장 운영비는 문 연 날마다 하루치씩 빠진다 (lab:cost).
 // 엔진 서버(api/changeup.py, 포트 8010)가 필요하다. 목업 계산(sim.ts)은 쓰지 않는다.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
@@ -11,6 +11,8 @@ import { FitControls, People, StoreLights, ViewBar, gfxDpr, gfxFrameloop, gfxSha
 import { flowRatioNote } from "./DongFlow";
 import { flowShape, profileOf } from "./area";
 import "./simulate-engine.css";
+import CostStack from "../lab/cost/CostStack"; // lab:cost
+import { VAT_NOTE, bbqStack, prorate, type BbqKpis } from "../lab/cost/stackModel"; // lab:cost
 import { setEngineCtx } from "./chatContext";
 import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, roomSize, storeStats, type Levers, type Profile, type Store } from "./model";
 
@@ -165,14 +167,18 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
     all.push(dt);
     if (dt.getDay() !== 1) open.push(dt); // 월요일 휴무 (엔진 가정)
   }
-  const nights = r.nights;
+  const nights = r.nights.slice(0, open.length); // lab:cost — 그달 합계가 실제로 찍히는 밤들에 맞춰 나뉘도록
   const sumRev = nights.reduce((a, x) => a + x.revenue, 0) || 1;
   const sumFood = nights.reduce((a, x) => a + x.cogs, 0) || 1;
   const sumFee = nights.reduce((a, x) => a + x.fees, 0) || 1;
   const k = r.kpis;
   const byDate = new Map<number, Night>();
-  open.forEach((dt, i) => { const nt = nights[Math.min(i, nights.length - 1)]; if (nt) byDate.set(dt.getDate(), nt); });
-  const laborCash = Math.max(0, k.labor - ctx.imputed);
+  // lab:cost — 엔진이 문 닫은 날(위생 영업정지, 사장 몸살)을 빼서 밤 수가 영업일보다 적으면 마지막 밤을 되풀이하지 않고
+  // 남는 영업일을 쉬는 날로 둔다 (되풀이하면 날마다의 매출 합이 그달 매출보다 커졌다)
+  open.forEach((dt, i) => { const nt = nights[i]; if (nt) byDate.set(dt.getDate(), nt); });
+  const laborCash = Math.max(0, k.labor - (typeof k.labor_owner === "number" ? k.labor_owner : ctx.imputed));
+  // lab:cost — 인건비·사장 생활비·매장 운영비를 월말에 한 번이 아니라 문 연 날마다 하루치씩 뺀다 (합계는 같다)
+  const nOpen = Math.max(1, Math.min(open.length, nights.length));
   const firstSat = all.find((d) => d.getDay() === 6)?.getDate();
   let cash = cashStart;
   return all.map((dt, i) => {
@@ -186,15 +192,20 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
       ticks.push({ label: "매출", amount: revenue });
       ticks.push({ label: "재료비", amount: -food });
       if (fee > 0) ticks.push({ label: k.delivery_fee > 0 ? "카드·배달 수수료" : "카드 수수료", amount: -fee });
+      if (laborCash > 0) ticks.push({ label: "인건비 (알바)", amount: -laborCash / nOpen }); // lab:cost
+      if (ctx.draw > 0) ticks.push({ label: "사장 생활비", amount: -ctx.draw / nOpen }); // lab:cost
+      ticks.push({ label: "매장 운영비", amount: -k.mgmt / nOpen }); // lab:cost
     }
     if (i === 0) {
       ticks.push({ label: "월세", amount: -k.rent });
-      ticks.push({ label: "관리비", amount: -k.mgmt });
+      if (!nights.length) { // lab:cost — 문 연 날이 없는 달: 하루치로 나눌 수 없어 첫날에 한 번에
+        if (laborCash > 0) ticks.push({ label: "인건비 (알바)", amount: -laborCash });
+        if (ctx.draw > 0) ticks.push({ label: "사장 생활비", amount: -ctx.draw });
+        ticks.push({ label: "매장 운영비", amount: -k.mgmt });
+      }
       if (ctx.interest > 0) ticks.push({ label: "대출 이자", amount: -ctx.interest });
       for (const e of r.events) notes.push(`일어난 일 · ${e.label}`);
     }
-    if (i === 9) ticks.push({ label: "직원 급여", amount: -laborCash });
-    if (i === 24) ticks.push({ label: "사장 생활비", amount: -ctx.draw });
     if (dt.getDate() === firstSat) {
       for (const d of r.decisions) notes.push(`${d.clock} ${d.title} · ${d.chosen_label}`);
     }
@@ -298,30 +309,21 @@ function CashChart({ start, months, labels, compact }: { start: number; months: 
   );
 }
 
+// lab:cost — 정산표를 비용 쌓기(매출 막대 + 줄별 금액)로: 인건비는 알바와 사장 가상 급여, 매장 운영비는 내역까지
 function SettleTable({ m, imputed }: { m: MonthResult; imputed: number }) {
   const k = m.kpis;
+  const per = k.delivery_orders >= 1 ? k.delivery_revenue / k.delivery_orders : 0;
+  const net = per ? per - k.delivery_fee / k.delivery_orders - per * (k.cogs / k.revenue) : 0;
   return (
-    <table className="sx-table">
-      <tbody>
-        <tr><th>매출</th><td>{man(won(k.revenue))}</td><td>손님 {fmt(Math.round(k.covers))}명, 객단가 {fmt(Math.round(k.ticket))}원</td></tr>
-        <tr><th>재료비</th><td>−{man(won(k.cogs))}</td><td>매출의 {Math.round((k.cogs / k.revenue) * 100)}%</td></tr>
-        <tr><th>인건비</th><td>−{man(won(k.labor))}</td><td>사장 가상 급여 {man(won(imputed))} 포함</td></tr>
-        <tr><th>월세·관리비</th><td>−{man(won(k.rent + k.mgmt))}</td><td /></tr>
-        {k.delivery_revenue > 0 && (
-          <tr><th>배달 매출</th><td>{man(won(k.delivery_revenue))}</td><td>매출에 포함, 주문 {fmt(Math.round(k.delivery_orders))}건. 일부는 원래 매장에 올 손님이라 그만큼 매장 매출이 줄었어요</td></tr>
-        )}
-        <tr><th>카드 수수료</th><td>−{man(won(k.fees - (k.delivery_fee ?? 0)))}</td><td /></tr>
-        {k.delivery_fee > 0 && (
-          <tr><th>배달 수수료</th><td>−{man(won(k.delivery_fee))}</td><td>중개수수료, 결제 수수료, 건당 배달비·포장재. 배달 매출의 {Math.round((k.delivery_fee / k.delivery_revenue) * 100)}%.{" "}
-            {k.delivery_orders >= 1 && (() => {
-              const per = k.delivery_revenue / k.delivery_orders;
-              const net = per - k.delivery_fee / k.delivery_orders - per * (k.cogs / k.revenue);
-              return `한 건 평균 ${fmt(Math.round(per / 100) * 100)}원 주문에 재료비까지 빼면 ${fmt(Math.round(net / 100) * 100)}원 남아요`;
-            })()}</td></tr>
-        )}
-        <tr className="sum"><th>영업이익</th><td>{signed(won(k.op))}</td><td>비슷한 달 10번 중 8번은 {signed(won(m.p10.op))} ~ {signed(won(m.p90.op))}</td></tr>
-      </tbody>
-    </table>
+    <CostStack className="cst-settle" stack={bbqStack(k as BbqKpis, imputed)}
+      head={<>매출 (손님 {fmt(Math.round(k.covers))}명, 객단가 {fmt(Math.round(k.ticket))}원)</>}
+      extra={
+        <ul className="sx-cs-notes">
+          {k.delivery_revenue > 0 && <li>배달 매출 {man(won(k.delivery_revenue))} 포함, 주문 {fmt(Math.round(k.delivery_orders))}건. 배달 수수료 {man(won(k.delivery_fee))}(배달 매출의 {Math.round((k.delivery_fee / k.delivery_revenue) * 100)}%)는 수수료 줄에 들어 있어요.{per ? ` 한 건 평균 ${fmt(Math.round(per / 100) * 100)}원 주문에 재료비까지 빼면 ${fmt(Math.round(net / 100) * 100)}원 남아요.` : ""}</li>}
+          <li>비슷한 달 10번 중 8번은 영업이익이 {signed(won(m.p10.op))} ~ {signed(won(m.p90.op))}예요.</li>
+        </ul>
+      }
+      foot={VAT_NOTE} />
   );
 }
 
@@ -599,6 +601,18 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   }, [done, ledger, startMonth]);
   useEffect(() => () => setEngineCtx(null), []);
 
+  // lab:cost — 이달 손익 (재생 중): 지난 날의 매출·재료비와, 문 연 날 수만큼 쌓인 인건비·임차료·매장 운영비
+  const live = (() => {
+    if (!cur || !(view === null || view === "settle")) return null;
+    const k = cur.result.kpis;
+    const upto = cur.days.slice(0, (view === "settle" ? cur.days.length : dayIdx + 1));
+    const revNow = upto.reduce((a, d) => a + d.revenue, 0);
+    const openAll = cur.days.filter((d) => d.open).length || 1;
+    const openNow = upto.filter((d) => d.open).length;
+    const full = bbqStack(k as BbqKpis, imputed);
+    return { stack: prorate(full, k.revenue ? revNow / k.revenue : 0, openNow / openAll, revNow), day: upto.length, days: cur.days.length };
+  })();
+
   // 영수증: 지금까지 지난 날만 쌓인다
   const receiptDays = done.flatMap((m, mi) => {
     const list = mi === done.length - 1 ? m.days.slice(0, dayIdx + 1) : m.days;
@@ -635,7 +649,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
       </div>
 
       <header className="sx-hud">
-        <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금에서 매출과 비용이 날마다 더해지고 빠져요. 월세·급여·생활비·이자는 지급일에 한꺼번에 나가요.</>}>
+        <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금에서 매출과 비용이 날마다 더해지고 빠져요. 월세와 이자는 달 첫날에, 인건비·사장 생활비·매장 운영비는 문 연 날마다 하루치씩 나가요.</>}>
           {man(won(cashNow))}
         </Metric>
         <Metric icon={<IconCal />} label="달" tip={<>시작 달부터 6개월을 한 달씩 진행해요.</>}>
@@ -691,7 +705,14 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
         {receipt ? "현금 흐름 기록 접기" : "현금 흐름 기록 펴기"}
       </button>
       {receipt && (
-        <aside className="sx-receipt" aria-label="현금 흐름 기록">
+        <aside className="sx-receipt cst-right" aria-label="이달 손익과 현금 흐름 기록">
+          {live && ( // lab:cost
+            <div className="cst-live">
+              <CostStack compact stack={live.stack} head={<>{cur!.result.month}월 손익, {live.day}/{live.days}일</>}
+                headValue={<b className={live.stack.op >= 0 ? "pos" : "neg"}>{signed(won(live.stack.op))}</b>}
+                foot="인건비(사장 가상 급여 포함)·임차료·매장 운영비는 지난 날만큼 이미 뺐어요." />
+            </div>
+          )}
           <div className="sx-paper">
             <p className="sx-r-title">현금 흐름 영수증</p>
             <p className="sx-r-sub">{profile.gu}{st.area ? ` ${st.area}` : ""} · 시작 현금 {man(won(cashAtStart.current[0] ?? startCash))}</p>

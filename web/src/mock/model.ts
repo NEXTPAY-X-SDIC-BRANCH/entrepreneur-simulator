@@ -359,7 +359,11 @@ export const OPEN_DAYS = 26;          // hero pnl days
 export const SIDE_TICKET = 8000;      // hero pnl t_alc + t_side
 export const FOOD_SHARE = 0.31;       // hero pnl food ÷ rev
 export const STAFF_COST = 199;        // 만원/월, hero pnl (l_pt + l_emp) ÷ servers
-export const MGMT_PER_PYEONG = 12.8;  // 만원/월, hero pnl mgmt ÷ area
+export const MGMT_PER_PYEONG = 12.8;  // 만원/월, hero pnl mgmt ÷ area (lab:cost: no longer used, see mgmtOf)
+// lab:cost — 매장 운영비를 엔진과 같은 식으로: 공과금은 평수에 비례(170만원 ÷ 25평, sim/store_input.py), 나머지 운영비 150만원은
+// 평수와 상관없이 고정 (hero_base.yaml cst_other_opex). 평당 12.8만원으로 통째로 비례시키면 작은 가게의 운영비가 엔진보다 적었다.
+export const UTIL_PER_PYEONG = 6.8, OTHER_OPEX = 150;
+export const mgmtOf = (pyeong: number) => UTIL_PER_PYEONG * pyeong + OTHER_OPEX;
 export const FEE_SHARE = 0.0084;      // hero pnl fees ÷ rev
 export const OWNER_DRAW = 300;        // 만원/월, hero owner_wage
 export const OPEN_CURVE = [0.55, 0.7, 0.82, 0.9, 0.96, 1.0]; // 오픈 곡선, 가정
@@ -389,7 +393,7 @@ export function simulate(profile: Profile, store: Store, lv: Levers, shocks: Sho
     const demand = settled * r * priceFx * shockFx * demandMult * (lv.days === 30 ? 0.96 : 1);
     const covers = Math.min(demand, capacity);
     const revenue = (covers * ticket * lv.days) / 10000;
-    const cost = revenue * (food + FEE_SHARE) + staffPay(staff, lv.days) + st.rent * store.pyeong + MGMT_PER_PYEONG * store.pyeong;
+    const cost = revenue * (food + FEE_SHARE) + staffPay(staff, lv.days) + st.rent * store.pyeong + mgmtOf(store.pyeong); // lab:cost
     const op = revenue - cost;
     cash += op - OWNER_DRAW - (store.loan * LOAN_RATE) / 12;
     return { m: i + 1, demand, capacity, covers, revenue, cost, op, cash };
@@ -405,7 +409,7 @@ export function breakEven(profile: Profile, store: Store, lv: Levers) {
   const st = guStat(profile.gu);
   const lines = [
     { label: "월세", amount: st.rent * store.pyeong },
-    { label: "관리비", amount: MGMT_PER_PYEONG * store.pyeong },
+    { label: "매장 운영비", amount: mgmtOf(store.pyeong) }, // lab:cost
     { label: `직원 ${lv.staff}명 급여`, amount: staffPay(lv.staff, lv.days) },
     { label: "사장 생활비", amount: OWNER_DRAW },
     { label: "대출 이자", amount: (store.loan * LOAN_RATE) / 12 },
@@ -514,7 +518,7 @@ export function checks(profile: Profile, store: Store, lv: Levers): Check[] {
       status: net <= 0 ? "weak" : sunk / net <= 36 ? "ok" : sunk / net <= 60 ? "warn" : "weak",
       line: net <= 0 ? `자리가 잡힌 뒤에도 한 달에 ${man(-net)}씩 줄어요. 이 구성으로는 돌아오지 않아요.`
         : `자리가 잡히면 한 달에 ${man(net)}이 남아요. 들인 돈 ${man(sunk)}은 약 ${months(Math.ceil(sunk / net))} 뒤에 돌아와요.`,
-      rule: `들인 돈은 보증금을 뺀 공사, 설비, 간판, 첫 재료 값이에요(보증금은 나갈 때 돌려받아요). 한 달에 남는 돈은 6개월째 매출에서 재료비, 급여, 월세, 관리비, 사장 생활비 ${man(OWNER_DRAW)}, 이자를 뺀 값이에요.`,
+      rule: `들인 돈은 보증금을 뺀 공사, 설비, 간판, 첫 재료 값이에요(보증금은 나갈 때 돌려받아요). 한 달에 남는 돈은 6개월째 매출에서 재료비, 급여, 월세, 매장 운영비, 사장 생활비 ${man(OWNER_DRAW)}, 이자를 뺀 값이에요.`,
     },
     {
       key: "shock", title: "오픈 이후 어떤 사건들이 생길까요?",
