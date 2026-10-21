@@ -470,9 +470,9 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                       지금 은행 중소기업대출 평균 금리는 연 {+(LOAN_RATE * 100).toFixed(2)}%예요.
                     </p>
                     <ul className="m-chips m-banks">
-                      {BANKS.map((b) => <li key={b.name} className="m-chip"><a href={b.url} target="_blank" rel="noreferrer" title={`${b.app} 앱 안내 (Google Play)`}>{b.name} · {b.app}</a></li>)}
+                      {BANKS.map((b) => <li key={b.name} className="m-chip"><a href={b.url} target="_blank" rel="noreferrer" title={b.kind === "앱" ? `${b.app} 앱 안내 (Google Play)` : `${b.name} ${b.app} (은행 홈페이지)`}>{b.name} · {b.kind === "앱" ? `${b.app} 앱` : b.app}</a></li>)}
                     </ul>
-                    <small>앱 안내 페이지로 이어져요. 보안 프로그램을 깔지 않아도 열려요.</small>
+                    <small>KB·우리는 대출 상품 페이지로, 나머지는 은행 앱 안내로 이어져요. 모두 보안 프로그램을 깔지 않아도 열려요 (2026년 10월 확인).</small>
                     <small>은행마다 금리가 어떻게 다른지는 <a href={BANK_COMPARE_URL} target="_blank" rel="noreferrer">은행연합회 개인사업자 대출금리 비교</a>에서 볼 수 있어요. 이 화면은 은행을 추천하거나 신청을 받지 않아요.</small>
                   </div>
                 </div>
