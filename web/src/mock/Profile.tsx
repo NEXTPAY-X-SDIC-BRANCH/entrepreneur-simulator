@@ -54,7 +54,7 @@ export default function ProfileStep({ profile, setProfile, gus, onDone }: {
       )}
 
       <form className={`m-q ${leaving ? "is-leaving" : ""}`} key={q} onSubmit={(e) => { e.preventDefault(); if (valid) move(i + 1); }}>
-        {q === "industry" && <IndustryPicker value={profile.industry} onChange={(id) => set({ industry: id as Industry })} />} {/* lab:industry 일곱 업종 (안 B) */}
+        {q === "industry" && <IndustryPicker value={profile.industry} onChange={(id) => set({ industry: id as Industry })} />} {/* lab:industry 일곱 업종 + 옷가게 (안 B) */}
         {q === "gu" && (
           <fieldset>
             <legend>서울 어디에 열고 싶으세요?</legend>

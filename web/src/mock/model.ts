@@ -4,13 +4,21 @@
 // shock sizes from research/shocks.yaml. Every input and its standing is listed on the #/sources page (sources.ts).
 
 import { LAB_IDS, LAB_TXT, isLab, labMetrics, type LabIndustry } from "../lab/industry/industries"; // lab:industry
-export type Industry = "bbq" | "cafe" | LabIndustry; // lab:industry 새 업종 id
+// lab:merge 옷가게는 upstream 화면(apparel.ts), 치킨·분식을 포함한 새 업종 id는 lab 엔진(sim/generic) 화면으로 간다
+export type Industry = "bbq" | "cafe" | "apparel" | LabIndustry;
+export const isQuickfood = (i: Industry): i is "chicken" | "bunsik" => i === "chicken" || i === "bunsik"; // upstream quickfood.ts 계산용 (화면 라우팅은 isLab)
 // 화면 문구와 계산에서 업종마다 달라지는 말. 동네 분석은 setIndustry로 업종을 바꾸면 같은 코드가 카페용 자료로 돈다.
 export const TXT = {
   bbq: { shop: "고깃집", base: "한식음식점", kind: "돼지고기 구이 가게", cat: "한식 가게" },
   cafe: { shop: "카페", base: "커피·음료 가게", kind: "카페", cat: "커피·음료 가게" },
-  ...LAB_TXT, // lab:industry
+  apparel: { shop: "옷가게", base: "의류 가게", kind: "옷가게", cat: "의류 가게" },
+  ...LAB_TXT, // lab:industry (치킨·분식 포함)
 } as const;
+// 치킨·분식: 서울시 상권분석서비스 카드 추정매출에는 배달앱 결제가 거의 안 잡혀서, 점포당 매출을 ÷ (1 − 배달 주문 비중)으로 보정한다.
+// 배달 주문 비중 = 하루 배달 ÷ (방문 + 배달 + 포장), 외식업체 경영실태조사 2025 (quickfood.ts가 파일을 읽으면 다시 맞춘다)
+const QF_DELIV: Record<string, number> = { chicken: 21.7 / (26.8 + 21.7 + 10.2), bunsik: 15.5 / (49.6 + 15.5 + 24.7) };
+export const setQfDelivery = (ind: "chicken" | "bunsik", share: number) => { QF_DELIV[ind] = share; };
+export const qfDeliveryShare = (ind: "chicken" | "bunsik") => QF_DELIV[ind];
 let IND: Industry = "bbq";
 export const industry = (): Industry => IND;
 export const T = () => TXT[IND];
@@ -32,7 +40,7 @@ export type GuStat = {
 };
 export type Dong = {
   code: string; name: string; stores: number; pork: number; sales_month: number; raw_per_store: number | null; rel: number | null;
-  dow: number[]; qidx: number[]; shares: { weekend: number; lunch: number; evening: number; age20: number; age30: number }; type: string;
+  dow: number[]; qidx: number[] | null; shares: { weekend: number; lunch: number; evening: number; age20: number; age30: number }; type: string;
 };
 // 카페용(cafe_dong_stats.json)은 _meta에 보정 배율(adj)과 구별 카페 수(gu_cafes)가 더 들어 있다.
 export type DongData = { _meta: { generated: string; year: number; caveats: string[]; adj?: number; gu_cafes?: Record<string, number> }; gu: Record<string, Dong[]> };
@@ -45,7 +53,7 @@ type Row = Record<string, number> & { dow_share: number[]; quarter_index: number
 type Block = { service_name: string; seoul: Row; gu: Record<string, Row> };
 export type GuData = {
   _meta: { generated: string; year: number; quarters: string[]; sources: Record<string, string>; license: string; method: string; caveats: string[] };
-  bbq: Block; cafe: Block; [lab: string]: unknown; // lab:industry 새 업종 블록 (industry_gu.json을 Mock.tsx가 합친다)
+  bbq: Block; cafe: Block; apparel?: Block; [lab: string]: unknown; // lab:industry 새 업종 블록 (industry_gu.json을 Mock.tsx가 합친다)
   pork?: { snapshot: string; source: string; codes: Record<string, string>; gu: Record<string, { hansik: number; pork: number; beef: number; tripe: number }> };
 };
 // 외식업체 경영실태조사(2025) 한식 육류 요리 전문점 값. pipelines/build_gogi_krei.py가 만든 gogi_krei.json.
@@ -140,12 +148,14 @@ export function guStat(name: string): GuStat {
   // 고깃집: 한식 값 × 육류 전문점 배율. 카페: 카드 추정매출 × 서울 소상공인 카페 월매출로 맞춘 보정 배율(지표 엑셀, 1.538).
   // 카페는 평균이 아니라 중앙값을 대표값으로 쓴다(잘되는 가게 몇 곳이 평균을 끌어올리므로). 서울 소상공인 카페 월매출 평균(보정 후)에
   // 전국 독립 음료점의 '중앙값 ÷ 평균' 배율을 곱한 추정이다. 서울 중앙값은 공개 자료에 없다(CAFE_MEDIAN).
-  const sales = Math.round(salesH * (IND === "cafe" ? (DONGS?._meta.adj ?? 1.538) * CAFE_MEDIAN.ratio : isLab(IND) ? 1 : meatUplift())); // lab:industry 새 업종은 카드 추정 그대로
+  // 옷가게: 서울시 상권분석서비스 일반의류(CS300011) 카드 추정 점포당 매출을 그대로 쓴다 (보정 배율 없음)
+  // lab:industry 새 업종(치킨·분식 포함)은 industry_gu.json 카드 추정 그대로 (lab 엔진이 KREI 중앙값으로 다시 맞춘다)
+  const sales = Math.round(salesH * (IND === "cafe" ? (DONGS?._meta.adj ?? 1.538) * CAFE_MEDIAN.ratio : isLab(IND) || IND === "apparel" ? 1 : meatUplift()));
   const salesRange: [number, number] | null = IND === "cafe" ? [Math.round(sales * CAFE_MEDIAN.p25), Math.round(sales * CAFE_MEDIAN.p75)] : null;
   return {
     demand: +(g.demand_index * (salesH / g.sales_per_store_month)).toFixed(2), stores: g.stores, closure: +(g.closure_rate * 100).toFixed(1),
     sales, salesRange, salesHansik: salesH, ...grow, tx: g.tx_per_store_day,
-    ticket: g.ticket, ...rentPart, ...area, pork: IND === "cafe" ? DONGS?._meta.gu_cafes?.[name] ?? g.stores : isLab(IND) ? Number((g as Record<string, unknown>).count ?? g.stores) : DATA?.pork?.gu[name]?.pork ?? 0, opening: g.opening_rate, // lab:industry pork = 새 업종 가게 수
+    ticket: g.ticket, ...rentPart, ...area, pork: IND === "cafe" ? DONGS?._meta.gu_cafes?.[name] ?? g.stores : isLab(IND) ? Number((g as Record<string, unknown>).count ?? g.stores) : IND === "apparel" ? g.stores : DATA?.pork?.gu[name]?.pork ?? 0, opening: g.opening_rate, // lab:industry pork = 새 업종 가게 수
     dow: dg?.dow ?? g.dow_share, qidx: dg?.qidx ?? g.quarter_index,
   };
 }
@@ -167,6 +177,12 @@ const METRICS_BY: Record<Industry, Record<Metric, MetricInfo>> = {
     growth: { label: "가게 수 흐름", fmt: (v) => `${v > 0 ? "+" : ""}${v}%p`, hint: "연 개업률 − 연 폐업률. 카페는 2024년 구 매출 자료가 없어 매출 성장률 대신 써요" },
     pork: { label: "카페 수", fmt: gone, hint: "소상공인 상가정보의 카페, 구 전체 (프랜차이즈 포함)" },
     closure: { label: "1년 폐업률", fmt: (v) => `${v}%`, hint: "최근 4분기에 문 닫은 커피·음료 가게 비율" },
+  },
+  apparel: {
+    demand: { label: "매출 지수", fmt: (v) => v.toFixed(2), hint: "옷가게(일반의류) 한 곳의 월매출(카드 추정), 서울 평균이 1" },
+    growth: { label: "가게 수 흐름", fmt: (v) => `${v > 0 ? "+" : ""}${v}%p`, hint: "연 개업률 − 연 폐업률 (2025년, 상권 안 일반의류 가게)" },
+    pork: { label: "옷가게 수", fmt: gone, hint: "서울시 상권분석서비스 상권 안의 일반의류 가게 (구 전체가 아님)" },
+    closure: { label: "1년 폐업률", fmt: (v) => `${v}%`, hint: "2025년에 문 닫은 일반의류 가게 비율" },
   },
   ...(Object.fromEntries(LAB_IDS.map((i) => [i, labMetrics(i)])) as Record<LabIndustry, Record<Metric, MetricInfo>>), // lab:industry
 };
@@ -207,6 +223,15 @@ export type Grade = "basic" | "mid" | "high";
 // 평당 인테리어 공사비(만원). 외식업체 경영실태조사 2025 원자료, 한식 육류 요리 전문점 중 12~40평 가게의 가중 분위수:
 // 25% 42 / 50% 77 / 75% 153 (응답 85곳, gogi_krei.json micro.mid_size_12_40). 기본·중급·고급을 이 세 분위수에 맞춰 45·80·150으로 둔다.
 // 예전 가정값은 150·220·320이었고, 실측 상위 25%가 150이라 고급 320은 조사 범위를 벗어난다.
+// 비교용: 공정위 가맹정보 API 2024 정보공개서의 3.3㎡당 인테리어 비용 분위수 (만원, web/public/mock/ftc_interior.json,
+// pipelines/fetch_ftc_interior.py). 가맹점 값이라 개인 가게보다 높다. 고깃집·카페 공사비는 위 실측 분위수를 쓰고 이 값은 옆에 보여 주기만 한다.
+// 옷가게는 업종 실측 자료가 없어 이 분위수를 공사비로 쓴다 (브랜드 9개뿐).
+export const FTC_INTERIOR = {
+  bbq: { n: 175, p25: 160, median: 195, p75: 215 },
+  cafe: { n: 263, p25: 195, median: 215, p75: 275 },
+  apparel: { n: 9, p25: 82, median: 160, p75: 190 },
+} as const;
+export const ftcNote = (k: keyof typeof FTC_INTERIOR) => `가맹점이면 평당 ${FTC_INTERIOR[k].median}만원쯤 (공정위 정보공개서 ${FTC_INTERIOR[k].n}개 브랜드 중앙값)`;
 export const GRADES: Record<Grade, { label: string; perPyeong: number; floor: string; wall: string }> = {
   basic: { label: "기본", perPyeong: 45, floor: "#cbb9a0", wall: "#efe6d6" },
   mid: { label: "중급", perPyeong: 80, floor: "#9a8672", wall: "#e4ddd0" },
@@ -339,7 +364,7 @@ export function openingCost(store: Store, gu: string, keyMoney = 0): { lines: Co
   const lines: CostLine[] = [
     ...(keyMoney > 0 ? [{ key: "keymoney", label: "권리금", amount: keyMoney, basis: "직접 넣은 값 (가게 자리에 붙는 웃돈, 나갈 때 돌려받지 못해요)" }] : []),
     { key: "deposit", label: "보증금", amount: st.rent * store.pyeong * DEPOSIT_MONTHS, basis: `월세 ${DEPOSIT_MONTHS}개월분 (서울시 실태조사: 보증금은 월세의 11~15개월)` },
-    { key: "interior", label: "인테리어 공사", amount: GRADES[store.grade].perPyeong * store.pyeong, basis: `${store.pyeong}평, 평당 ${GRADES[store.grade].perPyeong}만원 (${GRADES[store.grade].label})` },
+    { key: "interior", label: "인테리어 공사", amount: GRADES[store.grade].perPyeong * store.pyeong, basis: `${store.pyeong}평, 평당 ${GRADES[store.grade].perPyeong}만원 (${GRADES[store.grade].label}, 외식업체 경영실태조사 개인 가게). ${ftcNote("bbq")}` },
     { key: "equip", label: "주방과 설비", amount: equip, basis: "주방, 냉장고, 계산대 등" },
     { key: "seat", label: "테이블과 의자", amount: seatCost, basis: `테이블 ${s.tables}개, ${s.seats}석` },
     { key: "deco", label: "꾸밈", amount: s.furnish - seatCost - equip, basis: "화분, 조명, 대기 의자" },

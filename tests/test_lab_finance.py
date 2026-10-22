@@ -154,22 +154,26 @@ def test_cafe_api_accepts_and_validates():
     assert c.post("/cafe/season", json={**CAFE, "loan_rate": 0.9}).status_code == 422
 
 
-# ---------------------------------------------------------------- 은행별 가상 금리 자료
+# ---------------------------------------------------------------- 은행별 금리 자료 (은행연합회 비교공시 실제 값, lab:merge)
 def test_bank_rates_json_is_labelled_and_link_only():
     d = json.loads((ROOT / "web/public/mock/bank_rates.json").read_text(encoding="utf-8"))
     ecos = json.loads((ROOT / "web/public/mock/ecos_rates.json").read_text(encoding="utf-8"))
     anchor = d["_meta"]["anchor"]
     assert anchor["rate"] == ecos["latest"]["loan_sme"]["rate"] and anchor["month"] == ecos["latest"]["loan_sme"]["month"]
+    assert d["banks"] and d["ym"] and d["kinds"]          # upstream 표·카드가 읽는 키 (pipelines/fetch_kfb_rates.py)
     ids = [x["id"] for x in d["lenders"]]
     assert len(ids) == len(set(ids))
     names = " ".join(x["name"] for x in d["lenders"])
     for must in ("KB국민", "신한", "우리", "하나", "NH농협", "IBK기업", "카카오뱅크", "토스뱅크", "케이뱅크", "소상공인시장진흥공단", "서울신용보증재단"):
         assert must in names
+    assert "한국씨티은행" not in names                     # 신규 취급 중단 은행은 고를 수 없다
     for x in d["lenders"]:
         assert x["url"].startswith("https://")
-        assert x["label"] in ("가상 값", "공고 금리", "금리 공고 확인 필요")
-        if x["label"] == "가상 값":
-            assert x["rate"] == pytest.approx(anchor["rate"] + x["spread"], abs=0.005)
+        assert x["label"] in ("공시 평균", "공고 금리", "금리 공고 확인 필요")
+        assert "spread" not in x                           # 예전 가상 차이는 쓰지 않는다
+        if x["label"] == "공시 평균":
+            b = d["banks"][x["name"]]
+            assert x["rate"] == (b.get("보증서담보대출") or b["신용대출"])["avg"] and x["source"] and x["as_of"]
         if x["label"] == "공고 금리":
             assert x["source"] and x["as_of"]
         if x["label"] == "금리 공고 확인 필요":

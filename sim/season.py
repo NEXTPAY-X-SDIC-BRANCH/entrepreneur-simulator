@@ -299,6 +299,10 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
     perceived = plan["meat_price"] / (1 + v("meat_grade.door_weight") * g["tolerance"])
     p["_price_index"] = (w_meat * perceived / base["prd_meat_price"] + w_alc * plan["soju_price"] / base["prd_alcohol_price"]
                          + (1 - w_meat - w_alc))
+    # 시세 사건 배율: 등급마다 세기(pork_event_strength)를 곱한다. 달별 원가 지수(calendar.yaml cost_index, 같은 시즌 10월 = 1)는
+    # 그 뒤에 모든 등급에 똑같이 곱한다. 계절 흐름까지 세기를 곱하면 숙성만 10월→3월 하락을 1.25배로 받아 늘 이기게 된다
+    # (sim/tests/test_season.py test_no_plan_beats_base...: 숙성 ₩22,000이 8개 시드 모두 454만원 앞섰다)
+    cidx = cal.get("cost_index") or {}
     pork = op_mult.get("cst_meat_cost_per_portion", 1.0)
     if plan["meat_grade"] == "imported":
         pork = (1 + (pork - 1) * v("meat_grade.pork_event_strength_imported")) * op_mult.get("import_meat_cost_mult", 1.0)
@@ -309,9 +313,13 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
         strength = {"imported": v("meat_grade.pork_event_strength_imported"),
                     "aged": v("meat_grade.pork_event_strength_aged")}.get(plan["meat_grade"], 1.0)
         pork *= 1 + (meat_cost_mult(m) - 1) * strength
+    else:   # upstream: 달별 원가 지수 (calendar.yaml cost_index, 10월 = 1). lab:merge 예측을 켜면 예측이 계절 흐름을 대신한다 (두 번 곱하지 않게)
+        pork *= cidx.get("meat", 1.0)
     p["cst_meat_cost_per_portion"] = g["cost"] * pork
     extras = [P["menu_extras"][x] for x in plan["menu_extras"]]
-    p["cst_banchan_cost_per_cover"] = (plan["banchan"] * v("banchan.cost_per_item") * op_mult.get("cst_banchan_cost_per_cover", 1.0)
+    # 채소값(달별 지수 × 쌈채소 사건)은 반찬 원가 중 채소 몫에만 실린다
+    veg = cidx.get("veg", 1.0) * op_mult.get("cst_banchan_cost_per_cover", 1.0)
+    p["cst_banchan_cost_per_cover"] = (plan["banchan"] * v("banchan.cost_per_item") * (1 + v("banchan.veg_share") * (veg - 1))
                                        + sum(x["cost_per_cover"] for x in extras))
     a["svc_extra_per_party_min"] = v("staff.table_tasks_min") + sum(x["service_min"] for x in extras)
     a["reorder_patience_min"] = v("staff.reorder_patience_min")
@@ -433,7 +441,8 @@ def _pnl(month: dict, su: dict, rng: np.random.Generator | None, n_reviews: floa
         # 배달 매출 = 저녁 매출 x 배달 비중 x 달별 배율. 그중 cannibal 몫은 원래 매장에 왔을 손님이라 매장 매출에서 뺀다.
         # 앱 결제라 매장 카드 수수료는 붙지 않고, 중개수수료·결제대행 수수료·건당 배달비·포장재가 나간다.
         # 결제대행 수수료는 영세·중소 우대수수료율로 환급되므로 매장 카드 수수료율과 같게 둔다 (쿠팡이츠 상생 요금제 공지).
-        d_rev = revenue * v("delivery.share") * _delivery_month_index().get(su["month"], 1.0)
+        # 구별 배수: 이 구 고깃집의 점포당 배달 주문 ÷ 서울 가운데값 (소상공인365 배달분석, 점포 입력 delivery_gu_index). 없으면 1
+        d_rev = revenue * v("delivery.share") * _delivery_month_index().get(su["month"], 1.0) * _store().get("delivery_gu_index", 1.0)
         lost = d_rev * v("delivery.cannibal")
         orders = d_rev / (ticket * v("delivery.people_per_order")) if ticket else 0.0
         tier = data()["P"]["delivery"]["tier"][off["delivery"]]
@@ -1395,6 +1404,7 @@ def play_month(state: dict, plan: dict, events: list[str] | None = None, *, band
         "engine": "sim.season v2",
         "month": su["month"], "month_index": state["month_index"], "state_seed": state["seed"],
         "calendar": {"label": su["cal"]["label"], "note": su["cal"]["note"], "demand_index": su["cal"]["demand_index"],
+                     "cost_index": su["cal"].get("cost_index"), "cost_range": su["cal"].get("cost_range"),
                      "tags": su["cal"]["tags"]},
         "events": [{"id": e, "label": data()["EV"][e]["label"], "group": data()["EV"][e]["group"],
                     "mechanism": data()["EV"][e]["mechanism"], "tag": data()["EV"][e]["tag"],

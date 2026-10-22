@@ -1,0 +1,418 @@
+{
+ "_meta": {
+  "built_at": "2026-10-22T00:57:52",
+  "method": "pipelines/build_delivery_index.py",
+  "survey": "서울서베이 2022 최근 일주일간 배달 또는 포장 음식을 이용한 식사 (집에서, 주당 평균 회)",
+  "population": "서울시 상권분석서비스 행정동 상주인구 연령 (dong_flow.json resi)",
+  "areas": "소상공인365 배달상권 경계 2024-01 (구별 개수, 참고)",
+  "weekly_by_age": {
+   "10대": 1.5,
+   "20대": 1.5,
+   "30대": 1.9,
+   "40대": 1.4,
+   "50대": 1.1,
+   "60대 이상": 0.7
+  },
+  "seoul_weekly": 1.274,
+  "seoul_survey_avg": 1.3,
+  "household": {
+   "1인 가구": 2.0,
+   "부부 가구": 0.9,
+   "2세대 이상 가구": 1.2,
+   "기타 가구": 1.4
+  }
+ },
+ "gu": {
+  "관악구": {
+   "index": 1.065,
+   "age_index": 1.029,
+   "household_index": 1.101,
+   "single_share": 0.347,
+   "age_share": [
+    0.086,
+    0.222,
+    0.183,
+    0.128,
+    0.137,
+    0.243
+   ],
+   "delivery_areas": 10
+  },
+  "마포구": {
+   "index": 1.026,
+   "age_index": 1.032,
+   "household_index": 1.019,
+   "single_share": 0.216,
+   "age_share": [
+    0.13,
+    0.162,
+    0.175,
+    0.157,
+    0.154,
+    0.223
+   ],
+   "delivery_areas": 6
+  },
+  "영등포구": {
+   "index": 1.024,
+   "age_index": 1.024,
+   "household_index": 1.024,
+   "single_share": 0.232,
+   "age_share": [
+    0.121,
+    0.151,
+    0.188,
+    0.144,
+    0.148,
+    0.247
+   ],
+   "delivery_areas": 7
+  },
+  "광진구": {
+   "index": 1.024,
+   "age_index": 1.016,
+   "household_index": 1.032,
+   "single_share": 0.237,
+   "age_share": [
+    0.116,
+    0.175,
+    0.164,
+    0.143,
+    0.158,
+    0.243
+   ],
+   "delivery_areas": 6
+  },
+  "중구": {
+   "index": 1.017,
+   "age_index": 0.989,
+   "household_index": 1.045,
+   "single_share": 0.262,
+   "age_share": [
+    0.097,
+    0.144,
+    0.172,
+    0.138,
+    0.157,
+    0.291
+   ],
+   "delivery_areas": 17
+  },
+  "금천구": {
+   "index": 1.013,
+   "age_index": 0.989,
+   "household_index": 1.037,
+   "single_share": 0.256,
+   "age_share": [
+    0.101,
+    0.153,
+    0.166,
+    0.13,
+    0.165,
+    0.285
+   ],
+   "delivery_areas": 2
+  },
+  "용산구": {
+   "index": 1.013,
+   "age_index": 1.008,
+   "household_index": 1.017,
+   "single_share": 0.219,
+   "age_share": [
+    0.116,
+    0.141,
+    0.176,
+    0.147,
+    0.161,
+    0.26
+   ],
+   "delivery_areas": 6
+  },
+  "동작구": {
+   "index": 1.012,
+   "age_index": 1.007,
+   "household_index": 1.017,
+   "single_share": 0.22,
+   "age_share": [
+    0.122,
+    0.168,
+    0.158,
+    0.144,
+    0.151,
+    0.257
+   ],
+   "delivery_areas": 7
+  },
+  "강서구": {
+   "index": 1.01,
+   "age_index": 1.011,
+   "household_index": 1.01,
+   "single_share": 0.207,
+   "age_share": [
+    0.129,
+    0.141,
+    0.171,
+    0.154,
+    0.148,
+    0.258
+   ],
+   "delivery_areas": 11
+  },
+  "동대문구": {
+   "index": 1.006,
+   "age_index": 0.992,
+   "household_index": 1.02,
+   "single_share": 0.223,
+   "age_share": [
+    0.12,
+    0.166,
+    0.144,
+    0.143,
+    0.154,
+    0.272
+   ],
+   "delivery_areas": 3
+  },
+  "종로구": {
+   "index": 1.004,
+   "age_index": 0.976,
+   "household_index": 1.032,
+   "single_share": 0.241,
+   "age_share": [
+    0.113,
+    0.153,
+    0.138,
+    0.138,
+    0.172,
+    0.286
+   ],
+   "delivery_areas": 15
+  },
+  "서대문구": {
+   "index": 1.002,
+   "age_index": 0.998,
+   "household_index": 1.006,
+   "single_share": 0.2,
+   "age_share": [
+    0.13,
+    0.157,
+    0.147,
+    0.145,
+    0.16,
+    0.262
+   ],
+   "delivery_areas": 3
+  },
+  "성동구": {
+   "index": 1.001,
+   "age_index": 1.007,
+   "household_index": 0.995,
+   "single_share": 0.187,
+   "age_share": [
+    0.125,
+    0.147,
+    0.164,
+    0.148,
+    0.16,
+    0.255
+   ],
+   "delivery_areas": 6
+  },
+  "강남구": {
+   "index": 1.0,
+   "age_index": 1.022,
+   "household_index": 0.978,
+   "single_share": 0.155,
+   "age_share": [
+    0.174,
+    0.124,
+    0.145,
+    0.182,
+    0.157,
+    0.218
+   ],
+   "delivery_areas": 21
+  },
+  "송파구": {
+   "index": 0.995,
+   "age_index": 1.016,
+   "household_index": 0.974,
+   "single_share": 0.15,
+   "age_share": [
+    0.154,
+    0.129,
+    0.16,
+    0.163,
+    0.154,
+    0.239
+   ],
+   "delivery_areas": 7
+  },
+  "성북구": {
+   "index": 0.991,
+   "age_index": 0.991,
+   "household_index": 0.991,
+   "single_share": 0.178,
+   "age_share": [
+    0.139,
+    0.152,
+    0.132,
+    0.149,
+    0.167,
+    0.261
+   ],
+   "delivery_areas": 2
+  },
+  "서초구": {
+   "index": 0.99,
+   "age_index": 1.018,
+   "household_index": 0.963,
+   "single_share": 0.133,
+   "age_share": [
+    0.178,
+    0.122,
+    0.14,
+    0.177,
+    0.16,
+    0.222
+   ],
+   "delivery_areas": 18
+  },
+  "구로구": {
+   "index": 0.988,
+   "age_index": 0.99,
+   "household_index": 0.986,
+   "single_share": 0.176,
+   "age_share": [
+    0.129,
+    0.13,
+    0.155,
+    0.149,
+    0.158,
+    0.279
+   ],
+   "delivery_areas": 2
+  },
+  "중랑구": {
+   "index": 0.988,
+   "age_index": 0.975,
+   "household_index": 1.001,
+   "single_share": 0.197,
+   "age_share": [
+    0.113,
+    0.131,
+    0.151,
+    0.139,
+    0.169,
+    0.297
+   ],
+   "delivery_areas": 4
+  },
+  "강동구": {
+   "index": 0.986,
+   "age_index": 1.0,
+   "household_index": 0.971,
+   "single_share": 0.148,
+   "age_share": [
+    0.152,
+    0.123,
+    0.149,
+    0.162,
+    0.154,
+    0.26
+   ],
+   "delivery_areas": 6
+  },
+  "은평구": {
+   "index": 0.982,
+   "age_index": 0.982,
+   "household_index": 0.982,
+   "single_share": 0.166,
+   "age_share": [
+    0.128,
+    0.132,
+    0.142,
+    0.15,
+    0.167,
+    0.28
+   ],
+   "delivery_areas": 3
+  },
+  "강북구": {
+   "index": 0.976,
+   "age_index": 0.945,
+   "household_index": 1.006,
+   "single_share": 0.206,
+   "age_share": [
+    0.107,
+    0.132,
+    0.121,
+    0.138,
+    0.174,
+    0.327
+   ],
+   "delivery_areas": 5
+  },
+  "노원구": {
+   "index": 0.975,
+   "age_index": 0.979,
+   "household_index": 0.97,
+   "single_share": 0.148,
+   "age_share": [
+    0.148,
+    0.133,
+    0.122,
+    0.151,
+    0.173,
+    0.272
+   ],
+   "delivery_areas": 4
+  },
+  "양천구": {
+   "index": 0.973,
+   "age_index": 0.991,
+   "household_index": 0.956,
+   "single_share": 0.122,
+   "age_share": [
+    0.168,
+    0.12,
+    0.122,
+    0.166,
+    0.172,
+    0.252
+   ],
+   "delivery_areas": 4
+  },
+  "도봉구": {
+   "index": 0.96,
+   "age_index": 0.948,
+   "household_index": 0.971,
+   "single_share": 0.155,
+   "age_share": [
+    0.119,
+    0.122,
+    0.122,
+    0.139,
+    0.177,
+    0.321
+   ],
+   "delivery_areas": 1
+  }
+ },
+ "seongdong_public_app": {
+  "source": "서울특별시 성동구 공공배달앱 배달특급 가맹점 현황 (2024-08-29)",
+  "stores": 937,
+  "businesses": 723,
+  "by_kind": {
+   "그 밖의 음식점": 612,
+   "치킨": 88,
+   "피자·버거": 60,
+   "카페·디저트": 48,
+   "분식": 42,
+   "중식": 33,
+   "족발·보쌈": 29,
+   "도시락·샐러드": 25
+  },
+  "note": "업종은 상호 낱말로 나눔 (가정). 사업자번호 하나에 상호가 여럿이면 한 주방이 여러 브랜드로 배달하는 경우"
+ }
+}

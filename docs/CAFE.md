@@ -242,6 +242,9 @@ Body (every field optional; an empty body or no body plays the month with last m
 | `staff_policy` | "lean" / "standard" / "generous" | Kept until changed |
 | `marketing_krw` | 0..5,000,000 per month | Kept until changed |
 | `dessert` | true / false | Kept until changed; default true |
+| `delivery` | true / false | 배달앱 입점. Kept until changed; default false |
+| `open_hour`, `close_hour` | 6..24, at least 4 hours | hard 모드: 영업 시각을 직접 정함 (보내지 않으면 `hours` 프리셋). Kept until changed |
+| `menu` | object | hard 모드 메뉴·판촉: `bean` "standard"/"specialty", `seasonal` bool, `dessert_price_pct` -30..50, `takeout_disc` 0..0.3, `loyalty` bool, `delivery_share` 0.05..0.6 or null (조사 값 25%), `free_dlvy_krw` 0..3000. Omitted keys = 효과 없음. Kept until changed |
 | `month_index` | 0-based month this request is for | Optional. A repeat of a played month with the same decisions returns that month again (a retry after a timeout); any other mismatch is 409 `{error: "month_mismatch", month_index, months_played}` |
 
 409 `{error: "season_over", detail, months_played}` once the run is closed or all months (6) are played. 404 for an
@@ -424,7 +427,7 @@ dessert margin).
 | opex | `card_fee_bands` | [[300000000, 0.004], [500000000, 0.01], [1000000000, 0.0115], [3000000000, 0.0145]] | H | 금융위원회 우대수수료율 2025-02-14 시행 (H2 2026 유지), 신용카드 연매출 3억 이하 0.40%, 3~5억 1.00%, 5~10억 1.15%, 10~30억 1.45%, research §4 |
 | opex | `card_share` | 1.0 | 가정 | none; 전 매출에 신용카드 요율 적용, 체크카드(0.15~1.15%)와 현금은 더 낮아 보수적 |
 | opex | `takeout_share` | 0.506 | M | 오픈서베이 카페 트렌드 2023 테이크아웃 50.6% (지출 기준), research §1.5 |
-| opex | `packaging_per_takeout_cup` | 100 | M | 다나와 검색 (2026-10-14 조회) 1,000개 단위 최저가: 16온스 92파이 아이스컵+돔리드 52.1원/세트, 13온스 종이컵 29.7~33.1원, 92파이 돔리드 17~23.6원, 컵홀더 14.5~15.5원, 개별포장 빨대 5~10원, 2구 캐리어 43.7~99.3원; 아이스 한 잔 = 컵과 뚜껑 52 + 빨대 8 + 홀더 14 + 캐리어 절반 22 = 96원, 뜨거운 한 잔 = 컵 31 + 뚜껑 20 + 홀더 15 + 캐리어 절반 22 = 88원, 컵과 뚜껑을 따로 사면 약 113원이라 100원. 로고 인쇄 컵은 더 비쌈. 이전 값 200원 (가정) |
+| opex | `packaging_per_takeout_cup` | 125 | M | 배민상회 쿠폰가 개당 (2026-10-21 조회, S98): 아이스 한 잔 = 컵 44 + 뚜껑 17 + 빨대 5 + 홀더 29 + 1구 캐리어 35 = 130원, 뜨거운 한 잔 = 컵 34 + 뚜껑 23 + 홀더 29 + 캐리어 35 = 121원, 평균 약 125원. 다나와 최저가 (2026-10-14)는 96원·88원 |
 | opex | `repairs_share` | 0.01 | 가정 | none; 수선유지비, 매출 대비 |
 | opex | `supplies_share` | 0.015 | 가정 | none; 냅킨 세제 등 소모품, 매출 대비 |
 | opex | `marketing_share` | 0.02 | 가정 | none; 광고 판촉, 매출 대비 |
@@ -448,7 +451,7 @@ dessert margin).
 | capex | `chair` | 50000 | M | 다나와 검색 (2026-10-14 조회) '업소용 의자', '업소용 카페의자': 3.58만, 4.08만(체어센스 기원), 4.19만(체어센스 비앙카), 5.15만(베노띠), 8.8만, 9.77만(인터데코 HW136); 중앙값 약 4.7만원을 5만원으로 둠. 광고 목록이 섞여 있음. 이전 값 6만원 (가정) |
 | capex | `bar_seat` | 50000 | M | 다나와 검색 (2026-10-14 조회) '바스툴' 바 의자 10개: 1.78만(이케아 STIG)~19.8만(이케아 JANINGE); 중앙값 4.95만원. 가정용 등급이 많음. 이전 값 8만원 (가정) |
 | capex | `bar_counter_per_m` | 300000 | 가정 | none |
-| capex | `interior_per_pyeong` | 2090000 | M | 공정위 가맹사업 정보공개서 (franchise.ftc.go.kr) 커피 16개 브랜드의 3.3㎡당 인테리어 비용 중앙값 209만원 (2026-10-14 조회); 브랜드별 3.3㎡당 만원: 감성커피 143.8, 메가엠지씨 165, 빽다방 167.2, 더벤티 176, 투썸 192.2, 엔제리너스 198, 할리스 200, 이디야 209, 커피베이 209, 탐앤탐스 220, 요거프레소 220, 텐퍼센트 242, 파스쿠찌 247.5, 컴포즈 291.5, 매머드 295.6, 하삼동 297. 프랜차이즈 값을 개인카페에 쓴 대리 지표이고 철거·전기·설비는 빠진 경우가 많음. 교차 확인: 농경연 2025 표32 커피 전문점 인테리어 평균 4,295.2만원 ÷ 표12 평균 면적 78.9㎡(23.9평) = 180만원/평. 이전 값 250만원 (업체 블로그) 슬라이더로 바꿀 가정 |
+| capex | `interior_per_pyeong` | 2150000 | M | 공정위 가맹정보 API (data.go.kr 15125479, 2024 정보공개서) 커피 263개 브랜드의 3.3㎡당 인테리어 비용 중앙값 215만원, 25~75% 195~275만원 (pipelines/fetch_ftc_interior.py, 2026-10-21); 프랜차이즈 값을 개인카페에 쓴 대리 지표이고 철거·전기·설비는 빠진 경우가 많음. 이전 값 209만원은 정보공개서 사이트에서 손으로 본 16개 브랜드 중앙값. 교차 확인: 농경연 2025 표32 커피 전문점 인테리어 평균 4,295.2만원 ÷ 표12 평균 면적 78.9㎡(23.9평) = 180만원/평 |
 | capex | `electrical` | 2000000 | L | research §3.2 전기 증설 ₩1.5~3M |
 | capex | `vat_rate` | 0.1 | H | 부가가치세법 10%, 인테리어와 설비에 선지급 후 환급, research §3.2 |
 | layout | `aspect` | 1.6 | 가정 | none; 가로 ÷ 세로, 출입문은 앞쪽 긴 벽 |
@@ -475,20 +478,29 @@ dessert margin).
 | layout | `ghost_cell` | 1.8 | 가정 | none; 공간 부족 항목을 방 밖에 늘어놓는 칸 크기 |
 | district 3120012 대학로 | `stores` | 122 | H | VwsmTrdarStorQq 20262 (83 개인 + 39 프랜차이즈), research §0 |
 | district 3120012 대학로 | `rent_per_pyeong_krw` | 198348 | H | R-ONE 소규모상가 1층 환산임대료 2026Q2 혜화동 60.0천원/㎡ x 3.3058, research §4 |
-| district 3120012 대학로 | `deposit_per_pyeong_krw` | 2660000 | M | 배라 rent model 혜화역 1층 66㎡ 보증금 중앙값 5,320만 ÷ 20평, research §3.3 |
+| district 3120012 대학로 | `deposit_per_pyeong_krw` | 3081000 | M | 서울시 「2023년 서울시 상가임대차 실태조사」 상권별 1층 보증금/㎡ 혜화역 93.21만원 x 3.3058 (S99); 2023년 1층 상가 1:1 면접 조사 |
 | district 3120012 대학로 | `key_money_krw` | 45200000 | M | 배라 rent model 혜화역 권리금 prior 중앙값, research §3.3 |
 | district 3120094 신촌 | `stores` | 144 | H | VwsmTrdarStorQq 20262 (110 개인 + 34 프랜차이즈), research §0 |
 | district 3120094 신촌 | `rent_per_pyeong_krw` | 134877 | H | R-ONE 소규모상가 1층 환산임대료 2026Q2 신촌/이대 40.8천원/㎡ x 3.3058, research §4 |
-| district 3120094 신촌 | `deposit_per_pyeong_krw` | 1810000 | 가정 | GAP (research §7-6); 대학로 평당 보증금 x 임대료 비율(135/198)로 환산한 가정 |
+| district 3120094 신촌 | `deposit_per_pyeong_krw` | 2956000 | M | 서울시 「2023년 서울시 상가임대차 실태조사」 상권별 1층 보증금/㎡ 신촌역(신촌로터리) 89.41만원 x 3.3058 (S99); 2023년 1층 상가 1:1 면접 조사 |
 | district 3120094 신촌 | `key_money_krw` | 39900000 | M | 한국부동산원 상업용부동산 임대동향 권리금 조사 2025, 서울 숙박·음식점업 중앙값 3,990만원 (R-ONE). 교차 확인: 농식품부·농경연 「2025 외식업체 경영실태 조사 통계보고서」 (2025.8~10 방문 면접, 2024년 실적, 커피 전문점 n=261) 표22 사업장 임차권리금, 커피 전문점 평균 3,828.6만원 (권리금을 낸 102곳); 두 공식 자료가 4% 안에서 맞음. 업종은 숙박·음식점 전체(R-ONE)이거나 지역이 전국(농경연)이라 M, 입지별 값 없음 |
 | district 3110131 성수동카페거리 | `stores` | 51 | H | VwsmTrdarStorQq 20262 (43 개인 + 8 프랜차이즈), research §1.2 |
 | district 3110131 성수동카페거리 | `rent_per_pyeong_krw` | 214877 | H | R-ONE 소규모상가 1층 환산임대료 2026Q2 뚝섬 65.0천원/㎡ x 3.3058, research §4 |
-| district 3110131 성수동카페거리 | `deposit_per_pyeong_krw` | 2890000 | 가정 | GAP (research §7-6); 대학로 평당 보증금 x 임대료 비율(215/198)로 환산한 가정 |
+| district 3110131 성수동카페거리 | `deposit_per_pyeong_krw` | 2097000 | M | 서울시 「2023년 서울시 상가임대차 실태조사」 상권별 1층 보증금/㎡ 성수동 카페거리 63.44만원 x 3.3058 (S99); 2023년 1층 상가 1:1 면접 조사 |
 | district 3110131 성수동카페거리 | `key_money_krw` | 39900000 | M | 한국부동산원 상업용부동산 임대동향 권리금 조사 2025, 서울 숙박·음식점업 중앙값 3,990만원 (R-ONE). 교차 확인: 농식품부·농경연 「2025 외식업체 경영실태 조사 통계보고서」 (2025.8~10 방문 면접, 2024년 실적, 커피 전문점 n=261) 표22 사업장 임차권리금, 커피 전문점 평균 3,828.6만원 (권리금을 낸 102곳); 두 공식 자료가 4% 안에서 맞음. 업종은 숙박·음식점 전체(R-ONE)이거나 지역이 전국(농경연)이라 M, 입지별 값 없음 |
 
 | season | `months` | 6 | 가정 | none; 한 시즌 = 6개월 (고깃집 시즌과 맞춤, 2026-10-20 결정). 원안은 12개월 |
 | season | `start_month` | 3 | 가정 | none; 기본 오픈 달 3월 (대학가 개강), 요청에서 바꿀 수 있음 |
-| season | `seasonality_by_quarter` | 1: 0.92, 2: 1.02, 3: 1.07, 4: 1.0 | H | 서울 상권 커피-음료 분기 매출 2025 Q1 6,325억 Q2 7,046 Q3 7,347 Q4 6,864 ÷ 2025 평균 6,896억, research §1.3; 분기 지수를 그 분기의 세 달에 똑같이 적용, 분기 안의 달별 차이는 GAP |
+| season | `seasonality_by_quarter` | 1: 0.92, 2: 1.02, 3: 1.07, 4: 1.0 | H | 서울 상권 커피-음료 분기 매출 2025 Q1 6,325억 Q2 7,046 Q3 7,347 Q4 6,864 ÷ 2025 평균 6,896억, research §1.3; 분기 지수에 `month_in_quarter`를 곱한다 |
+| season | `ingredient_index` | 1: 1.036, 2: 1.037, 3: 1.041, 4: 1.043, 5: 1.043, 6: 1.047, 7: 1.05, 8: 1.047, 9: 1.049, 10: 1.053, 11: 1.056, 12: 1.069 | M | S103 KOSIS 생활물가지수 서울 커피·우유 (DT_1J22005 T11) 최근 12개월 평균 ÷ 2024년 평균 (커피 1.148, 우유 1.007) × 달별 지수 (2021~2025), 외식업체 경영실태조사 2025 비알코올 음료점업 식재료비 중 가공식품 61.7% (DT_114054_031); 음료 식재료비에 곱하는 배수. 원두와 우유가 둘 다 가공식품에 묶여 있어 반반으로 봄 (가정). 식재료비율(food_cost_share)이 2024년 실적이라 그 뒤 오른 몫을 더한다. pipelines/fetch_food_cost.py |
+| season | `delivery_order_share` | 0.25 | M | 외식업체 경영실태조사 2025 비알코올 음료점업 (KOSIS DT_114054_023·016): 하루 배달 9.3건(전체 평균) ÷ 배달앱 이용 31.2% = 이용 카페 29.8건, 방문 62.6명·포장 26.5건과 합치면 배달이 25%; 배달하는 달에 전체 주문 중 배달 몫 |
+| season | `delivery_cannibal` | 0.3 | 가정 | none; 배달 주문 중 원래 매장·포장으로 왔을 손님 비율. 나머지 70%가 새 주문 |
+| season | `delivery_app_fee_krw` | 258 | M | 경영실태조사 비알코올 음료점업 배달앱 이용 가게 월평균 214,963원 ÷ (이용 카페 하루 29.8건 × 28일); 배달 한 건에 배달앱에 내는 돈 |
+| season | `delivery_agency_fee_krw` | 1147 | M | 경영실태조사 비알코올 음료점업 배달대행 이용 가게 월평균 957,302원 ÷ (29.8건 × 28일); 배달 한 건에 배달대행에 내는 돈 (손님 부담 배달비 제외) |
+| season | `delivery_packaging_krw` | 250 | 가정 | 배민상회 쿠폰가 기준 컵 캐리어·비닐봉투 (S98); 배달 한 건 포장재 (컵·뚜껑은 테이크아웃 잔당 포장재에 이미 있음) |
+| season | `delivery_gu_index` | "3120012": 1.004, "3120094": 1.002, "3110131": 1.001 | M | 서울서베이 2022 × 상권이 속한 구의 주민 연령·세대구성; 서울 평균 = 1 |
+| season | `delivery_month_index` | 1: 0.978, 2: 0.904, 3: 0.959, 4: 0.927, 5: 0.988, 6: 0.98, 7: 1.044, 8: 1.082, 9: 0.987, 10: 1.022, 11: 1.005, 12: 1.125 | M | 통계청 음식서비스 거래액 달별 배율; 그해 월평균 = 1 |
+| season | `month_in_quarter` | 1: 0.953, 2: 0.996, 3: 1.051, 4: 0.969, 5: 1.009, 6: 1.022, 7: 0.996, 8: 1.014, 9: 0.989, 10: 1.022, 11: 0.975, 12: 1.003 | M | S96 통계청 서비스업생산지수 커피 등 비알코올 음료점업 (KOSIS DT_1KC2020 I5622) 불변지수, 하루당, 2023~2025 평균; 분기 평균 1, 전국 값이라 대학가 방학은 없다 |
 | season | `launch_share` | 0.7 | 가정 | none; 새 매장은 성숙 매장 손님의 70%에서 시작, 단골이 쌓이며 100%로 다가감 |
 | season | `regulars_speed` | 0.15 | 가정 | none; 단골 지수가 목표값에 다가가는 한 달 비율 |
 | season | `regulars_speed_marketing` | 0.15 | 가정 | none; 마케팅 효과가 최대일 때 더해지는 속도 |
@@ -526,6 +538,20 @@ dessert margin).
 | season | `dessert_min_spoilage_krw` | 300000 | 가정 | none; 쇼케이스를 채워 두는 최소 재고의 월 폐기 |
 | season | `dessert_prep_hours_per_day` | 2 | 가정 | none; 디저트 준비 유급 시간 |
 | season | `dessert_no_showcase_factor` | 0.5 | 가정 | none; 쇼케이스가 없으면 포장 디저트만, 디저트 매출 절반 |
+| season | `custom_hours_range` | [6, 24] | 가정 | none; 직접 정하는 영업 시각 범위 (최소 4시간) |
+| season | `bean_specialty_cost` | 1.15 | 가정 | none; 스페셜티 원두로 바꾸면 음료 식재료비 15% 증가 (원두가 음료 원가의 절반쯤이고 원두값이 30% 비싸다고 봄) |
+| season | `bean_specialty_demand` | 1.04 | 가정 | none; 스페셜티 원두로 손님 4% 증가 |
+| season | `satisfaction_specialty` | 0.04 | 가정 | none;  |
+| season | `seasonal_demand` | 1.05 | 가정 | none; 시즌 음료(딸기 라떼 등)를 내면 손님 5% 증가 |
+| season | `seasonal_ticket` | 1.03 | 가정 | none; 시즌 음료가 비싸 객단가 3% 증가 |
+| season | `seasonal_cost_krw` | 300000 | 가정 | none; 시즌 음료 개발·시럽·남는 재료 한 달 |
+| season | `satisfaction_seasonal` | 0.03 | 가정 | none;  |
+| season | `dessert_price_elasticity` | 1.5 | 가정 | none; 디저트는 음료보다 가격에 민감 (10% 올리면 사는 비율 약 13% 감소) |
+| season | `takeout_disc_lift` | 2.0 | 가정 | none; 포장 할인 10%면 포장 손님 20% 증가 (치킨·분식과 같은 가정) |
+| season | `loyalty_demand` | 1.04 | 가정 | none; 스탬프 적립(10잔에 1잔 무료)으로 손님 4% 증가 |
+| season | `loyalty_free_share` | 0.03 | 가정 | none; 적립으로 공짜로 나가는 잔이 매출의 3%쯤 (10잔 중 1잔 × 적립 손님 30%) |
+| season | `delivery_share_exp` | 0.6 | 가정 | none; 배달 비중을 키운 만큼보다 배달 주문이 덜 는다 (치킨·분식과 같은 가정) |
+| season | `free_dlvy_lift_per_1000` | 0.08 | 가정 | none; 무료배달로 가게가 건당 1,000원을 부담할 때마다 배달 주문 8% 증가 |
 | season | `loan_rate` | 0.045 | M | 한국은행 「2026년 8월 금융기관 가중평균금리」 예금은행 신규취급액 중소기업 대출 4.38% (2026-09-30 공보); 소상공인시장진흥공단 2026년 4/4분기 정책자금 금리 일반경영안정자금 연 4.72% (기준 4.12% + 0.6%P, ols.semas.or.kr); 연 4.5%, 원리금 균등 상환. 4.5%는 은행 중소기업 대출 4.38%와 정책자금 4.72% 사이, 개인사업자 신규 창업 대출만의 금리는 따로 없어 M |
 | season | `loan_term_months` | 60 | 가정 | none; 5년 원리금 균등, 거치 기간 없음 (보수적) |
 | season | `working_capital_months` | 3 | 가정 | none; 운전자금 기본값: 문을 열 때 통장에 월 고정비 3개월치가 있도록 모자란 만큼 빌림, extra_loan_krw로 바꿀 수 있음 |

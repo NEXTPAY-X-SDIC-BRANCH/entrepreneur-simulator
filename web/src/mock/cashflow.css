@@ -1,0 +1,47 @@
+.cf-scroll { overflow-x: auto; }
+.cf-table th, .cf-table td { white-space: nowrap; }
+.cf-table thead th { font-weight: 700; color: #545b66; text-align: right; }
+.cf-table thead th:first-child { text-align: left; }
+.cf-table td { text-align: right; }
+.cf-in td { color: #1f7a4d; }
+.cf-tax th, .cf-tax td { color: #8a5a12; background: #fffaf0; }
+.cf-net th, .cf-net td { background: #f1f5ff; }
+.cf-count { font-size: 12px; color: #7a818c; font-weight: 500; }
+
+.cf-chart { overflow-x: auto; padding: 14px 12px 10px; border: 1px solid #e3e8f4; border-radius: 16px; background: #fff; }
+.cf-chart svg { display: block; inline-size: 100%; min-inline-size: 300px; max-block-size: 240px; }
+.cf-zero { stroke: #c9d0dc; stroke-width: 1; }
+.cf-link { stroke: #9aa5b8; stroke-width: 1; stroke-dasharray: 3 3; }
+.cf-b.is-total rect { fill: #3d63ea; }
+.cf-b.is-in rect { fill: #27a06a; }
+.cf-b.is-out rect { fill: #e2574c; }
+.cf-b.is-tax rect { fill: #f0a83a; }
+.cf-b.is-net rect { fill: #1f3f8f; }
+.cf-v { font-size: 11px; font-weight: 700; text-anchor: middle; fill: #2a2f3a; }
+.cf-v.up { fill: #1f8a5a; } .cf-v.down { fill: #c8443a; }
+.cf-l { font-size: 11px; text-anchor: middle; fill: #5a6270; }
+.cf-after { fill: none; stroke: #1f3f8f; stroke-width: 2; stroke-dasharray: 5 4; }
+.cf-after-d { fill: #fff; stroke: #1f3f8f; stroke-width: 2; }
+.cf-key { display: flex; flex-wrap: wrap; gap: 14px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 12.5px; color: #4a5160; }
+.cf-key li::before { content: ""; display: inline-block; inline-size: 10px; block-size: 10px; margin-inline-end: 6px; border-radius: 3px; vertical-align: -1px; background: #3d63ea; }
+.cf-key .is-in::before { background: #27a06a; } .cf-key .is-out::before { background: #e2574c; } .cf-key .is-tax::before { background: #f0a83a; }
+.cf-key .is-after::before { background: none; border-top: 2px dashed #1f3f8f; block-size: 0; inline-size: 14px; border-radius: 0; vertical-align: 3px; }
+.cf-pair { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.cf-pair .sx-sec h2 { font-size: 15px; }
+.cf-pair .cf-chart { padding: 10px 10px 8px; }
+.cf-pair .cf-key { gap: 10px; font-size: 11.5px; }
+@media (max-width: 900px) { .cf-pair { grid-template-columns: minmax(0, 1fr); } }
+.cf-pair.is-one { grid-template-columns: minmax(0, 1fr); }
+.cf-l { font-size: 10.5px; }
+
+/* 차분한 색: 가진 현금은 진한 파랑, 들어온 돈은 중간 파랑, 나간 돈은 회청색, 세금은 연한 회색 */
+.cf-b.is-total rect { fill: #2f4fc4; }
+.cf-b.is-in rect { fill: #6f8ce0; }
+.cf-b.is-out rect { fill: #b9c2d6; }
+.cf-b.is-tax rect { fill: #d6d9e1; }
+.cf-b.is-net rect { fill: #1f3f8f; }
+.cf-v.up { fill: #2f4fc4; } .cf-v.down { fill: #8a5a55; }
+.cf-key li::before { background: #2f4fc4; }
+.cf-key .is-in::before { background: #6f8ce0; } .cf-key .is-out::before { background: #b9c2d6; } .cf-key .is-tax::before { background: #d6d9e1; }
+.cf-in td { color: #2f4fc4; }
+.cf-tax th, .cf-tax td { color: #5a6270; background: #f7f8fb; }

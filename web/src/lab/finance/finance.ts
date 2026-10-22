@@ -1,4 +1,4 @@
-// lab:finance — 은행별 가상 금리 고르기와 월세 카드 할부. 화면 사이에서 같은 선택을 쓰도록 모듈 하나에 상태를 둔다.
+// lab:finance — 은행별 금리(은행연합회 비교공시 공시 평균) 고르기와 월세 카드 할부. 화면 사이에서 같은 선택을 쓰도록 모듈 하나에 상태를 둔다.
 // 은행·정책자금 자료: web/public/mock/bank_rates.json (pipelines/build_bank_rates.py). 고른 금리는 model.ts의 LOAN_RATE를
 // 덮어써서 기존 이자 계산(가게 꾸미기, 시뮬레이션, 투자 회수)이 그대로 따라온다.
 // 월세 카드 할부의 계산은 엔진(sim/rent_card.py)이 기준이다. 여기 rentSchedule은 시뮬레이션 전 미리보기용으로 같은 식을 옮긴 것이고,
@@ -6,14 +6,14 @@
 import { useSyncExternalStore } from "react";
 import { ecosRates, setLoanOverride } from "../../mock/model";
 
-export type LenderLabel = "가상 값" | "공고 금리" | "금리 공고 확인 필요";
+export type LenderLabel = "공시 평균" | "공고 금리" | "금리 공고 확인 필요";   // lab:merge 은행은 비교공시 실제 값 (가상 값 없앰)
 export type Lender = {
-  id: string; name: string; kind: "은행" | "인터넷은행" | "정책자금"; spread?: number; rate: number | null;
+  id: string; name: string; kind: "은행" | "인터넷은행" | "정책자금"; rate: number | null; rate_credit?: number | null;
   label: LenderLabel; who: string; url: string; as_of?: string | null; source?: string | null; youth?: boolean;
 };
 export type BankRates = {
   _meta: { anchor: { rate: number; month: string; series: string; source: string }; method: string; order: string; link_only: string; built: string };
-  compare_url: string; lenders: Lender[];
+  compare_url: string; lenders: Lender[]; ym: string;   // ym: 비교공시 달 (upstream 키)
 };
 
 let DATA: BankRates | null = null;

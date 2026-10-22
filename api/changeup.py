@@ -10,10 +10,15 @@ DB, LLM, 임베딩은 쓰지 않는다 (기존 api/main.py와 별개). 상태는
     POST /season/play    한 달 진행 (상태, 계획, 사건, 밤 결정 선택 → 결과와 다음 상태)
     POST /season/run     6개월을 한 번에 돌리고 투자·대출 장부까지 계산
     POST /venture        월별 영업이익 목록만 주고 현금 장부와 회수 시점 계산
+    GET/POST /scores     6개월 성적표 점수 랭킹 (반 코드별, data/scores.json)
 """
 from __future__ import annotations
 
+import json
 import threading
+import time
+import uuid
+from pathlib import Path
 from typing import Any
 
 from fastapi import Body, FastAPI, HTTPException
@@ -33,7 +38,9 @@ app.add_middleware(
 )
 
 from api.cafe import router as cafe_router  # 카페 엔진 (sim/cafe, docs/CAFE.md): /cafe/preview, /cafe/season ...
+from api.sbiz365 import router as sbiz365_router  # 소상공인365 오픈API 화면 연결 (/sbiz365)
 app.include_router(cafe_router)
+app.include_router(sbiz365_router)
 from api.lab_menu import router as lab_menu_router  # lab:menu  메뉴판 기본값과 오늘 시세 원가 (/lab/menu/*)
 app.include_router(lab_menu_router)  # lab:menu
 from api.lab_pork import router as lab_pork_router  # lab:pork — 돼지고기 도매가 예측 /lab/pork/*
@@ -62,7 +69,8 @@ def _apply_store(spec: dict | None) -> dict:
             seats=int(spec.get("seats", 0)), cash_rent_man_per_pyeong=float(spec["cash_rent_man_per_pyeong"]),
             staff=int(spec.get("staff", 3)), price=int(spec.get("price", 19000)),
             baseline_runs=int(spec.get("baseline_runs", 150)), quarter_index=spec.get("quarter_index"),
-            area_type=spec.get("area_type"), start_month=spec.get("start_month"), flow=spec.get("flow"))
+            area_type=spec.get("area_type"), start_month=spec.get("start_month"), flow=spec.get("flow"),
+            delivery_gu_index=spec.get("delivery_gu_index"))
     except (KeyError, TypeError, ValueError) as e:
         raise HTTPException(422, f"store 입력 오류: {e}") from e
     S.set_store(store)
@@ -108,6 +116,7 @@ def _slim(r: dict) -> dict:
         "waterfall": [{"driver": w["driver"], "delta": w["delta"]} for w in r.get("waterfall", []) if w.get("kind") == "step" and w.get("delta")],
         "month": r["month"], "month_index": r["month_index"], "label": r["calendar"]["label"],
         "demand_index": r["calendar"]["demand_index"],
+        "cost_index": r["calendar"].get("cost_index"), "cost_range": r["calendar"].get("cost_range"),
         "events": [{"id": e["id"], "label": e["label"].replace("대학로", "대학가"), "group": e["group"],
                     "mechanism": (e.get("mechanism") or "").replace("대학로", "대학가") or None, "outcome": e.get("outcome")}
                    for e in r["events"]],
@@ -226,3 +235,60 @@ def venture(body: dict[str, Any] = Body(...)) -> dict:
                           own_capital=float(body.get("own_capital", 0.0)), owner_draw=float(body.get("owner_draw", 0.0)),
                           imputed_owner_wage=float(body.get("imputed_owner_wage", _owner_wage())),
                           rent_card=body.get("rent_card"), monthly_rent=body.get("monthly_rent"))  # lab:finance
+
+
+# --- 성적표 랭킹 ---------------------------------------------------------------------------------------------
+# 6개월 성적표 점수를 반(클래스 코드)별로 모은다. 같은 서버를 쓰는 사람끼리 순위를 본다 (교육 현장 시연용).
+# 파일 하나에 쌓고 DB는 쓰지 않는다. 이름은 화면에서 받은 별명이고 개인정보는 받지 않는다.
+SCORES = Path(__file__).resolve().parents[1] / "data" / "scores.json"
+_SCORE_LOCK = threading.Lock()
+
+
+def _load_scores() -> list[dict]:
+    try:
+        return json.loads(SCORES.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+
+
+def _same(r: dict, cls: str, shop: str, mode: str) -> bool:
+    """같은 반·업종·모드끼리만 순위를 매긴다 (예전 기록은 shop이 없으면 고깃집, mode가 없으면 쉬운 모드로 본다)."""
+    return r["cls"] == cls and r.get("shop", "고깃집") == shop and r.get("mode", "easy") == mode
+
+
+def _board(rows: list[dict], cls: str, shop: str, mode: str, limit: int = 20) -> list[dict]:
+    mine = sorted((r for r in rows if _same(r, cls, shop, mode)), key=lambda r: (-r["score"], r["ts"]))
+    return [{**r, "rank": i + 1} for i, r in enumerate(mine[:limit])]
+
+
+@app.get("/scores")
+def scores(cls: str = "공개", shop: str = "고깃집", mode: str = "easy") -> dict:
+    rows = _load_scores()
+    mode = "hard" if mode == "hard" else "easy"
+    return {"cls": cls, "shop": shop, "mode": mode, "count": sum(_same(r, cls, shop, mode) for r in rows), "top": _board(rows, cls, shop, mode)}
+
+
+@app.post("/scores")
+def score_add(body: dict[str, Any] = Body(...)) -> dict:
+    """body: {name, cls?, score (0~100), grade, mode, gu, shop, end_cash, seed?}.
+    저장한 기록의 순위와 같은 반·업종·모드의 상위 20명을 돌려준다. seed는 그 판이 겪은 사건·날씨를 다시 볼 수 있게 함께 저장한다."""
+    name = str(body.get("name", "")).strip()[:12]
+    cls = str(body.get("cls") or "공개").strip()[:20] or "공개"
+    try:
+        score = int(round(float(body["score"])))
+    except (KeyError, TypeError, ValueError) as e:
+        raise HTTPException(422, "score가 필요합니다") from e
+    if not name or not 0 <= score <= 100:
+        raise HTTPException(422, "별명과 0~100 점수가 필요합니다")
+    row = {"id": uuid.uuid4().hex[:10], "name": name, "cls": cls, "score": score, "grade": str(body.get("grade", ""))[:20],
+           "mode": "hard" if body.get("mode") == "hard" else "easy", "gu": str(body.get("gu", ""))[:10], "shop": str(body.get("shop", "고깃집"))[:10],
+           "end_cash": int(float(body.get("end_cash", 0))), "seed": int(body["seed"]) if isinstance(body.get("seed"), (int, float)) else None,
+           "ts": time.strftime("%Y-%m-%dT%H:%M:%S")}
+    with _SCORE_LOCK:
+        rows = _load_scores() + [row]
+        SCORES.parent.mkdir(parents=True, exist_ok=True)
+        SCORES.write_text(json.dumps(rows, ensure_ascii=False, indent=1), encoding="utf-8")
+    ranked = sorted((r for r in rows if _same(r, cls, row["shop"], row["mode"])), key=lambda r: (-r["score"], r["ts"]))
+    rank = next(i + 1 for i, r in enumerate(ranked) if r["id"] == row["id"])
+    return {"id": row["id"], "rank": rank, "count": len(ranked), "cls": cls, "shop": row["shop"], "mode": row["mode"],
+            "top": _board(rows, cls, row["shop"], row["mode"])}

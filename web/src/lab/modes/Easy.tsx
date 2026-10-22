@@ -117,6 +117,8 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
 }) {
   const ind = profile.industry;
   const kind = kindOf(ind);
+  // lab:merge 옷가게(upstream 화면)는 이지 모드 엔진(sim/easy.py)이 없어 하드 모드에서만 연다. 들어올 때 옷가게면 고깃집으로 둔다
+  useEffect(() => { if (PICKER.find((p) => p.id === ind)?.easy === false) setProfile({ ...profile, industry: "bbq", dong: undefined }); }, [ind]); // eslint-disable-line react-hooks/exhaustive-deps
   const [pyeong, setPyeong] = useState<number | null>(null);
   const [phase, setPhase] = useState<"form" | "run" | "result">("form");
   const [err, setErr] = useState("");
@@ -179,7 +181,7 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
             <fieldset>
               <legend>어떤 가게</legend>
               <div className="m-seg lm-inds" role="group" aria-label="업종">
-                {PICKER.map((p) => (
+                {PICKER.filter((p) => p.easy !== false).map((p) => ( /* lab:merge 옷가게는 하드 모드에서만 */
                   <button key={p.id} type="button" aria-pressed={ind === p.id} onClick={() => set({ industry: p.id as Profile["industry"], dong: undefined })}>{p.name}</button>
                 ))}
               </div>
@@ -341,7 +343,7 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
           <button type="button" className="m-btn" disabled={phase === "run"} onClick={again}>
             {phase === "run" ? "돌리는 중이에요" : `${cur.n + 1}판 돌려 보기${changedNext ? "" : " (같은 입력)"}`}
           </button>
-          <button type="button" className="m-btn m-btn-quiet" onClick={() => onHard({
+          <button type="button" className="m-btn m-btn-quiet" onClick={() => ind !== "apparel" && onHard({
             industry: ind, pyeong: inp.store?.pyeong ?? inp.pyeong ?? 20, tables: inp.store?.tables ?? inp.tables ?? 0, staff: inp.staff,
             price: inp.price ?? 19000, loan_man: inp.loan_man ?? 0, dong: inp.dong,
           })}>하드 모드로 이어서 하기</button>

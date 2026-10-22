@@ -25,6 +25,8 @@ export const VAR_SHARE = C.FOOD + C.TAX + C.OTHER + C.CARD;
 export const areaFx = (p: number) => (p <= 10 ? 0.89 : p <= 20 ? 0.89 + (p - 10) * 0.011 : Math.min(1.37, 1 + (p - 20) * (0.37 / 15)));
 
 // 가게 꾸미기 입력. 3D 목업의 배치 입력(tables~pos)은 비워 두면 평수에서 어림한 값(독립 카페 평당 테이블 0.36개, 좌석 1.27석)을 쓴다.
+// lab:merge 카페 가게 모양·출입문은 lab:layout(RoomShape: 자유 비율, 네 벽 어디든 문, 창문)이 정한다. upstream 의 shape·door 선택지는 엔진이
+// 같은 값으로 받아 주지만(api/cafe.py) 화면은 보내지 않는다.
 export type CafeCfg = { pyeong: number; grade: Grade; staff: number; tables?: number; chairs?: number; bar?: number; groups?: number; showcase?: number; oven?: number; kiosks?: number; pos?: number; shape?: RoomShape }; // lab:layout shape
 export const cafeLayoutOf = (c: CafeCfg) => ({
   tables: c.tables ?? Math.max(1, Math.round(c.pyeong * 0.36)), chairs: c.chairs ?? Math.max(2, Math.round(c.pyeong * 1.27)), bar: c.bar ?? 0,

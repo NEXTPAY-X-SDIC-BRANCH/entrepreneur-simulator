@@ -15,7 +15,7 @@ export const LAB_TXT: Record<LabIndustry, Txt> = {
 };
 
 // 1단계 업종 고르기 (안 B: 식사 / 술 / 카페·빵, 2열). 일곱 업종 모두 같은 출처의 한 줄을 단다.
-export type PickerItem = { id: string; name: string; desc: string; data: string; group: "meal" | "drink" | "cafe"; isNew: boolean };
+export type PickerItem = { id: string; name: string; desc: string; data: string; group: "meal" | "drink" | "cafe" | "shop"; isNew: boolean; easy?: false }; // easy: false = 이지 모드에 없음
 export const PICKER: PickerItem[] = [
   { id: "bbq", name: "고깃집", desc: "삼겹살, 목살 같은 돼지고기 구이 (자료는 한식 육류 요리 전문점 기준)", data: "서울 7,834곳 · 객단가 1만 8,900원", group: "meal", isNew: false },
   { id: "hansik", name: "한식 백반집", desc: "백반, 찌개, 국밥 같은 식사 위주 한식 (자료는 한식 일반음식점 기준)", data: "서울 3만 1,700곳 · 객단가 1만 3,700원", group: "meal", isNew: true },
@@ -24,11 +24,13 @@ export const PICKER: PickerItem[] = [
   { id: "pub", name: "호프·주점", desc: "생맥주, 요리 주점, 포차처럼 저녁에 여는 술집", data: "서울 1만 3,639곳 · 객단가 2만 1,000원", group: "drink", isNew: true },
   { id: "cafe", name: "카페", desc: "커피, 음료, 디저트 (자료는 독립 카페 기준, 동네 분석부터 열려 있어요)", data: "서울 2만 2,739곳 · 객단가 5,700원", group: "cafe", isNew: false },
   { id: "bakery", name: "베이커리", desc: "빵, 케이크, 구움과자, 매출의 59%가 포장", data: "서울 6,119곳 · 객단가 8,200원", group: "cafe", isNew: true },
+  // lab:merge 옷가게 (upstream apparel.ts 화면). 가게 수와 결제 1건 금액은 서울시 상권분석서비스 일반의류(상권 안, gu_stats.json apparel)
+  { id: "apparel", name: "옷가게", desc: "동네 의류 가게 (서울 소매업 중 가게 수와 매출이 가장 많은 일반의류 기준, 구 단위 분석)", data: "서울 상권 안 5만 1,953곳 · 결제 1건 6만 3,800원", group: "shop", isNew: true, easy: false },
 ];
 export const PICKER_GROUPS: { key: PickerItem["group"]; label: string }[] = [
-  { key: "meal", label: "식사" }, { key: "drink", label: "술" }, { key: "cafe", label: "카페·빵" },
+  { key: "meal", label: "식사" }, { key: "drink", label: "술" }, { key: "cafe", label: "카페·빵" }, { key: "shop", label: "판매" },
 ];
-export const PICKER_SRC = "서울 가게 수는 소상공인 상가정보(2026년 6월), 객단가는 외식업체 경영실태조사 2025 원자료(전국, 1인 평균)예요.";
+export const PICKER_SRC = "서울 가게 수는 소상공인 상가정보(2026년 6월), 객단가는 외식업체 경영실태조사 2025 원자료(전국, 1인 평균)예요. 옷가게는 서울시 상권분석서비스(상권 안 일반의류) 값이에요.";
 export const industryLabel = (id: string) => PICKER.find((p) => p.id === id)?.name ?? id;
 
 // 3단계 '가진 돈' 질문의 참고 문장: 경영실태조사 2025 개업 시 투자 비용(보증금·권리금 제외) 분위수, 만원

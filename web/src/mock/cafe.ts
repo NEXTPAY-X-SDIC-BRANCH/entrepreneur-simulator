@@ -2,7 +2,7 @@
 // 값의 출처: 서울 행정동 카페 지표 엑셀 '시작 비용' 시트(cafe_cost.json), 외식업체 경영실태조사 2025 원자료 중 독립(비프랜차이즈) 커피 전문점·음료점의
 // 가중 25/50/75 분위수 (등급 H). 간판과 첫 재료는 자료가 없어 고깃집과 같은 가정값이다.
 import { profileOf } from "./area";
-import { DEPOSIT_MONTHS, guStat, type CostLine, type Grade, type Profile } from "./model";
+import { DEPOSIT_MONTHS, ftcNote, guStat, type CostLine, type Grade, type Profile } from "./model";
 
 export const CAFE_PYEONG = { low: 13, mid: 20, high: 28 } as const; // 매장 면적 분위수 (sto_area_pyeong)
 // 평당 만원. 기본·중급·고급을 25·50·75분위에 맞춘다 (고깃집과 같은 방식).
@@ -19,7 +19,7 @@ export function cafeOpeningCost(pyeong: number, grade: Grade, gu: string, keyMon
   const lines: CostLine[] = [
     ...(keyMoney > 0 ? [{ key: "keymoney", label: "권리금", amount: keyMoney, basis: "직접 넣은 값 (가게 자리에 붙는 웃돈, 나갈 때 돌려받지 못해요)" }] : []),
     { key: "deposit", label: "보증금", amount: Math.round(st.rent * pyeong * DEPOSIT_MONTHS), basis: `월세 ${DEPOSIT_MONTHS}개월분 (서울시 실태조사: 보증금은 월세의 11~15개월)` },
-    { key: "interior", label: "인테리어 공사", amount: g.interior * pyeong, basis: `${pyeong}평, 평당 ${g.interior}만원 (${g.label})` },
+    { key: "interior", label: "인테리어 공사", amount: g.interior * pyeong, basis: `${pyeong}평, 평당 ${g.interior}만원 (${g.label}). ${ftcNote("cafe")}` },
     { key: "equip", label: "머신과 주방 설비", amount: g.kitchen * pyeong, basis: `에스프레소 머신, 냉장·제빙 등, 평당 ${g.kitchen}만원 (${g.label})` },
     { key: "seat", label: "가구와 집기", amount: g.hall * pyeong, basis: `테이블, 의자, 카운터 집기, 평당 ${g.hall}만원 (${g.label})` },
     { key: "sign", label: "간판", amount: CAFE_SIGN, basis: "전면 간판 1개, 가정" },

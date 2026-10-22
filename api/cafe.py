@@ -40,6 +40,8 @@ class CafeIn(BaseModel):
     oven: int = Field(0, ge=0, le=1)
     kiosks: int = Field(0, ge=0, le=3)
     pos: int = Field(1, ge=1, le=3)
+    shape: Literal["wide", "square", "deep"] | None = None             # 가게 모양 (가로 ÷ 세로 1.6 / 1.0 / 0.7), None = wide
+    door: Literal["right", "left"] | None = None                       # 출입문 자리, None = right (배치를 좌우로 뒤집음)
     own_capital_krw: int = Field(80_000_000, ge=0)
     daily_customers: int | None = Field(None, ge=10, le=600)   # orders on the peak day; None = data default
     peak_day: Literal["weekday", "weekend"] | None = None              # None = the district's busier day type
@@ -89,6 +91,10 @@ class MonthIn(BaseModel):
     staff_policy: Literal["lean", "standard", "generous"] | None = None
     marketing_krw: int | None = Field(None, ge=0, le=5_000_000)
     dessert: bool | None = None
+    delivery: bool | None = None                  # 배달앱 입점 (None = 지난달 그대로)
+    open_hour: int | None = Field(None, ge=0, le=24)    # hard 모드: 여는 시각 직접 (None = 프리셋)
+    close_hour: int | None = Field(None, ge=0, le=24)
+    menu: dict | None = None                      # hard 모드 메뉴·판촉 (sim/cafe/season.py MENU_DEFAULT)
     scenario: dict[str, str] | None = None        # {decision point id: option id}; missing ones take the default
     month_index: int | None = Field(None, ge=0)   # optional: 0-based month this request is for (= months played); a
                                                   # repeat of a played month with the same decisions returns it again
@@ -106,8 +112,13 @@ LAB_LAYOUT_KEYS = ("aspect", "door_wall", "door_pos", "windows")   # lab:layout
 
 
 def _dump(body: BaseModel) -> dict:
-    """lab:layout: drop the room-shape keys when unset, so an old request gives the old answer byte for byte."""
-    return body.model_dump(exclude={k for k in LAB_LAYOUT_KEYS if getattr(body, k, None) is None})
+    """요청 본문 → 엔진 입력. 고르지 않은 가게 모양·출입문(None)은 넣지 않는다 (예전 입력과 같은 결과·같은 입력 기록).
+    lab:layout 의 aspect·door_wall·door_pos·windows 와 upstream 의 shape·door 모두 같은 규칙."""
+    d = body.model_dump()
+    for k in (*LAB_LAYOUT_KEYS, "shape", "door"):
+        if d.get(k) is None:
+            d.pop(k, None)
+    return d
 
 
 @router.post("/preview")

@@ -35,6 +35,15 @@ def L(key):
     return v("layout", key)
 
 
+# 가게 모양 (upstream 선택지): 가로 ÷ 세로. 고르지 않으면 params layout.aspect (1.6)
+# lab:merge: lab:layout 의 aspect(자유 비율)가 있으면 그것이 이기고, 없을 때만 shape 를 aspect 로 바꿔 쓴다.
+SHAPE_ASPECT = {"wide": None, "square": 1.0, "deep": 0.7}
+
+
+def _aspect(cfg: dict) -> float | None:
+    return cfg.get("aspect") or SHAPE_ASPECT.get(cfg.get("shape") or "wide")
+
+
 def room_dims(size_pyeong: float, aspect: float | None = None) -> tuple[float, float, float]:
     area = size_pyeong * PYEONG_M2
     width = math.sqrt(area * (aspect or L("aspect")))   # lab:layout optional aspect override
@@ -47,13 +56,15 @@ WALLS = ("front", "back", "left", "right")
 
 def door_frame(cfg: dict) -> dict:
     """Real room dims, the door-frame dims and the door centre along the door wall (door frame x)."""
-    area, W, D = room_dims(cfg["size_pyeong"], cfg.get("aspect"))
+    area, W, D = room_dims(cfg["size_pyeong"], _aspect(cfg))
     wall = cfg.get("door_wall") or "front"
     if wall not in WALLS:
         raise ValueError(f"unknown door_wall {wall}")
     Wc, Dc = (W, D) if wall in ("front", "back") else (D, W)
     m = L("entry_w") / 2
     pos = cfg.get("door_pos")
+    if pos is None and cfg.get("door_wall") is None and cfg.get("door") == "left":
+        pos = 0.0                                     # lab:merge upstream door="left" = 앞 벽 왼쪽 끝 (오른쪽 문 배치의 거울)
     if pos is None:
         xd = Wc - m                                   # the old default: entry path along the right-hand wall
     else:
@@ -104,7 +115,7 @@ def seat_band_start(cfg: dict) -> float:
 
 def solve(cfg: dict) -> dict:
     """cfg keys: size_pyeong, tables, chairs, bar_seats, espresso_groups, showcase, oven, kiosks, pos
-    (+ lab:layout aspect, door_wall, door_pos). Door left of the middle = the right-door solution mirrored."""
+    (+ lab:layout aspect, door_wall, door_pos; upstream shape/door map onto these). Door left of the middle = the right-door solution mirrored."""
     f = door_frame(cfg)
     Wc, xd = f["Wc"], f["xd"]
     mirror = xd < Wc / 2 - 1e-9

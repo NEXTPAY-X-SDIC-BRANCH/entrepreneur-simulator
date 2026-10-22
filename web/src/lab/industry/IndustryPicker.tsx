@@ -7,7 +7,7 @@ export function IndustryPicker({ value, onChange }: { value: string; onChange: (
   return (
     <fieldset>
       <legend>어떤 가게를 열고 싶으세요?</legend>
-      <p className="m-help">서울에 가게가 많고 새로 여는 곳이 많은 외식 업종 일곱 개예요.</p>
+      <p className="m-help">서울에 가게가 많고 새로 여는 곳이 많은 외식 업종 일곱 개와 옷가게예요.</p>
       {PICKER_GROUPS.map((g) => (
         <div className="ip-grp" key={g.key} role="group" aria-labelledby={`ip-${g.key}`}>
           <h3 id={`ip-${g.key}`}>{g.label}</h3>

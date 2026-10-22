@@ -23,14 +23,21 @@ import { roomDims, shapeOf } from "../lab/layout/plan"; // lab:layout
 import ScoreCard from "../lab/score/ScoreCard"; // lab:score
 import { bbqSummary } from "../lab/score/summary"; // lab:score
 import RecordAttempt from "../lab/modes/RecordAttempt"; // lab:modes 하드 모드 판 기록 (카페·새 업종과 같은 방식: 결과 화면이 판을 남긴다)
+import Assume from "./Assume";
+import PriceTrend from "./PriceTrend";
+import { sbizDelivery } from "./quickfood";
+import { BBQ_REF, bbqBand } from "./priceCompare";
+import CashFlow, { type CfMonth } from "./CashFlow";
 
 const API = (import.meta.env.VITE_ENGINE_API as string | undefined) ?? "http://127.0.0.1:8010";
 const SHIRTS = ["#e0735a", "#43648a", "#d4a032", "#5679a3", "#ec8a4f", "#35614a"];
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
 const TURNS = 6;
 
+// lab:menu  메뉴판이 있으면 엔진이 삼겹살 가격 대신 메뉴로 객단가·원가를 계산. 나머지는 upstream hard 모드 선택지 (research/season_params.yaml base_plan)
 type Plan = { meat_price: number; staff_per_shift: number; close_hour: number; marketing_budget: number; meat_grade: string; banchan: number; delivery: string;
-  menu?: EngineMenuItem[]; table_cost?: number }; // lab:menu  메뉴판이 있으면 엔진이 삼겹살 가격 대신 메뉴로 객단가·원가를 계산
+  menu?: EngineMenuItem[]; table_cost?: number;
+  soju_price?: number; lunch?: boolean; review_event?: boolean; group_reservations?: boolean; hygiene?: string; staff_grilling?: boolean; menu_extras?: string[] };
 type Night = { dow: string; rain: boolean; revenue: number; covers: number; walkaways: number; cogs: number; fees: number };
 type Ev = { id: string; label: string; group: string; mechanism: string | null; outcome?: string | null };
 type Option = { id: string; label: string; hint: string; downside: string; tag: string };
@@ -41,6 +48,7 @@ type Decision = Dp & {
 };
 type MonthResult = {
   month: number; month_index: number; label: string; note: string | null; demand_index: number; events: Ev[]; decisions: Decision[];
+  cost_index?: { meat: number; veg: number } | null; cost_range?: { meat: [number, number]; veg: [number, number] } | null;
   kpis: Record<string, number>; p10: { revenue: number; op: number }; p50: { revenue: number; op: number }; p90: { revenue: number; op: number };
   nights: Night[]; reviews: { stars: number }[]; owner_line: { text?: string } | null;
   state_after: { cash: number; rating: number; review_count: number; awareness: number; regular_share: number; fatigue: number };
@@ -49,7 +57,7 @@ type MonthResult = {
   base_plan: Plan; shadow: { revenue: number; op: number; covers: number }; waterfall: { driver: string; delta: number }[];
 };
 type Tick = { label: string; amount: number }; // 원
-type Day = { n: number; date: Date; open: boolean; covers: number; rain: boolean; revenue: number; ticks: Tick[]; notes: string[]; net: number; cash: number };
+type Day = { n: number; date: Date; open: boolean; covers: number; rain: boolean; revenue: number; ticks: Tick[]; notes: string[]; net: number; cash: number; fixedShare: number; cum: number };
 type Done = { result: MonthResult; plan: Plan; days: Day[]; cashStart: number; cashEnd: number; year: number; picked: Record<string, string> };
 // 고르지 않은 대응을 골랐다면: 같은 달을 그 대응으로 한 번 더 계산한 결과 (고른 뒤에만 계산한다)
 type Alt = { label: string; month_op: number; op_gap: number; revenue: number; night_revenue: number; night_covers: number };
@@ -95,6 +103,22 @@ const LEVERS: LeverDef[] = [
     can: (p, d) => { const i = GRADES.indexOf(p.meat_grade as (typeof GRADES)[number]); return i + d >= 0 && i + d < GRADES.length; },
     move: (p, d) => ({ ...p, meat_grade: GRADES[GRADES.indexOf(p.meat_grade as (typeof GRADES)[number]) + d] }),
   },
+  { key: "soju_price", label: "소주 한 병 가격", hint: "서울 고깃집 보통 5,000원. 비싸면 술 매출은 늘지만 '비싸다'는 손님이 늘어요", text: (p) => `${fmt(p.soju_price ?? 5000)}원`,
+    can: (p, d) => { const v = (p.soju_price ?? 5000) + d * 500; return v >= 4000 && v <= 7000; }, move: (p, d) => ({ ...p, soju_price: (p.soju_price ?? 5000) + d * 500 }) },
+  { key: "lunch", label: "점심 영업", hint: "점심 특선(1인 11,000원)으로 하루 7명쯤 더 받아요. 사장님과 직원이 하루 두 번 영업해 피로가 쌓여요", text: (p) => (p.lunch ? "해요" : "안 해요"),
+    can: (p, d) => (d > 0 ? !p.lunch : !!p.lunch), move: (p, d) => ({ ...p, lunch: d > 0 }) },
+  { key: "staff_grilling", label: "직원이 고기 굽기", hint: "체류 시간이 짧아져 회전이 빨라지고 만족이 올라요. 테이블마다 직원 시간이 10분 더 들어요", text: (p) => (p.staff_grilling ? "직원이 구워요" : "손님이 구워요"),
+    can: (p, d) => (d > 0 ? !p.staff_grilling : !!p.staff_grilling), move: (p, d) => ({ ...p, staff_grilling: d > 0 }) },
+  { key: "review_event", label: "리뷰 이벤트", hint: "리뷰를 쓰면 음료 한 병. 리뷰가 1.5배 늘고 별점이 오르지만, 일부 손님은 별점이 부풀려졌다고 봐요", text: (p) => (p.review_event ? "해요" : "안 해요"),
+    can: (p, d) => (d > 0 ? !p.review_event : !!p.review_event), move: (p, d) => ({ ...p, review_event: d > 0 }) },
+  { key: "group_reservations", label: "단체 예약", hint: "회식 예약을 받아요. 손님이 늘지만 노쇼가 20%쯤 나고 예약석이 비어 있는 동안 다른 손님을 못 받아요", text: (p) => (p.group_reservations ? "받아요" : "안 받아요"),
+    can: (p, d) => (d > 0 ? !p.group_reservations : !!p.group_reservations), move: (p, d) => ({ ...p, group_reservations: d > 0 }) },
+  { key: "hygiene", label: "청결 관리", hint: "높이면 청소 시간이 늘지만 위생 점검에 덜 걸리고 만족이 올라요", text: (p) => ({ basic: "기본만", normal: "보통", high: "꼼꼼히" } as Record<string, string>)[p.hygiene ?? "normal"],
+    can: (p, d) => { const i = ["basic", "normal", "high"].indexOf(p.hygiene ?? "normal") + d; return i >= 0 && i <= 2; },
+    move: (p, d) => ({ ...p, hygiene: ["basic", "normal", "high"][["basic", "normal", "high"].indexOf(p.hygiene ?? "normal") + d] }) },
+  { key: "menu_extras", label: "곁들임 메뉴", hint: "냉삼·통삼겹·미나리를 더 팔아요. 객단가가 오르지만 원가와 서빙 시간이 늘어요", text: (p) => ((p.menu_extras ?? []).length ? (p.menu_extras ?? []).map((x) => ({ naengsam: "냉삼", tongsam: "통삼겹", minari: "미나리" } as Record<string, string>)[x]).join("·") : "없음"),
+    can: (p, d) => { const n = (p.menu_extras ?? []).length + d; return n >= 0 && n <= 3; },
+    move: (p, d) => ({ ...p, menu_extras: d > 0 ? ["naengsam", "tongsam", "minari"].slice(0, (p.menu_extras ?? []).length + 1) : (p.menu_extras ?? []).slice(0, -1) }) },
   {
     key: "delivery", label: "배달", hint: DELIVERY_HINT, text: (p) => DELIVERY_KO[p.delivery] ?? p.delivery,
     can: (p, d) => { const i = DELIVERY.indexOf(p.delivery as (typeof DELIVERY)[number]); return i + d >= 0 && i + d < DELIVERY.length; },
@@ -165,6 +189,8 @@ function recommend(last: Done | undefined, plan: Plan): Rec[] {
     n = { ...lp, meat_grade: GRADES[gi - 1] };
     rec("meat_grade", n, `재료비가 매출의 ${Math.round((k.cogs / k.revenue) * 100)}%예요. 한 단계 낮춰 원가를 줄여 보세요.`);
   } else rec("meat_grade", lp, "바꿀 신호가 없어요. 바꾸면 단골이 조금 빠져요.");
+  // 배달: 추천 규칙이 없어 지금 구간을 그대로 둔다 (구간은 앱 안 매출 순위라 사장이 정하는 값이 아니다)
+  rec("delivery", lp, lp.delivery === "none" ? "배달을 켜면 매출이 늘지만 수수료와 배달비가 나가요." : "앱 안 매출 순위 구간이라 그대로 둬요.");
   for (const lv of LEVERS) if (!out.some((r) => r.lever.key === lv.key)) rec(lv.key, lp, ""); // lab:finance bugfix: 배달 추천이 없어 2달째 계획 화면이 멈췄다 (main에도 있음)
   return LEVERS.map((l) => out.find((r) => r.lever.key === l.key)!);
 }
@@ -193,6 +219,7 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
   const nOpen = Math.max(1, Math.min(open.length, nights.length));
   const firstSat = all.find((d) => d.getDay() === 6)?.getDate();
   let cash = cashStart;
+  let cum = 0; // 이달 1일부터 오늘까지의 현금 변화 (lab:cost 로 인건비·생활비·운영비가 날마다 빠지므로 고정비 몫이 이미 들어 있다)
   return all.map((dt, i) => {
     const nt = byDate.get(dt.getDate());
     const revenue = nt ? (k.revenue * nt.revenue) / sumRev : 0;
@@ -225,7 +252,8 @@ function buildDays(r: MonthResult, cashStart: number, year: number, ctx: { imput
     }
     const net = ticks.reduce((a, t) => a + t.amount, 0);
     cash += net;
-    return { n: i + 1, date: dt, open: !!nt, covers: nt?.covers ?? 0, rain: !!nt?.rain, revenue, ticks, notes, net, cash };
+    cum += net;
+    return { n: i + 1, date: dt, open: !!nt, covers: nt?.covers ?? 0, rain: !!nt?.rain, revenue, ticks, notes, net, cash, fixedShare: 0, cum };
   });
 }
 
@@ -282,7 +310,7 @@ function Stepper({ lv, plan, prev, set }: { lv: LeverDef; plan: Plan; prev?: Pla
     <div className={`sx-step${changed ? " is-changed" : ""}`}>
       <div className="sx-step-t">
         <span id={id} className="sx-step-l">{lv.label}</span>
-        <small>{lv.key === "meat_grade" ? GRADE_HINT[plan.meat_grade] : lv.hint}</small>
+        <small>{lv.key === "meat_grade" ? GRADE_HINT[plan.meat_grade] : lv.hint}{lv.key === "delivery" && <Assume id="bbqDelivery" />}</small>
         {changed && <small className="sx-step-prev">지난달 {lv.text(prev!)}</small>}
       </div>
       <div className="sx-step-c">
@@ -294,7 +322,8 @@ function Stepper({ lv, plan, prev, set }: { lv: LeverDef; plan: Plan; prev?: Pla
   );
 }
 
-function CashChart({ start, months, labels, compact }: { start: number; months: Done[]; labels: number[]; compact?: boolean }) {
+// 옷가게 시뮬레이션(ApparelSim.tsx)도 같은 그래프를 쓴다: 달마다 날짜별 현금(원)만 있으면 된다
+export function CashChart({ start, months, labels, compact }: { start: number; months: { days: { cash: number }[] }[]; labels: number[]; compact?: boolean }) {
   const W = compact ? 360 : 640, H = compact ? 170 : 200, P = { l: compact ? 58 : 70, r: 10, t: 12, b: 24 };
   const pts: { x: number; v: number }[] = [{ x: 0, v: start }];
   months.forEach((m, mi) => m.days.forEach((d, di) => pts.push({ x: mi * 31 + di + 1, v: d.cash })));
@@ -324,7 +353,8 @@ function CashChart({ start, months, labels, compact }: { start: number; months: 
 }
 
 // lab:cost — 정산표를 비용 쌓기(매출 막대 + 줄별 금액)로: 인건비는 알바와 사장 가상 급여, 매장 운영비는 내역까지
-function SettleTable({ m, imputed }: { m: MonthResult; imputed: number }) {
+// lab:merge upstream 손익계산서의 이달 시세(10월 = 1)와 감가상각·이자·세전이익 줄을 아래 메모로 붙였다
+function SettleTable({ m, imputed, dep, interest }: { m: MonthResult; imputed: number; dep: number; interest: number }) {
   const k = m.kpis;
   const per = k.delivery_orders >= 1 ? k.delivery_revenue / k.delivery_orders : 0;
   const net = per ? per - k.delivery_fee / k.delivery_orders - per * (k.cogs / k.revenue) : 0;
@@ -335,6 +365,11 @@ function SettleTable({ m, imputed }: { m: MonthResult; imputed: number }) {
         <ul className="sx-cs-notes">
           {k.delivery_revenue > 0 && <li>배달 매출 {man(won(k.delivery_revenue))} 포함, 주문 {fmt(Math.round(k.delivery_orders))}건. 배달 수수료 {man(won(k.delivery_fee))}(배달 매출의 {Math.round((k.delivery_fee / k.delivery_revenue) * 100)}%)는 수수료 줄에 들어 있어요.{per ? ` 한 건 평균 ${fmt(Math.round(per / 100) * 100)}원 주문에 재료비까지 빼면 ${fmt(Math.round(net / 100) * 100)}원 남아요.` : ""}</li>}
           <li>비슷한 달 10번 중 8번은 영업이익이 {signed(won(m.p10.op))} ~ {signed(won(m.p90.op))}예요.</li>
+          {m.cost_index && m.cost_range && m.month !== 10 && (
+            <li>이달 시세 (10월 = 1): 돼지고기 {m.cost_index.meat.toFixed(2)}배 (지난 시즌 {m.cost_range.meat[0].toFixed(2)}~{m.cost_range.meat[1].toFixed(2)}),
+              채소 {m.cost_index.veg.toFixed(2)}배 ({m.cost_range.veg[0].toFixed(2)}~{m.cost_range.veg[1].toFixed(2)}). 예측이 아니라 과거 같은 달 값이에요 (통계청 생활물가지수, KAMIS 서울 도매가)</li>
+          )}
+          <li>영업이익은 감가상각 전이에요. 감가상각비 −{man(won(dep))} (인테리어·설비를 5년에 나눈 몫, 현금은 안 나가요){interest > 0 ? <>, 이자비용 −{man(won(interest))} (연 {+(LOAN_RATE * 100).toFixed(2)}%)</> : null}를 빼면 세전이익 <b>{signed(won(m.kpis.op - dep - interest))}</b>이에요. 부가세·소득세는 아래 '세금 떼어 둘 돈'에서 따로 봐요.</li>
         </ul>
       }
       foot={VAT_NOTE} />
@@ -414,6 +449,17 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const cost = useMemo(() => openingCost(store, profile.gu, profile.keyMoney ?? 0), [store, profile.gu, profile.keyMoney]);
   const startCash = (profile.capital + store.loan - cost.total) * 1e4; // 원
   const interest = (store.loan * 1e4 * LOAN_RATE) / 12;
+  // 감가상각: 보증금·권리금·첫 재료처럼 쓰고 사라지지 않거나 바로 쓰는 돈은 빼고, 시설·가구만 60개월로 나눈다 (SettleTable 주석)
+  const dep = (cost.lines.filter((l) => ["interior", "equip", "seat", "deco", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) * 1e4) / 60;
+  // 현금흐름표·영수증 (원). 사장 가상 급여는 현금이 안 나가므로 인건비에서 뺀다
+  const cfOf = (ds: Done[]): CfMonth[] => ds.map((d) => {
+    const k = d.result.kpis, rc = d.result.rent_card; // lab:finance 월세 카드 할부는 엔진 결과(rent_card)를 따른다
+    return { month: d.result.month, start: d.cashStart, end: d.cashEnd, lines: [
+      { label: "매출", amount: k.revenue }, { label: "재료비 (고기·채소·주류)", amount: -k.cogs }, { label: "알바·직원 급여", amount: -Math.max(0, k.labor - imputed) },
+      { label: "월세", amount: -(rc && rc.charged > 0 ? 0 : k.rent) }, { label: "카드 할부 대금 (월세)", amount: -(rc?.paid ?? 0) }, { label: "매장 운영비", amount: -k.mgmt },
+      { label: "카드·배달 수수료", amount: -k.fees }, { label: "사장 생활비", amount: -draw }, { label: "대출 이자", amount: -interest },
+    ], tax: { revenue: k.revenue, farmBuy: k.cogs * 0.8, taxableBuy: k.rent + k.mgmt * 0.6 + (k.delivery_fee ?? 0), profit: k.op + imputed - dep - interest } };
+  });
   const draw = OWNER_DRAW * 1e4;
   const now = new Date();
   const [startMonth, setStartMonth] = useState((now.getMonth() + 1) % 12 + 1); // 기본: 다음 달부터
@@ -494,6 +540,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     staff: plan.staff_per_shift, price: plan.meat_price, baseline_runs: 150, quarter_index: st.qidx, area_type: st.areaType ?? "일반",
     start_month: startMonth,
     flow: flowShape(dongCode, profile.gu), // 동네의 요일·시간대·연령 비율 (없으면 엔진이 기준 상권 값을 씀)
+    delivery_gu_index: sbizDelivery("bbq", profile.gu)?.gu?.index, // 소상공인365 배달분석 고기·구이: 이 구 ÷ 서울
   });
 
   const [porkFc, setPorkFc] = useState(false); // integrate: lab:pork 돼지고기 도매가 예측을 원가에 반영 (기본 끔)
@@ -516,21 +563,22 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
       const s = await post("/season/new", { seed, opening: true, cash: Math.max(0, startCash) });
       states.current = [s]; cashAtStart.current = [startCash];
       setEngineState(s); setDone([]); setLedger(null); setDayIdx(0);
-      setBusy(false); swap("plan");
+      setBusy(false);
+      swap("plan");
     } catch (e) { setErr(String(e)); setBusy(false); }
   };
 
   // 운영 계획을 확정하면 먼저 이번 달 사건과 그 달 사건의 대응 상황을 받는다
-  const startMonthCall = async () => {
-    if (!engineState) return;
+  const startMonthCall = async (p: Plan = plan, es: Record<string, unknown> | null = engineState) => {
+    if (!es) return;
     setErr(""); setBusy(true);
     try {
-      const s = await post("/season/start", { state: engineState, plan: withCard(plan), store: spec() }); // lab:finance
+      const s = await post("/season/start", { state: es, plan: withCard(p), store: spec() }); // lab:finance
       const points: Dp[] = s.decision_points ?? [];
       setDps({ events: s.events ?? [], points, note: s.note ?? null });
       setChoices(Object.fromEntries(points.map((p) => [p.id, p.default])));
       setBusy(false);
-      if (points.length) swap("scenario"); else await playMonth({});
+      if (points.length) swap("scenario"); else await playMonth({}, p, es);
     } catch (e) { setErr(String(e)); setBusy(false); }
   };
 
@@ -555,16 +603,16 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     setAltBusy(false);
   };
 
-  const playMonth = async (picked: Record<string, string>) => {
-    if (!engineState) return;
+  const playMonth = async (picked: Record<string, string>, p: Plan = plan, es: Record<string, unknown> | null = engineState) => {
+    if (!es) return;
     setErr(""); setBusy(true);
     try {
-      const out = await post("/season/play", { state: engineState, plan: withCard(plan), store: spec(), night: true, night_choices: picked, band_runs: 20 }); // lab:finance
+      const out = await post("/season/play", { state: es, plan: withCard(p), store: spec(), night: true, night_choices: picked, band_runs: 20 }); // lab:finance
       const result: MonthResult = out.result;
       const idx = done.length;
       const cs = cashAtStart.current[idx];
       const days = buildDays(result, cs, yearOf(idx), { imputed, draw, interest });
-      const entry: Done = { result, plan, days, cashStart: cs, cashEnd: days.at(-1)?.cash ?? cs, year: yearOf(idx), picked };
+      const entry: Done = { result, plan: p, days, cashStart: cs, cashEnd: days.at(-1)?.cash ?? cs, year: yearOf(idx), picked };
       setDone((d) => [...d, entry]);
       setAlts({});
       setEngineState(out.state);
@@ -763,13 +811,17 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
           <div className="sx-paper">
             <p className="sx-r-title">현금 흐름 영수증</p>
             <p className="sx-r-sub">{profile.gu}{st.area ? ` ${st.area}` : ""} · 시작 현금 {man(won(cashAtStart.current[0] ?? startCash))}</p>
+            <p className="sx-r-acc">이달 누적은 1일부터 오늘까지 현금이 늘거나 준 합이에요. 인건비·사장 생활비·매장 운영비는 문 연 날마다 하루치씩, 월세와 이자는 첫날에 빠져요.</p>
             {receiptDays.length === 0 && <p className="sx-r-empty">아직 찍힌 내역이 없어요. 첫 달이 시작되면 하루씩 쌓여요.</p>}
             {receiptDays.map((x, i) => (
               <section key={`${x.mi}-${x.n}`} className="sx-r-day">
                 {(i === 0 || receiptDays[i - 1].mi !== x.mi) && <p className="sx-r-month">{done[x.mi].result.month}월</p>}
                 <p className="sx-r-head"><b>{x.date.getMonth() + 1}/{x.date.getDate()} ({DOW_KO[x.date.getDay()]})</b><span>{x.open ? `손님 ${x.covers}명${x.rain ? " · 비" : ""}` : "쉬는 날"}</span></p>
                 {x.notes.map((n) => <p key={n} className="sx-r-note">{n}</p>)}
-                <ul>{x.ticks.map((t) => <li key={t.label} className={t.amount >= 0 ? "in" : "out"}><span>{t.label}</span><b>{signed(won(t.amount))}</b></li>)}</ul>
+                <ul>
+                  {x.ticks.map((t) => <li key={t.label} className={t.amount >= 0 ? "in" : "out"}><span>{t.label}</span><b>{signed(won(t.amount))}</b></li>)}
+                  {x.open && <li className={`acc-sum ${x.cum >= 0 ? "in" : "out"}`}><span>이달 누적</span><b>{signed(won(x.cum))}</b></li>}
+                </ul>
                 <p className="sx-r-sum"><span>남은 현금</span><b>{man(won(x.cash))}</b></p>
               </section>
             ))}
@@ -794,7 +846,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
             {view === "intro" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{profile.gu}{st.area ? ` ${st.area}` : ""}에서 6개월</h1>
+                  <h1>{profile.gu}{st.area ? ` ${st.area}` : ""}에서 6개월</h1>{/* lab:merge 이지/하드는 시작 화면(ModePick)에서 고른다. 이 화면은 하드 모드 */}
                   <Kpis items={[
                     { label: "가게", value: `${store.pyeong}평 · ${stats.seats}석` },
                     { label: "평당 월세", value: `${st.rent}만원` },
@@ -859,12 +911,17 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       {cur && recs.some((r) => r.change) && (
                         <button type="button" className="sx-ghost" onClick={() => setPlan(recs.reduce((p, r) => (r.change ? { ...p, [r.lever.key]: r.next[r.lever.key] } : p), plan))}>추천대로 적용</button>
                       )}
+                      {(() => {
+                        const b = bbqBand(plan.meat_price); // lab:menu 메뉴판이 있으면 meat_price는 메뉴판에서 환산한 삼겹살 기준 가격
+                        return <p className="sx-note sx-price">가격 비교 <span className={`sx-badge ${b.tone}`}>{b.band}</span> {b.text}<Assume id="priceRef" what={`비교 기준: ${BBQ_REF.src}. 동네 단위 메뉴 가격 자료가 없어 서울 평균과 비교해요. ±5% 안을 '비슷'으로 봐요 (가정)`} /></p>;
+                      })()}
+                      <PriceTrend month={planMonth} />
                     </section>
                     <section className="sx-right" aria-label="이번 달 운영 계획">
                       <h2>{planMonth}월에 이렇게 할게요</h2>
                       <div className="sx-steps">
                         {plan.menu && <MenuSummary doc={menuDoc} onEdit={() => swap("menu")} />}{/* lab:menu 삼겹살 가격 자리 */}
-                        {LEVERS.filter((lv) => !(plan.menu && lv.key === "meat_price")).map((lv) => <Stepper key={lv.key} lv={lv} plan={plan} prev={cur?.plan} set={setPlan} />)}
+                        {LEVERS.filter((lv) => !(plan.menu && (lv.key === "meat_price" || lv.key === "soju_price"))).map((lv) => <Stepper key={lv.key} lv={lv} plan={plan} prev={cur?.plan} set={setPlan} />)}
                       </div>
                       <p className="sx-note">가격이나 고기를 바꾸면 그달 단골이 조금 빠져요.</p>
                       <label className="sx-note"><input type="checkbox" checked={porkFc} onChange={(e) => setPorkFc(e.target.checked)} /> 고깃값을 돼지고기 도매가 예측대로 바꾸기 (축산물품질평가원 시세로 만든 추정, 상단 '돼지고기 시세'에서 근거 확인)</label>{/* integrate: lab:pork */}
@@ -873,7 +930,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                   {err && <p className="se-err" role="alert">{err}</p>}
                 </div>
                 <footer className="sx-foot">
-                  <button type="button" className="se-btn" onClick={startMonthCall} disabled={busy}>{busy ? "엔진이 계산 중이에요" : `${planMonth}월 시작`}</button>
+                  <button type="button" className="se-btn" onClick={() => void startMonthCall()} disabled={busy}>{busy ? "엔진이 계산 중이에요" : `${planMonth}월 시작`}</button>
                 </footer>
               </>
             )}
@@ -896,12 +953,12 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                   )}
                   <section className="sx-sec">
                     <h2>이달의 사건, 어떻게 대응할까요?</h2>
-                    <p className="sx-note">고른 대응대로 그달 계산에 반영돼요. 처음에는 기본 대응이 골라져 있어요.</p>
+                    <p className="sx-note">사장님의 선택이 이번 달 이익을 바꿔요. 장점(+)과 단점(−)을 보고 하나를 골라 주세요. 처음에는 기본 대응이 골라져 있어요.</p>
                   </section>
-                  <div className="sx-dps">
+                  <div className={`sx-dps${dps.points.length === 1 ? " is-single" : ""}`}>
                     {dps.points.map((dp) => (
                       <div key={dp.id} className="sx-dp" role="radiogroup" aria-labelledby={`${dp.id}-h`}
-                        style={{ gridRow: `span ${2 + Math.max(...dps.points.map((x) => x.options.length))}` }}>
+                        style={dps.points.length === 1 ? undefined : { gridRow: `span ${2 + Math.max(...dps.points.map((x) => x.options.length))}` }}>
                         <header className="sx-dp-h"><span className="sx-clock">{dp.clock}</span><h3 id={`${dp.id}-h`}>{dp.title}</h3></header>
                         <div className="sx-dp-q">
                           <p>{dp.prompt}</p>
@@ -950,7 +1007,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                     <div className="sx-settle">
                       <section className="sx-sec">
                         <h2>정산표</h2>
-                        <SettleTable m={r} imputed={imputed} />
+                        <SettleTable m={r} imputed={imputed} dep={dep} interest={interest} />
                         <small>월말 현금은 영업이익에서 사장 생활비 {man(won(draw))}와 이자를 빼고, 사장 가상 급여는 되돌린 값이에요.</small>
                         <CardMonthLine rc={r.rent_card} />{/* lab:finance */}
                       </section>
@@ -962,6 +1019,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                         {r.reviews.length > 0 && <p className="sx-note">새 리뷰 {r.reviews.length}건, 평균 ★ {(r.reviews.reduce((a, x) => a + x.stars, 0) / r.reviews.length).toFixed(1)}</p>}
                       </section>
                     </div>
+                    <CashFlow months={cfOf(done)} kind="food" shop="고깃집" />
 
                     {r.decisions.length > 0 && (
                       <section className="sx-sec">
@@ -1023,6 +1081,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       <section className="sx-sec">
                         <h2>남은 현금</h2>
                         <CashChart start={cashAtStart.current[0] ?? startCash} months={done} labels={monthSeq} />
+                        <CashFlow months={cfOf(done)} kind="food" shop="고깃집" />
                       </section>
                       <section className="sx-sec">
                         <h2>월별 현금</h2>
@@ -1039,7 +1098,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                         {done.map((m, i) => (
                           <details key={i} className="sx-det" open={i === done.length - 1}>
                             <summary><b>{m.result.month}월</b><span className={tone(m.result.kpis.op)}>영업이익 {signedMan(m.result.kpis.op)}</span><span>월말 현금 {man(won(m.cashEnd))}</span></summary>
-                            <SettleTable m={m.result} imputed={imputed} />
+                            <SettleTable m={m.result} imputed={imputed} dep={dep} interest={interest} />
                             {m.result.events.length > 0 && <p className="sx-note">사건: {m.result.events.map((e) => e.label).join(", ")}</p>}
                             {m.result.decisions.length > 0 && (
                               <ul className="sx-wf">

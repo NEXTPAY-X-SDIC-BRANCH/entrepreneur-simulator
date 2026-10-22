@@ -126,8 +126,11 @@ def test_engine_setup_applies_mult_only_when_flagged():
         off = S._setup(st, plan, [])["params"]["cst_meat_cost_per_portion"]
         off2 = S._setup(st, {**plan, "use_pork_forecast": False}, [])["params"]["cst_meat_cost_per_portion"]
         on = S._setup(st, {**plan, "use_pork_forecast": True}, [])["params"]["cst_meat_cost_per_portion"]
-        assert off == off2 == S.data()["P"]["meat_grade"][grade]["cost"]
-        assert on == pytest.approx(off * (1 + (f - 1) * strength))
+        # lab:merge 끄면 upstream 달별 원가 지수(calendar cost_index.meat)를, 켜면 그 대신 예측 배율을 쓴다 (두 번 곱하지 않는다)
+        ci = (S._calendar(m).get("cost_index") or {}).get("meat", 1.0)
+        base = S.data()["P"]["meat_grade"][grade]["cost"]
+        assert off == off2 == pytest.approx(base * ci)
+        assert on == pytest.approx(base * (1 + (f - 1) * strength))
 
 
 def test_engine_month_identical_when_flag_off_and_cheaper_meat_when_mult_below_one():

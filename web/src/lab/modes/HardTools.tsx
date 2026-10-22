@@ -76,6 +76,7 @@ export default function HardTools({ profile, store, levers, cafeCfg, indCfg, ste
   const recorded = useAttempts(ind); // 판이 기록되면 머리글의 몇 판째 표시도 바로 바뀐다
   const n = (recorded.at(-1)?.n ?? 0) + 1;
   if (step !== "build" && step !== "sim") return null;
+  if (ind === "apparel") return null; // lab:merge 옷가게는 upstream 화면이라 민감도·다시 해보기 엔진이 없다 (성적표와 시도 비교는 upstream Scorecard가 한다)
 
   const retry = async () => {
     // 모든 업종: 결과 화면(성적표 옆 RecordAttempt)이 판을 남긴다. 아직 비교를 안 보여 준 판이면 비교부터 (성적표와 같은 요약이라 점수도 같다)

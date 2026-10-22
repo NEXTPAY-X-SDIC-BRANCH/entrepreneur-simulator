@@ -47,13 +47,21 @@ const DONG_METRICS_BY: Record<Industry, Record<DongMetric, DongMetricInfo>> = {
     compete: { label: "경쟁", hint: "카페 수 ÷ 동 면적", fmt: (v) => `${v}곳/㎢`, high: "카페가 많은 동네", low: "카페가 적은 동네" },
     cost, life,
   },
-  ...(Object.fromEntries(LAB_IDS.map((i) => [i, labDongMetrics(i)])) as Record<LabIndustry, Record<DongMetric, DongMetricInfo>>), // lab:industry
+  // 옷가게: 동네 지도의 매출은 그 업종 행정동 파일(rel), 경쟁은 그 업종 가게 수 ÷ 동 면적 (Mock.tsx adaptProfiles)
+  apparel: {
+    sales: { label: "매출", hint: "구 평균 대비 옷가게 점포당 매출", fmt: (v) => `구 평균의 ${Math.round(v * 100)}%`, high: "매출이 높은 동네", low: "매출이 낮은 동네" },
+    growth: { label: "흐름", hint: "연 개업률 − 연 폐업률", fmt: (v) => `${v > 0 ? "+" : ""}${v}%p`, high: "가게가 느는 동네", low: "가게가 주는 동네" },
+    compete: { label: "경쟁", hint: "옷가게 수 ÷ 동 면적", fmt: (v) => `${v}곳/㎢`, high: "옷가게가 많은 동네", low: "옷가게가 적은 동네" },
+    cost, life,
+  },
+  ...(Object.fromEntries(LAB_IDS.map((i) => [i, labDongMetrics(i)])) as Record<LabIndustry, Record<DongMetric, DongMetricInfo>>), // lab:industry (치킨·분식 포함, 동네 지도는 쓰지 않는다)
 };
 export const DONG_METRICS: Record<DongMetric, DongMetricInfo> = { ...DONG_METRICS_BY.bbq };
 // 업종을 바꾼다 (모델의 지표 문구와 이 파일의 동네 지도 문구를 함께). 화면이 읽기 전에 부른다.
 export function useIndustry(i: Industry) { setIndustry(i); Object.assign(DONG_METRICS, DONG_METRICS_BY[i]); }
 // 지도 알약에 보일 지표: 고깃집에는 영업 기간 자료가 없다
-export const dongMetricKeys = (): DongMetric[] => (Object.keys(DONG_METRICS) as DongMetric[]).filter((k) => k !== "life" || industry() === "cafe");
+export const dongMetricKeys = (): DongMetric[] => (Object.keys(DONG_METRICS) as DongMetric[])
+  .filter((k) => (k !== "life" || industry() === "cafe") && (k !== "growth" || industry() === "bbq" || industry() === "cafe")); // 옷가게·치킨·분식은 동네 성장률이 없다
 export function dongValue(m: DongMetric, p: DongProfile, d: Dong | undefined): number | null {
   if (m === "sales") return d?.rel ?? null;
   if (m === "growth") return p.growth;
@@ -86,7 +94,7 @@ const won = (x: number) => `${Math.round(x / 1e8).toLocaleString("ko-KR")}억`;
 export function insightOf(p: DongProfile): Insight | null {
   const c = cuts();
   if (!c) return null;
-  const cafe = industry() === "cafe", S = T().shop, W = cafe ? "카페 매출" : "한식 매출";
+  const cafe = industry() === "cafe", S = T().shop, W = cafe ? "카페 매출" : industry() === "apparel" ? "의류 매출" : "한식 매출";
   // 동 프로필의 월세와 기준선은 보증금 환산분이 들어간 값이라(분류는 그 값끼리 비교) 문장에는 지표 카드와 같은 현금 월세로 바꿔 쓴다
   const cash = (v: number) => Math.round(cashRent(v) * 10) / 10;
   const rent = cash(p.rent ?? p.rent_gu ?? 0), rentHi = cash(c.rent[1]).toFixed(1);
@@ -204,7 +212,8 @@ export type GuInsight = { summary: Summary; compete: "약함" | "보통" | "치�
 export function guInsight(gu: string, names: string[]): GuInsight {
   const st = guStat(gu), n = names.length;
   const third = Math.ceil(n / 3);
-  const S = T().shop, B = T().base, cafe = industry() === "cafe";
+  // 매출 성장률은 고깃집(한식)만 있다. 카페·옷가게는 growth 자리에 가게 수 흐름이 들어 있어 성장 문장을 쓰지 않는다
+  const S = T().shop, B = T().base, cafe = industry() !== "bbq";
   const rD = rankOf(gu, "demand", names), rG = rankOf(gu, "growth", names), rP = rankOf(gu, "pork", names), rC = rankOf(gu, "closure", names);
   const rentRank = names.filter((x) => guStat(x).rent > st.rent).length + 1; // 비싼 순
   const prev = growthMeta()?.prev ?? 2024;
@@ -226,7 +235,7 @@ export function guInsight(gu: string, names: string[]): GuInsight {
   if (rentRank <= third) warn.push({ tag: "월세 높음", tone: "warn", tab: "cost", text: rent });
   if (rentRank > n - third) good.push({ tag: "월세 저렴", tone: "good", tab: "cost", text: rent });
   // 생존
-  const closed = `${B} 10곳 중 ${(st.closure / 10).toFixed(1)}곳이 1년 안에 문을 닫았어요 (${cafe ? "최근 4분기" : "2025년"}). ${rankWord(rC, n, "많아요", "적어요")}.`;
+  const closed = `${B} 10곳 중 ${(st.closure / 10).toFixed(1)}곳이 1년 안에 문을 닫았어요 (${industry() === "cafe" ? "최근 4분기" : "2025년"}). ${rankWord(rC, n, "많아요", "적어요")}.`;
   if (rC <= third) warn.push({ tag: "폐업 많음", tone: "warn", tab: "survive", text: closed });
   if (rC > n - third) good.push({ tag: "폐업 적음", tone: "good", tab: "survive", text: closed });
   if (st.netOpen != null && st.netOpen > 0) good.push({ tag: "가게 증가", tone: "good", tab: "survive", text: `개업이 폐업보다 많아 ${iga(B)} 늘고 있어요 (${sign(st.netOpen)}${st.netOpen}%p).` });
@@ -239,7 +248,7 @@ export type BandCard = { label: string; value: string; sub: string };
 const people = (n: number | null) => (n == null ? "-" : n >= 10000 ? `${(Math.round(n / 1000) / 10).toLocaleString("ko-KR")}만 명` : `${n.toLocaleString("ko-KR")}명`);
 export function bandOf(p: DongProfile, ins: Insight): BandCard[] {
   const c = cuts();
-  const cafe = industry() === "cafe", S = T().shop, W = cafe ? "카페 매출 비중" : "한식 매출 비중";
+  const cafe = industry() === "cafe", S = T().shop, W = cafe ? "카페 매출 비중" : industry() === "apparel" ? "의류 매출 비중" : "한식 매출 비중";
   const out: BandCard[] = [];
   // 같은 숫자는 한 번만: 다른 카드나 띠의 설명 문장(ins.why)에 이미 나온 비율이면 넣지 않는다
   const nums = (t: string): string[] => t.match(/\d+(\.\d+)?%/g) ?? [];

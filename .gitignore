@@ -12,3 +12,4 @@ dist/
 *.log
 data/cache/
 data/lab/
+data/scores.json

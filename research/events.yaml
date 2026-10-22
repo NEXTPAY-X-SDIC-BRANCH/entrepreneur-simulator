@@ -14,17 +14,21 @@ _meta:
 pork_up:
   label: 돼지고기 도매가 상승
   group: 원가
-  prob: {10: 0.10, 11: 0.20, 12: 0.15, 1: 0.10, 2: 0.10, 3: 0.15}
-  effects: {params: [{param: cst_meat_cost_per_portion, op: mul, value: 1.08}]}
-  mechanism: 국내산 삼겹 1인분 원가 +8% (수입육은 영향 작음)
-  tag: S68;S48
+  # 10월→3월의 평소 흐름(점점 싸짐)은 calendar.yaml cost_index.meat에 있다. 이 사건은 그 흐름보다 비싼 달이다.
+  # 제주 지육 경락가 2023/24~2025/26, 11~3월 15개 달 중 평균 경로보다 5% 넘게 비싼 달 3개(20%), 평균 +6.6% (S102).
+  # 표본이 3시즌뿐이라 달마다 다르게 두지 않는다.
+  prob: {10: 0.20, 11: 0.20, 12: 0.20, 1: 0.20, 2: 0.20, 3: 0.20}
+  effects: {params: [{param: cst_meat_cost_per_portion, op: mul, value: 1.066}]}
+  mechanism: 그 달 도매가가 예년 같은 달보다 비싸서 국내산 삼겹 1인분 원가 +6.6% (수입육은 영향 작음)
+  tag: S102;S100;S68
 pork_down:
   label: 돼지고기 도매가 하락
   group: 원가
-  prob: {10: 0.05, 11: 0.05, 12: 0.05, 1: 0.15, 2: 0.12, 3: 0.05}
-  effects: {params: [{param: cst_meat_cost_per_portion, op: mul, value: 0.90}]}
-  mechanism: 1월 비수기 도매가 하락으로 1인분 원가 −10%
-  tag: S68
+  # 위와 같은 방법: 15개 달 중 5% 넘게 싼 달 1개(7%), −10.7%
+  prob: {10: 0.07, 11: 0.07, 12: 0.07, 1: 0.07, 2: 0.07, 3: 0.07}
+  effects: {params: [{param: cst_meat_cost_per_portion, op: mul, value: 0.893}]}
+  mechanism: 그 달 도매가가 예년 같은 달보다 싸서 1인분 원가 −10.7%
+  tag: S102;S100;S68
 import_up:
   label: 수입 냉동육 단가 상승
   group: 원가
@@ -35,10 +39,13 @@ import_up:
 veg_up:
   label: 쌈채소값 급등
   group: 원가
-  prob: {10: 0.08, 11: 0.05, 12: 0.08, 1: 0.15, 2: 0.12, 3: 0.05}
-  effects: {params: [{param: cst_banchan_cost_per_cover, op: mul, value: 1.30}]}
-  mechanism: 반찬·쌈채소 원가 +30%. 반찬 가짓수가 많을수록 타격이 크다
-  tag: 가정
+  # KAMIS 서울 중도매인 채소 6품목, 2020/21~2025/26 11~3월 30개 달 중 평균 경로보다 30% 넘게 비싼 달 5개(17%), 평균 +45%.
+  # (15%로 자르면 33%·+34%로 너무 잦아 다른 사건을 밀어낸다.) 값은 채소값 배율이고, 반찬 원가 중 채소 몫(banchan.veg_share)에만 곱한다.
+  # 싼 달(−30% 넘게, 13%)은 사건으로 두지 않아 채소 원가 기댓값이 평균보다 약 4% 높다.
+  prob: {10: 0.17, 11: 0.17, 12: 0.17, 1: 0.17, 2: 0.17, 3: 0.17}
+  effects: {params: [{param: cst_banchan_cost_per_cover, op: mul, value: 1.45}]}
+  mechanism: 쌈채소·양념 채소값이 예년 같은 달보다 +45%. 반찬 가짓수가 많을수록 타격이 크다
+  tag: S101
 rent_renewal:
   label: 재계약 임대료 인상
   group: 고정비
@@ -121,8 +128,8 @@ staff_quit:
   group: 인력
   prob: {}       # driven by staff count and fatigue (season_params.fatigue.quit_*), not by the calendar
   effects: {resolve: quit}
-  mechanism: 이번 달 교대당 알바 한 명이 빠지고 남은 사람의 피로가 오른다. 확률 = 알바 한 명당 월 0.07 (전 산업 월 이직률 4.9%, 외식 4.3%보다 높게 가정), 피로가 높으면 더 오른다
-  tag: 가정
+  mechanism: 이번 달 교대당 알바 한 명이 빠지고 남은 사람의 피로가 오른다. 확률 = 알바 한 명당 월 0.048 (음식점 30인미만 임시일용 자발적 이직률, S92), 피로가 높으면 더 오른다
+  tag: S92
 owner_sick:
   label: 사장님 몸살
   group: 인력
@@ -258,7 +265,7 @@ _night_decisions:
     months: [1]
     clock_min: 0
     prompt_ko: "한파 주의보가 내려 주말 저녁 예약이 줄줄이 취소되고 있습니다."
-    monthly_count: {value: 8, tag: 가정, note: "한파로 영향받는 저녁이 한 달에 8번 있다고 가정"}
+    monthly_count: {value: 4.8, tag: S94, note: "서울(108) 1월 최저기온 영하 10도 이하인 날 비율 0.155 × 31일, 2016~2025 (web/public/mock/weather_seoul.json). 이 날 모두 예약 취소가 생긴다고 본다"}
     condition: always
     default: nothing
     options:

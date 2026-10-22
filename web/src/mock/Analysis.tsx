@@ -9,16 +9,54 @@ import { BbqComp, CafeComp } from "./DongComp";
 import DongTrdar from "./DongTrdar";
 import DongFlow from "./DongFlow";
 import { DONG_METRICS, bandOf, dongMetricKeys, cuts, geoOf, guInsight, hasDongMap, insightOf, meatSalesNote, picksOf, profileOf, profilesOf, rankWord, type DongMetric, type KTab, type Line, type Tone } from "./area";
-import { FUNDS, FUNDS_SRC, type Fund } from "./funds";
-import BankRates from "../lab/finance/BankRates"; // lab:finance
+import { BANKS, BANK_COMPARE_URL, BANK_GUARANTEE_URL, BANK_SEARCH_URL, FUNDS, FUNDS_SRC, SEMAS_FUND_URL, type Fund } from "./funds";
+import LabBankRates from "../lab/finance/BankRates"; // lab:finance 은행·정책자금 금리를 골라 대출 이자에 쓴다 (자료는 upstream 비교공시)
 import RentCard from "../lab/finance/RentCard"; // lab:finance
 import { loanRateInfo, useFinance } from "../lab/finance/finance"; // lab:finance
 import KStartup from "./KStartup";
+import BankRates, { bankRateOf, useBankRates } from "./BankRates";
 import { CAFE_KEY_MONEY, cafeEstimate } from "./cafe";
+import { apparelEstimate } from "./apparel";
+import { QF_NAME, derived as qfDerived, qfEstimate } from "./quickfood";
 import { DEPOSIT_MONTHS, LOAN_RATE, METRICS, ecosRates, ymKo, RAMP, T, iga, dongsOf, guStat, krei, kreiMean, man, openingCost, rankOf, recommend, rentData, type Gu, type Metric, type Profile } from "./model";
 
 type Tab = "place" | "budget" | "fund";
-const TABS: { key: Tab; label: string }[] = [{ key: "place", label: "동네" }, { key: "budget", label: "드는 돈" }, { key: "fund", label: "모자란 돈" }];
+// '모자란 돈' 안의 토글: 네 묶음을 색과 번호 도형으로 구분한다 (색은 mock.css의 .m-ftab.is-*, .m-fund-head.is-*).
+type FundTab = "pre" | "post" | "bank" | "support";
+const FUND_TABS: { key: FundTab; label: string; title: string; lead: string }[] = [
+  { key: "pre", label: "사업자등록 전 정책자금", title: "사업자등록 전에 받을 수 있는 정책자금", lead: "가게를 열기 전, 예비창업자 신분으로 신청하는 자금이에요. 조건부 상품도 있어요." },
+  { key: "post", label: "개업 후 정책자금", title: "가게를 연 뒤에 받을 수 있는 정책자금", lead: "사업자등록 후 영업을 시작한 뒤에 신청하는 자금이에요." },
+  { key: "bank", label: "은행 대출 상품", title: "은행에서 사업자 대출 알아보기", lead: "은행 대출은 신용과 담보에 따라 조건이 달라요. 이 화면은 은행을 추천하거나 신청을 받지 않아요." },
+  { key: "support", label: "접수 중인 창업 지원사업", title: "지금 접수 중인 창업 지원사업", lead: "" },
+];
+// 정책자금 한 개를 카드로: 칩(조건부·청년), 이름, 기관, 한도(크게), 금리 비교, 신청처와 메모, 공고 링크
+function FundCard({ f }: { f: Fund }) {
+  const limit = f.limit.split(" (")[0];
+  const r = f.rate || f.floating ? rateVsBank(f) : null;
+  return (
+    <li className="fd-card">
+      <div className="fd-l">
+        <div className="fd-chips">
+          {f.youth && <span className="fd-chip">만 39세 이하</span>}
+          {f.pre === "조건부" && <span className="fd-chip is-warn">조건부</span>}
+          {f.program && <span className="fd-chip is-good">교육 프로그램</span>}
+          {f.rate && <span className="fd-chip is-rate">연 {f.rate[0] === f.rate[1] ? f.rate[0] : `${f.rate[0]}~${f.rate[1]}`}%</span>}
+        </div>
+        <b className="fd-name">{f.name}</b>
+        <small className="fd-org">{f.org} · {f.who}</small>
+      </div>
+      <strong className={`fd-limit${limit.length > 12 ? " is-long" : ""}`}>{limit}</strong>
+      <div className="fd-r">
+        <p className="fd-terms">{f.terms}</p>
+        {r && <p className={`fd-rate ${r.includes("높아요") ? "is-high" : ""}`}>{r}</p>}
+        <small className="fd-note">{f.where}. {f.note}</small>
+        {f.url && <a className="fd-go" href={f.url} target="_blank" rel="noreferrer">공식 안내 보기 →</a>}
+      </div>
+    </li>
+  );
+}
+
+const TABS: { key: Tab; label: string }[] =[{ key: "place", label: "동네" }, { key: "budget", label: "드는 돈" }, { key: "fund", label: "모자란 돈" }];
 const RUNWAY_MONTHS = 3; // 가정: 자리 잡기 전 석 달 치 적자와 생활비
 const MONTHLY_BURN = 550;
 const sign = (v: number) => (v > 0 ? "+" : "");
@@ -56,18 +94,22 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
 }) {
   const [tab, setTab] = useState<Tab>("place");
   useFinance(); // lab:finance 은행을 고르면 아래 '이 시뮬레이터의 대출 이자' 줄도 다시 그린다
+  const [ftab, setFtab] = useState<FundTab>("pre");
+  const rates = useBankRates();
   const [ktab, setKtab] = useState<KTab>("sales");
   const [recOpen, setRecOpen] = useState(false);
   const [metric, setMetric] = useState<Metric>("demand");
-  const [dmetric, setDmetric] = useState<DongMetric>("growth");
+  const [dmetric0, setDmetric] = useState<DongMetric>("growth");
+  // 업종마다 칠할 수 있는 지표가 다르다 (옷가게·치킨·분식은 동네 성장률이 없음). 고른 지표가 없으면 첫 지표(매출)로
+  const dmetric: DongMetric = dongMetricKeys().includes(dmetric0) ? dmetric0 : dongMetricKeys()[0];
   const [zoom, setZoom] = useState(false);
   const names = gus.map((g) => g.name);
   const st = guStat(profile.gu);
   const all = names.map(guStat);
   const span = (k: Metric) => { const v = all.map((a) => a[k]).filter((x): x is number => x != null); return { lo: Math.min(...v), hi: Math.max(...v) }; };
   // 드는 돈 견적은 사용자가 아직 꾸미지 않았을 수 있어서, 이 돈과 동네에 맞춘 추천 구성으로 낸다 (가게 꾸미기의 '추천 배치'와 같다)
-  const est = useMemo(() => profile.industry === "cafe" ? { pyeong: cafeEstimate(profile, RUNWAY_MONTHS * MONTHLY_BURN).pyeong } : recommend(profile).store, [profile.industry, profile.gu, profile.capital, profile.keyMoney, profile.rent, profile.dong, profile.age]); // eslint-disable-line react-hooks/exhaustive-deps
-  const cost = profile.industry === "cafe" ? cafeEstimate(profile, RUNWAY_MONTHS * MONTHLY_BURN).cost : openingCost(est as ReturnType<typeof recommend>["store"], profile.gu, profile.keyMoney ?? 0);
+  const est = useMemo(() => profile.industry === "cafe" ? { pyeong: cafeEstimate(profile, RUNWAY_MONTHS * MONTHLY_BURN).pyeong } : profile.industry === "apparel" ? { pyeong: apparelEstimate(profile).pyeong } : profile.industry === "chicken" || profile.industry === "bunsik" ? { pyeong: qfEstimate(profile, profile.industry).pyeong } : recommend(profile).store, [profile.industry, profile.gu, profile.capital, profile.keyMoney, profile.rent, profile.dong, profile.age]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cost = profile.industry === "cafe" ? cafeEstimate(profile, RUNWAY_MONTHS * MONTHLY_BURN).cost : profile.industry === "apparel" ? apparelEstimate(profile).cost : profile.industry === "chicken" || profile.industry === "bunsik" ? qfEstimate(profile, profile.industry).cost : openingCost(est as ReturnType<typeof recommend>["store"], profile.gu, profile.keyMoney ?? 0);
   const need = cost.total + RUNWAY_MONTHS * MONTHLY_BURN;
   const gap = need - profile.capital;
   const young = profile.age === "20대" || profile.age === "30대";
@@ -104,7 +146,9 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
   const scope = st.area ?? profile.gu;
   const summary = ins && dp ? ins.summary : gi.summary;
   const gMap = lowHigh()[metric];
-  const S = T().shop, B = T().base, cafe = S === "카페";
+  const S = T().shop, B = T().base, cafe = S === "카페", apparel = S === "옷가게";
+  const qfInd = profile.industry === "chicken" || profile.industry === "bunsik" ? profile.industry : null;
+  const lite = apparel || qfInd != null; // 구 단위만 있는 업종 (동네 매출·성장률 없음)
   const dMap = DONG_METRICS[dmetric];
   const n = names.length;
   const lines = [...summary.warn, ...summary.good];
@@ -120,11 +164,12 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
     {
       key: "sales", name: "매출", ...tagOf("sales", "평균 범위"), value: n0(st.sales), unit: "만원",
       sub: cafe ? (st.salesRange ? `4분의 1~4분의 3: ${n0(st.salesRange[0])}~${n0(st.salesRange[1])}만원` : "점포당 월매출 중앙값")
+        : lite ? `한 번에 평균 ${n0(st.ticket)}원 결제${qfInd ? " (매장 카드 결제)" : ""}`
         : growth != null ? `${growth >= 0 ? "▲" : "▼"} ${Math.abs(growth)}% 전년 대비 (${st.area ? "동 전체 한식 매출" : "한식"})` : "전년 자료 없음",
-      subTone: !cafe && growth != null ? (growth >= 0 ? "up" : "down") : undefined,
-      basis: cafe ? `카페 점포당 월매출 중앙값 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}` : `고깃집 점포당 월매출 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}`,
+      subTone: !cafe && !lite && growth != null ? (growth >= 0 ? "up" : "down") : undefined,
+      basis: cafe ? `카페 점포당 월매출 중앙값 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}` : apparel ? `옷가게 점포당 월매출 (카드 추정)${st.area ? ", 구 값 × 동네 위치" : ""}` : qfInd ? `${S} 점포당 월매출 (카드 추정 ÷ (1 − 배달 비중))` : `고깃집 점포당 월매출 (추정)${st.area ? ", 구 값 × 동네 위치" : ""}`,
       rows: [
-        { title: "하루 결제 건수", sub: cafe ? "한 곳당 하루 평균 카드 결제" : "한 곳당 하루 평균, 1건은 보통 한 팀", scope: guArea, value: `${st.tx}건` },
+        { title: "하루 결제 건수", sub: cafe || lite ? "한 곳당 하루 평균 카드 결제" : "한 곳당 하루 평균, 1건은 보통 한 팀", scope: guArea, value: `${st.tx}건` },
         { title: "매출 지수", sub: "서울 평균을 1로 놓았을 때", scope: st.area ? `${B} · 동 (구 값 × 동네 위치)` : guArea, value: st.demand.toFixed(2) },
         ...(dp?.apt_price != null ? [{ title: "아파트 평균 시가", sub: "동네 소득 수준을 가늠하는 값", scope: "아파트 · 동", value: `${(Math.round(dp.apt_price / 1e7) / 10).toFixed(1)}억원` }] : []),
       ],
@@ -137,6 +182,10 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
         // 고깃집은 한식음식점 값과 섞지 않고 고깃집 수만 따로 보인다
         cafe
           ? { title: `${B} 수`, sub: "카페를 포함한 커피·음료 가게 전체", scope: st.area ? `${B} · 동` : guArea, value: `${n0(st.area ? st.areaStores ?? 0 : st.stores)}곳` }
+          : qfInd ? { title: `${S} 수`, sub: `상권 안 ${B} · ${rankWord(rankOf(profile.gu, "pork", names), n, "많음", "적음")}`, scope: guArea, value: `${n0(st.stores)}곳` }
+          : apparel ? (st.area
+            ? { title: "옷가게 수", sub: `${st.area} 안의 남성·여성·기타 의류 소매점 (소상공인 상가정보)`, scope: "옷가게 · 동", value: `${n0(st.areaPork ?? 0)}곳` }
+            : { title: "옷가게 수", sub: `상권 안 일반의류 가게 · ${rankWord(rankOf(profile.gu, "pork", names), n, "많음", "적음")}`, scope: guArea, value: `${n0(st.stores)}곳` })
           : { title: "고깃집 수", sub: st.area ? `${st.area} 안의 돼지고기 구이/찜 가게` : `돼지고기 구이/찜 가게 · ${rankWord(rankOf(profile.gu, "pork", names), n, "많음", "적음")}`, scope: st.area ? "고깃집 · 동" : "고깃집 · 구 전체", value: `${n0(count)}곳` },
         ...(dp?.pop_per_pork != null ? [{ title: `${S} 1곳당 인구`, sub: "주민 + 직장인", scope: `${S} · 동`, value: `${n0(dp.pop_per_pork)}명` }] : []),
       ],
@@ -364,7 +413,17 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
 
             <details className="m-srcnote"><summary>숫자의 출처와 한계</summary>
               <p className="m-src">
-                {cafe ? (
+                {qfInd ? (
+                  <>
+                    매출과 가게 수, 폐업률·개업률은 서울시 상권분석서비스 2025년 {B}({qfInd === "chicken" ? "CS100007" : "CS100008"}) 상권 값을 구로 모은 거예요. 카드사 추정 매출에는 배달앱 결제가 거의 빠져 있어, 외식업체 경영실태조사 2025의 배달 주문 비중({Math.round(qfDerived(qfInd).share.delivery * 100)}%)만큼 나눠 보정했어요.
+                    식재료비율·배달 수수료·인건비·인테리어비는 같은 조사의 전국 {qfInd === "chicken" ? "치킨전문점" : "김밥 및 기타 간이 음식점업"} 값이에요. 동네(행정동) 자료는 아직 없어 구 단위로만 봐요.
+                  </>
+                ) : apparel ? (
+                  <>
+                    매출과 가게 수, 폐업률·개업률은 서울시 상권분석서비스 2025년 일반의류(CS300011) 상권 값을 구로 모은 거예요. 매출은 카드사 추정이고 현금·온라인 매출은 빠져 있어요.
+                    원가와 경비 비율은 통계청 도소매업조사 2024년 서울 의복 소매업 중 연매출 1억~5억 사업체 값이에요. 동네를 고르면 서울시 상권분석서비스 행정동 일반의류 매출과 소상공인 상가정보(2026년 6월) 남성·여성·기타 의류 소매점 수로 구 안의 위치를 맞춰요. 동네 가게 수는 상권 밖 가게까지 센 값이라 구 전체의 상권 안 가게 수와 기준이 달라요.
+                  </>
+                ) : cafe ? (
                   <>
                     매출 규모는 서울시 상권분석서비스 2025년 커피-음료 카드 추정매출에 서울 소상공인 카페 월매출(외식업체 경영실태조사 2025, 응답 63곳)로 맞춘 배율 1.54를 곱했어요. 카드 추정은 실제보다 낮게 잡혀서 배율로 보정한 값이에요. 화면의 대표값은 평균이 아니라 중앙값이에요. 잘되는 가게 몇 곳이 평균을 끌어올리기 때문이고, 전국 독립 카페의 중앙값÷평균 배율(0.78)과 4분의 1·4분의 3 분위(중앙값의 0.75배·1.49배)를 서울 값에 옮긴 추정이라 서울 실제 분포와는 다를 수 있어요.
                     카페 수는 소상공인 상가정보 2026년 6월 기준이고 프랜차이즈가 섞여 있어요. 카페는 동네별 2024년 매출이 없어 성장률 대신 개업률에서 폐업률을 뺀 '가게 수 흐름'을 보여 줘요. 가게가 버틴 기간과 상권 변화 유형은 서울시 상권분석서비스 상권변화지표(2026년 2분기)이고, 카페만의 값이 아니라 그 동네 모든 업종의 값이에요. 이름·키워드·제안은 숫자에서 규칙으로 뽑은 분류이고 현장 조사가 아니에요.
@@ -385,9 +444,9 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
 
         {tab === "budget" && (
           <div className="m-finding" key="budget">
-            <h1>{profile.gu}에 {est.pyeong}평 {S}{cafe ? "를" : "을"} 열려면 <mark>{man(need)}</mark>쯤 필요해요.</h1>
+            <h1>{profile.gu}에 {est.pyeong}평 {S}{cafe || apparel ? "를" : "을"} 열려면 <mark>{man(need)}</mark>쯤 필요해요.</h1>
             <table className="m-quote">
-              <caption>{cafe ? `독립 카페 면적 중앙값(20평)에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 값은 외식업체 경영실태조사 2025 원자료의 25%·50%·75% 분위수를 기본·중급·고급으로 놓은 거예요. 다음 단계(가게 꾸미기)에서는 카페 엔진이 이 동네 권리금과 부가세 선납(개업 후 돌려받음)까지 넣어 다시 계산해서, 여는 비용이 이보다 커질 수 있어요.` : "이 돈에 맞춘 추천 구성으로 낸 견적이에요. 다음 단계에서 직접 꾸미거나 '추천 배치'를 누르면 이 구성이 놓여요."}</caption>
+              <caption>{qfInd ? `조사한 ${QF_NAME[qfInd]} 평균 면적(${Math.round(qfDerived(qfInd).areaPy)}평)에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 인테리어는 외식업체 경영실태조사 평균, 설비비는 가정이에요.` : apparel ? "13평에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 첫 재고는 이 구 옷가게의 한 달 매출 1.5개월치를 원가(29%)로 들인다고 봤어요. 인테리어 단가는 공정위 정보공개서 의류 가맹 9개 브랜드 값이라 표본이 적어요." : cafe ? `독립 카페 면적 중앙값(20평)에서 시작해 가진 돈에 맞춘 대략의 견적이에요. 값은 외식업체 경영실태조사 2025 원자료의 25%·50%·75% 분위수를 기본·중급·고급으로 놓은 거예요. 다음 단계(가게 꾸미기)에서는 카페 엔진이 이 동네 권리금과 부가세 선납(개업 후 돌려받음)까지 넣어 다시 계산해서, 여는 비용이 이보다 커질 수 있어요.` : "이 돈에 맞춘 추천 구성으로 낸 견적이에요. 다음 단계에서 직접 꾸미거나 '추천 배치'를 누르면 이 구성이 놓여요."}</caption>
               <tbody>
                 {cost.lines.filter((l: { amount: number }) => l.amount > 0).map((l) => (
                   <tr key={l.key}><th scope="row">{l.label}<small>{l.basis}</small></th><td>{man(l.amount)}</td></tr>
@@ -408,7 +467,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                 <span>만원</span>
                 {profile.keyMoney ? <button type="button" className="m-link" onClick={() => setProfile({ ...profile, keyMoney: undefined })}>지우기</button> : null}
               </div>
-              <small>{cafe
+              <small>{qfInd ? `${S} 권리금은 아직 정리하지 못했어요. 위 견적에는 넣지 않았어요.` : apparel ? "옷가게 권리금은 공개 통계를 아직 찾지 못했어요. 위 견적에는 넣지 않았어요." : cafe
                 ? `권리금을 낸 독립 카페의 중앙값은 ${man(CAFE_KEY_MONEY.base)}이고, 4분의 1은 ${man(CAFE_KEY_MONEY.low)} 아래, 4분의 1은 ${man(CAFE_KEY_MONEY.high)} 위예요. 위 견적에는 넣지 않았어요 (경영실태조사 2025 원자료, 카페 팀 지표 엑셀 정리, 전국).`
                 : kk && keyN
                 ? `한식 육류 요리 전문점 중 가게를 빌려 쓰는 곳의 절반쯤이 권리금을 냈고(응답 ${keyN}곳), 낸 곳의 중앙값은 ${man(Math.round(kk.key_money.p50 / 100) * 100)}, 평균은 ${man(Math.round(kreiMean("key_money")!))}이에요. 위 견적에는 넣지 않았어요 (경영실태조사 2025, 전국).`
@@ -424,30 +483,6 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
               <>
                 <h1>가진 돈으로는 <mark>{man(gap)}</mark>이 모자라요.</h1>
                 <p>모자란 돈을 구하는 길은 셋이에요. 평수나 마감을 낮추거나, 월세가 싼 구로 옮기거나, 정책자금을 알아보는 거예요.</p>
-                <div className="m-funds">
-                  {(["가능", "조건부", "등록 후"] as const).map((k) => {
-                    const list = FUNDS.filter((f) => f.pre === k && (!f.youth || young));
-                    if (!list.length) return null;
-                    return (
-                      <div key={k}>
-                        <h2 className="m-sub">{k === "가능" ? "사업자등록 전에 신청할 수 있는 자금" : k === "조건부" ? "조건이 맞으면 신청할 수 있는 자금" : "가게를 연 뒤 신청하는 자금"}</h2>
-                        <ul>
-                          {list.map((f) => (
-                            <li key={f.name}>
-                              <b>{f.url ? <a href={f.url} target="_blank" rel="noreferrer">{f.name}</a> : f.name}</b> <small>{f.org} · {f.who}</small>
-                              <p>{f.limit}. {f.terms}</p>
-                              {(f.rate || f.floating) && (() => { const t = rateVsBank(f); return <p className={`m-rate ${t.includes("높아요") ? "is-high" : ""}`}>{t}</p>; })()}
-                              <small>{f.where}. {f.note}</small>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  })}
-                </div>
-                {!young && <p className="m-aside">나이 조건(만 39세 이하)이 있는 청년 자금은 목록에서 뺐어요.</p>}
-                <BankRates loanMan={gap} young={young} />{/* lab:finance 은행별 가상 금리 (링크만) */}
-                <small className="m-src">{FUNDS_SRC}. 업계 글을 모은 표라 한도와 금리는 기관 공고 원문으로 확인해야 해요. 이 시뮬레이터의 대출 이자는 연 {+(LOAN_RATE * 100).toFixed(2)}%로 계산해요 ({loanRateInfo().who}, {loanRateInfo().label}). {/* lab:finance */}</small>
               </>
             ) : (
               <>
@@ -456,7 +491,80 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
               </>
             )}
             <RentCard rentMan={st.rent * est.pyeong} />{/* lab:finance 월세 카드 할부 */}
-            <KStartup young={young} gu={profile.gu} />
+            <div className="fd-tabs" role="tablist" aria-label="돈을 구하는 방법">
+              {FUND_TABS.map((t, i) => {
+                const n = t.key === "pre" ? FUNDS.filter((f) => (f.pre === "가능" || f.pre === "조건부") && !f.program && (!f.youth || young)).length
+                  : t.key === "post" ? FUNDS.filter((f) => f.pre === "등록 후" && !f.program && (!f.youth || young)).length
+                  : t.key === "bank" ? BANKS.length : null;
+                return (
+                  <button key={t.key} type="button" role="tab" id={`ftab-${t.key}`} aria-selected={ftab === t.key} aria-controls="fpanel"
+                    className="fd-tab" onClick={() => setFtab(t.key)}>
+                    <span className="fd-tab-top"><span className="fd-num" aria-hidden="true">{i + 1}</span>{n != null && <span className="fd-cnt">{n}건</span>}</span>
+                    <b>{t.label}</b>
+                    <small>{t.key === "pre" ? "가게를 열기 전에" : t.key === "post" ? "사업자등록을 한 뒤에" : t.key === "bank" ? "은행별 상품과 금리" : "교육·공모·지원금"}</small>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="m-fpanel" id="fpanel" role="tabpanel" aria-labelledby={`ftab-${ftab}`} key={ftab}>
+              {(ftab === "pre" || ftab === "post") && (() => {
+                const t = FUND_TABS.find((x) => x.key === ftab)!;
+                const list = FUNDS.filter((f) => (ftab === "pre" ? f.pre === "가능" || f.pre === "조건부" : f.pre === "등록 후") && !f.program && (!f.youth || young));
+                return (
+                  <div className="m-funds">
+                    <p className="fd-lead"><b>{t.title}</b>{t.lead}</p>
+                    {list.length ? (
+                      <ul className="fd-cards">
+                        {list.map((f) => <FundCard key={f.name} f={f} />)}
+                      </ul>
+                    ) : <p className="m-aside">지금 조건에 맞는 자금이 목록에 없어요.</p>}
+                    {!young && <p className="m-aside">나이 조건(만 39세 이하)이 있는 청년 자금은 목록에서 뺐어요.</p>}
+                    <small className="m-src">{FUNDS_SRC}. 업계 글을 모은 표라 한도와 금리는 기관 공고 원문으로 확인해야 해요.</small>
+                  </div>
+                );
+              })()}
+              {ftab === "bank" && (
+                <div className="m-funds">
+                  <p className="fd-lead"><b>은행에서 사업자 대출 알아보기</b>
+                    지역신용보증재단 보증서를 담보로 한 대출은 은행에서 방문 없이 신청할 수 있어요 (<a href={BANK_GUARANTEE_URL} target="_blank" rel="noreferrer">신용보증재단중앙회 안내</a>).
+                    지금 은행 중소기업대출 평균 금리는 <mark>연 {ecosRates()?.loan_sme?.rate ?? +(LOAN_RATE * 100).toFixed(2)}%</mark>예요.</p>{/* lab:merge 고른 은행 금리가 아니라 한국은행 평균 */}
+                  <div className="fd-hubs">
+                    <a className="fd-hub" href={BANK_COMPARE_URL} target="_blank" rel="noreferrer">
+                      <small>모든 은행 한눈에</small><b>개인사업자 대출 금리 비교</b><span>은행연합회 소비자포털 · 보증서·신용·마이너스 대출을 은행별로</span><i aria-hidden="true">→</i>
+                    </a>
+                    <a className="fd-hub" href={BANK_SEARCH_URL} target="_blank" rel="noreferrer">
+                      <small>상품 찾기</small><b>은행 대출 상품 검색</b><span>은행연합회 소비자포털 · 조건을 넣어 상품을 찾아요</span><i aria-hidden="true">→</i>
+                    </a>
+                    <a className="fd-hub" href={SEMAS_FUND_URL} target="_blank" rel="noreferrer">
+                      <small>정책자금</small><b>소상공인정책자금 누리집</b><span>소상공인시장진흥공단 · 직접대출과 대리대출 신청</span><i aria-hidden="true">→</i>
+                    </a>
+                  </div>
+                  <LabBankRates loanMan={gap} young={young} />{/* lab:finance 고른 금리가 대출 이자 계산에 들어간다 (자료: 은행연합회 비교공시) */}
+                  <details className="m-srcnote"><summary>보증비율·신용등급별 공시 금리 표</summary><BankRates /></details>{/* upstream 은행연합회 비교공시 표 */}
+                  <ul className="fd-banks">
+                    {BANKS.map((b) => (
+                      <li key={b.name}>
+                        <a href={b.url} target="_blank" rel="noreferrer">
+                          <img src={`${import.meta.env.BASE_URL}mock/banks/${b.icon}`} alt="" width={44} height={44} />
+                          <span><b>{b.name}</b><small>{rates?.banks[b.name]?.보증서담보대출 ? `보증서담보 연 ${bankRateOf(rates, b.name)!.보증서담보대출!.avg.toFixed(2)}% · ` : ""}{b.app}</small></span>
+                          <em className={b.kind === "상품" ? "" : "is-cmp"}>{b.kind === "상품" ? "상품 페이지" : "금리 비교"}</em>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                  <small className="m-src">모든 링크는 앱 설치나 보안 프로그램 없이 웹에서 열려요 (2026년 10월 확인). IBK·NH·신한은 로그인 없이 볼 수 있는 상품 페이지가 없어 은행연합회 비교표로 연결해요.
+                    이 화면은 은행을 추천하거나 신청을 받지 않아요. 이 시뮬레이터의 대출 이자는 연 {+(LOAN_RATE * 100).toFixed(2)}%로 계산해요 ({loanRateInfo().who}, {loanRateInfo().label}). {/* lab:finance */}</small>
+                </div>
+              )}
+              {ftab === "support" && (
+                <KStartup young={young} gu={profile.gu} before={(() => {
+                  const progs = FUNDS.filter((f) => f.program && (!f.youth || young));
+                  return progs.length ? (
+                    <ul className="fd-cards">{progs.map((f) => <FundCard key={f.name} f={f} />)}</ul>
+                  ) : null;
+                })()} />
+              )}
+            </div>
             <button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button>
           </div>
         )}
