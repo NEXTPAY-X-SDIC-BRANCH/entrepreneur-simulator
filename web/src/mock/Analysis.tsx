@@ -11,6 +11,7 @@ import DongFlow from "./DongFlow";
 import { DONG_METRICS, bandOf, dongMetricKeys, cuts, geoOf, guInsight, hasDongMap, insightOf, meatSalesNote, picksOf, profileOf, profilesOf, rankWord, type DongMetric, type KTab, type Line, type Tone } from "./area";
 import { BANKS, BANK_COMPARE_URL, BANK_GUARANTEE_URL, BANK_SEARCH_URL, FUNDS, FUNDS_SRC, SEMAS_FUND_URL, type Fund } from "./funds";
 import KStartup from "./KStartup";
+import BankRates, { bankRateOf, useBankRates } from "./BankRates";
 import { CAFE_KEY_MONEY, cafeEstimate } from "./cafe";
 import { apparelEstimate } from "./apparel";
 import { QF_NAME, derived as qfDerived, qfEstimate } from "./quickfood";
@@ -90,6 +91,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
 }) {
   const [tab, setTab] = useState<Tab>("place");
   const [ftab, setFtab] = useState<FundTab>("pre");
+  const rates = useBankRates();
   const [ktab, setKtab] = useState<KTab>("sales");
   const [recOpen, setRecOpen] = useState(false);
   const [metric, setMetric] = useState<Metric>("demand");
@@ -530,12 +532,13 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                       <small>정책자금</small><b>소상공인정책자금 누리집</b><span>소상공인시장진흥공단 · 직접대출과 대리대출 신청</span><i aria-hidden="true">→</i>
                     </a>
                   </div>
+                  <BankRates />
                   <ul className="fd-banks">
                     {BANKS.map((b) => (
                       <li key={b.name}>
                         <a href={b.url} target="_blank" rel="noreferrer">
                           <img src={`${import.meta.env.BASE_URL}mock/banks/${b.icon}`} alt="" width={44} height={44} />
-                          <span><b>{b.name}</b><small>{b.app}</small></span>
+                          <span><b>{b.name}</b><small>{rates?.banks[b.name]?.보증서담보대출 ? `보증서담보 연 ${bankRateOf(rates, b.name)!.보증서담보대출!.avg.toFixed(2)}% · ` : ""}{b.app}</small></span>
                           <em className={b.kind === "상품" ? "" : "is-cmp"}>{b.kind === "상품" ? "상품 페이지" : "금리 비교"}</em>
                         </a>
                       </li>

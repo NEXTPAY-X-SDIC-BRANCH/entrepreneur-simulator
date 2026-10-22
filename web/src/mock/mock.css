@@ -651,3 +651,18 @@ html:has(.m-app) { background: #fff; }
 .m-layout .m-seg button { flex: 1 1 auto; padding: 6px 10px; font-size: 14px; }
 .m-layout .m-stepper { inline-size: 100%; }
 .m-layout-h small { margin-inline-start: 6px; font-size: 12px; font-weight: 500; color: #5a6270; }
+/* 은행별 개인사업자 대출 금리 표 (BankRates) */
+.br { padding: 16px 18px; border: 1px solid #e3e6ee; border-radius: 18px; background: #fff; }
+.br h3 { margin: 0 0 10px; font-size: 17px; }
+.br h3 small { margin-inline-start: 6px; font-size: 12.5px; font-weight: 500; color: #5a6270; }
+.br-scroll { overflow-x: auto; }
+.br-table { inline-size: 100%; border-collapse: collapse; font-size: 14px; }
+.br-table th, .br-table td { padding: 9px 10px; border-block-end: 1px solid #eef0f4; text-align: end; white-space: nowrap; }
+.br-table th:first-child { text-align: start; }
+.br-table thead th { font-size: 12.5px; color: #5a6270; font-weight: 600; }
+.br-table tbody th a { color: #17181c; font-weight: 700; text-decoration: none; }
+.br-table tbody th a:hover { color: #3d63ea; text-decoration: underline; }
+.br-table tr.best td, .br-table tr.best th { background: #f3f6ff; }
+.br-tag { margin-inline-start: 6px; padding: 1px 8px; border-radius: 999px; background: #3d63ea; color: #fff; font-size: 11px; font-weight: 700; }
+.br-note { display: block; font-size: 11.5px; color: #a5560c; font-weight: 500; white-space: normal; max-inline-size: 260px; }
+.br-more { margin-block: 8px 4px; padding: 6px 12px; border: 1px solid #d5deeb; border-radius: 10px; background: #fff; color: #3d63ea; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
