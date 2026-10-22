@@ -624,15 +624,22 @@ html:has(.m-app) { background: #fff; }
 .m-layout-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .m-layout-row > span { font-size: 14px; font-weight: 600; }
 .m-layout small { font-size: 12.5px; color: #5a5d6b; line-height: 1.5; }
-/* 정책자금 카드: 한 줄에 하나, 가로로 긴 상자 (왼쪽 이름·기관, 가운데 한도, 오른쪽 조건·금리·신청처) */
+/* 정책자금 카드: 한 줄에 하나, 가로로 긴 상자. 위 줄 = 이름·기관(왼쪽)과 한도(오른쪽), 아래 줄 = 조건·금리·신청처 */
 .m-funds ul.fd-cards { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.m-funds li.fd-card { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(140px, .55fr) minmax(0, 1.6fr); column-gap: 24px; align-items: center; padding: 18px 22px 16px; }
-.fd-card::before { inset: 0 auto 0 0; inline-size: 4px; block-size: auto; }
-.fd-l, .fd-r { display: flex; flex-direction: column; gap: 6px; min-inline-size: 0; }
-.fd-card .fd-limit { text-align: center; padding: 12px 8px; border-radius: 14px; background: #f3f6ff; }
-.fd-card .fd-go { margin-block-start: 2px; padding: 0; align-self: flex-end; }
+.m-funds li.fd-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "l limit" "r r"; gap: 12px 24px; align-items: center;
+  padding: 20px 24px; border: 1px solid #e3e6ee; border-radius: 18px; background: #fff; box-shadow: none; overflow: visible; }
+.m-funds li.fd-card:hover { border-color: #c9d4f5; }
+.fd-card::before { display: none; }
+.fd-l { grid-area: l; display: flex; flex-direction: column; gap: 4px; min-inline-size: 0; }
+.fd-l .fd-chips { min-block-size: 0; margin-block-end: 2px; }
+.fd-card .fd-limit { grid-area: limit; justify-self: end; padding: 0; background: none; font-size: 24px; color: #3d63ea; text-align: end; }
+.fd-r { grid-area: r; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 20px; padding-block-start: 12px; border-block-start: 1px solid #eef0f4; min-inline-size: 0; }
+.fd-r .fd-terms, .fd-r .fd-rate, .fd-r .fd-note { grid-column: 1; }
+.fd-r .fd-rate { justify-self: start; padding: 6px 12px; font-size: 14px; }
+.fd-card .fd-go { grid-column: 2; grid-row: 1 / span 3; align-self: end; margin: 0; padding: 0; white-space: nowrap; }
 @media (max-width: 760px) {
-  .m-funds li.fd-card { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
-  .fd-card .fd-limit { text-align: start; background: none; padding: 0; }
-  .fd-card .fd-go { align-self: flex-start; }
+  .m-funds li.fd-card { grid-template-columns: minmax(0, 1fr); grid-template-areas: "l" "limit" "r"; }
+  .fd-card .fd-limit { justify-self: start; text-align: start; }
+  .fd-r { grid-template-columns: minmax(0, 1fr); }
+  .fd-card .fd-go { grid-column: 1; grid-row: auto; }
 }
