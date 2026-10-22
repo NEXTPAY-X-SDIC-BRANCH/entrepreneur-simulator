@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Assume from "./Assume";
 import { LOAN_RATE, guStat, man, type Profile } from "./model";
 import {
-  DEFAULT_PLAN, EXTRAS, HOURS_DEFAULT, HOURS_RANGE, MAIN, PLAN_KEYS, QF_NAME, extraPrice, hoursText, mixOf, mixStr, planText, type PlanKey, deliveryGuInfo, derived, eventOf, foodMult, playMonth, qfOpeningCost, qfStrategies, startState,
+  DEFAULT_PLAN, EXTRAS, HOURS_DEFAULT, HOURS_RANGE, MAIN, PLAN_KEYS, QF_NAME, extraPrice, hoursText, mixOf, mixStr, planText, sbizDelivery, type PlanKey, deliveryGuInfo, derived, eventOf, foodMult, playMonth, qfOpeningCost, qfStrategies, startState,
   type QfCfg, type QfMonth, type QfPlan, type QfState, type QfStratId,
 } from "./quickfood";
 import ShopRoom3D, { shopPlan } from "./ShopRoom3D";
@@ -44,8 +44,8 @@ const picksOf = (ind: "chicken" | "bunsik"): QPick<QfPlan>[] => [
 ];
 
 // 홀·포장·배달 비중 정하기 (hard 모드). 한 갈래를 5% 올리면 나머지 중 큰 쪽에서 5%를 가져온다
-function MixPicker({ ind, plan, prev, set, seats }: { ind: "chicken" | "bunsik"; plan: QfPlan; prev?: QfPlan; set: (p: QfPlan) => void; seats: number }) {
-  const mx = mixOf(ind, plan), base = mixOf(ind, { ...DEFAULT_PLAN });
+function MixPicker({ ind, plan, prev, set, seats, gu }: { ind: "chicken" | "bunsik"; plan: QfPlan; prev?: QfPlan; set: (p: QfPlan) => void; seats: number; gu: string }) {
+  const mx = mixOf(ind, plan), base = mixOf(ind, { ...DEFAULT_PLAN }), sb = sbizDelivery(ind, gu);
   const keys = [["visit", "홀"], ["takeout", "포장"], ["delivery", "배달"]] as const;
   const move = (k: keyof typeof mx, d: number) => {
     const n = { ...mx };
@@ -58,7 +58,8 @@ function MixPicker({ ind, plan, prev, set, seats }: { ind: "chicken" | "bunsik";
   const pm = prev ? mixOf(ind, prev) : null;
   return (
     <div className="sx-mix">
-      <div className="sx-mix-h"><b>판매 비중</b><Assume id="qfMix" /><small>조사한 평균은 홀 {base.visit}% · 포장 {base.takeout}% · 배달 {base.delivery}%{seats ? ` · 홀 자리 ${seats}석` : ""}</small></div>
+      <div className="sx-mix-h"><b>판매 비중</b><Assume id="qfMix" /><small>조사한 평균은 홀 {base.visit}% · 포장 {base.takeout}% · 배달 {base.delivery}%{seats ? ` · 홀 자리 ${seats}석` : ""}</small>
+        {sb?.gu && <small className="sx-mix-src">{gu} {ind === "chicken" ? "치킨집" : "분식집"} 한 곳은 한 달에 배달 주문 <b>{sb.gu.orders.toLocaleString("ko-KR")}건</b>, 배달 매출 <b>{Math.round(sb.gu.sales / 1e4).toLocaleString("ko-KR")}만원</b>을 받아요 (서울 가운데값 {sb.seoul.orders.toLocaleString("ko-KR")}건, 배달 한 건 {sb.gu.ticket.toLocaleString("ko-KR")}원). 소상공인365 배달분석 {sb.ym.slice(0, 4)}년 {+sb.ym.slice(4)}월</small>}</div>
       <div className="sx-mix-bar" aria-hidden>{keys.map(([k, l]) => <span key={k} className={`is-${k}`} style={{ flexGrow: mx[k] || 0.001 }}>{mx[k] >= 12 ? `${l} ${mx[k]}%` : ""}</span>)}</div>
       <div className="sx-mix-c">
         {keys.map(([k, l]) => (
@@ -395,7 +396,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                     ) : (
                       <section className="sx-right" aria-label="이번 달 운영 계획">
                         <h2>{m}월에 이렇게 할게요</h2>
-                        <MixPicker ind={cfg.ind} plan={plan} prev={cur?.m.plan} set={setPlan} seats={seats} />
+                        <MixPicker ind={cfg.ind} plan={plan} prev={cur?.m.plan} set={setPlan} seats={seats} gu={profile.gu} />
                         <div className="sx-steps">
                           {STEPS.map(([k, lo, hi, step]) => {
                             const before = cur?.m.plan;

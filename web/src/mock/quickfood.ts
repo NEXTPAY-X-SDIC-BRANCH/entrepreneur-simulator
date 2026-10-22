@@ -46,7 +46,14 @@ let DELIVERY_MONTH: Record<number, number> = { 1: 0.978, 2: 0.904, 3: 0.959, 4: 
 // 구별 배달·포장 수요 지수 (서울 = 1): 서울서베이 2022 연령·가구형태별 주당 배달·포장 식사 × 구 상주인구 연령·가구형태 (delivery_gu.json)
 let DELIVERY_GU: Record<string, { index: number; single_share: number | null }> = {};
 export function setDeliveryGu(d: { gu?: Record<string, { index: number; single_share: number | null }> } | null) { DELIVERY_GU = d?.gu ?? {}; }
-export const deliveryGu = (gu: string) => DELIVERY_GU[gu]?.index ?? 1;
+// 소상공인365 배달분석 (sbiz_delivery.json, pipelines/build_sbiz365_delivery.py): 구별 점포당 월평균 배달 주문 건수.
+// 이 업종 값이 있으면 구별 배달 배수는 구 값 ÷ 서울 값(실제 카드 배달 매출)으로 쓰고, 없으면 서울서베이로 어림한 지수를 쓴다
+type SbizGu = { orders: number; sales: number; ticket: number; index: number; dongs: Record<string, { name: string; orders: number; sales: number }> };
+type SbizInd = { ym: string; seoul: { orders: number; sales: number; ticket: number }; gu: Record<string, SbizGu>; trend_orders: Record<string, number> };
+let SBIZ_DLVY: Record<string, SbizInd> = {};
+export function setSbizDelivery(d: { inds?: Record<string, SbizInd> } | null) { SBIZ_DLVY = d?.inds ?? {}; }
+export const sbizDelivery = (ind: string, gu: string) => { const x = SBIZ_DLVY[ind]; return x ? { ym: x.ym, seoul: x.seoul, gu: x.gu[gu] ?? null, trend: x.trend_orders } : null; };
+export const deliveryGu = (gu: string, ind?: QfInd) => (ind && SBIZ_DLVY[ind]?.gu[gu]?.index) || DELIVERY_GU[gu]?.index || 1;
 export const deliveryGuInfo = (gu: string) => DELIVERY_GU[gu] ?? null;
 export function setDeliveryMarket(d: { month_index?: Record<string, number> } | null) {
   if (d?.month_index) DELIVERY_MONTH = Object.fromEntries(Object.entries(d.month_index).map(([k, v]) => [Number(k), v]));
@@ -257,7 +264,7 @@ export function playMonth(profile: Profile, cfg: QfCfg, s: QfState, month: numbe
   const want: Channel = {
     visit: Number.isFinite(seatCap) ? visitWant / Math.pow(1 + Math.pow(visitWant / seatCap, 4), 1 / 4) : visitWant,
     takeout: base * mt * (ev.fx?.takeout ?? 1) * (fx.takeout ?? 1) * (1 + PICKUP_LIFT * pick) * (1 - pick),  // 할인한 만큼 한 건 값이 준다
-    delivery: base * md * DELIVERY_MONTH[month] * deliveryGu(profile.gu) * AD_BOOST[plan.ad] * (ev.fx?.delivery ?? 1) * (fx.delivery ?? 1),
+    delivery: base * md * DELIVERY_MONTH[month] * deliveryGu(profile.gu, cfg.ind) * AD_BOOST[plan.ad] * (ev.fx?.delivery ?? 1) * (fx.delivery ?? 1),
   };
   const need = want.visit + want.takeout + want.delivery;
   const capacity = d.perWorker * HEADROOM * (1 + plan.staff + (fx.extraWorker ?? 0));

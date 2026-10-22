@@ -379,3 +379,4 @@ h1:has(> .sx-modesw) { display: flex; align-items: center; justify-content: spac
 .sx-mix-k button:disabled { opacity: .4; cursor: default; }
 .sx-mix-k output { text-align: center; font-weight: 700; }
 .sx-sub { margin: 18px 0 8px; font-size: 16px; }
+.sx-mix-h .sx-mix-src { padding: 8px 10px; border-radius: 8px; background: #f3f6ff; color: #2a3550; line-height: 1.55; }

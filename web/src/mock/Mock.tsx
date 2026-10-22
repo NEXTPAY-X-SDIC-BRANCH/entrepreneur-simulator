@@ -12,7 +12,7 @@ import CafeSim from "./CafeSim";
 import ApparelBuild from "./ApparelBuild";
 import ApparelSim from "./ApparelSim";
 import { DEFAULT_APPAREL, setApparelKosis, setFashionMarket, type ApparelCfg } from "./apparel";
-import { defaultQf, setDeliveryGu, setDeliveryMarket, setFoodCost, setQuickfoodKrei, type QfCfg } from "./quickfood";
+import { defaultQf, setDeliveryGu, setDeliveryMarket, setFoodCost, setQuickfoodKrei, setSbizDelivery, type QfCfg } from "./quickfood";
 import QuickFoodBuild from "./QuickFoodBuild";
 import QuickFoodSim from "./QuickFoodSim";
 import type { CafeCfg } from "./cafeChecks";
@@ -71,6 +71,7 @@ export default function Mock() {
       get("delivery_market.json").then(setDeliveryMarket).catch(() => null);
       get("food_cost.json").then(setFoodCost).catch(() => null);   // 없으면 식재료 시세 배수 1
       get("delivery_gu.json").then(setDeliveryGu).catch(() => null); // 없으면 구별 배달 지수 1
+      get("sbiz_delivery.json").then(setSbizDelivery).catch(() => null); // 소상공인365 배달분석. 없으면 서울서베이 지수
       setQfCfg((c) => (c.ind === ind ? c : defaultQf(ind)));
     }
     if (apparel) get("apparel_kosis.json").then(setApparelKosis).catch(() => null);
