@@ -31,19 +31,23 @@ function FundCard({ f }: { f: Fund }) {
   const r = f.rate || f.floating ? rateVsBank(f) : null;
   return (
     <li className="fd-card">
-      <div className="fd-chips">
-        {f.youth && <span className="fd-chip">만 39세 이하</span>}
-        {f.pre === "조건부" && <span className="fd-chip is-warn">조건부</span>}
-        {f.program && <span className="fd-chip is-good">교육 프로그램</span>}
-        {f.rate && <span className="fd-chip is-rate">연 {f.rate[0] === f.rate[1] ? f.rate[0] : `${f.rate[0]}~${f.rate[1]}`}%</span>}
+      <div className="fd-l">
+        <div className="fd-chips">
+          {f.youth && <span className="fd-chip">만 39세 이하</span>}
+          {f.pre === "조건부" && <span className="fd-chip is-warn">조건부</span>}
+          {f.program && <span className="fd-chip is-good">교육 프로그램</span>}
+          {f.rate && <span className="fd-chip is-rate">연 {f.rate[0] === f.rate[1] ? f.rate[0] : `${f.rate[0]}~${f.rate[1]}`}%</span>}
+        </div>
+        <b className="fd-name">{f.name}</b>
+        <small className="fd-org">{f.org} · {f.who}</small>
       </div>
-      <b className="fd-name">{f.name}</b>
-      <small className="fd-org">{f.org} · {f.who}</small>
       <strong className="fd-limit">{limit}</strong>
-      <p className="fd-terms">{f.terms}</p>
-      {r && <p className={`fd-rate ${r.includes("높아요") ? "is-high" : ""}`}>{r}</p>}
-      <small className="fd-note">{f.where}. {f.note}</small>
-      {f.url && <a className="fd-go" href={f.url} target="_blank" rel="noreferrer">공식 안내 보기 →</a>}
+      <div className="fd-r">
+        <p className="fd-terms">{f.terms}</p>
+        {r && <p className={`fd-rate ${r.includes("높아요") ? "is-high" : ""}`}>{r}</p>}
+        <small className="fd-note">{f.where}. {f.note}</small>
+        {f.url && <a className="fd-go" href={f.url} target="_blank" rel="noreferrer">공식 안내 보기 →</a>}
+      </div>
     </li>
   );
 }
