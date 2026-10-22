@@ -136,11 +136,11 @@ export function shopPlan(kind: ShopKind, pyeong: number, lay: ShopLayout = {}) {
   let posBox: Rect, posRot = false, posStaff: [number, number];
   if (kind !== "apparel") {
     if (pos === "window") { posBox = [-W / 2 + 0.6, D / 2 - 1.68, -W / 2 + 2.0, D / 2 - 1.12]; posStaff = [-W / 2 + 1.3, D / 2 - 2.05]; }
-    else if (pos === "back") { posBox = [W / 2 - 0.9, -D / 2 + 1.3, W / 2 - 0.35, -D / 2 + 2.7]; posRot = true; posStaff = [W / 2 - 1.25, -D / 2 + 2.0]; }
+    else if (pos === "back") { posBox = [W / 2 - 0.9, -D / 2 + 2.0, W / 2 - 0.35, -D / 2 + 3.3]; posRot = true; posStaff = [W / 2 - 1.25, -D / 2 + 2.65]; } // 주방 출입구 앞은 비워 둔다
     else if (center) { posBox = [0.95, D / 2 - 1.68, 2.35, D / 2 - 1.12]; posStaff = [1.65, D / 2 - 1.75]; }
     else { posBox = [W / 2 - 2.0, D / 2 - 1.68, W / 2 - 0.6, D / 2 - 1.12]; posStaff = [W / 2 - 1.3, D / 2 - 1.75]; }
     staff.push([-W / 4, kitchenZ + 0.7], posStaff);
-    const x0 = -W / 2 + 0.8, x1 = W / 2 - 0.8, z0 = -D / 2 + 1.9, z1 = D / 2 - 1.0;
+    const x0 = -W / 2 + 0.8, x1 = W / 2 - 0.8, z0 = -D / 2 + 2.45, z1 = D / 2 - 1.0; // 뒤쪽 1.6m는 칸막이로 나눈 주방
     const bar = kind === "bunsik" && lay.bar !== false;
     if (bar) {
       const zEnd = pos === "window" ? D / 2 - 2.0 : z1 - 0.1;
@@ -195,6 +195,35 @@ export function FlowPath({ pts }: { pts: [number, number][] }) {
           <meshBasicMaterial color="#3d63ea" transparent opacity={0.85} />
         </mesh>
       ))}
+    </group>
+  );
+}
+
+// 음식점 주방: 뒷벽 조리대, 칸막이(음식 내주는 선반과 오른쪽 출입구), 후드, 싱크대, 냉장고, 벽 선반. 치킨은 튀김기 줄
+function Kitchen({ W, D, kz, wall, fryers }: { W: number; D: number; kz: number; wall: string; fryers: boolean }) {
+  const pz = -D / 2 + 1.6, px1 = W / 2 - 1.3;   // 칸막이: 왼쪽 벽부터 오른쪽 1.3m 앞까지 (그 틈이 주방 출입구)
+  const nF = Math.min(4, Math.max(2, Math.floor(W / 2)));
+  const fx0 = -W / 2 + 0.6, fx1 = fx0 + (nF - 1) * 0.55;
+  return (
+    <group>
+      <Counter x0={-W / 2 + 0.1} x1={W / 2 - 1.0} z={kz} />
+      {fryers && Array.from({ length: nF }, (_, i) => <Fryer key={i} x={fx0 + i * 0.55} z={kz} />)}
+      {/* 후드 */}
+      <B p={[fryers ? (fx0 + fx1) / 2 : -W / 4, 2.05, kz + 0.05]} s={[fryers ? fx1 - fx0 + 0.7 : 1.4, 0.32, 0.75]} color={STEEL} metal={0.6} />
+      {/* 싱크대 */}
+      <B p={[W / 2 - 1.55, 0.92, kz]} s={[0.7, 0.04, 0.5]} color="#8d969f" metal={0.5} />
+      <B p={[W / 2 - 1.55, 0.9, kz]} s={[0.5, 0.05, 0.34]} color="#5b636b" metal={0.4} />
+      {/* 업소용 냉장고 (오른쪽 구석) */}
+      <B p={[W / 2 - 0.5, 0.95, kz + 0.02]} s={[0.8, 1.9, 0.7]} color="#d9dde2" metal={0.4} />
+      <B p={[W / 2 - 0.5, 0.95, kz + 0.38]} s={[0.02, 1.7, 0.01]} color="#8d969f" />
+      {/* 벽 선반과 통 */}
+      <B p={[0, 1.62, -D / 2 + 0.17]} s={[W * 0.45, 0.03, 0.28]} color={WOOD} cast={false} />
+      {Array.from({ length: 6 }, (_, i) => <B key={i} p={[-W * 0.2 + i * (W * 0.08), 1.73, -D / 2 + 0.17]} s={[0.18, 0.2, 0.18]} color={i % 2 ? "#f2f0ea" : "#c9a46a"} />)}
+      {/* 주방 바닥 타일 (홀과 다른 색) */}
+      <B p={[0, 0.005, (-D / 2 + pz) / 2]} s={[W, 0.01, pz + D / 2]} color="#c8ccd2" cast={false} />
+      {/* 칸막이와 음식 내주는 선반 */}
+      <B p={[(-W / 2 + px1) / 2, 0.7, pz]} s={[px1 + W / 2, 1.4, 0.1]} color={wall} />
+      <B p={[(-W / 2 + px1) / 2, 1.42, pz]} s={[px1 + W / 2 + 0.04, 0.05, 0.36]} color={WOOD} />
     </group>
   );
 }
@@ -265,15 +294,14 @@ export default function ShopRoom3D({ kind, pyeong, people = 0, riders = 0, heigh
         <Box p={[-W / 2 + 1.2, WALL_H + 0.25, D / 2 + 0.15]} s={[1.6, 0.22, 0.02]} color={pal.signText} />
       </FrontFade>
 
+      {kind !== "apparel" && <Kitchen W={W} D={D} kz={plan.kitchenZ} wall={pal.wall} fryers={kind === "chicken"} />}
       {kind === "chicken" && <>
-        <Counter x0={-W / 2 + 0.1} x1={W / 2 - 0.1} z={plan.kitchenZ} />
-        {Array.from({ length: Math.min(4, Math.max(2, Math.floor(W / 2))) }, (_, i) => <Fryer key={i} x={-W / 2 + 0.6 + i * 0.55} z={plan.kitchenZ} />)}
         <B p={[W / 4, 1.0, plan.kitchenZ]} s={[0.9, 0.12, 0.5]} color="#e9c46a" />
         <PosCounter box={plan.posBox} rot={plan.posRot} />
         {[0, 1, 2].map((i) => <B key={i} p={[W / 2 - 0.35, 0.3 + i * 0.4, D / 2 - 1.9]} s={[0.4, 0.32, 0.4]} color={i % 2 ? pal.accent : pal.sign} />)}
       </>}
       {kind === "bunsik" && <>
-        <Counter x0={-W / 2 + 0.1} x1={W / 2 - 0.1} z={plan.kitchenZ} />
+        <Cy p={[W / 2 - 1.95, 1.02, plan.kitchenZ]} r={0.2} h={0.26} color="#f2f0ea" />
         <Cy p={[-W / 4, 0.95, plan.kitchenZ]} r={0.42} h={0.06} color="#c63a26" metal={0.2} />
         <Cy p={[-W / 4 + 1.0, 1.02, plan.kitchenZ]} r={0.22} h={0.24} color={STEEL} metal={0.6} />
         <B p={[W / 6, 0.95, plan.kitchenZ]} s={[1.0, 0.06, 0.45]} color="#5a8a3a" />

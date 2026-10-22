@@ -28,7 +28,9 @@ const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
 const TURNS = 6;
 
 export type MenuItem = { name: string; price: number; cost: number; share: number }; // 1인분 원, 주문 비중 %
-type Plan = { meat_price: number; staff_per_shift: number; close_hour: number; marketing_budget: number; meat_grade: string; banchan: number; delivery: string; menu?: MenuItem[] };
+// hard 모드에서 더 정하는 것 (엔진 research/season_params.yaml base_plan에 있는 값. 안 보내면 엔진 기본값)
+type Plan = { meat_price: number; staff_per_shift: number; close_hour: number; marketing_budget: number; meat_grade: string; banchan: number; delivery: string; menu?: MenuItem[];
+  soju_price?: number; lunch?: boolean; review_event?: boolean; group_reservations?: boolean; hygiene?: string; staff_grilling?: boolean; menu_extras?: string[] };
 type Mode = "easy" | "hard"; // easy 모드: 계획은 추천대로 자동, 사건 대응만 고른다. hard 모드: 메뉴·원가와 계획을 직접 정한다
 type Night = { dow: string; rain: boolean; revenue: number; covers: number; walkaways: number; cogs: number; fees: number };
 type Ev = { id: string; label: string; group: string; mechanism: string | null; outcome?: string | null };
@@ -127,6 +129,22 @@ const LEVERS: LeverDef[] = [
     can: (p, d) => { const i = GRADES.indexOf(p.meat_grade as (typeof GRADES)[number]); return i + d >= 0 && i + d < GRADES.length; },
     move: (p, d) => ({ ...p, meat_grade: GRADES[GRADES.indexOf(p.meat_grade as (typeof GRADES)[number]) + d] }),
   },
+  { key: "soju_price", label: "소주 한 병 가격", hint: "서울 고깃집 보통 5,000원. 비싸면 술 매출은 늘지만 '비싸다'는 손님이 늘어요", text: (p) => `${fmt(p.soju_price ?? 5000)}원`,
+    can: (p, d) => { const v = (p.soju_price ?? 5000) + d * 500; return v >= 4000 && v <= 7000; }, move: (p, d) => ({ ...p, soju_price: (p.soju_price ?? 5000) + d * 500 }) },
+  { key: "lunch", label: "점심 영업", hint: "점심 특선(1인 11,000원)으로 하루 7명쯤 더 받아요. 사장님과 직원이 하루 두 번 영업해 피로가 쌓여요", text: (p) => (p.lunch ? "해요" : "안 해요"),
+    can: (p, d) => (d > 0 ? !p.lunch : !!p.lunch), move: (p, d) => ({ ...p, lunch: d > 0 }) },
+  { key: "staff_grilling", label: "직원이 고기 굽기", hint: "체류 시간이 짧아져 회전이 빨라지고 만족이 올라요. 테이블마다 직원 시간이 10분 더 들어요", text: (p) => (p.staff_grilling ? "직원이 구워요" : "손님이 구워요"),
+    can: (p, d) => (d > 0 ? !p.staff_grilling : !!p.staff_grilling), move: (p, d) => ({ ...p, staff_grilling: d > 0 }) },
+  { key: "review_event", label: "리뷰 이벤트", hint: "리뷰를 쓰면 음료 한 병. 리뷰가 1.5배 늘고 별점이 오르지만, 일부 손님은 별점이 부풀려졌다고 봐요", text: (p) => (p.review_event ? "해요" : "안 해요"),
+    can: (p, d) => (d > 0 ? !p.review_event : !!p.review_event), move: (p, d) => ({ ...p, review_event: d > 0 }) },
+  { key: "group_reservations", label: "단체 예약", hint: "회식 예약을 받아요. 손님이 늘지만 노쇼가 20%쯤 나고 예약석이 비어 있는 동안 다른 손님을 못 받아요", text: (p) => (p.group_reservations ? "받아요" : "안 받아요"),
+    can: (p, d) => (d > 0 ? !p.group_reservations : !!p.group_reservations), move: (p, d) => ({ ...p, group_reservations: d > 0 }) },
+  { key: "hygiene", label: "청결 관리", hint: "높이면 청소 시간이 늘지만 위생 점검에 덜 걸리고 만족이 올라요", text: (p) => ({ basic: "기본만", normal: "보통", high: "꼼꼼히" } as Record<string, string>)[p.hygiene ?? "normal"],
+    can: (p, d) => { const i = ["basic", "normal", "high"].indexOf(p.hygiene ?? "normal") + d; return i >= 0 && i <= 2; },
+    move: (p, d) => ({ ...p, hygiene: ["basic", "normal", "high"][["basic", "normal", "high"].indexOf(p.hygiene ?? "normal") + d] }) },
+  { key: "menu_extras", label: "곁들임 메뉴", hint: "냉삼·통삼겹·미나리를 더 팔아요. 객단가가 오르지만 원가와 서빙 시간이 늘어요", text: (p) => ((p.menu_extras ?? []).length ? (p.menu_extras ?? []).map((x) => ({ naengsam: "냉삼", tongsam: "통삼겹", minari: "미나리" } as Record<string, string>)[x]).join("·") : "없음"),
+    can: (p, d) => { const n = (p.menu_extras ?? []).length + d; return n >= 0 && n <= 3; },
+    move: (p, d) => ({ ...p, menu_extras: d > 0 ? ["naengsam", "tongsam", "minari"].slice(0, (p.menu_extras ?? []).length + 1) : (p.menu_extras ?? []).slice(0, -1) }) },
   {
     key: "delivery", label: "배달", hint: DELIVERY_HINT, text: (p) => DELIVERY_KO[p.delivery] ?? p.delivery,
     can: (p, d) => { const i = DELIVERY.indexOf(p.delivery as (typeof DELIVERY)[number]); return i + d >= 0 && i + d < DELIVERY.length; },

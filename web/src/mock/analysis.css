@@ -270,3 +270,14 @@
 .fl-pop { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: baseline; margin: 0; }
 .fl-pop b { font-variant-numeric: tabular-nums; } .fl-pop small { flex-basis: 100%; color: #5b6b82; font-size: 13px; }
 .fl-src { margin: 0; }
+/* 동네 상권 상자: 채도를 낮춘 차분한 남색 (2026-10-22) */
+.a-kw { background: #3b4a7a; }
+.a-kw-eyebrow, .a-kw-cards span { color: #cdd4ea; }
+.a-kw > p, .a-kw-cards small { color: #e3e7f3; }
+.a-kw-name span { color: #3b4a7a; }
+.a-kw-cards > div { background: #4f5e8e; }
+/* 동네 상권 상자: 파란색이되 채도는 낮게 */
+.a-kw { background: #2f4f97; }
+.a-kw-name span { color: #2f4f97; }
+.a-kw-cards > div { background: #4464ad; }
+.a-kw-eyebrow, .a-kw-cards span { color: #d2dcf3; }

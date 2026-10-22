@@ -12,8 +12,10 @@ type Msg = { who: "me" | "bot"; text: string; cites?: Cite[]; offline?: boolean 
 const ASK = ["내 가게는 몇 달째부터 남기 시작해요?", "여는 데 돈이 제일 많이 드는 곳은 어디예요?", "하루에 몇 명 받아야 본전이에요?", "이 동네 경쟁은 어때요?"];
 const CITE_API = (import.meta.env.VITE_CITE_API as string | undefined) ?? "http://127.0.0.1:8000";
 
-export default function Chat({ profile, store, levers, gus, onClose }: {
-  profile: Profile; store: Store; levers: Levers; shocks: ShockId[]; gus: Gu[]; onClose: () => void;
+// alt: 고깃집이 아닌 업종의 가게 입력 (여는 데 드는 돈, 평수, 직원). 없으면 고깃집 가게 입력(store)을 쓴다
+export type ChatShop = { cost: { total: number; lines: { key: string; label: string; amount: number }[] }; pyeong: number; staff: number };
+export default function Chat({ profile, store, levers, gus, onClose, alt }: {
+  profile: Profile; store: Store; levers: Levers; shocks: ShockId[]; gus: Gu[]; onClose: () => void; alt?: ChatShop | null;
 }) {
   const [log, setLog] = useState<Msg[]>([{ who: "bot", text: "입력하신 가게와 시뮬레이션 결과, 월세·동네·외식업 비용·돼지고기 가격 같은 자료에서 찾아 답해요. 숫자는 자료의 문장 그대로 보여 드려요." }]);
   const [text, setText] = useState("");
@@ -25,18 +27,19 @@ export default function Chat({ profile, store, levers, gus, onClose }: {
   const context = () => {
     const st = guStat(profile.gu);
     const s = storeStats(store);
-    const cost = openingCost(store, profile.gu, profile.keyMoney ?? 0);
-    const engine = getEngineCtx();
+    const cost = alt?.cost ?? openingCost(store, profile.gu, profile.keyMoney ?? 0);
+    const engine = alt ? null : getEngineCtx();
+    const bbq = !alt;
     return {
+      industry: profile.industry,
       gu: profile.gu, dong: st.area ?? undefined,
       dong_code: profile.dong && profile.dong.gu === profile.gu ? profileOf(profile.gu, profile.dong.name)?.code : undefined, area_type: st.areaType ?? undefined,
-      pyeong: store.pyeong, tables: s.tables, seats: s.seats, staff: levers.staff,
+      pyeong: alt?.pyeong ?? store.pyeong, ...(bbq ? { tables: s.tables, seats: s.seats } : {}), staff: alt?.staff ?? levers.staff,
       rent: st.rent, rent_src: st.rentSrc,
       opening_total: cost.total, deposit: cost.lines.find((l) => l.key === "deposit")?.amount,
-      capital: profile.capital, loan: store.loan, cash_left: cashLeft(profile, store),
+      capital: profile.capital, loan: bbq ? store.loan : 0, cash_left: bbq ? cashLeft(profile, store) : profile.capital - cost.total,
       lines: cost.lines.filter((l) => l.amount > 0).map((l) => ({ label: l.label, amount: l.amount })),
-      pork_gu: st.pork, pork_rank: rankOf(profile.gu, "pork", gus.map((g) => g.name)),
-      pork_area: st.areaPork ?? undefined, stores_area: st.areaStores ?? undefined,
+      ...(bbq ? { pork_gu: st.pork, pork_rank: rankOf(profile.gu, "pork", gus.map((g) => g.name)), pork_area: st.areaPork ?? undefined, stores_area: st.areaStores ?? undefined } : {}),
       ...(engine ? { engine } : {}),
     };
   };
@@ -46,7 +49,7 @@ export default function Chat({ profile, store, levers, gus, onClose }: {
     const st = guStat(profile.gu);
     if (/월세|임대/.test(q)) return `${profile.gu}${st.area ? ` ${st.area}` : ""}의 평당 월세는 ${st.rent}만원으로 잡았어요. ${store.pyeong}평이면 한 달 ${man(st.rent * store.pyeong)}이에요.`;
     if (/많이 드는|여는 데|오픈 비용|창업 비용|개업 비용/.test(q)) {
-      const cost = openingCost(store, profile.gu, profile.keyMoney ?? 0);
+      const cost = alt?.cost ?? openingCost(store, profile.gu, profile.keyMoney ?? 0);
       const top = [...cost.lines].sort((a, b) => b.amount - a.amount);
       return `여는 데 드는 ${man(cost.total)} 가운데 ${iga(top[0].label)} ${man(top[0].amount)}으로 가장 커요. 그다음이 ${top[1].label} ${man(top[1].amount)}이에요.`;
     }

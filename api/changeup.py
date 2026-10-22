@@ -37,7 +37,9 @@ app.add_middleware(
 )
 
 from api.cafe import router as cafe_router  # 카페 엔진 (sim/cafe, docs/CAFE.md): /cafe/preview, /cafe/season ...
+from api.sbiz365 import router as sbiz365_router  # 소상공인365 오픈API 화면 연결 (/sbiz365)
 app.include_router(cafe_router)
+app.include_router(sbiz365_router)
 
 KPI = ("revenue", "op", "covers", "ticket", "cogs", "labor", "rent", "mgmt", "fees", "walkaways", "avg_wait_min",
        "table_utilization", "satisfaction", "reviews", "delivery_revenue", "delivery_fee", "delivery_orders")

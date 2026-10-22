@@ -166,11 +166,17 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
   const headline = closed ? `${n}개월 만에 문을 닫았어요` : total >= 80 ? `${n}개월을 버텼고, 남는 장사였어요` : endCash > 0 ? `${n}개월을 버텼지만 아슬아슬했어요` : `${n}개월을 버텼지만 현금이 바닥났어요`;
   const tone = closed || total < 60 ? "is-bad" : total < 80 ? "is-mid" : "";
   const signedMan = (x: number) => `${x >= 0 ? "+" : "−"}${won(Math.abs(x))}`;
+  // 한 줄 원인: 문을 닫았는데 거의 매달 흑자였다면 '장사'가 아니라 '현금(생활비·이자·처음 운영자금)' 문제다
+  const opSum = months.reduce((a, m) => a + m.op, 0);
+  const cause = closed && black >= n - 1
+    ? `장사는 ${n}달 중 ${black}달 흑자(영업이익 합계 ${signedMan(opSum)})였지만, 영업이익에서 사장 생활비와 대출 이자를 빼면 매달 현금이 줄어 바닥났어요. 처음 운영자금을 넉넉히 두거나 생활비를 줄여 보세요.`
+    : weak[0] ? `점수가 가장 많이 깎인 곳은 ${weak[0].label}이에요. ${weak[0].detail}` : "다섯 영역 모두 고르게 잘했어요.";
+  const hiOp = Math.max(1, ...months.map((m) => Math.abs(m.op)));
   return (
     <section className="sx-sec sc-card" aria-label="6개월 성적표">
       <div className={`sc-hero ${tone}`}>
         <h2>{headline}</h2>
-        <p>{weak[0] ? `가장 큰 원인은 ${weak[0].label}이에요. ${weak[0].detail}` : "다섯 영역 모두 고르게 잘했어요."}</p>
+        <p>{cause}</p>
       </div>
       <ul className="sc-badges" aria-label="기록">
         <li><small>흑자인 달</small><b>{black} / {n}</b></li>
@@ -184,6 +190,15 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
           <p className="sc-grade">{grade.label}</p>
           <p className="sx-note">{grade.note}</p>
         </div>
+      </div>
+      <div className="sc-ops" role="img" aria-label="달별 영업이익">
+        {months.map((m) => (
+          <span key={m.month} title={`${m.month}월 ${signedMan(m.op)}`}>
+            <em>{signedMan(m.op)}</em>
+            <i className={m.op < 0 ? "neg" : ""} style={{ blockSize: `${Math.max(4, (Math.abs(m.op) / hiOp) * 100)}%` }} />
+            <small>{m.month}월</small>
+          </span>
+        ))}
       </div>
       <ul className="sc-areas">
         {areas.map((a) => (

@@ -439,3 +439,88 @@ h1:has(> .sx-modesw), h1:has(> .sx-modelock) { display: flex; align-items: cente
 .sx-chips button:hover { border-color: #9fb3f5; }
 .sx-chips button.on { border-color: #3d63ea; background: #3d63ea; color: #fff; box-shadow: 0 2px 8px rgba(61, 99, 234, .25); }
 .sx-chips button:focus-visible { outline: 3px solid #3d63ea; outline-offset: 2px; }
+
+/* 정산 자세히 보기: 정산표 카드와 홀·포장·배달 카드 (치킨·분식) */
+.st-card { margin: 12px 16px 16px; padding: 16px 18px; border: 1px solid #e3e8f4; border-radius: 16px; background: #fff; }
+.st-h { display: flex; align-items: center; gap: 12px; margin-block-end: 12px; }
+.st-h h2 { margin: 0; font-size: 17px; }
+.st-h small { color: #5a6270; font-size: 12.5px; }
+.st-ico { display: grid; place-items: center; inline-size: 34px; block-size: 34px; border-radius: 10px; background: #eef2fe; color: #3d63ea; font-weight: 800; }
+.st-ico.is-ch { background: #fdf3e3; color: #b0701a; }
+.st-table tr.sum th, .st-table tr.sum td { background: #f3f6ff; }
+.ch-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ch-card { display: grid; grid-template-rows: auto 1fr auto; border: 1px solid #e3e8f4; border-radius: 14px; overflow: hidden; background: #fff; }
+.ch-card header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 12px; color: #fff; }
+.ch-card.is-visit header { background: #3d63ea; } .ch-card.is-takeout header { background: #27a06a; } .ch-card.is-delivery header { background: #e8952e; }
+.ch-card header b { font-size: 15px; }
+.ch-best { padding: 1px 8px; border-radius: 999px; background: rgba(255, 255, 255, .92); color: #17181c; font-size: 11px; font-weight: 700; }
+.ch-card dl { display: grid; gap: 4px; margin: 0; padding: 10px 12px; font-size: 13.5px; }
+.ch-card dl div { display: flex; justify-content: space-between; gap: 8px; }
+.ch-card dt { color: #5a6270; } .ch-card dd { margin: 0; font-variant-numeric: tabular-nums; }
+.ch-card footer { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 0 8px; padding: 10px 12px; border-block-start: 1px solid #eef0f4; background: #f7f8fb; }
+.ch-card footer span { font-size: 12.5px; color: #5a6270; }
+.ch-card footer strong { text-align: end; font-size: 17px; }
+.ch-card footer small { grid-column: 1 / -1; text-align: end; font-size: 12px; color: #5a6270; }
+.st-ev { margin-block-start: 12px; padding: 10px 12px; border-radius: 12px; background: #f7f8fb; font-size: 13.5px; }
+.st-ev .sx-evs { margin: 4px 0 0; }
+@media (max-width: 760px) { .ch-cards { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- 차분한 색 (2026-10-22): 형광 빨강·파랑 대신 연한 바탕 + 진한 글자, 그래프는 파란 계열 진하기로만 나눈다 ---- */
+.sc-hero { color: #1d2a55; background: #eef2fe; border: 1px solid #d5def5; }
+.sc-hero h2 { color: #22388f; }
+.sc-hero p { color: #3a4660; opacity: 1; }
+.sc-hero.is-bad { color: #4a2a28; background: #fbf1f0; border-color: #efd6d3; }
+.sc-hero.is-bad h2 { color: #a1453c; }
+.sc-hero.is-bad p { color: #5a4544; }
+.sc-hero.is-mid { color: #4a3a1c; background: #fbf6ea; border-color: #eee1c2; }
+.sc-hero.is-mid h2 { color: #8a6420; }
+.cb-bar { color: #fff; }
+.cb-bar span.lt { color: #22388f; }
+.cb-bar .cb-op { background: #1f3f8f; }
+.cb-loss { color: #a1453c; font-weight: 600; font-size: 15px; }
+.ins-d { color: #2f4fc4; }
+.ch-card.is-visit header { background: #2f4fc4; }
+.ch-card.is-takeout header { background: #5b78d8; }
+.ch-card.is-delivery header { background: #8aa0e3; }
+.sx-mix-bar .is-visit { background: #2f4fc4; } .sx-mix-bar .is-takeout { background: #5b78d8; } .sx-mix-bar .is-delivery { background: #8aa0e3; }
+.sx-mix-k.is-visit span { color: #2f4fc4; } .sx-mix-k.is-takeout span { color: #4a64c4; } .sx-mix-k.is-delivery span { color: #6a80c9; }
+.st-ico.is-ch { background: #eef2fe; color: #3d63ea; }
+.tc-bars i { background: #4d6bd6; } .tc-bars.r i { background: #94a8ea; } .tc-bars i.neg { background: #c9a6a2; }
+.ap-bar span.neg { background: #c9a6a2; }
+/* 흑자/적자 숫자: 초록·빨강 대신 파랑 / 차분한 붉은색 */
+.sx-kpis dd.pos, .sx-pop .pos, .sc-up, .sx-table .pos { color: #2f4fc4; }
+.sx-kpis dd.neg, .sx-pop .neg, .sc-down, .sx-table .neg { color: #a1453c; }
+.sx-chip.pos { background: #eef2fe; } .sx-chip.neg { background: #fbf1f0; }
+/* 적자 상자는 조금 더 붉게 (너무 형광은 아니게) */
+.sc-hero.is-bad { color: #5a1f1a; background: #f9e1de; border-color: #e7b3ac; }
+.sc-hero.is-bad h2 { color: #b4372c; }
+.sc-hero.is-bad p { color: #6a3a35; }
+/* 운영 계획 화면: 지난달 결과는 위에 가로로, 계획 칸은 아래에 두 줄로 펼쳐 아래로 덜 내려가게 (다섯 업종 공통) */
+.sx-split { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.sx-left { padding: 14px 18px; }
+.sx-right .sx-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
+.sx-right .sx-steps .sx-step:nth-child(2) { border-top: 0; }
+.sx-right .sx-steps .sx-step:first-child { border-top: 0; }
+@media (max-width: 900px) { .sx-right .sx-steps { grid-template-columns: minmax(0, 1fr); } .sx-right .sx-steps .sx-step:nth-child(2) { border-top: 1px solid #edf1f7; } }
+/* 시작·운영 계획·사건·정산 상자를 처음부터 같은 크기로 (다섯 업종 공통) */
+.sx-pop, .sx-pop-intro, .sx-pop-plan, .sx-pop-scenario, .sx-pop-settle, .sx-pop-report { width: min(1100px, 100%); height: min(860px, 100%); max-height: 100%; }
+
+/* 성적표 다듬기: 달별 영업이익 막대, 다섯 영역은 두 줄 카드, 차분한 파랑 */
+.sc-ops { display: flex; align-items: flex-end; gap: 10px; block-size: 140px; padding: 14px 16px 26px; border: 1px solid #e3e8f4; border-radius: 14px; background: #fff; }
+.sc-ops span { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; block-size: 100%; }
+.sc-ops i { display: block; inline-size: min(46px, 70%); border-radius: 6px 6px 0 0; background: #4d6bd6; }
+.sc-ops i.neg { background: #c9a6a2; }
+.sc-ops em { font-style: normal; font-size: 11.5px; font-weight: 700; color: #2a3550; margin-block-end: 4px; white-space: nowrap; }
+.sc-ops small { position: absolute; inset-block-end: -20px; font-size: 12px; color: #5a6270; }
+.sc-areas { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sc-areas li { padding: 12px 14px; border: 1px solid #e3e8f4; border-radius: 14px; background: #fff; grid-template-columns: auto 1fr 52px; }
+.sc-bar i { background: #4d6bd6; }
+.sc-score b { color: #2f4fc4; }
+.sc-fix b { color: #a1453c; }
+.sc-badges li { background: #f3f6ff; }
+@media (max-width: 760px) { .sc-areas { grid-template-columns: minmax(0, 1fr); } }
+/* 선택 버튼 묶음(sx-chips)이 있는 줄: 버튼을 설명 아래로 내려 겹치지 않게 */
+.sx-step:has(.sx-chips) { grid-template-columns: minmax(0, 1fr); }
+.sx-step-c:has(.sx-chips) { display: block; padding: 0; border: 0; background: none; inline-size: auto; }
+.sx-chips { justify-content: flex-start; max-inline-size: none; }
+.sx-chips button { flex: none; }

@@ -24,26 +24,28 @@ FAMILIES: dict[str, tuple[str, ...]] = {
     "weather": ("weather", "hourly_rain"),
     "holiday": ("holiday",),
     "rent": ("rent_", "premium", "kosis_cost_임차료", "live_rent", "live_deposit", "cafe_rent"),
-    "competition": ("pork", "dong_", "live_shop", "cafe_competition"),
-    "sales": ("hansik", "cafe", "dong_", "cafe_sales", "survival_"),
+    "competition": ("pork", "dong_", "live_shop", "cafe_competition", "qfdong_"),
+    "sales": ("hansik", "cafe", "dong_", "cafe_sales", "survival_", "qfdong_"),
     "neighborhood": ("dong_", "rent_dong_", "cafe_dong"),
     "meat_price": ("price_", "kmta_pork", "kmta_import", "kmta_retail_pork", "kmta_market_pork", "pork_retail", "pork_import",
-                   "pork_wholesale", "pork_margin", "pork_stock", "pig_auction", "food_pork", "food_chicken", "costidx_pork"),
-    "food_price": ("kamis_", "food_", "costidx_veg"),  # 채소·곡물·식재료 가격 (KAMIS, 서울 생활물가지수 food_cost.json)
+                   "pork_wholesale", "pork_margin", "pork_stock", "pig_auction", "food_pork", "food_chicken", "costidx_pork", "backtest_"),
+    "food_price": ("kamis_", "food_", "costidx_veg", "backtest_"),  # 채소·곡물·식재료 가격 (KAMIS, 서울 생활물가지수 food_cost.json)
     "livestock": ("kape_", "pig_", "kmta_hanwoo", "kmta_pork_grading", "kmta_pork_consumption"),
-    "cafe": ("cafe_", "coffee_", "dessert_", "beverage_"),
+    "cafe": ("cafe_", "coffee_", "dessert_", "beverage_", "sns_cafe", "sbizdlvy_seoul_cafe", "sbizdlvy_cafe_"),
     "cafe_cost": ("cafe_cost_", "cafe_startup", "cafe_investment"),
     "cafe_menu_price": ("cafe_menu_price",),  # 카페 메뉴 가격
     "cost": ("kosis_", "cafe_cost_"),
     "myshop": ("live_", "cafe_myshop"),
     "flow": ("flow_", "live_flow", "live_type"),
-    "loan": ("ecos_", "live_loan"),       # 은행 대출 금리 (pipelines/fetch_ecos.py)
+    "loan": ("ecos_", "live_loan", "bank_"),       # 은행 대출 금리 (pipelines/fetch_ecos.py) + 은행별 개인사업자 금리 (pipelines/fetch_kfb_rates.py)
     "support": ("kstartup_",),            # 창업 지원사업 공고 (pipelines/fetch_kstartup.py)
-    "apparel": ("apparel_", "fashion_", "ftc_interior_apparel"),  # 옷가게: 상권분석·도소매업조사·생존율 + 패션 소비 실태조사·수입 원가·재고 논문
-    "chicken": ("chicken_", "food_chicken", "food_oil", "delivery_"),  # 치킨집: 경영실태조사·상권분석 치킨전문점·닭고기·식용유 시세
-    "bunsik": ("bunsik_", "food_rice", "food_tteok", "food_fishcake", "food_egg", "delivery_"),  # 분식집: 경영실태조사·상권분석 분식전문점·쌀·떡·어묵·달걀
+    "apparel": ("apparel_", "fashion_", "ftc_interior_apparel", "sns_apparel"),  # 옷가게: 상권분석·도소매업조사·생존율 + 패션 소비 실태조사·수입 원가·재고 논문
+    "chicken": ("chicken_", "food_chicken", "food_oil", "delivery_", "sbizdlvy_seoul_chicken", "sbizdlvy_trend_chicken", "sbizdlvy_chicken_", "qfdong_chicken_", "sns_chicken"),  # 치킨집: 경영실태조사·상권분석 치킨전문점·닭고기·식용유 시세
+    "bunsik": ("bunsik_", "food_rice", "food_tteok", "food_fishcake", "food_egg", "delivery_", "sbizdlvy_seoul_bunsik", "sbizdlvy_trend_bunsik", "sbizdlvy_bunsik_", "qfdong_bunsik_", "sns_bunsik"),  # 분식집: 경영실태조사·상권분석 분식전문점·쌀·떡·어묵·달걀
     "interior": ("ftc_interior_", "cafe_cost_"),  # 가맹점 평당 인테리어 (공정위 정보공개서)
-    "delivery": ("delivery_",),           # 배달 시장·수수료 (pipelines/fetch_kosis_delivery.py, season_params.yaml delivery)
+    "delivery": ("delivery_", "sbizdlvy_"),           # 배달 시장·수수료 + 소상공인365 배달분석 (구·동네별 점포당 배달 주문)
+    "sns": ("sns_",),                     # 소상공인365 SNS 분석 (업종 키워드 언급 수·연관어)
+    # 배달 (pipelines/fetch_kosis_delivery.py, season_params.yaml delivery)
 }
 TOPIC_RE: list[tuple[str, re.Pattern]] = [
     ("weather", re.compile(r"날씨|기온|장마|강수|소나기|비가|비 ?(오|와|온|올|내)|눈이|눈 ?(오|와|온)|더위|추위|한파|폭염")),
@@ -64,6 +66,7 @@ TOPIC_RE: list[tuple[str, re.Pattern]] = [
     ("loan", re.compile(r"금리|이자|기준금리|대출|정책 ?자금|융자")),
     ("support", re.compile(r"지원 ?사업|공고|창업 ?교육|컨설팅|멘토링|보육|입주|지원금|[Kk]-?스타트업|케이스타트업")),
     ("delivery", re.compile(r"배달|배민|쿠팡 ?이츠|요기요|중개 ?수수료")),
+    ("sns", re.compile(r"SNS|sns|에스엔에스|인스타|블로그|언급|연관어|해시태그|반응|입소문|화제")),
     ("apparel", re.compile(r"옷가게|옷 ?가게|의류|옷 ?장사|패션|보세|옷을 ?팔")),
     ("chicken", re.compile(r"치킨|통닭|닭집|프라이드|양념 ?치킨")),
     ("bunsik", re.compile(r"분식|떡볶이|김밥|순대|튀김 ?가게")),
@@ -80,7 +83,8 @@ OFFTOPIC = re.compile(r"로또|비트코인|코인|주식|펀드|환율|대통�
 PORK_PRICE = re.compile(r"^pork_(retail|import|wholesale|margin|stock)")
 RULEQ = re.compile(r"어떻게 ?(나눠|분류|정해|구분|나누)|분류 ?(기준|방법)|기준이 ?뭐|규칙")
 SNOW = re.compile(r"눈 ?(이|도)? ?(오|와|온|올|내)|폭설|적설")
-GU = re.compile(r"[가-힣]{1,3}구(?![가-힣])")
+# 서울 25개 구 이름 (조사가 붙어도: "동작구에", "마포구는"). 긴 이름을 먼저 (동대문구가 중구보다 앞)
+GU = re.compile(r"(?<![가-힣])(강남구|강동구|강북구|강서구|관악구|광진구|구로구|금천구|노원구|도봉구|동대문구|동작구|마포구|서대문구|서초구|성동구|성북구|송파구|양천구|영등포구|용산구|은평구|종로구|중랑구|중구)")
 PER_GU = re.compile(r"^(hansik_(?!seoul)|cafe_(?!seoul)|pork_(?!top|retail|import|wholesale|margin|stock)|chicken_gu_|bunsik_gu_|delivery_gu_)")
 EFFECT = re.compile(r"줄어|늘어|영향|효과|떨어|오르면|내리면|올리면|때문에|손님이 ?(줄|늘)")
 
@@ -165,8 +169,9 @@ def static_facts() -> tuple[list[dict], dict]:
     e = _load("cafe_cost.json")
     f = _load("kamis.json")  # 서울 채소·곡물 소매가격 (pipelines/fetch_kamis.py)
     x = _load("facts_extra.json")  # 식재료 시세·치킨·분식·패션·가맹 인테리어 (pipelines/build_facts_extra.py)
+    y = _load("facts_sbiz365.json")  # 소상공인365 배달·SNS, 은행별 금리, 시세 검증, 치킨·분식 동네 (pipelines/build_facts_sbiz365.py)
 
-    facts = a["facts"] + b["facts"] + f.get("facts", []) + x.get("facts", [])
+    facts = a["facts"] + b["facts"] + f.get("facts", []) + x.get("facts", []) + y.get("facts", [])
     # 카페 JSON을 facts 형태로 변환
     if c.get("facts"):
         facts.extend([{
@@ -250,6 +255,8 @@ def static_facts() -> tuple[list[dict], dict]:
         sources.update(f["sources"])
     if x.get("sources"):
         sources.update(x["sources"])
+    if y.get("sources"):
+        sources.update(y["sources"])
 
     return facts, sources
 
@@ -618,6 +625,10 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
     sources = {**sources, **({"app": _load("facts_changeup.json")["sources"].get("app")} if live else {})}
     dongs = dong_names()
     tps = topics(q, dongs)
+    # 업종 말 없이 '이 동네 경쟁·매출'을 물으면 화면의 업종(치킨·분식·옷가게·카페)을 주제에 더해 그 업종의 구 근거를 쓴다
+    _ci = (ctx or {}).get("industry")
+    if _ci in ("chicken", "bunsik", "apparel", "cafe") and not tps & {"chicken", "bunsik", "apparel", "cafe"} and not MEAT_Q.search(q)             and tps & {"competition", "sales", "neighborhood", "myshop"}:
+        tps.add(_ci)
     near = match_dongs(q, dongs)
     named_dong = bool(near)
     if near:
@@ -642,10 +653,23 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
     if "support" in tps:
         pool = [f for f in pool if not f["id"].startswith("kstartup_") or f.get("gu") in (None, want_gu)]
         k = max(k, 5)
+    # 업종별 문장(SNS·배달분석·동네): 질문에 다른 업종 말이 없으면 지금 화면의 업종 것만, 구별 배달 문장은 물은(고른) 구 것만
+    named_inds = {t for t in tps if t in ("apparel", "chicken", "bunsik", "cafe")} | ({"bbq"} if MEAT_Q.search(q) else set())
+    cur_ind = (ctx or {}).get("industry")
+    keep_inds = named_inds or ({cur_ind} if cur_ind else set())
+    def _ind_ok(fid: str) -> bool:
+        m = re.match(r"^(?:sns|sbizdlvy_seoul|sbizdlvy_trend|sbizdlvy|qfdong)_(chicken|bunsik|cafe|bbq|apparel)(?:_(.+))?$", fid)
+        if not m:
+            return True
+        if keep_inds and m.group(1) not in keep_inds:
+            return False
+        gu_part = m.group(2)
+        return not (gu_part and want_gu and fid.startswith(("sbizdlvy_", "qfdong_")) and gu_part != want_gu)
+    pool = [f for f in pool if _ind_ok(f["id"])]
     if "apparel" in tps:
         # 옷가게를 물으면 옷가게 근거만. 구를 말했으면(또는 화면에서 고른 구가 있으면) 그 구 값, 아니면 서울 값과 비용·생존율만
         g = GU.search(q).group() if GU.search(q) else (ctx or {}).get("gu") if (ctx or {}).get("industry") == "apparel" else None
-        pool = [f for f in pool if f["id"].startswith("apparel_") and (not f["id"].startswith("apparel_gu_") or (g and f["id"] == f"apparel_gu_{g}"))]
+        pool = [f for f in pool if f["id"].startswith(("apparel_", "sns_apparel")) and (not f["id"].startswith("apparel_gu_") or (g and f["id"] == f"apparel_gu_{g}"))]
     # '30대 생존율', '20대 대출'처럼 나이대가 나와도 생존율·대출·지원사업·배달을 묻는 질문은 인구 질문이 아니다
     if "flow" in tps and not re.search(r"생존|폐업", q) and not tps & {"loan", "support", "delivery"}:
         # 사람 수 질문은 사람 근거만 쓴다. 이름이 나온 동이 없고 화면의 동네도 모르면 다른 주제의 문장으로 대신하지 않는다.
@@ -656,6 +680,17 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
             here = [f for f in pool if f["id"].startswith("live_")]
             pool = here or pool
     cafe_q, meat_q = bool(CAFE_Q.search(q)), bool(MEAT_Q.search(q))
+    # 질문에 업종 말이 없으면 지금 화면의 업종(ctx.industry)으로 거른다: 옷가게·치킨·분식에서 고깃집·카페 문장이 섞이지 않게
+    ind = (ctx or {}).get("industry")
+    if not cafe_q and not meat_q and ind:
+        cafe_q, meat_q = ind == "cafe", ind == "bbq"
+        if ind in ("apparel", "chicken", "bunsik"):
+            pool = [f for f in pool if not MEAT_ID.match(f["id"]) and not MEAT_TEXT.search(f["text"]) and not CAFE_ID.match(f["id"])]
+            if ind == "apparel":
+                pool = [f for f in pool if not re.match(r"^(chicken|bunsik|food_|delivery_|costidx_)", f["id"])]
+            else:
+                other = "bunsik" if ind == "chicken" else "chicken"
+                pool = [f for f in pool if not f["id"].startswith(("fashion_", "apparel_", f"{other}_"))]
     if cafe_q and not meat_q:
         pool = [f for f in pool if not MEAT_ID.match(f["id"]) and not MEAT_TEXT.search(f["text"])]
     elif meat_q and not cafe_q:
@@ -673,32 +708,50 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
 
     if not pool:
         return {"answer": None, "facts": [], "citations": [], "message": NONE_MESSAGE}
-    if not GU.search(q) and not named_dong and tps & {"sales", "competition"} and "rent" not in tps:
+    if not GU.search(q) and not named_dong and not (OWN.search(q) and want_gu) and tps & {"sales", "competition"} and "rent" not in tps:
         seoul = [f for f in pool if not PER_GU.match(f["id"])]
         pool = seoul or pool
-    if OWN.search(q) and live:
+    if OWN.search(q) and live and not tps & {"delivery", "sns"}:   # '이 동네 배달·SNS'는 화면 값(live_)에 없어 업종·구 문장으로 답한다
         own = [f for f in pool if f["id"].startswith("live_")]
         pool = own or pool
+    # 은행끼리 비교하는 질문(어느 은행, 제일 낮은 등)은 은행 순위 문장으로. 은행 이름을 말했으면 그 은행 문장
+    if "loan" in tps and re.search(r"어느 ?은행|은행별|은행 ?중|낮은|싼|비교|제일|가장|높은|순위", q):
+        named_bank = [f for f in pool if f["id"].startswith("bank_") and f["id"] != "bank_guarantee_rank" and f["id"][5:].split("(")[0][:2] in q]
+        rank = [f for f in pool if f["id"] == "bank_guarantee_rank"]
+        pool = named_bank or rank or pool
 
     if "neighborhood" in tps and RULEQ.search(q) and not named_dong:
         rule = [f for f in stat if f["id"] == "dong_type_rule"]
         pool = rule or pool
 
+    # 생존율 질문: 생존율 근거는 업종을 나누지 않은 값이라 업종 말('고깃집')이 문장에 없어도 그 근거로 답한다
+    surv_q = bool(re.search(r"생존|살아남", q))
+    if surv_q:
+        surv = [f for f in pool if f["id"].startswith("survival_")]
+        if not re.search(r"[1-6]0대|나이", q):   # 나이를 묻지 않았으면 업종 생존율 문장을 쓴다
+            surv = [f for f in surv if "나이대" not in f["text"]] or surv
+        pool = surv or pool
+    # 구 이름을 말한 경쟁·매출 질문은 그 구 문장을 먼저 (서울 1·꼴찌 구 문장이 끼지 않게)
+    gq = GU.search(q)
+    g_name = gq.group() if gq else (want_gu if OWN.search(q) else None)   # '이 동네·우리 구'는 화면에서 고른 구
+    if g_name and tps & {"competition", "sales"} and not surv_q:
+        own_gu = [f for f in pool if f["id"].endswith("_" + g_name) or f.get("gu") == g_name]
+        pool = own_gu or pool
     ranked = C._rank_facts(q, pool)
     # 화면이 보낸 값은 지금 사용자가 보고 있는 가게의 값이라 같은 점수면 먼저 보여 준다
     ranked = sorted(((s * (1.25 if f["id"].startswith("live_") or (want_gu and f.get("gu") == want_gu) else 1.0), f) for s, f in ranked),
                     key=lambda x: -x[0])
     top = ranked[0][0] if ranked else 0.0
     # 주제가 명확히 인식된 경우 임계값을 더 높게 (엉뚱한 답을 피하기 위해)
-    threshold = 0.0 if price_q else 0.25 if tps else 0.20   # 품목 가격 질문은 이미 품목 이름으로 걸렀다
+    threshold = 0.0 if price_q or surv_q else 0.25 if tps else 0.20   # 품목 가격·생존율 질문은 이미 근거를 골라 뒀다
     if top < threshold:
         # 범위 밖 질문이면 명확하게 답변
         if OFFTOPIC.search(q):
             return {"answer": None, "facts": [], "citations": [], "message": OFF_MESSAGE}
         return {"answer": None, "facts": [], "citations": [], "message": NONE_MESSAGE}
     # 질문의 핵심 낱말(직장인구, 유형 등)이 고른 근거 어디에도 없으면, '이 동네' 같은 말만 겹친 것이라 답하지 않는다.
-    keys = specific_words(q, near)
-    if keys and not any(covers(f, keys) for _, f in ranked[:k]):
+    keys = [w for w in specific_words(q, near) if not w.startswith(("고깃집", "치킨집", "분식집", "카페", "옷가게"))] if surv_q else specific_words(q, near)
+    if keys and not any(covers(f, keys) for _, f in ranked[:k]) and not surv_q:
         return {"answer": None, "facts": [], "citations": [], "message": NONE_MESSAGE}
     hits, seen = [], set()
     for sim, f in ranked:

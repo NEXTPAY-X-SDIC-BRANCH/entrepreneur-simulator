@@ -302,13 +302,16 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
     perceived = plan["meat_price"] / (1 + v("meat_grade.door_weight") * g["tolerance"])
     p["_price_index"] = (w_meat * perceived / base["prd_meat_price"] + w_alc * plan["soju_price"] / base["prd_alcohol_price"]
                          + (1 - w_meat - w_alc))
-    # 달별 원가 지수 (calendar.yaml cost_index, 같은 시즌 10월 = 1): 시세 사건 배율과 곱한다
+    # 시세 사건 배율: 등급마다 세기(pork_event_strength)를 곱한다. 달별 원가 지수(calendar.yaml cost_index, 같은 시즌 10월 = 1)는
+    # 그 뒤에 모든 등급에 똑같이 곱한다. 계절 흐름까지 세기를 곱하면 숙성만 10월→3월 하락을 1.25배로 받아 늘 이기게 된다
+    # (sim/tests/test_season.py test_no_plan_beats_base...: 숙성 ₩22,000이 8개 시드 모두 454만원 앞섰다)
     cidx = cal.get("cost_index") or {}
-    pork = op_mult.get("cst_meat_cost_per_portion", 1.0) * cidx.get("meat", 1.0)
+    pork = op_mult.get("cst_meat_cost_per_portion", 1.0)
     if plan["meat_grade"] == "imported":
         pork = (1 + (pork - 1) * v("meat_grade.pork_event_strength_imported")) * op_mult.get("import_meat_cost_mult", 1.0)
     elif plan["meat_grade"] == "aged":
         pork = 1 + (pork - 1) * v("meat_grade.pork_event_strength_aged")
+    pork *= cidx.get("meat", 1.0)
     p["cst_meat_cost_per_portion"] = g["cost"] * pork
     if plan["menu"]:   # 메뉴를 직접 등록했으면 등급 원가 대신 메뉴 원가의 비중 가중 평균 (도매가 사건 배율은 그대로 곱한다)
         p["cst_meat_cost_per_portion"] = sum(x["cost"] * x["share"] for x in plan["menu"]) * pork

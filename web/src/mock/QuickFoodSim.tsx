@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Assume from "./Assume";
 import { guStat, man, type Profile } from "./model";
 import {
-  DEFAULT_PLAN, EXTRAS, HOURS_DEFAULT, HOURS_RANGE, MAIN, PLAN_KEYS, QF_NAME, clock, extraPrice, hoursText, mixOf, mixStr, planText, sbizDelivery, type PlanKey, deliveryGuInfo, derived, eventOf, playMonth, qfOpeningCost, startState,
+  DEFAULT_PLAN, EXTRAS, HOURS_DEFAULT, HOURS_RANGE, MAIN, PLAN_KEYS, QF_NAME, PACK_KRW, clock, extraPrice, hoursText, mixOf, mixStr, planText, sbizDelivery, type PlanKey, deliveryGuInfo, derived, eventOf, playMonth, qfOpeningCost, startState,
   type QfCfg, type QfEvent, type QfMonth, type QfOption, type QfPlan, type QfState, type QfStratId,
 } from "./quickfood";
 import ShopRoom3D, { shopPlan } from "./ShopRoom3D";
@@ -33,6 +33,7 @@ const n0 = (x: number) => Math.round(x).toLocaleString("ko-KR");
 const stepsOf = (ind: "chicken" | "bunsik"): [Exclude<PlanKey, "mix">, number, number, number][] => [
   ["price", 0.5, 2, 500 / MAIN[ind].p0], ["staff", 0, 6, 1], ["ad", 0, 2, 1], ["marketing", 0, 300, 25],
   ["open", HOURS_RANGE[ind].open[0], HOURS_RANGE[ind].open[1], 1], ["close", HOURS_RANGE[ind].close[0], HOURS_RANGE[ind].close[1], 1], ["pickup", 0, 0.3, 0.05],
+  ["review", 0, 1, 1], ["minOrder", 9000, 24000, 1000], ["radius", 0.5, 4, 0.5], ["newMenu", 0, 1, 1],
 ];
 // easy 모드: 방향을 고른 뒤 버튼으로 바꾸는 세 가지
 // easy 모드에서는 꼭 정해야 하는 것만: 대표 메뉴 가격, 알바, 배달앱 광고
@@ -44,7 +45,7 @@ const picksOf = (ind: "chicken" | "bunsik"): QPick<QfPlan>[] => [
   { key: "staff", label: "알바", hint: "바쁜 날 주문을 놓치지 않게", opts: [0, 1, 2, 3].map((n) => ({ label: n ? `${n}명` : "없이", value: n })) },
   { key: "ad", label: "배달앱 광고", hint: "배달 주문을 늘리지만 광고비가 들어요", opts: [{ label: "안 함", value: 0 }, { label: "기본", value: 1 }, { label: "적극", value: 2 }] },
   { key: "close", label: "몇 시에 닫을까요?", hint: ind === "chicken" ? "야식 주문은 밤 10시~새벽 1시에 몰려요" : "분식은 저녁 8시 뒤로 주문이 적어요",
-    opts: (ind === "chicken" ? [23, 25, 27] : [20, 21, 22]).map((h) => ({ label: clock(h), value: h })) },
+    opts: Array.from({ length: HOURS_RANGE[ind].close[1] - HOURS_RANGE[ind].close[0] + 1 }, (_, i) => HOURS_RANGE[ind].close[0] + i).map((h) => ({ label: clock(h), value: h })) },
 ];
 
 // 홀·포장·배달 비중 정하기 (hard 모드). 한 갈래를 5% 올리면 나머지 중 큰 쪽에서 5%를 가져온다
@@ -82,12 +83,12 @@ function MixPicker({ ind, plan, prev, set, seats, gu }: { ind: "chicken" | "buns
 // 매출 100원이 어디로 갔나: 비용 항목과 남은 이익을 한 줄 막대로
 function CostBar({ items, revenue, op }: { items: [string, number][]; revenue: number; op: number }) {
   const r = Math.max(1, revenue), xs = items.filter(([, v]) => v > 0.5);
-  const COL = ["#f0a83a", "#e2574c", "#9b6fb0", "#5a6b8c", "#a3adbf", "#4f9aa3"];
+  const COL = ["#2f4fc4", "#4d6bd6", "#7089e0", "#94a8ea", "#b6c4f1", "#d3dcf7"]; // 파란 계열 한 가지로 진하기만 다르게 (앞 비용이 큰 순)
   return (
     <section className="sx-sec cb">
       <h2>매출 100원이 어디로 갔나</h2>
       <div className="cb-bar" role="img" aria-label={xs.map(([k, v]) => `${k} ${Math.round((v / r) * 100)}원`).join(", ") + `, 남은 이익 ${Math.round((op / r) * 100)}원`}>
-        {xs.map(([k, v], i) => <span key={k} style={{ flexGrow: v, background: COL[i % COL.length] }} title={`${k} ${man(Math.round(v))}`}>{v / r >= 0.07 ? `${k} ${Math.round((v / r) * 100)}` : ""}</span>)}
+        {xs.map(([k, v], i) => <span key={k} className={i >= 3 ? "lt" : undefined} style={{ flexGrow: v, background: COL[i % COL.length] }} title={`${k} ${man(Math.round(v))}`}>{v / r >= 0.07 ? `${k} ${Math.round((v / r) * 100)}` : ""}</span>)}
         {op > 0 && <span className="cb-op" style={{ flexGrow: op }}>{op / r >= 0.05 ? `이익 ${Math.round((op / r) * 100)}` : ""}</span>}
       </div>
       {op <= 0 && <p className="cb-loss">비용이 매출보다 {man(Math.round(-op))} 많았어요 (매출 100원당 {Math.round((-op / r) * 100)}원 적자).</p>}
@@ -136,18 +137,35 @@ function buildDays(m: QfMonth, year: number, cashStart: number, dow: number[]): 
 }
 
 // 정산의 갈래별 표: 홀·포장·배달마다 주문 수, 매출, 배달 수수료, 식재료를 빼고 남는 돈
-function ChannelTable({ m }: { m: QfMonth }) {
+// 홀·포장·배달을 갈래마다 카드 하나로: 주문·매출·빠지는 돈(식재료·수수료·용기)·한 건에 남는 돈. 색은 판매 비중 막대와 같다
+function ChannelCards({ m, pack }: { m: QfMonth; pack: number }) {
   const fr = m.revenue > 0 ? m.food / m.revenue : 0;
-  const rows: [string, number, number, number][] = [
-    ["홀", m.orders.visit, m.ch.visit, 0], ["포장", m.orders.takeout, m.ch.takeout, 0], ["배달", m.orders.delivery, m.ch.delivery, m.appFees + m.agencyFees],
+  const rows: [string, string, number, number, number, number][] = [
+    ["visit", "홀", m.orders.visit, m.ch.visit, 0, 0],
+    ["takeout", "포장", m.orders.takeout, m.ch.takeout, 0, (m.orders.takeout * pack) / 1e4],
+    ["delivery", "배달", m.orders.delivery, m.ch.delivery, m.appFees + m.agencyFees, (m.orders.delivery * pack) / 1e4],
   ];
+  const per = (r: number, f: number, p: number, o: number) => ((r - r * fr - f - p) * 1e4) / Math.max(1, o);
+  const best = Math.max(...rows.filter((x) => x[2] > 0).map(([, , o, r, f, p]) => per(r, f, p, o)));
   return (
-    <table className="sx-table">
-      <thead><tr><th>갈래</th><th>주문</th><th>매출</th><th>배달 수수료</th><th>식재료 빼고 남는 돈</th></tr></thead>
-      <tbody>{rows.map(([k, o, r, f]) => (
-        <tr key={k}><th>{k}</th><td>{n0(o)}건</td><td>{man(w(r))}</td><td>{f ? `−${man(w(f))}` : "없음"}</td><td>{man(w(r - r * fr - f))} (한 건 {n0(((r - r * fr - f) * 1e4) / Math.max(1, o))}원)</td></tr>
-      ))}</tbody>
-    </table>
+    <div className="ch-cards">
+      {rows.map(([k, l, o, r, f, p]) => {
+        const left = r - r * fr - f - p, one = per(r, f, p, o);
+        return (
+          <article key={k} className={`ch-card is-${k}`}>
+            <header><b>{l}</b>{o > 0 && one === best && <span className="ch-best">한 건에 가장 많이 남아요</span>}</header>
+            <dl>
+              <div><dt>주문</dt><dd>{n0(o)}건</dd></div>
+              <div><dt>매출</dt><dd>{man(w(r))}</dd></div>
+              <div><dt>식재료</dt><dd>−{man(w(r * fr))}</dd></div>
+              <div><dt>배달 수수료</dt><dd>{f ? `−${man(w(f))}` : "없음"}</dd></div>
+              <div><dt>용기</dt><dd>{p ? `−${man(w(p))}` : "없음"}</dd></div>
+            </dl>
+            <footer><span>남는 돈</span><strong>{man(w(left))}</strong><small>한 건 {n0(one)}원</small></footer>
+          </article>
+        );
+      })}
+    </div>
   );
 }
 
@@ -162,6 +180,8 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const [done, setDone] = useState<Done[]>([]);
   const [plan, setPlan] = useState<QfPlan>({ ...DEFAULT_PLAN, ...HOURS_DEFAULT[cfg.ind], staff: cfg.staff });
   const PT = planText(cfg.ind), STEPS = stepsOf(cfg.ind), PICKS = picksOf(cfg.ind);
+  // 계획 값이 비어 있으면 기본값 (영업 시각은 업종 기본, 나머지는 DEFAULT_PLAN)
+  const cur0 = (k: Exclude<PlanKey, "mix">): number => (plan[k] as number | undefined) ?? (k === "open" || k === "close" ? HOURS_DEFAULT[cfg.ind][k] : (DEFAULT_PLAN[k] as number | undefined) ?? 0);
   const seats = useMemo(() => shopPlan(cfg.ind === "chicken" ? "chicken" : "bunsik", cfg.pyeong, cfg.layout).seats.length, [cfg]);
   const [, setStrat] = useState<QfStratId>("rec");
   const [tweak, setTweak] = useState<Partial<QfPlan>>({});
@@ -183,14 +203,14 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const cur = done.at(-1);
   const m = monthSeq[Math.min(idx, TURNS - 1)];
   const ev = eventOf(cfg.ind, m, seed + idx);
-  const dep = open.lines.filter((l) => ["interior", "equip", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) / 60; // 5년 감가상각
+  const dep = open.lines.filter((l) => ["interior", "equip", "kitchen", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) / 60; // 5년 감가상각
   // 현금흐름표·영수증 (원). 엔진 현금 = 월초 + 영업이익 − 생활비 − 이자
   const cfMonths: CfMonth[] = months.map((c, i) => {
     const s0 = i ? months[i - 1].cash : start.cash, K = 1e4;
     return { month: c.month, start: s0 * K, end: c.cash * K, lines: [
       { label: "매출 (홀·포장·배달)", amount: c.revenue * K }, { label: "식재료", amount: -c.food * K }, { label: "알바 인건비", amount: -c.staffPay * K },
       { label: "월세", amount: -c.rent * K }, { label: "공과금·카드 수수료 등", amount: -c.other * K },
-      { label: "배달앱 중개수수료", amount: -c.appFees * K }, { label: "배달대행비", amount: -c.agencyFees * K }, { label: "배달앱 광고", amount: -c.adCost * K },
+      { label: "배달앱 중개수수료", amount: -c.appFees * K }, { label: "배달대행비", amount: -c.agencyFees * K }, { label: "배달·포장 용기", amount: -(c.packaging ?? 0) * K }, { label: "배달앱 광고", amount: -c.adCost * K },
       { label: "홍보·사건 대응", amount: -(c.marketing + c.eventCost) * K }, { label: "사장 생활비", amount: -c.draw * K }, { label: "대출 이자", amount: -c.interest * K },
     ], tax: { revenue: c.revenue * K, farmBuy: c.food * K, taxableBuy: (c.rent + c.other * 0.5 + c.appFees + c.agencyFees + c.adCost) * K, profit: (c.op - dep - c.interest) * K } };
   });
@@ -410,9 +430,9 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                                   {changed && <small className="sx-step-prev">지난달 {PT[k].text(before!)}</small>}
                                 </div>
                                 <div className="sx-step-c">
-                                  <button type="button" aria-label={`${PT[k].label} 낮추기`} disabled={(plan[k] ?? HOURS_DEFAULT[cfg.ind][k as "open"]) - step < lo - 1e-9} onClick={() => setPlan({ ...plan, [k]: +((plan[k] ?? HOURS_DEFAULT[cfg.ind][k as "open"]) - step).toFixed(4) })}>−</button>
+                                  <button type="button" aria-label={`${PT[k].label} 낮추기`} disabled={cur0(k) - step < lo - 1e-9} onClick={() => setPlan({ ...plan, [k]: +(cur0(k) - step).toFixed(4) })}>−</button>
                                   <output>{PT[k].text(plan)}</output>
-                                  <button type="button" aria-label={`${PT[k].label} 높이기`} disabled={(plan[k] ?? HOURS_DEFAULT[cfg.ind][k as "open"]) + step > hi + 1e-9} onClick={() => setPlan({ ...plan, [k]: +((plan[k] ?? HOURS_DEFAULT[cfg.ind][k as "open"]) + step).toFixed(4) })}>+</button>
+                                  <button type="button" aria-label={`${PT[k].label} 높이기`} disabled={cur0(k) + step > hi + 1e-9} onClick={() => setPlan({ ...plan, [k]: +(cur0(k) + step).toFixed(4) })}>+</button>
                                 </div>
                               </div>
                             );
@@ -504,18 +524,18 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                     <Insight tries={qfTries(profile, cfg, cur.s0, c, cur.ev, cur.opt, seats)} last={c.closed || done.length >= TURNS}
                       onApply={(patch) => { if (mode === "easy") setTweak(patch); else setPlan({ ...c.plan, ...patch }); next(); }} />
                     <CostBar items={[
-                      ["식재료", c.food], ["배달 수수료", fees], ["인건비", c.staffPay], ["월세", c.rent], ["기타", c.other], ["광고·홍보", c.adCost + c.marketing + c.eventCost],
+                      ["식재료", c.food], ["배달 수수료", fees], ["포장 용기", c.packaging ?? 0], ["인건비", c.staffPay], ["월세", c.rent], ["기타", c.other], ["광고·홍보", c.adCost + c.marketing + c.eventCost],
                     ]} revenue={c.revenue} op={c.op} />
                     <CashFlow months={cfMonths} kind="food" shop={name} compact />
                     <details className="sx-more">
                       <summary>정산표와 홀·포장·배달별 자세히 보기</summary>
-                      <div className="sx-settle">
-                      <section className="sx-sec">
-                        <h2>정산표</h2>
-                        <table className="sx-table"><tbody>
+                      <section className="st-card">
+                        <header className="st-h"><span className="st-ico" aria-hidden>₩</span><div><h2>정산표</h2><small>이번 달 매출에서 비용을 하나씩 뺀 계산이에요</small></div></header>
+                        <table className="sx-table st-table"><tbody>
                           <tr><th>매출</th><td>{man(w(c.revenue))}</td><td>주문 약 {n0(c.tx)}건, 한 건 {n0(c.ticket)}원<Assume id="elastic" what="평수 효과(제곱근), 새 가게 인지도, 가격 탄력성 2" /></td></tr>
                           <tr><th>식재료비</th><td>−{man(w(c.food))}</td><td>매출의 {Math.round((c.food / Math.max(1, c.revenue)) * 100)}%, 이달 식재료 시세 {c.foodMult.toFixed(2)}배<Assume id="priceCheck" /></td></tr>
                           <tr><th>배달 수수료</th><td>−{man(w(fees))}</td><td>배달 {n0(c.orders.delivery)}건 × {n0(dv.appFee * 1e4 + dv.agencyFee * 1e4)}원</td></tr>
+                          <tr><th>배달·포장 용기</th><td>−{man(w(c.packaging ?? 0))}</td><td>배달·포장 {n0(c.orders.delivery + c.orders.takeout)}건 × {PACK_KRW[cfg.ind]}원<Assume id="qfPacking" /></td></tr>
                           <tr><th>인건비</th><td>{c.staffPay ? `−${man(w(c.staffPay))}` : "0원"}</td><td>알바 {c.plan.staff}명</td></tr>
                           <tr><th>월세</th><td>−{man(w(c.rent))}</td><td /></tr>
                           <tr><th>기타경비</th><td>−{man(w(c.other))}</td><td>카드 수수료·가스·전기 등<Assume id="otherCost" /></td></tr>
@@ -525,13 +545,11 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                           <tr className="sum"><th>세전이익</th><td>{signed(pre)}</td><td /></tr>
                         </tbody></table>
                       </section>
-                      <section className="sx-sec">
-                        <h2>홀·포장·배달, 어디서 남았나</h2>
-                        <ChannelTable m={c} />
-                        <h2>이번 달 사건</h2>
-                        <ul className="sx-evs"><li><b>{c.event}</b><span>고른 대응: {c.choice}</span></li></ul>
+                      <section className="st-card">
+                        <header className="st-h"><span className="st-ico is-ch" aria-hidden>⇄</span><div><h2>홀·포장·배달, 어디서 남았나</h2><small>같은 메뉴라도 배달은 한 건마다 수수료와 용기값이 빠져요. 월세·알바비는 갈래와 상관없이 나가요</small></div></header>
+                        <ChannelCards m={c} pack={PACK_KRW[cfg.ind]} />
+                        <div className="st-ev"><b>이번 달 사건</b><ul className="sx-evs"><li><b>{c.event}</b><span>고른 대응: {c.choice}</span></li></ul></div>
                       </section>
-                      </div>
                     </details>
                   </div>
                   <footer className="sx-foot">

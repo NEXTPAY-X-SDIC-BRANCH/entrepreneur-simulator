@@ -31,3 +31,17 @@
 .cf-pair .cf-chart { padding: 10px 10px 8px; }
 .cf-pair .cf-key { gap: 10px; font-size: 11.5px; }
 @media (max-width: 900px) { .cf-pair { grid-template-columns: minmax(0, 1fr); } }
+.cf-pair.is-one { grid-template-columns: minmax(0, 1fr); }
+.cf-l { font-size: 10.5px; }
+
+/* 차분한 색: 가진 현금은 진한 파랑, 들어온 돈은 중간 파랑, 나간 돈은 회청색, 세금은 연한 회색 */
+.cf-b.is-total rect { fill: #2f4fc4; }
+.cf-b.is-in rect { fill: #6f8ce0; }
+.cf-b.is-out rect { fill: #b9c2d6; }
+.cf-b.is-tax rect { fill: #d6d9e1; }
+.cf-b.is-net rect { fill: #1f3f8f; }
+.cf-v.up { fill: #2f4fc4; } .cf-v.down { fill: #8a5a55; }
+.cf-key li::before { background: #2f4fc4; }
+.cf-key .is-in::before { background: #6f8ce0; } .cf-key .is-out::before { background: #b9c2d6; } .cf-key .is-tax::before { background: #d6d9e1; }
+.cf-in td { color: #2f4fc4; }
+.cf-tax th, .cf-tax td { color: #5a6270; background: #f7f8fb; }

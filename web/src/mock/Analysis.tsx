@@ -42,7 +42,7 @@ function FundCard({ f }: { f: Fund }) {
         <b className="fd-name">{f.name}</b>
         <small className="fd-org">{f.org} · {f.who}</small>
       </div>
-      <strong className="fd-limit">{limit}</strong>
+      <strong className={`fd-limit${limit.length > 12 ? " is-long" : ""}`}>{limit}</strong>
       <div className="fd-r">
         <p className="fd-terms">{f.terms}</p>
         {r && <p className={`fd-rate ${r.includes("높아요") ? "is-high" : ""}`}>{r}</p>}
@@ -95,7 +95,9 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
   const [ktab, setKtab] = useState<KTab>("sales");
   const [recOpen, setRecOpen] = useState(false);
   const [metric, setMetric] = useState<Metric>("demand");
-  const [dmetric, setDmetric] = useState<DongMetric>("growth");
+  const [dmetric0, setDmetric] = useState<DongMetric>("growth");
+  // 업종마다 칠할 수 있는 지표가 다르다 (옷가게·치킨·분식은 동네 성장률이 없음). 고른 지표가 없으면 첫 지표(매출)로
+  const dmetric: DongMetric = dongMetricKeys().includes(dmetric0) ? dmetric0 : dongMetricKeys()[0];
   const [zoom, setZoom] = useState(false);
   const names = gus.map((g) => g.name);
   const st = guStat(profile.gu);

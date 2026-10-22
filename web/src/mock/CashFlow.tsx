@@ -34,15 +34,17 @@ export default function CashFlow({ months, kind, compact }: { months: CfMonth[];
 
   return (
     <div className="cf">
-      <div className="cf-pair">
+      <div className={`cf-pair${months.length > 1 ? "" : " is-one"}`}>
         <section className="sx-sec">
           <h2>{months.at(-1)!.month}월 돈의 흐름</h2>
           <Waterfall m={months.at(-1)!} lines={rows.at(-1)!} tax={taxes.at(-1)!.vat + taxes.at(-1)!.income} />
         </section>
-        <section className="sx-sec">
-          <h2>달마다 남은 현금</h2>
-          <CashBars months={months} after={afterTax} />
-        </section>
+        {months.length > 1 && (
+          <section className="sx-sec">
+            <h2>달마다 남은 현금</h2>
+            <CashBars months={months} after={afterTax} />
+          </section>
+        )}
       </div>
       {compact ? <details className="sx-more"><summary>현금흐름표와 세금 떼어 둘 돈 보기</summary>
       <section className="sx-sec">
@@ -100,13 +102,17 @@ export default function CashFlow({ months, kind, compact }: { months: CfMonth[];
 }
 
 const W = 56; // 막대 한 칸 폭 (svg 단위)
-const short = (lb: string) => (lb.length > 7 ? lb.slice(0, 7) + "…" : lb);
+// 라벨을 두 줄로: 괄호 앞까지, 6자씩 (말줄임 없이)
+const two = (lb: string) => { const t = lb.split(" (")[0]; return t.length <= 6 ? [t] : [t.slice(0, 6), t.slice(6, 12)]; };
 const mk = (x: number) => { const v = Math.round(x / 1e4); return Math.abs(v) >= 1e4 ? `${(v / 1e4).toFixed(1)}억` : `${v.toLocaleString("ko-KR")}만`; };
 
 // 폭포 그래프: 월초 현금에서 들어온 돈(초록)은 올라가고 나간 돈(빨강)은 내려가 월말 현금(파랑)에 닿는다. 마지막에 세금 떼어 둘 돈을 빼 본다.
 function Waterfall({ m, lines, tax }: { m: CfMonth; lines: CfLine[]; tax: number }) {
   const ins = lines.filter((l) => l.amount > 0).sort((a, b) => b.amount - a.amount);
-  const outs = lines.filter((l) => l.amount < 0).sort((a, b) => a.amount - b.amount);
+  // 나간 돈은 큰 것 다섯 개만 따로, 나머지는 '그 밖의 비용' 하나로 묶는다 (막대가 너무 많으면 읽기 어려워서)
+  const outAll = lines.filter((l) => l.amount < 0).sort((a, b) => a.amount - b.amount);
+  const rest = outAll.slice(5).reduce((a, l) => a + l.amount, 0);
+  const outs = [...outAll.slice(0, 5), ...(rest < 0 ? [{ label: "그 밖의 비용", amount: rest }] : [])];
   type Bar = { label: string; from: number; to: number; kind: "total" | "in" | "out" | "tax" | "net" };
   const bars: Bar[] = [{ label: "월초 현금", from: 0, to: m.start, kind: "total" }];
   let run = m.start;
@@ -119,7 +125,7 @@ function Waterfall({ m, lines, tax }: { m: CfMonth; lines: CfLine[]; tax: number
   const width = bars.length * W + 8;
   return (
     <div className="cf-chart">
-      <svg viewBox={`0 0 ${width} ${top + H + 46}`} role="img" aria-label={`${m.month}월 현금 흐름 그래프. 월초 ${mk(m.start)}원에서 월말 ${mk(m.end)}원`}>
+      <svg viewBox={`0 0 ${width} ${top + H + 56}`} role="img" aria-label={`${m.month}월 현금 흐름 그래프. 월초 ${mk(m.start)}원에서 월말 ${mk(m.end)}원`}>
         <line x1={0} x2={width} y1={y(0)} y2={y(0)} className="cf-zero" />
         {bars.map((x, i) => {
           const y1 = y(Math.max(x.from, x.to)), y2 = y(Math.min(x.from, x.to));
@@ -130,7 +136,7 @@ function Waterfall({ m, lines, tax }: { m: CfMonth; lines: CfLine[]; tax: number
               <rect x={cx - 21} y={y1} width={42} height={Math.max(2, y2 - y1)} rx={5} />
               {i < bars.length - 1 && <line x1={cx + 21} x2={cx + W - 21} y1={y(x.to)} y2={y(x.to)} className="cf-link" />}
               <text x={cx} y={y1 - 6} className="cf-v">{x.kind === "total" || x.kind === "net" ? mk(x.to) : `${d > 0 ? "+" : "−"}${mk(Math.abs(d))}`}</text>
-              <text x={cx} y={top + H + 20} className="cf-l">{short(x.label)}</text>
+              <text x={cx} y={top + H + 16} className="cf-l">{two(x.label).map((t, k) => <tspan key={k} x={cx} dy={k ? 13 : 0}>{t}</tspan>)}</text>
               <title>{`${x.label}: ${x.kind === "total" || x.kind === "net" ? mk(x.to) : (d > 0 ? "+" : "−") + mk(Math.abs(d))}원`}</title>
             </g>
           );

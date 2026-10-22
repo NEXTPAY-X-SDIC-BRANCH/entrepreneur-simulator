@@ -42,7 +42,7 @@ demand:
 meat_grade:   # cost per 200g portion, quality score (0-1), price tolerance (raises the price customers accept)
   imported: {cost: 2000, quality: 0.30, tolerance: -0.20, tag: "S85;가정", note: "수입 냉동 삼겹 도매 ₩7,000~9,250/kg (S85), 200g 약 ₩2,000. 만족 −0.3과 수용 가격 약 ₩15,000은 가정"}
   domestic: {cost: 4500, quality: 0.60, tolerance: 0.0, tag: "S68;S69"}
-  aged: {cost: 6000, quality: 0.90, tolerance: 0.15, price_ceiling: 22000, tag: "S23;가정", note: "숙성 손실과 인건비 미확인 (round 4 §4: ₩5,500~6,500). 손님이 받아들이는 가격은 약 ₩22,000에서 멈춘다: 서울 평균 ₩21,321/200g (S23), 관찰된 숙성 메뉴 ₩16,000/150g ≈ ₩21,300/200g (round 4 §4, 검색 요약)"}
+  aged: {cost: 6500, quality: 0.80, tolerance: 0.15, price_ceiling: 22000, tag: "S23;가정", note: "원가는 조사 범위 위쪽 끝 (round 4 §4: ₩5,500~6,500, 숙성 손실·인건비 미확인), 품질 0.80은 가정. 2026-10-22 균형 점검(sim/tests/test_season.py): 6,000원·0.90이면 숙성 ₩22,000이 8개 시드 모두 기본보다 450만원 넘게 앞서 한 가지 정답이 됐다. 손님이 받아들이는 가격은 약 ₩22,000에서 멈춘다: 서울 평균 ₩21,321/200g (S23), 관찰된 숙성 메뉴 ₩16,000/150g ≈ ₩21,300/200g (round 4 §4, 검색 요약)"}
   pork_event_strength_imported: {value: 0.3, tag: 가정, note: "국내 도매가 변화가 수입육 원가에 미치는 비율"}
   pork_event_strength_aged: {value: 1.25, tag: 가정, note: "숙성은 손실만큼 원육이 더 들어가서 도매가 변동이 원가에 더 크게 실린다"}
   door_weight: {value: 0.3, tag: 가정, note: "음식점은 돼지고기 원산지를 메뉴판에 표시해야 한다 (원산지 표시제). 그래서 원육 등급이 가게 앞에서 가격처럼 작용한다: 체감 가격 = 가격 ÷ (1 + 가격 수용도 × 이 값)"}

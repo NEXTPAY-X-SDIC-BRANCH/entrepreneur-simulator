@@ -13,6 +13,7 @@
 //   새 가게 인지도 0.6에서 매달 15%씩 1로, 협찬 100만원당 인지도 +0.15: 고깃집 시즌 엔진의 가정 (season_params.yaml)
 //   그 밖(면적 효과, 할인 탄력, 달별 품목 비중, 결품 곡선, 재고 값 하락, 세일 판매 속도, 매입 방식별 원가, 사건 효과 크기)은
 //   가정이고 아래에 '가정'으로 적었다. 인터뷰·POS 자료가 생기면 이 값부터 바꾼다.
+import { snsMonth } from "./sns";
 import type { ShopLayout } from "./ShopRoom3D";
 import { DEPOSIT_MONTHS, FTC_INTERIOR, GRADES, LOAN_RATE, OWNER_DRAW, guStat, type CostLine, type Grade, type Profile } from "./model";
 
@@ -127,7 +128,9 @@ export function apparelEstimate(profile: Profile): { pyeong: number; cost: Retur
 // buy: 예상 판매분 대비 매입 배수, marketing 만원, markdownAge: 몇 달 지난 옷부터 세일 칸으로 옮길지, markdown: 세일 폭, focus: 더 들일 품목
 // buyCat: hard 모드 품목별 매입 배수 (상의·하의·아우터·잡화 따로, 1 = 예상 판매만큼). onlineAd: 온라인 광고비(만원), freeShip: 무료배송
 export type ApPlan = { buy: number; discount: number; staff: number; marketing: number; markdownAge: number; markdown: number; focus: Cat | "none"; online: number;
-  buyCat?: Partial<Record<Cat, number>>; onlineAd?: number; freeShip?: boolean };
+  buyCat?: Partial<Record<Cat, number>>; onlineAd?: number; freeShip?: boolean;
+  // hard 모드 추가 (1 = 함): live SNS 라이브·공동구매, vmd 진열 바꾸기, loyalty 회원 적립, alter 사이즈 교환·수선
+  live?: number; vmd?: number; loyalty?: number; alter?: number };
 // 온라인 판매 (online: 0 안 함 / 1 스마트스토어 / 2 패션 플랫폼 입점). 같은 재고로 판다. 근거: 2026 SS 패션 구매의 52.3%가 온라인 (S105).
 // 매장 대비 늘어나는 주문(lift), 판매 수수료(fee), 월 고정비(fixed, 사진·등록·광고), 주문당 택배비(ship, 만원)와 반품률은 가정이다
 export const ONLINE = [
@@ -137,11 +140,15 @@ export const ONLINE = [
 ];
 // 가정: 온라인 광고는 최대 +50%까지 온라인 주문을 늘리고(반은 50만원에서), 고객이 택배비를 내면 온라인 주문이 25% 적다
 const ONLINE_AD_MAX = 0.5, ONLINE_AD_HALF = 50, PAID_SHIP_LIFT = 0.75;
-export const onlineLift = (plan: ApPlan) => {
+export const onlineLift = (plan: ApPlan, month = 0) => {
   const on = ONLINE[plan.online ?? 0] ?? ONLINE[0];
   if (!on.lift) return 0;
-  return on.lift * (1 + ONLINE_AD_MAX * (1 - Math.exp(-(plan.onlineAd ?? 0) / ONLINE_AD_HALF))) * (plan.freeShip === false ? PAID_SHIP_LIFT : 1);
+  return on.lift * (1 + ONLINE_AD_MAX * (1 - Math.exp(-(plan.onlineAd ?? 0) / ONLINE_AD_HALF))) * (plan.freeShip === false ? PAID_SHIP_LIFT : 1)
+    * (plan.live ? 1 + AP_MORE.liveLift * snsMonthOf(month) : 1);
 };
+// hard 모드 추가 선택지의 효과 (모두 가정)
+const snsMonthOf = (m: number) => (m ? snsMonth("apparel", m) : 1);
+export const AP_MORE = { liveLift: 0.3, liveCost: 30, vmdDemand: 1.04, vmdCost: 40, loyaltyDemand: 1.03, loyaltyGive: 0.02, alterLostCut: 0.15, alterCostShare: 0.01 };
 const ONLINE_RETURN = 0.15; // 가정: 온라인 주문 중 반품 비율 (반품 택배비만 더 든다고 본다)
 export const ONLINE_ASSUME = "온라인 주문 증가(스마트스토어 매장의 +15%, 플랫폼 +35%), 수수료(5.6% / 28%), 택배비 3,000원, 반품 15%, 월 고정비(15만 / 10만원), 온라인 매출의 기타경비 15%, 포장 일손은 가정. 인터뷰로 확인 필요";
 // 세일 시작 2달·폭 30%: "직영점이나 백화점에서 통상 1~2개월 정상판매되고 … 정상가의 20~30% 할인된 가격으로" (장은영 2001)
@@ -179,9 +186,10 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   const cogsR = KOSIS.cogs;
   const discount = Math.min(0.5, plan.discount + (fx.discount ?? 0));
   const baseAt = (mm: number) => expectedSales(profile.gu, cfg.pyeong) * (st.qidx[Math.floor((mm - 1) / 3)] ?? 1) * MONTH_IN_QUARTER[mm];
-  const demandStore = baseAt(month) * s.awareness * (ev.demand ?? 1) * (fx.demand ?? 1) * (1 + ELASTIC * discount); // 매장에서 정가로 팔고 싶은 양 (만원)
+  const demandStore = baseAt(month) * s.awareness * (ev.demand ?? 1) * (fx.demand ?? 1) * (1 + ELASTIC * discount) // 매장에서 정가로 팔고 싶은 양 (만원)
+    * (plan.vmd ? AP_MORE.vmdDemand : 1) * (plan.loyalty ? AP_MORE.loyaltyDemand : 1);
   const on = ONLINE[plan.online ?? 0] ?? ONLINE[0];
-  const lift = onlineLift(plan);
+  const lift = onlineLift(plan, month);
   const demand = demandStore * (1 + lift);   // 온라인 주문도 같은 재고·같은 일손(포장)으로 받는다
   // 사장 + 알바가 감당하는 매출. 온라인 주문 포장은 영업시간 밖에 한다고 보고 그 절반만큼 일손을 더 쳐 준다 (가정)
   const capacity = KOSIS.perWorker * HEADROOM * (1 + plan.staff) * (1 + lift * 0.5);
@@ -252,7 +260,7 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
     for (let a = mdAge - 1; a >= 0 && left > 0; a--) { const x = Math.min(inv[c][a], left); inv[c][a] -= x; left -= x; }
     fullRev += soldFull / cogsR;
     soldUnits += soldFull + mdSold[c];
-    const ls = demand * mix[c] * (1 - fills[c]);
+    const ls = demand * mix[c] * (1 - fills[c]) * (plan.alter ? 1 - AP_MORE.alterLostCut : 1); // 사이즈 교환·수선이면 일부는 다른 사이즈로 산다
     lostStock += ls;
     cats[c] = { demand: demand * mix[c], bought: bought[c], sold: soldFull, mdSold: mdSold[c], fill: fills[c], lostStock: ls, stock: 0, old: 0 };
   }
@@ -273,7 +281,7 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   }
   const own = consign ? 0 : 1;
   const writeOff = woUnits * costAvg * own;
-  const revenue = fullRev * (1 - discount) + mdRev + clearRev;
+  const revenue = (fullRev * (1 - discount) + mdRev + clearRev) * (plan.loyalty ? 1 - AP_MORE.loyaltyGive : 1); // 회원 적립금만큼 매출이 준다
   // 온라인 몫: 정가 판매 중 온라인 주문 비중만큼. 수수료 + (주문 + 반품) 택배비 + 월 고정비
   const onlineRev = lift > 0 ? fullRev * (1 - discount) * (lift / (1 + lift)) : 0;
   const onlineOrders = (onlineRev * 1e4) / st.ticket;
@@ -286,7 +294,8 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   // 기타경비(카드 수수료·공과금·포장 등)는 매장 매출에 도소매업조사 비율, 온라인 매출에는 15% (카드 수수료는 플랫폼 수수료로 대신, 가정)
   const other = (revenue - onlineRev) * KOSIS.other + onlineRev * 0.15;
   const marketing = plan.marketing;
-  const eventCost = fx.cost ?? 0;
+  // 사건 대응 + SNS 라이브 + 진열 바꾸기 + 수선비 (정산표 '홍보·사건 대응' 줄)
+  const eventCost = (fx.cost ?? 0) + (plan.live ? AP_MORE.liveCost : 0) + (plan.vmd ? AP_MORE.vmdCost : 0) + (plan.alter ? revenue * AP_MORE.alterCostShare : 0);
   const op = revenue - cogs - staffPay - rent - other - marketing - eventCost - writeOff - onlineCost;
   const interest = (cfg.loan * LOAN_RATE) / 12;
   const purchase = consign ? 0 : paid;
@@ -409,6 +418,10 @@ export const PLAN_TEXT: Record<keyof ApPlan, { label: string; text: (p: ApPlan) 
   marketing: { label: "SNS 홍보비", text: (p) => (p.marketing ? `${p.marketing}만원` : "없음"), hint: "인지도가 올라 손님이 늘어요 (100만원당 인지도 +0.15, 고깃집과 같은 가정)" },
   buyCat: { label: "품목별 매입", text: (p) => (p.buyCat && Object.values(p.buyCat).some((x) => x !== 1) ? CATS.map((c) => `${c.label} ${Math.round((p.buyCat?.[c.id] ?? 1) * 100)}%`).join(" · ") : "고르게"), hint: "품목마다 예상 판매의 몇 %를 들일지예요" },
   onlineAd: { label: "온라인 광고", text: (p) => (p.onlineAd ? `${p.onlineAd}만원` : "없음"), hint: "검색·플랫폼 광고. 온라인 주문이 늘지만 효과는 점점 줄어요 (최대 +50%, 50만원에서 절반, 가정)" },
+  live: { label: "SNS 라이브·공동구매", text: (p) => (p.live ? "해요 (월 30만원)" : "안 해요"), hint: "인스타 라이브나 공동구매로 온라인 주문 +30% × 그 달 SNS 관심도 (소상공인365 SNS 분석). 온라인 판매를 할 때만 효과가 있어요 (가정)" },
+  vmd: { label: "진열 바꾸기", text: (p) => (p.vmd ? "바꿔요 (40만원)" : "그대로"), hint: "마네킹·쇼윈도를 그 달 품목으로 바꾸면 매장 손님 +4% (가정)" },
+  loyalty: { label: "회원 적립", text: (p) => (p.loyalty ? "해요" : "안 해요"), hint: "구매액의 2%를 적립해 주면 손님 +3%, 적립금만큼 매출 −2% (가정)" },
+  alter: { label: "사이즈 교환·수선", text: (p) => (p.alter ? "해요" : "안 해요"), hint: "사이즈가 없어 놓치는 손님이 15% 줄고, 수선비가 매출의 1% 들어요 (가정)" },
   freeShip: { label: "배송비", text: (p) => (p.freeShip === false ? "고객 부담" : "무료배송"), hint: "무료배송이면 주문이 많고 택배비를 가게가 내요. 고객이 내면 주문이 25% 적어요 (가정)" },
   online: { label: "온라인 판매", text: (p) => ONLINE[p.online ?? 0].label, hint: "같은 재고를 온라인으로도 팔아요. 스마트스토어는 수수료가 싸고 손님이 적게 늘고, 플랫폼은 손님이 많이 늘지만 수수료가 28%예요 (가정). 택배비와 반품도 들어요" },
 };

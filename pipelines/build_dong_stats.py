@@ -3,6 +3,7 @@
     python -m pipelines.build_dong_stats [--year 2025] [--industry bbq|apparel]
 
 옷가게(--industry apparel): 매출은 일반의류(CS300011), 점포 수는 상가정보 남성·여성·기타 의류 소매(G20901, G20902, G20905).
+치킨집(--industry chicken): 치킨전문점(CS100007), 점포 수 상가정보 I21006. 분식집(--industry bunsik): 분식전문점(CS100008), 상가정보 I21007.
   stores와 pork는 둘 다 옷가게 수다(화면 코드를 업종만 바꿔 재사용). 동네 유형(type)은 한식 매출 비중으로 정한
   dong_stats.json의 값을 그대로 쓴다. 유형은 동네 성격이고, 옷 매출 비중은 기준값이 한식에 맞춰져 있지 않기 때문이다.
 
@@ -70,6 +71,10 @@ INDUSTRY = {
     "apparel": {"svc": "CS300011", "out": "apparel_dong_stats.json", "label": "일반의류 CS300011",
                 "stores": [{"indsSclsCd": "G20901"}, {"indsSclsCd": "G20902"}, {"indsSclsCd": "G20905"}], "pork": None,
                 "store_label": "G20901 남성 의류, G20902 여성 의류, G20905 기타 의류 소매업"},
+    "chicken": {"svc": "CS100007", "out": "chicken_dong_stats.json", "label": "치킨전문점 CS100007",
+                "stores": [{"indsSclsCd": "I21006"}], "pork": None, "store_label": "I21006 치킨"},
+    "bunsik": {"svc": "CS100008", "out": "bunsik_dong_stats.json", "label": "분식전문점 CS100008",
+               "stores": [{"indsSclsCd": "I21007"}], "pork": None, "store_label": "I21007 김밥·만두·분식"},
 }
 
 
@@ -203,7 +208,8 @@ def main() -> None:
         n = sum(x["stores"] for x in lst)
         base = s / n if n else None
         for x in lst:
-            x["rel"] = round(x["raw_per_store"] / base, 3) if base and x["raw_per_store"] and x["stores"] >= 20 else None
+            # 치킨·분식은 동마다 가게가 적어 8곳 이상이면 비교한다 (고깃집·옷가게는 20곳)
+            x["rel"] = round(x["raw_per_store"] / base, 3) if base and x["raw_per_store"] and x["stores"] >= (8 if a.industry in ("chicken", "bunsik") else 20) else None
         lst.sort(key=lambda x: -x["pork"])
     caveats = ["매출은 카드사 추정치, 점포 수는 상가 등록 기준이라 점포당 매출은 구 안의 상대 위치(rel)로만 쓴다",
                "고깃집만의 매출은 없고 한식음식점 전체 기준", "rel은 한식 점포 20곳 미만인 동에는 없다",

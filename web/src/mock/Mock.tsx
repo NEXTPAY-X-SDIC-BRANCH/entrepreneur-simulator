@@ -11,8 +11,10 @@ import CafeBuild from "./CafeBuild";
 import CafeSim from "./CafeSim";
 import ApparelBuild from "./ApparelBuild";
 import ApparelSim from "./ApparelSim";
-import { DEFAULT_APPAREL, setApparelKosis, setFashionMarket, type ApparelCfg } from "./apparel";
-import { defaultQf, setDeliveryGu, setDeliveryMarket, setFoodCost, setQuickfoodKrei, setSbizDelivery, type QfCfg } from "./quickfood";
+import { DEFAULT_APPAREL, apparelOpeningCost, setApparelKosis, setFashionMarket, type ApparelCfg } from "./apparel";
+import { setSns } from "./sns";
+import { cafeOpeningCost } from "./cafe";
+import { defaultQf, qfOpeningCost, setDeliveryGu, setDeliveryMarket, setFoodCost, setQuickfoodKrei, setSbizDelivery, type QfCfg } from "./quickfood";
 import QuickFoodBuild from "./QuickFoodBuild";
 import QuickFoodSim from "./QuickFoodSim";
 import type { CafeCfg } from "./cafeChecks";
@@ -29,6 +31,18 @@ const STEPS: { key: Step; label: string }[] = [
   { key: "build", label: "가게 꾸미기" },
   { key: "sim", label: "시뮬레이션" },
 ];
+
+// 옷가게·치킨·분식: 동네 성격은 dong_profile.json(한식 기준)을 쓰고, 가게 수와 경쟁 밀도(곳/㎢)는 그 업종 행정동 파일 값으로 바꾼다.
+// 업종별 동네 성장률은 없어서 비운다 (지도 알약에서도 뺀다, area.ts dongMetricKeys)
+type Prof = { dong: { code: string; stores: number; pork: number; area_km2: number | null; pork_km2: number | null; pork_share: number | null; growth: number | null }[] };
+function adaptProfiles(pf: Prof | null, dn: { gu: Record<string, { code: string; stores: number }[]> } | null): Prof | null {
+  if (!pf || !dn) return pf;
+  const n = new Map(Object.values(dn.gu).flat().map((x) => [x.code, x.stores]));
+  return { ...pf, dong: pf.dong.map((d) => {
+    const k = n.get(d.code) ?? 0;
+    return { ...d, pork: k, pork_km2: d.area_km2 ? Math.round((k / d.area_km2) * 10) / 10 : null, pork_share: null, growth: null };
+  }) };
+}
 
 export default function Mock() {
   const [step, setStep] = useState<Step>("profile");
@@ -56,16 +70,18 @@ export default function Mock() {
     let alive = true; // 업종을 빠르게 바꿔도 늦게 도착한 이전 업종의 자료가 덮어쓰지 않게
     setReady(false);
     const rent = get("rent_gu.json").catch(() => null); // 없으면 월세는 예시값으로 돌아간다
-    const dong = qf ? none : get(apparel ? "apparel_dong_stats.json" : cafe ? "cafe_dong_stats.json" : "dong_stats.json").catch(() => null); // 없으면 동네 고르기를 숨긴다
+    const dong = get(qf ? `${ind}_dong_stats.json` : apparel ? "apparel_dong_stats.json" : cafe ? "cafe_dong_stats.json" : "dong_stats.json").catch(() => null); // 없으면 동네 고르기를 숨긴다
     const krei = cafe || lite ? none : get("gogi_krei.json").catch(() => null);        // 없으면 한식음식점 기준으로 돌아간다
     const growth = cafe || lite ? none : get("growth.json").catch(() => null);         // 없으면 성장률을 숨긴다. 카페는 2024년 구 매출이 없다
-    const prof = lite ? none : get(cafe ? "cafe_dong_profile.json" : "dong_profile.json").catch(() => null);     // 없으면 동네 지도와 '~형 상권'을 숨긴다
+    // 동네 지도와 '~형 상권'. 옷가게·치킨·분식은 동네 성격(고깃집 쪽 파일)을 쓰되 가게 수·경쟁 밀도는 그 업종 값으로 바꾼다 (아래 adaptProfiles)
+    const prof = get(cafe ? "cafe_dong_profile.json" : "dong_profile.json").catch(() => null);
     const geo = get("seoul_dong.json").catch(() => null);
     const trdar = lite ? none : get("dong_trdar.json").catch(() => null);                                     // 없으면 동 안 상권 추천을 숨긴다
     const flow = get("dong_flow.json").catch(() => null);                                      // 없으면 '이 동네 지나가는 사람'을 숨기고 엔진은 기준 상권 모양을 쓴다
     const shops = lite ? none : get("dong_shops.json").catch(() => null);                                    // 없으면 동 경쟁 탭의 가게 목록을 숨긴다
     const cafeDong = cafe ? get("cafe_dong.json").catch(() => null) : Promise.resolve(null); // 카페 구성(지표 엑셀)과 서울 비교
     const ecos = get("ecos_rates.json").catch(() => null);
+    get("sbiz_sns.json").then(setSns).catch(() => null); // 소상공인365 SNS 분석 (홍보 효과의 달별 관심도, 연관어). 없으면 관심도 1
     if (qf) {
       get("quickfood_krei.json").then(setQuickfoodKrei).catch(() => null);  // 없으면 quickfood.ts의 같은 값으로 계산
       get("delivery_market.json").then(setDeliveryMarket).catch(() => null);
@@ -78,7 +94,7 @@ export default function Mock() {
     if (apparel) get("fashion_market.json").then(setFashionMarket).catch(() => null);   // 없으면 apparel.ts MARKET의 같은 값          // 없으면 apparel.ts의 같은 값으로 계산                                    // 없으면 대출 이자는 연 6% 가정
     Promise.all([get("seoul_gu.json"), get("gu_stats.json"), rent, dong, krei, growth, prof, geo, shops, cafeDong, trdar, flow, ecos]).then(([g, d, r, dn, k, gr, pf, ge, sh, cd, tr, fl, ec]) => {
       useIndustry(ind); // 아래 set*보다 먼저: 구 통계가 업종 블록을 고른다
-      if (!alive) return; setGuData(d); setRentData(r); setDongData(dn); setKrei(k); setGrowth(gr); setAreaData(pf, ge?.dong ?? null); setShopData(sh, cd); setTrdarData(tr); setFlowData(fl); setEcos(ec); setGus(g); setReady(true);
+      if (!alive) return; setGuData(d); setRentData(r); setDongData(dn); setKrei(k); setGrowth(gr); setAreaData(lite ? adaptProfiles(pf, dn) : pf, ge?.dong ?? null); setShopData(sh, cd); setTrdarData(tr); setFlowData(fl); setEcos(ec); setGus(g); setReady(true);
     }).catch(() => alive && setReady(true));
     return () => { alive = false; };
   }, [ind]);
@@ -136,7 +152,11 @@ export default function Mock() {
         </Suspense>
       )}
 
-      {idx >= 1 && chat && <Chat profile={profile} store={store} levers={levers} shocks={[]} gus={gus} onClose={() => setChat(false)} />}
+      {idx >= 1 && chat && <Chat profile={profile} store={store} levers={levers} shocks={[]} gus={gus} onClose={() => setChat(false)} alt={
+        ind === "chicken" || ind === "bunsik" ? { cost: qfOpeningCost(qfCfg, profile.gu, profile.keyMoney ?? 0), pyeong: qfCfg.pyeong, staff: qfCfg.staff }
+          : ind === "apparel" ? { cost: apparelOpeningCost(apparelCfg, profile.gu, profile.keyMoney ?? 0), pyeong: apparelCfg.pyeong, staff: apparelCfg.staff }
+          : ind === "cafe" ? { cost: cafeOpeningCost(cafeCfg?.pyeong ?? 20, cafeCfg?.grade ?? "basic", profile.gu, profile.keyMoney ?? 0), pyeong: cafeCfg?.pyeong ?? 20, staff: cafeCfg?.staff ?? 1 }
+          : null} />}
     </div>
   );
 }

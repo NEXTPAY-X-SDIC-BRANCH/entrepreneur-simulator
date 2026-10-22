@@ -29,7 +29,7 @@ const PICKS: QPick<ApPlan>[] = [
   { key: "online", label: "온라인 판매", hint: "같은 재고를 온라인으로도 팔아요 (수수료·택배비)", opts: [{ label: "안 함", value: 0 }, { label: "스마트스토어", value: 1 }, { label: "플랫폼 입점", value: 2 }] },
   { key: "staff", label: "알바", hint: "손님이 몰리는 날 응대와 피팅을 도와요", opts: [0, 1, 2].map((n) => ({ label: n ? `${n}명` : "없이", value: n })) },
 ];
-type NumKey = "buy" | "discount" | "markdownAge" | "markdown" | "staff" | "marketing" | "online";
+type NumKey = "buy" | "discount" | "markdownAge" | "markdown" | "staff" | "marketing" | "online" | "live" | "vmd" | "loyalty" | "alter";
 // hard 모드: 품목별 매입. 이번 달과 다음 달의 품목별 수요 비중(계절)과 지금 선반 재고를 보고 품목마다 정한다
 function CatBuy({ plan, set, month, inv, costAvg }: { plan: ApPlan; set: (p: ApPlan) => void; month: number; inv: ApState["inv"]; costAvg: number }) {
   const nx = (month % 12) + 1, avg = mixAvg();
@@ -436,7 +436,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                               </div>
                             </div>
                           </div>
-                          {([["buy", 0.5, 2, 0.1], ["discount", 0, 0.3, 0.05], ["markdownAge", 1, 5, 1], ["markdown", 0.1, 0.6, 0.1], ["staff", 0, 3, 1], ["marketing", 0, 200, 25], ["online", 0, 2, 1]] as [NumKey, number, number, number][]).map(([k, lo, hi, step]) => {
+                          {([["buy", 0.5, 2, 0.1], ["discount", 0, 0.3, 0.05], ["markdownAge", 1, 5, 1], ["markdown", 0.1, 0.6, 0.1], ["staff", 0, 3, 1], ["marketing", 0, 200, 25], ["online", 0, 2, 1], ["live", 0, 1, 1], ["vmd", 0, 1, 1], ["loyalty", 0, 1, 1], ["alter", 0, 1, 1]] as [NumKey, number, number, number][]).map(([k, lo, hi, step]) => {
                             const before = cur?.m.plan;
                             const changed = before && PLAN_TEXT[k].text(before) !== PLAN_TEXT[k].text(plan);
                             return (
@@ -447,9 +447,9 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                                   {changed && <small className="sx-step-prev">지난달 {PLAN_TEXT[k].text(before!)}</small>}
                                 </div>
                                 <div className="sx-step-c">
-                                  <button type="button" aria-label={`${PLAN_TEXT[k].label} 낮추기`} disabled={plan[k] - step < lo - 1e-9} onClick={() => setPlan({ ...plan, [k]: +(plan[k] - step).toFixed(2) })}>−</button>
+                                  <button type="button" aria-label={`${PLAN_TEXT[k].label} 낮추기`} disabled={(plan[k] ?? 0) - step < lo - 1e-9} onClick={() => setPlan({ ...plan, [k]: +((plan[k] ?? 0) - step).toFixed(2) })}>−</button>
                                   <output>{PLAN_TEXT[k].text(plan)}</output>
-                                  <button type="button" aria-label={`${PLAN_TEXT[k].label} 높이기`} disabled={plan[k] + step > hi + 1e-9} onClick={() => setPlan({ ...plan, [k]: +(plan[k] + step).toFixed(2) })}>+</button>
+                                  <button type="button" aria-label={`${PLAN_TEXT[k].label} 높이기`} disabled={(plan[k] ?? 0) + step > hi + 1e-9} onClick={() => setPlan({ ...plan, [k]: +((plan[k] ?? 0) + step).toFixed(2) })}>+</button>
                                 </div>
                               </div>
                             );
