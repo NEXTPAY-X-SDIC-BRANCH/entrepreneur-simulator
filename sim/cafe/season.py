@@ -8,6 +8,9 @@ decision never changes which events happen (only their effect). Every effect siz
 from __future__ import annotations
 
 import math
+from pathlib import Path
+import json
+import functools
 import random
 
 from . import model as m
@@ -40,6 +43,33 @@ def s(key: str):
 
 def _clamp(x: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, x))
+
+
+# 구·행정동별 배달 배수: 소상공인365 배달분석 카페·디저트 (web/public/mock/sbiz_delivery.json, pipelines/build_sbiz365_delivery.py).
+# 행정동 값이 있으면 그 동 카페 한 곳의 월평균 배달 주문 ÷ 서울 가운데값, 없으면 구 값, 파일이 없으면 params의 서울서베이 지수
+_COMMERCIAL_GU = {"3120012": "종로구", "3120094": "서대문구", "3110131": "성동구"}   # 상권 코드 3곳이 속한 구
+
+
+@functools.lru_cache(maxsize=1)
+def _sbiz_cafe() -> dict | None:
+    f = Path(__file__).resolve().parents[2] / "web" / "public" / "mock" / "sbiz_delivery.json"
+    if not f.exists():
+        return None
+    return json.loads(f.read_text(encoding="utf-8")).get("inds", {}).get("cafe")
+
+
+def delivery_area_mult(district: str) -> float:
+    d = _sbiz_cafe()
+    if d:
+        seoul = d["seoul"]["orders"] or 1
+        gname = _COMMERCIAL_GU.get(district)
+        for g, x in d["gu"].items():
+            if g == gname or x.get("cd") == district[:5]:
+                dong = x["dongs"].get(district)
+                if dong and dong["orders"] > 0:
+                    return round(_clamp(dong["orders"] / seoul, 0.4, 2.5), 3)
+                return x["index"]
+    return s("delivery_gu_index").get(district, 1.0)
 
 
 def _hrs(f: dict) -> tuple[int, int]:
@@ -495,7 +525,7 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
          "staff": dec["staff_policy"], "marketing_krw": dec["marketing_krw"], "dessert": dec["dessert"],
          "rival": st["rival"], "viral": viral, "breakdown": "breakdown" in keys, "rent_mult": st["rent_mult"],
          "scn": scn, "ingredient": s("ingredient_index")[cal], "delivery": dec.get("delivery", False),
-         "delivery_mult": s("delivery_gu_index").get(run["cfg"]["district"], 1.0) * s("delivery_month_index")[cal],
+         "delivery_mult": delivery_area_mult(run["cfg"]["district"]) * s("delivery_month_index")[cal],
          "hours_t": _dec_hours(dec), "menu": dec["menu"]}
     e = evaluate(ctx, f)
 

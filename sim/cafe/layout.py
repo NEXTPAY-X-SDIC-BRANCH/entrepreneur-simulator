@@ -28,9 +28,13 @@ def L(key):
     return v("layout", key)
 
 
-def room_dims(size_pyeong: float) -> tuple[float, float, float]:
+# 가게 모양 (사용자 선택): 가로 ÷ 세로. 고르지 않으면 params layout.aspect (1.6)
+SHAPE_ASPECT = {"wide": None, "square": 1.0, "deep": 0.7}
+
+
+def room_dims(size_pyeong: float, shape: str | None = None) -> tuple[float, float, float]:
     area = size_pyeong * PYEONG_M2
-    width = math.sqrt(area * L("aspect"))
+    width = math.sqrt(area * (SHAPE_ASPECT.get(shape or "wide") or L("aspect")))
     return area, width, area / width
 
 
@@ -63,8 +67,10 @@ def seat_band_start(cfg: dict) -> float:
 
 
 def solve(cfg: dict) -> dict:
-    """cfg keys: size_pyeong, tables, chairs, bar_seats, espresso_groups, showcase, oven, kiosks, pos."""
-    area, W, D = room_dims(cfg["size_pyeong"])
+    """cfg keys: size_pyeong, tables, chairs, bar_seats, espresso_groups, showcase, oven, kiosks, pos,
+    shape ("wide" | "square" | "deep", 없으면 wide), door ("right" | "left", 없으면 right).
+    문이 왼쪽이면 오른쪽 문 배치를 그대로 풀고 좌우로 뒤집는다 (자리 수·처리량은 같고 위치만 거울처럼 바뀜)."""
+    area, W, D = room_dims(cfg["size_pyeong"], cfg.get("shape"))
     wm, cd, line_d = L("wall_margin"), L("counter_d"), L("counter_line_d")
     items: list[dict] = []
     ghosts: list[dict] = []   # non-fitting items in placement order, laid out in the ghost zone at the end
@@ -191,6 +197,13 @@ def solve(cfg: dict) -> dict:
                + sum(((seating.W4 + L("table_gap")) * (seating.W4 + L("row_gap")) if p["cap"] == 4 and not p["wall"]
                      else (seating.W2 + L("table_gap")) * (seating.W4 + L("row_gap")) if not p["wall"]
                      else (seating.W4 + L("wall_table_gap")) * (seating.W2 + L("row_gap"))) for p in placed))
+    if cfg.get("door") == "left":
+        for it in items:
+            if it["fits"]:
+                it["x"] = _r(W - it["x"])
+                it["rot_deg"] = (360 - it["rot_deg"]) % 360
+        door = {**door, "x": _r(W - door["x"])}
+        counter_zone = {**counter_zone, "x": _r(W - counter_zone["x"] - counter_zone["w"])}
     return {
         "room": {"area_m2": _r(area), "width_m": _r(W), "depth_m": _r(D), "door": door,
                  "counter_zone": counter_zone},

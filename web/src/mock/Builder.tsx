@@ -8,10 +8,26 @@ import { GLGuard } from "../shared/GLGuard";
 import Checks from "./Checks";
 import { Items, Piece, Room } from "./Parts3D";
 import { FitControls, StoreLights, ViewBar, gfxDpr, gfxFrameloop, gfxShadows, useGfx } from "./Scene3D";
+import { FlowPath } from "./ShopRoom3D";
 import {
-  CATALOG, DEPOSIT_MONTHS, GRADES, ITEM, LOAN_RATE, cashLeft, ecosRates, eul, ymKo, fits, footprint, guStat, kitchenSpot, man, nextUid, openingCost, roomSize, snap,
+  CATALOG, DEPOSIT_MONTHS, GRADES, ITEM, LOAN_RATE, cashLeft, doorX, ecosRates, eul, ymKo, fits, footprint, guStat, kitchenSpot, man, nextUid, openingCost, roomSize, snap,
   recommend, storeStats, type CatalogItem, type Grade, type Levers, type Placed, type Profile, type Store,
 } from "./model";
+
+// 손님 동선: 문 → 문 안쪽 → 테이블 가운데. 서빙 동선: 주방 입구에서 테이블까지 평균 거리 (m)
+function tablesOf(store: Store) { return store.items.filter((i) => i.id.startsWith("table")); }
+function flowOf(store: Store, w: number, d: number): [number, number][] {
+  const dx = doorX(w, store.door), ts = tablesOf(store);
+  const mid: [number, number] = ts.length ? [ts.reduce((a, t) => a + t.x, 0) / ts.length, ts.reduce((a, t) => a + t.z, 0) / ts.length] : [0, 0];
+  return [[dx, d / 2 + 0.6], [dx, d / 2 - 1.2], mid];
+}
+function serveWalk(store: Store, w: number, d: number): number {
+  const k = kitchenSpot(store.pyeong, store), ts = tablesOf(store);
+  if (!ts.length) return 0;
+  const px = k.x + ITEM.kitchen.w / 2, pz = k.z; // 주방 문(오른쪽 면)
+  void w; void d;
+  return ts.reduce((a, t) => a + Math.abs(t.x - px) + Math.abs(t.z - pz), 0) / ts.length;
+}
 
 type Tool = { kind: "new"; id: string; rot: 0 | 1 } | { kind: "move"; uid: number; id: string; rot: 0 | 1 } | null;
 
@@ -20,13 +36,14 @@ function Scene({ portal, store, tool, selected, ghost, onFloorMove, onFloorClick
   onFloorMove: (x: number, z: number) => void; onFloorClick: () => void; onPick: (uid: number) => void;
   onTurn: () => void; onMove: () => void; onRemove: () => void;
 }) {
-  const { w, d } = roomSize(store.pyeong);
+  const { w, d } = roomSize(store.pyeong, store);
   const gf = tool ? footprint(tool) : null;
   const sel = store.items.find((i) => i.uid === selected);
   return (
     <>
       <StoreLights w={w} d={d} r={Math.max(w, d) / 2 + 3} />
-      <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} items={store.items.filter((i) => !(tool?.kind === "move" && tool.uid === i.uid))} />
+      <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} door={store.door} items={store.items.filter((i) => !(tool?.kind === "move" && tool.uid === i.uid))} />
+      <FlowPath pts={flowOf(store, w, d)} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} visible={false}
         onPointerMove={(e: ThreeEvent<PointerEvent>) => onFloorMove(e.point.x, e.point.z)}
         onClick={(e) => { if (e.delta < 5) onFloorClick(); }}>
@@ -95,7 +112,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
   const stats = storeStats(store);
   const cost = openingCost(store, profile.gu, profile.keyMoney ?? 0);
   const left = cashLeft(profile, store);
-  const { w, d } = roomSize(store.pyeong);
+  const { w, d } = roomSize(store.pyeong, store);
   const count = (id: string) => store.items.filter((i) => i.id === id).length;
   const perPyeong = (g: Grade) => guStat(profile.gu).rent * DEPOSIT_MONTHS + GRADES[g].perPyeong; // 보증금 + 공사, 1평당
 
@@ -153,12 +170,22 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
     if (pyeong > store.pyeong && perPyeong(store.grade) > left) return setMsg(`1평 넓히는 데 ${man(perPyeong(store.grade))}이 들어요. 현금이 모자라요.`);
     const shell: Store = { ...store, pyeong, items: [] };
     const kitchen = store.items.find((i) => i.id === "kitchen")!;
-    shell.items.push({ ...kitchen, ...kitchenSpot(pyeong) });
+    shell.items.push({ ...kitchen, ...kitchenSpot(pyeong, store) });
     for (const it of store.items) if (it.id !== "kitchen" && fits(shell, it)) shell.items.push(it);
     setStore(shell);
     setSelected(null);
     const gone = store.items.length - shell.items.length;
     setMsg(gone ? `${pyeong}평으로 바꿨어요. 자리가 없어진 ${gone}개는 치우고 돈을 돌려받았어요.` : `${pyeong}평으로 바꿨어요.`);
+  };
+  // 가게 모양·출입문을 바꾸면 벽이 움직인다. 주방은 새 구석으로 옮기고, 자리가 없어진 물건은 치운다
+  const relay = (lay: { door?: Store["door"]; shape?: Store["shape"] }) => {
+    const next: Store = { ...store, ...lay, items: [] };
+    const kitchen = store.items.find((i) => i.id === "kitchen")!;
+    next.items.push({ ...kitchen, ...kitchenSpot(store.pyeong, next) });
+    for (const it of store.items) if (it.id !== "kitchen" && fits(next, it)) next.items.push(it);
+    setStore(next); setSelected(null);
+    const gone = store.items.length - next.items.length;
+    setMsg(gone ? `가게 모양을 바꿨어요. 자리가 없어진 ${gone}개는 치우고 돈을 돌려받았어요.` : "가게 모양을 바꿨어요. 파란 화살표가 손님 동선이에요.");
   };
   const regrade = (g: Grade) => {
     const delta = (GRADES[g].perPyeong - GRADES[store.grade].perPyeong) * store.pyeong;
@@ -213,9 +240,25 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
             <output aria-labelledby="st">{levers.staff}명</output>
             <button type="button" aria-label="직원 1명 늘리기" disabled={levers.staff >= 8} onClick={() => setLevers({ ...levers, staff: levers.staff + 1 })}>+</button>
           </div>
-          <p>테이블 {stats.tables}개, {stats.seats}석</p>
+          <div className="m-layout-row">
+            <span id="bb-shape">가게 모양</span>
+            <div className="m-seg" role="group" aria-labelledby="bb-shape">
+              {([["wide", "가로로 긴"], ["square", "정사각"], ["deep", "세로로 긴"]] as const).map(([k, l]) => (
+                <button type="button" key={k} aria-pressed={(store.shape ?? "wide") === k} onClick={() => relay({ shape: k })}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div className="m-layout-row">
+            <span id="bb-door">출입문</span>
+            <div className="m-seg" role="group" aria-labelledby="bb-door">
+              {([["left", "왼쪽"], ["center", "가운데"], ["right", "오른쪽"]] as const).map(([k, l]) => (
+                <button type="button" key={k} aria-pressed={(store.door ?? "right") === k} onClick={() => relay({ door: k })}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <p>테이블 {stats.tables}개, {stats.seats}석 · 주방에서 테이블까지 평균 {serveWalk(store, w, d).toFixed(1)}m</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={() => {
-            const plan = recommend(profile);
+            const plan = recommend(profile, { door: store.door, shape: store.shape });
             setStore(plan.store); setLevers({ ...levers, staff: plan.staff }); setSelected(null); setTool(null);
             setMsg(`추천 배치를 놓았어요. ${plan.store.pyeong}평, 테이블 ${storeStats(plan.store).tables}개, 직원 ${plan.staff}명이에요.${plan.safe ? "" : " 이 돈으로는 6개월을 버티는 구성을 찾지 못했어요."}`);
           }}>추천 배치</button>

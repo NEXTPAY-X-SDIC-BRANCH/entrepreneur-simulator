@@ -40,6 +40,8 @@ class CafeIn(BaseModel):
     oven: int = Field(0, ge=0, le=1)
     kiosks: int = Field(0, ge=0, le=3)
     pos: int = Field(1, ge=1, le=3)
+    shape: Literal["wide", "square", "deep"] | None = None             # 가게 모양 (가로 ÷ 세로 1.6 / 1.0 / 0.7), None = wide
+    door: Literal["right", "left"] | None = None                       # 출입문 자리, None = right (배치를 좌우로 뒤집음)
     own_capital_krw: int = Field(80_000_000, ge=0)
     daily_customers: int | None = Field(None, ge=10, le=600)   # orders on the peak day; None = data default
     peak_day: Literal["weekday", "weekend"] | None = None              # None = the district's busier day type
@@ -76,9 +78,18 @@ class TokenMonthIn(MonthIn):
     state_token: str = Field(..., min_length=10, max_length=8000)
 
 
+def _dump(body: BaseModel) -> dict:
+    """요청 본문 → 엔진 입력. 고르지 않은 가게 모양·출입문(None)은 넣지 않는다 (예전 입력과 같은 결과·같은 입력 기록)."""
+    d = body.model_dump()
+    for k in ("shape", "door"):
+        if d.get(k) is None:
+            d.pop(k, None)
+    return d
+
+
 @router.post("/preview")
 def cafe_preview(body: CafeIn):
-    return cafe.preview(body.model_dump())
+    return cafe.preview(_dump(body))
 
 
 @router.get("/districts")
@@ -171,7 +182,7 @@ def _sent(body: MonthIn) -> tuple[dict, int | None]:
 
 @router.post("/season")
 def cafe_season_start(body: SeasonIn):
-    b = body.model_dump()
+    b = _dump(body)
     run = cafe_season.start(b)
     run["id"] = uuid.uuid4().hex[:12]
     state = {"v": TOKEN_VERSION, "pv": model_version(), "b": b, "d": []}

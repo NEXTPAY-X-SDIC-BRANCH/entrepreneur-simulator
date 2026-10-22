@@ -46,10 +46,11 @@ def _flow_profile(flow: dict) -> dict:
 def from_changeup(*, gu_sales_man: float, pyeong: float, tables: int, seats: int, cash_rent_man_per_pyeong: float,
                   staff: int = 3, price: int = 19000, baseline_runs: int = 150, quarter_index: list[float] | None = None,
                   area_type: str | None = None, start_month: int | None = None, n_months: int = 6,
-                  flow: dict | None = None) -> tuple[dict, dict]:
+                  flow: dict | None = None, delivery_gu_index: float | None = None) -> tuple[dict, dict]:
     """quarter_index: 그 동네의 분기별 매출 지수(1~4분기, 연평균 1). 주면 달력 수요 지수를 이것으로 바꾼다.
     start_month: 시작 달(1~12). 없으면 엔진 기본(10월). 6개월을 이 달부터 돈다. calendar.yaml에 없는 달(4~9월)은 분기 지수로 채운다.
-    area_type: "대학·청년"이면 대학가 달력과 행사를 그대로 두고, 그 밖의 유형은 달력을 분기 지수로, 대학가 행사를 뺀다."""
+    area_type: "대학·청년"이면 대학가 달력과 행사를 그대로 두고, 그 밖의 유형은 달력을 분기 지수로, 대학가 행사를 뺀다.
+    delivery_gu_index: 이 구 고깃집 한 곳의 배달 주문 ÷ 서울 가운데값 (소상공인365 배달분석 고기·구이). 배달 매출에 곱한다. 없으면 1."""
     tables = max(1, int(tables))
     per_table = min(6, max(2, round(seats / tables))) if seats else 4
     scale = min(SCALE_RANGE[1], max(SCALE_RANGE[0], gu_sales_man / HERO_SALES_MAN))
@@ -66,6 +67,8 @@ def from_changeup(*, gu_sales_man: float, pyeong: float, tables: int, seats: int
         "arrival_scale": round(scale, 4),
         "baseline_runs": int(baseline_runs),
     }
+    if delivery_gu_index:
+        store["delivery_gu_index"] = round(min(2.0, max(0.5, float(delivery_gu_index))), 3)
     if flow:
         store["profile"] = _flow_profile(flow)
     campus = area_type in (None, "", "대학·청년")

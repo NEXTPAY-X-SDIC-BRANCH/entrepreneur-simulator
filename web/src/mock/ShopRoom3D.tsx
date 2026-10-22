@@ -180,7 +180,7 @@ export function shopPlan(kind: ShopKind, pyeong: number, lay: ShopLayout = {}) {
 }
 
 // 손님 동선: 바닥에 0.55m마다 작은 화살표(납작한 삼각형)
-function FlowPath({ pts }: { pts: [number, number][] }) {
+export function FlowPath({ pts }: { pts: [number, number][] }) {
   const marks: { x: number; z: number; a: number }[] = [];
   for (let i = 0; i < pts.length - 1; i++) {
     const [x0, z0] = pts[i], [x1, z1] = pts[i + 1], len = Math.hypot(x1 - x0, z1 - z0);

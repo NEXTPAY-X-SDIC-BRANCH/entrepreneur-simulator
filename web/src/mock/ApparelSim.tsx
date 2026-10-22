@@ -4,7 +4,7 @@
 // 계산은 apparel.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 옷가게의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
-  BUY_MODES, CATS, MARKET, ONLINE, mixAvg, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
+  BUY_MODES, CATS, MARKET, ONLINE, mixAvg, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
   playMonth, startState, stateAfter, stockValue,
   type ApEvent, type ApMonth, type ApOption, type ApPlan, type ApState, type ApStratId, type ApparelCfg, type Cat,
 } from "./apparel";
@@ -169,7 +169,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
   const [state, setState] = useState<ApState>(() => startState(profile, cfg, startMonth));
   const [done, setDone] = useState<Done[]>([]);
   const [plan, setPlan] = useState<ApPlan>({ ...DEFAULT_PLAN, staff: cfg.staff });
-  const [strat, setStrat] = useState<ApStratId>("rec");
+  const [, setStrat] = useState<ApStratId>("rec");
   const [tweak, setTweak] = useState<Partial<ApPlan>>({});
   const [choice, setChoice] = useState("");
   const [dayIdx, setDayIdx] = useState(0);
@@ -201,7 +201,6 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
       { label: "사장 생활비", amount: -c.draw * K }, { label: "대출 이자", amount: -c.interest * K },
     ], tax: { revenue: c.revenue * K, taxableBuy: (c.purchase + c.settle + c.rent + c.other * 0.5 + c.onlineCost) * K, profit: (c.op - dep - c.interest) * K } };
   });
-  const strats = apStrategies(cur?.m, plan);
   const curDay = cur ? cur.days[Math.min(dayIdx, cur.days.length - 1)] : null;
 
   // 화면을 머리글 아래부터 끝까지 쓴다 (고깃집과 같다)
@@ -230,7 +229,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
 
   const restart = () => { setState(startState(profile, cfg, startMonth)); setDone([]); setPlan({ ...DEFAULT_PLAN, staff: cfg.staff }); setSeed(Math.floor(Math.random() * 1000)); setView("intro"); };
   const toScenario = () => {
-    const p = mode === "easy" ? { ...strats.find((x) => x.id === strat)!.plan, ...tweak } : plan;
+    const p = mode === "easy" ? { ...plan, ...tweak } : plan;
     setPlan(p);
     setChoice(ev.options[ev.options.length - 1].id);
     setView("scenario");
@@ -414,17 +413,9 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                       <InvTable state={state} month={m} cfg={cfg} />
                     </section>
                     {mode === "easy" ? (
-                      <section className="sx-right" aria-label="이번 달 방향">
-                        <h2>{m}월, 어느 쪽으로 갈까요?</h2>
-                        <div className="sx-strats" role="radiogroup">
-                          {strats.map((x) => (
-                            <label key={x.id} className={strat === x.id ? "on" : ""}>
-                              <input type="radio" name="ap-strat" checked={strat === x.id} onChange={() => setStrat(x.id)} />
-                              <span className="sx-strat"><b>{x.title}</b><small>{x.desc}</small><span className="sx-strat-chg">{x.changes.length ? x.changes.join(" · ") : "지난달과 같아요"}</span></span>
-                            </label>
-                          ))}
-                        </div>
-                        <QuickPicks picks={PICKS} base={strats.find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
+                      <section className="sx-right" aria-label="이번 달 운영 계획">
+                        <h2>{m}월에 이렇게 할게요</h2>
+                        <QuickPicks picks={PICKS} base={plan} prev={cur?.m.plan} tweak={tweak} setTweak={setTweak} />
                         <p className="sx-note">hard 모드에서는 매입량·더 들일 품목·상시 할인·세일 시작과 폭·알바·홍보비·온라인 판매를 숫자로 하나씩 정할 수 있어요.</p>
                       </section>
                     ) : (
@@ -438,10 +429,11 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                               {cur && cur.m.plan.focus !== plan.focus && <small className="sx-step-prev">지난달 {PLAN_TEXT.focus.text(cur.m.plan)}</small>}
                             </div>
                             <div className="sx-step-c">
-                              <select aria-label={PLAN_TEXT.focus.label} value={plan.focus} onChange={(e) => setPlan({ ...plan, focus: e.target.value as Cat | "none" })}>
-                                <option value="none">고르게</option>
-                                {CATS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                              </select>
+                              <div className="sx-chips" role="radiogroup" aria-label={PLAN_TEXT.focus.label}>
+                                {([["none", "고르게"], ...CATS.map((c) => [c.id, c.label])] as [Cat | "none", string][]).map(([id, l]) => (
+                                  <button type="button" key={id} role="radio" aria-checked={plan.focus === id} className={plan.focus === id ? "on" : ""} onClick={() => setPlan({ ...plan, focus: id })}>{l}</button>
+                                ))}
+                              </div>
                             </div>
                           </div>
                           {([["buy", 0.5, 2, 0.1], ["discount", 0, 0.3, 0.05], ["markdownAge", 1, 5, 1], ["markdown", 0.1, 0.6, 0.1], ["staff", 0, 3, 1], ["marketing", 0, 200, 25], ["online", 0, 2, 1]] as [NumKey, number, number, number][]).map(([k, lo, hi, step]) => {

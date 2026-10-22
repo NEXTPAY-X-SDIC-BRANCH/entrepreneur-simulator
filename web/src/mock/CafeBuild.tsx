@@ -74,6 +74,22 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
             <output aria-labelledby="st">{cfg.staff}명</output>
             <button type="button" aria-label="직원 1명 늘리기" disabled={cfg.staff >= 3} onClick={() => set({ staff: cfg.staff + 1 })}>+</button>
           </div>
+          <div className="m-layout-row">
+            <span id="cf-shape">가게 모양</span>
+            <div className="m-seg" role="group" aria-labelledby="cf-shape">
+              {([["wide", "가로로 긴"], ["square", "정사각"], ["deep", "세로로 긴"]] as const).map(([k, l]) => (
+                <button type="button" key={k} aria-pressed={(cfg.shape ?? "wide") === k} onClick={() => set({ shape: k })}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div className="m-layout-row">
+            <span id="cf-door">출입문</span>
+            <div className="m-seg" role="group" aria-labelledby="cf-door">
+              {([["left", "왼쪽"], ["right", "오른쪽"]] as const).map(([k, l]) => (
+                <button type="button" key={k} aria-pressed={(cfg.door ?? "right") === k} onClick={() => set({ door: k })}>{l}</button>
+              ))}
+            </div>
+          </div>
           <p>테이블 {lay.tables}개, {seats}석</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn"
             onClick={() => setCfgOut({ pyeong: est.pyeong, grade: est.grade, staff: 1 })}>추천 배치</button>

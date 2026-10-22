@@ -117,7 +117,7 @@ function recommend(last: Month | undefined, plan: Dec): Rec[] {
 
 // easy 모드: 달마다 방향 세 가지. 지난달 결정에서 출발해 추천/늘리기/아끼기로 몇 가지를 바꾼다
 type StratId = "rec" | "grow" | "save";
-function cafeStrategies(last: Month | undefined, plan: Dec, recs: Rec[]): { id: StratId; title: string; desc: string; plan: Dec; changes: string[] }[] {
+export function cafeStrategies(last: Month | undefined, plan: Dec, recs: Rec[]): { id: StratId; title: string; desc: string; plan: Dec; changes: string[] }[] {
   const lp: Dec = last ? { ...plan, ...last.decisions, price_change_pct: 0 } : { ...plan, price_change_pct: 0 };
   const hi = HOURS_ORDER.indexOf(lp.hours), si = STAFF_ORDER.indexOf(lp.staff_policy);
   const rec = recs.reduce((p, r) => (r.change ? { ...p, [planKey(r.lever)]: r.next[planKey(r.lever)] } : p), lp);
@@ -234,7 +234,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<Mode>("easy");
-  const [strat, setStrat] = useState<StratId>("rec");
+  const [, setStrat] = useState<StratId>("rec");
   const [tweak, setTweak] = useState<Partial<Dec>>({});
   const [ins, setIns] = useState<{ idx: number; tries: Try<Partial<Dec>>[] } | null>(null);
   useEffect(() => { setStrat("rec"); setTweak({}); }, [months.length]);
@@ -301,7 +301,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const askScenario = async () => {
     setBusy(true); setErr("");
     try {
-      const p = mode === "easy" ? { ...cafeStrategies(cur, plan, recs).find((x) => x.id === strat)!.plan, ...tweak } : plan;
+      const p = mode === "easy" ? { ...plan, ...tweak } : plan;
       if (mode === "easy") setPlan(p);
       const d: Dps = await post("/cafe/season/scenario", { state_token: token, ...p });
       setDps(d); setPts(d.points); setChoices(Object.fromEntries(d.points.map((p) => [p.id, p.default]))); setView("scenario");
@@ -527,19 +527,10 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                       })()}
                     </section>
                     {mode === "easy" ? (() => {
-                      const strats = cafeStrategies(cur, plan, recs);
                       return (
-                        <section className="sx-right" aria-label="이번 달 방향">
-                          <h2>{nextMonth}월, 어느 쪽으로 갈까요?</h2>
-                          <div className="sx-strats" role="radiogroup">
-                            {strats.map((x) => (
-                              <label key={x.id} className={strat === x.id ? "on" : ""}>
-                                <input type="radio" name="cf-strat" checked={strat === x.id} onChange={() => setStrat(x.id)} />
-                                <span className="sx-strat"><b>{x.title}</b><small>{x.desc}</small><span className="sx-strat-chg">{x.changes.length ? x.changes.join(" · ") : "지난달과 같아요"}</span></span>
-                              </label>
-                            ))}
-                          </div>
-                          <QuickPicks picks={PICKS} base={strats.find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
+                        <section className="sx-right" aria-label="이번 달 운영 계획">
+                          <h2>{nextMonth}월에 이렇게 할게요</h2>
+                          <QuickPicks picks={PICKS} base={plan} prev={cur ? { ...plan, ...cur.decisions, price_change_pct: 0 } : undefined} tweak={tweak} setTweak={setTweak} />
                           <p className="sx-note">hard 모드에서는 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정할 수 있어요.</p>
                         </section>
                       );

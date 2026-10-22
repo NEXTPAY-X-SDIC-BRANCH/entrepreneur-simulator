@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Assume from "./Assume";
 import { guStat, man, type Profile } from "./model";
 import {
-  DEFAULT_PLAN, EXTRAS, HOURS_DEFAULT, HOURS_RANGE, MAIN, PLAN_KEYS, QF_NAME, clock, extraPrice, hoursText, mixOf, mixStr, planText, sbizDelivery, type PlanKey, deliveryGuInfo, derived, eventOf, playMonth, qfOpeningCost, qfStrategies, startState,
+  DEFAULT_PLAN, EXTRAS, HOURS_DEFAULT, HOURS_RANGE, MAIN, PLAN_KEYS, QF_NAME, clock, extraPrice, hoursText, mixOf, mixStr, planText, sbizDelivery, type PlanKey, deliveryGuInfo, derived, eventOf, playMonth, qfOpeningCost, startState,
   type QfCfg, type QfEvent, type QfMonth, type QfOption, type QfPlan, type QfState, type QfStratId,
 } from "./quickfood";
 import ShopRoom3D, { shopPlan } from "./ShopRoom3D";
@@ -163,7 +163,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const [plan, setPlan] = useState<QfPlan>({ ...DEFAULT_PLAN, ...HOURS_DEFAULT[cfg.ind], staff: cfg.staff });
   const PT = planText(cfg.ind), STEPS = stepsOf(cfg.ind), PICKS = picksOf(cfg.ind);
   const seats = useMemo(() => shopPlan(cfg.ind === "chicken" ? "chicken" : "bunsik", cfg.pyeong, cfg.layout).seats.length, [cfg]);
-  const [strat, setStrat] = useState<QfStratId>("rec");
+  const [, setStrat] = useState<QfStratId>("rec");
   const [tweak, setTweak] = useState<Partial<QfPlan>>({});
   const [choice, setChoice] = useState("");
   const [dayIdx, setDayIdx] = useState(0);
@@ -194,7 +194,6 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
       { label: "홍보·사건 대응", amount: -(c.marketing + c.eventCost) * K }, { label: "사장 생활비", amount: -c.draw * K }, { label: "대출 이자", amount: -c.interest * K },
     ], tax: { revenue: c.revenue * K, farmBuy: c.food * K, taxableBuy: (c.rent + c.other * 0.5 + c.appFees + c.agencyFees + c.adCost) * K, profit: (c.op - dep - c.interest) * K } };
   });
-  const strats = qfStrategies(cur?.m, plan, cfg.ind);
   const curDay = cur ? cur.days[Math.min(dayIdx, cur.days.length - 1)] : null;
 
   useLayoutEffect(() => {
@@ -221,7 +220,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
 
   const restart = () => { setState(startState(profile, cfg)); setDone([]); setPlan({ ...DEFAULT_PLAN, staff: cfg.staff }); setSeed(Math.floor(Math.random() * 1000)); setView("intro"); };
   const toScenario = () => {
-    setPlan(mode === "easy" ? { ...strats.find((x) => x.id === strat)!.plan, ...tweak } : plan);
+    setPlan(mode === "easy" ? { ...plan, ...tweak } : plan);
     setChoice(ev.options[ev.options.length - 1].id);
     setView("scenario");
   };
@@ -390,17 +389,9 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                       {cur && <p className="sx-note">{cur.m.lost > cur.m.demand * 0.08 ? `일손이 모자라 몰리는 날 주문 ${n0((cur.m.lost * 1e4) / cur.m.ticket)}건을 놓쳤어요.` : cur.m.load < 0.55 ? "일손이 남았어요. 알바를 줄여도 될 만해요." : "주문과 일손이 잘 맞았어요."}</p>}
                     </section>
                     {mode === "easy" ? (
-                      <section className="sx-right" aria-label="이번 달 방향">
-                        <h2>{m}월, 어느 쪽으로 갈까요?</h2>
-                        <div className="sx-strats" role="radiogroup">
-                          {strats.map((x) => (
-                            <label key={x.id} className={strat === x.id ? "on" : ""}>
-                              <input type="radio" name="qf-strat" checked={strat === x.id} onChange={() => setStrat(x.id)} />
-                              <span className="sx-strat"><b>{x.title}</b><small>{x.desc}</small><span className="sx-strat-chg">{x.changes.length ? x.changes.join(" · ") : "지난달과 같아요"}</span></span>
-                            </label>
-                          ))}
-                        </div>
-                        <QuickPicks picks={PICKS} base={strats.find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
+                      <section className="sx-right" aria-label="이번 달 운영 계획">
+                        <h2>{m}월에 이렇게 할게요</h2>
+                        <QuickPicks picks={PICKS} base={plan} prev={cur?.m.plan} tweak={tweak} setTweak={setTweak} />
                         <p className="sx-note">hard 모드에서는 여기에 더해 SNS 홍보비·여는 시각·닫는 시각·포장 할인과 사이드·음료·주류 같은 곁들임 메뉴 가격까지 하나씩 정해요.</p>
                       </section>
                     ) : (

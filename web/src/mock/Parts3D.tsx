@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { Box, C } from "../store3d/Building";
 import { bladeSign, cardSign, fasciaSign, grate } from "../store3d/textures";
 import { FrontFade, Pendant, Storefront, WALL_H, Wall } from "./Scene3D";
-import { CELL, GRADES, ITEM, kitchenSpot, type Grade, type Placed } from "./model";
+import { CELL, GRADES, ITEM, doorX, kitchenSpot, type Grade, type Placed } from "./model";
 
 const WOOD = "#8a5a3c", DARK = "#2b2d30", LEAF = "#4d7a4a", PARTITION = "#e9e2d4";
 const STEEL_DARK = "#5d6166", VINYL = "#b8372b", SOJU = "#2f8f5b", BEER = "#9a6a24", CREAM = "#f4f1ea";
@@ -345,7 +345,7 @@ export function TableLife({ items, seated }: { items: Placed[]; seated: number[]
 
 // the floor, walls, storefront and the street-side life: fascia sign, blade sign, posters, menu board, warm lights,
 // planters, an A-frame board and beer crates. `items` draws the exhaust trunks over the tables.
-function RoomImpl({ w, d, grade, pyeong, items = [] }: { w: number; d: number; grade: Grade; pyeong?: number; items?: Placed[] }) {
+function RoomImpl({ w, d, grade, pyeong, items = [], door: doorAt }: { w: number; d: number; grade: Grade; pyeong?: number; items?: Placed[]; door?: "left" | "center" | "right" }) {
   const g = GRADES[grade];
   const lines = useMemo(() => {
     const pts: number[] = [];
@@ -361,7 +361,7 @@ function RoomImpl({ w, d, grade, pyeong, items = [] }: { w: number; d: number; g
   const posterB = useMemo(() => cardSign("소주 · 맥주", "#1f6b4e", "#ffffff", 384, 512, 64), []);
   const wallMenu = useMemo(() => boardTex("오늘의 고기", ["생삼겹살 180g", "목살 180g", "항정살 150g", "껍데기 200g"], "#3a2a20"), []);
   const aframe = useMemo(() => boardTex("오늘 추천", ["생삼겹살", "목살"], "#26302a", "#f2f0e6", 256, 320), []);
-  const door = { x: w / 2 - 1.2, w: 1 };
+  const door = { x: doorX(w, doorAt), w: 1 };
   const kitchenRight = -w / 2 + ITEM.kitchen.w;
   const fw = Math.min(w - 0.6, 2.8); // fasciaSign canvas is 1024x192
   return (

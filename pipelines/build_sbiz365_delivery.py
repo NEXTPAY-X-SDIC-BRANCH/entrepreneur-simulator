@@ -27,7 +27,7 @@ def main() -> None:
         gu = {}
         for name, x in cur.groupby("gu"):
             o, s = float(x.orders_per_store.median()), float(x.sales_per_store.median())
-            gu[name] = {"orders": round(o), "sales": round(s), "ticket": round(s / o), "index": round(o / seoul["orders"], 3),
+            gu[name] = {"cd": str(x.admi_cd.iloc[0])[:5], "orders": round(o), "sales": round(s), "ticket": round(s / o), "index": round(o / seoul["orders"], 3),
                         "dongs": {r.admi_cd: {"name": r.dong, "orders": round(r.orders_per_store), "sales": round(r.sales_per_store)} for r in x.itertuples()}}
         trend = {ym: round(float(x.orders_per_store.median())) for ym, x in g.groupby("ym")}
         out["inds"][ind] = {"ym": last, "seoul": {k: round(v) for k, v in seoul.items()}, "gu": gu, "trend_orders": trend}

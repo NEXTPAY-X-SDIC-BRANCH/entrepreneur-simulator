@@ -15,6 +15,7 @@ import { setEngineCtx } from "./chatContext";
 import Assume from "./Assume";
 import QuickPicks, { type Pick } from "./QuickPicks";
 import PriceTrend from "./PriceTrend";
+import { sbizDelivery } from "./quickfood";
 import { BBQ_REF, bbqBand } from "./priceCompare";
 import ModeSwitch from "./ModeSwitch";
 import CashFlow, { type CfMonth } from "./CashFlow";
@@ -465,7 +466,7 @@ function DecisionCard({ d, alts, busy, onTry }: { d: Decision; alts: Record<stri
 // ---------------------------------------------------------------- easy 모드: 달마다 방향 세 가지
 // 추천대로 = 지난달 결과로 만든 규칙 추천(recommend)을 모두 적용. 손님 늘리기·비용 아끼기는 지난달 계획에서 몇 가지만 한 칸씩 움직인다.
 type StratId = "rec" | "grow" | "save";
-function strategies(cur: Done | undefined, plan: Plan): { id: StratId; title: string; desc: string; plan: Plan; changes: string[] }[] {
+export function strategies(cur: Done | undefined, plan: Plan): { id: StratId; title: string; desc: string; plan: Plan; changes: string[] }[] {
   const base = cur?.plan ?? plan;
   const rec = cur ? recommend(cur, base).reduce((p, r) => (r.change ? { ...p, [r.lever.key]: r.next[r.lever.key] } : p), base) : base;
   const grow: Plan = { ...base, staff_per_shift: Math.min(4, base.staff_per_shift + 1), marketing_budget: Math.max(base.marketing_budget, 500_000),
@@ -554,7 +555,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const gfx = useGfx();
   const [mode, setMode] = useState<Mode>("easy");
   const [rentN, setRentN] = useState<RentN>(0); // easy 모드는 늘 현금
-  const [strat, setStrat] = useState<StratId>("rec");
+  const [, setStrat] = useState<StratId>("rec");
   const [tweak, setTweak] = useState<Partial<Plan>>({});
   const [view, setView] = useState<View>("intro");
   const [fade, setFade] = useState(false);
@@ -604,6 +605,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
     staff: plan.staff_per_shift, price: plan.meat_price, baseline_runs: 150, quarter_index: st.qidx, area_type: st.areaType ?? "일반",
     start_month: startMonth,
     flow: flowShape(dongCode, profile.gu), // 동네의 요일·시간대·연령 비율 (없으면 엔진이 기준 상권 값을 씀)
+    delivery_gu_index: sbizDelivery("bbq", profile.gu)?.gu?.index, // 소상공인365 배달분석 고기·구이: 이 구 ÷ 서울
   });
 
   const post = async (path: string, body: unknown) => {
@@ -736,7 +738,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
 
   const idx = done.length; // 지금 정하거나 재생 중인 달의 순번 (0부터)
   const curDay = cur ? cur.days[Math.min(dayIdx, cur.days.length - 1)] : null;
-  const { w, d } = roomSize(store.pyeong);
+  const { w, d } = roomSize(store.pyeong, store);
   const state = cur?.result.state_after;
   const cashNow = view === null || view === "settle" || view === "report" ? curDay?.cash ?? startCash : (cashAtStart.current[done.length] ?? startCash);
   const planMonth = monthSeq[Math.min(idx, TURNS - 1)];
@@ -786,7 +788,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
         <GLGuard>
           <Canvas key={gfx} frameloop={gfxFrameloop(gfx)} shadows={gfxShadows(gfx)} camera={{ position: [w * 0.7, Math.max(w, d) * 1.2, d * 1.6], fov: 38 }} dpr={gfxDpr(gfx)}>
             <StoreLights w={w} d={d} r={Math.max(w, d) / 2 + 3} dim={!curDay || curDay.open ? 1 : 0.45} />
-            <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} items={store.items} />
+            <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} door={store.door} items={store.items} />
             <Items items={store.items} />
             <Guests store={store} filled={view === "intro" || view === "plan" || view === "scenario" ? 0 : filled} />
             <FitControls box={[-w / 2, -d / 2, w / 2, d / 2 + 0.6]} dir={[0.7, 1.2, 1.6]} />
@@ -983,21 +985,9 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       <PriceTrend month={planMonth} />
                     </section>
                     {mode === "easy" ? (
-                    <section className="sx-right" aria-label="이번 달 방향">
-                      <h2>{planMonth}월, 어느 쪽으로 갈까요?</h2>
-                      <div className="sx-strats" role="radiogroup">
-                        {strategies(cur, plan).map((x) => (
-                          <label key={x.id} className={strat === x.id ? "on" : ""}>
-                            <input type="radio" name="strat" checked={strat === x.id} onChange={() => setStrat(x.id)} />
-                            <span className="sx-strat">
-                              <b>{x.title}</b>
-                              <small>{x.desc}</small>
-                              <span className="sx-strat-chg">{x.changes.length ? x.changes.join(" · ") : "지난달과 같아요"}</span>
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                      <QuickPicks picks={BBQ_PICKS} base={strategies(cur, plan).find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
+                    <section className="sx-right" aria-label="이번 달 운영 계획">
+                      <h2>{planMonth}월에 이렇게 할게요</h2>
+                      <QuickPicks picks={BBQ_PICKS} base={plan} prev={cur?.plan} tweak={tweak} setTweak={setTweak} />
                       <p className="sx-note">hard 모드에서는 메뉴·원가와 가격·알바·마감·반찬·배달을 하나씩 정할 수 있어요.</p>
                     </section>
                     ) : (
@@ -1014,7 +1004,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                 <footer className="sx-foot">
                   <button type="button" className="se-btn" onClick={() => {
                     if (mode === "hard") return void startMonthCall();
-                    const chosen = { ...strategies(cur, plan).find((x) => x.id === strat)!.plan, ...tweak };
+                    const chosen = { ...plan, ...tweak };
                     setPlan(chosen);
                     void startMonthCall(chosen);
                   }} disabled={busy}>{busy ? "엔진이 계산 중이에요" : `${planMonth}월 시작`}</button>

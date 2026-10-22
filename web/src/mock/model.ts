@@ -267,12 +267,19 @@ export const CATALOG: CatalogItem[] = [
 export const ITEM = Object.fromEntries(CATALOG.map((c) => [c.id, c])) as Record<string, CatalogItem>;
 
 export type Placed = { uid: number; id: string; x: number; z: number; rot: 0 | 1 }; // x,z = centre in metres; rot 1 = quarter turn
-export type Store = { pyeong: number; grade: Grade; items: Placed[]; loan: number }; // loan in 만원
+// door: 앞벽 출입문 자리, shape: 가게 모양 (가로로 긴 / 정사각 / 세로로 긴). 비어 있으면 오른쪽 문, 가로로 긴 가게
+export type Store = { pyeong: number; grade: Grade; items: Placed[]; loan: number; door?: "left" | "center" | "right"; shape?: "wide" | "square" | "deep" }; // loan in 만원
+export type Lay = { door?: Store["door"]; shape?: Store["shape"] };
+const SHAPE_RATIO = { wide: 1.45, square: 1.0, deep: 0.7 } as const;
+// 문 가운데 x. 오른쪽 문은 오른쪽 벽에서 1.2m 안쪽 (예전과 같은 자리)
+export const doorX = (w: number, door?: Store["door"]) => (door === "center" ? 0 : door === "left" ? -w / 2 + 1.2 : w / 2 - 1.2);
+// 문 앞 통로: 폭 1.2m, 앞벽에서 1m 안쪽까지는 아무것도 놓지 않는다
+const doorZone = (w: number, d: number, door?: Store["door"]) => ({ x0: doorX(w, door) - 0.6, x1: doorX(w, door) + 0.6, z0: d / 2 - 1.0 });
 
 export const CELL = 0.5;
-export function roomSize(pyeong: number): { w: number; d: number } {
+export function roomSize(pyeong: number, lay?: Lay): { w: number; d: number } {
   const area = pyeong * 3.3;
-  const w = Math.round(Math.sqrt(area * 1.45) / CELL) * CELL;
+  const w = Math.max(3.5, Math.round(Math.sqrt(area * SHAPE_RATIO[lay?.shape ?? "wide"]) / CELL) * CELL);
   return { w, d: Math.round(area / w / CELL) * CELL };
 }
 export function footprint(p: { id: string; rot: 0 | 1 }): { w: number; d: number } {
@@ -280,10 +287,12 @@ export function footprint(p: { id: string; rot: 0 | 1 }): { w: number; d: number
   return p.rot ? { w: it.d, d: it.w } : { w: it.w, d: it.d };
 }
 export function fits(store: Store, cand: { id: string; x: number; z: number; rot: 0 | 1 }, ignore?: number): boolean {
-  const { w, d } = roomSize(store.pyeong);
+  const { w, d } = roomSize(store.pyeong, store);
   const f = footprint(cand);
   if (cand.x - f.w / 2 < -w / 2 - 1e-6 || cand.x + f.w / 2 > w / 2 + 1e-6) return false;
   if (cand.z - f.d / 2 < -d / 2 - 1e-6 || cand.z + f.d / 2 > d / 2 + 1e-6) return false;
+  const dz = doorZone(w, d, store.door);
+  if (cand.x + f.w / 2 > dz.x0 + 1e-6 && cand.x - f.w / 2 < dz.x1 - 1e-6 && cand.z + f.d / 2 > dz.z0 + 1e-6) return false; // 문 앞 통로
   return store.items.every((o) => {
     if (o.uid === ignore) return true;
     const g = footprint(o);
@@ -297,15 +306,16 @@ export function snap(v: number, size: number): number {
 }
 
 // the kitchen is a walled room in the back-left corner; it moves with the walls when the size changes
-export function kitchenSpot(pyeong: number): { x: number; z: number } {
-  const { w, d } = roomSize(pyeong);
+export function kitchenSpot(pyeong: number, lay?: Lay): { x: number; z: number } {
+  const { w, d } = roomSize(pyeong, lay);
   return { x: -w / 2 + ITEM.kitchen.w / 2, z: -d / 2 + ITEM.kitchen.d / 2 };
 }
 
 // Where tables can go: rows from the front wall back, half a metre of aisle around each, clear of the kitchen room.
-export function tableSlots(pyeong: number): { x: number; z: number }[] {
-  const { w, d } = roomSize(pyeong);
-  const k = kitchenSpot(pyeong), kw = ITEM.kitchen.w, kd = ITEM.kitchen.d, tw = ITEM.table4.w, td = ITEM.table4.d, gap = 0.5;
+export function tableSlots(pyeong: number, lay?: Lay): { x: number; z: number }[] {
+  const { w, d } = roomSize(pyeong, lay);
+  const dz = doorZone(w, d, lay?.door);
+  const k = kitchenSpot(pyeong, lay), kw = ITEM.kitchen.w, kd = ITEM.kitchen.d, tw = ITEM.table4.w, td = ITEM.table4.d, gap = 0.5;
   const cols = Math.floor((w - gap) / (tw + gap));
   const x0 = -((cols - 1) * (tw + gap)) / 2; // centre the columns across the room
   const out: { x: number; z: number }[] = [];
@@ -315,7 +325,8 @@ export function tableSlots(pyeong: number): { x: number; z: number }[] {
       const clearK = Math.abs(x - k.x) >= (tw + kw) / 2 + gap - 1e-6 || Math.abs(z - k.z) >= (td + kd) / 2 + gap - 1e-6;
       const fx = -w / 2 + kw + 0.5, fz = -d / 2 + 0.5; // the fridge, next to the kitchen
       const clearF = Math.abs(x - fx) >= (tw + 1) / 2 + gap - 1e-6 || Math.abs(z - fz) >= (td + 1) / 2 + gap - 1e-6;
-      if (clearK && clearF) out.push({ x, z: snap(z, td) });
+      const clearD = x + tw / 2 <= dz.x0 + 1e-6 || x - tw / 2 >= dz.x1 - 1e-6 || z + td / 2 <= dz.z0 + 1e-6;
+      if (clearK && clearF && clearD) out.push({ x, z: snap(z, td) });
     }
   }
   return out;
@@ -327,14 +338,14 @@ export function emptyStore(pyeong = 20, grade: Grade = "basic"): Store {
 }
 
 // the kitchen room, one drinks fridge and `tables` four-seat tables, laid out automatically
-export function starterStore(pyeong = 20, grade: Grade = "basic", loan = 0, tables = 3): Store {
-  const store: Store = { pyeong, grade, items: [], loan };
-  const { w, d } = roomSize(pyeong);
+export function starterStore(pyeong = 20, grade: Grade = "basic", loan = 0, tables = 3, lay: Lay = {}): Store {
+  const store: Store = { pyeong, grade, items: [], loan, ...lay };
+  const { w, d } = roomSize(pyeong, lay);
   let uid = 1;
-  store.items.push({ uid: uid++, id: "kitchen", ...kitchenSpot(pyeong), rot: 0 });
+  store.items.push({ uid: uid++, id: "kitchen", ...kitchenSpot(pyeong, lay), rot: 0 });
   const fr = { id: "fridge", x: snap(-w / 2 + ITEM.kitchen.w + 0.5, 1), z: snap(-d / 2 + 0.5, 1), rot: 0 as const };
   if (fits(store, fr)) store.items.push({ uid: uid++, ...fr });
-  for (const t of tableSlots(pyeong).slice(0, tables)) {
+  for (const t of tableSlots(pyeong, lay).slice(0, tables)) {
     const c = { id: "table4", ...t, rot: 0 as const };
     if (fits(store, c)) store.items.push({ uid: uid++, ...c });
   }
@@ -460,12 +471,12 @@ export const settledNet = (run: Run, store: Store) => run.rows[5].op - OWNER_DRA
 // The store this money can best afford: among the sizes, table counts and staff numbers that survive six months even
 // with 20% fewer guests, the one that leaves the most each month once settled. If none survives, the one that ends
 // the six months with the most cash.
-export function recommend(profile: Profile): { store: Store; staff: number; safe: boolean } {
+export function recommend(profile: Profile, lay: Lay = {}): { store: Store; staff: number; safe: boolean } {
   let best: { store: Store; staff: number; safe: boolean; score: number } | null = null;
   for (let pyeong = 12; pyeong <= 30; pyeong++) {
-    const slots = tableSlots(pyeong).length;
+    const slots = tableSlots(pyeong, lay).length;
     for (let tables = 2; tables <= slots; tables++) {
-      const store = starterStore(pyeong, "basic", 0, tables);
+      const store = starterStore(pyeong, "basic", 0, tables, lay);
       if (cashLeft(profile, store) < 0) break;
       for (let staff = 0; staff <= 6; staff++) {
         const lv = { ...DEFAULT_LEVERS, staff };

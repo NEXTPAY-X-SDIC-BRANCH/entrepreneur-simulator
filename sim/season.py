@@ -429,7 +429,8 @@ def _pnl(month: dict, su: dict, rng: np.random.Generator | None, n_reviews: floa
         # 배달 매출 = 저녁 매출 x 배달 비중 x 달별 배율. 그중 cannibal 몫은 원래 매장에 왔을 손님이라 매장 매출에서 뺀다.
         # 앱 결제라 매장 카드 수수료는 붙지 않고, 중개수수료·결제대행 수수료·건당 배달비·포장재가 나간다.
         # 결제대행 수수료는 영세·중소 우대수수료율로 환급되므로 매장 카드 수수료율과 같게 둔다 (쿠팡이츠 상생 요금제 공지).
-        d_rev = revenue * v("delivery.share") * _delivery_month_index().get(su["month"], 1.0)
+        # 구별 배수: 이 구 고깃집의 점포당 배달 주문 ÷ 서울 가운데값 (소상공인365 배달분석, 점포 입력 delivery_gu_index). 없으면 1
+        d_rev = revenue * v("delivery.share") * _delivery_month_index().get(su["month"], 1.0) * _store().get("delivery_gu_index", 1.0)
         lost = d_rev * v("delivery.cannibal")
         orders = d_rev / (ticket * v("delivery.people_per_order")) if ticket else 0.0
         tier = data()["P"]["delivery"]["tier"][off["delivery"]]

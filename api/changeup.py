@@ -57,7 +57,8 @@ def _apply_store(spec: dict | None) -> dict:
             seats=int(spec.get("seats", 0)), cash_rent_man_per_pyeong=float(spec["cash_rent_man_per_pyeong"]),
             staff=int(spec.get("staff", 3)), price=int(spec.get("price", 19000)),
             baseline_runs=int(spec.get("baseline_runs", 150)), quarter_index=spec.get("quarter_index"),
-            area_type=spec.get("area_type"), start_month=spec.get("start_month"), flow=spec.get("flow"))
+            area_type=spec.get("area_type"), start_month=spec.get("start_month"), flow=spec.get("flow"),
+            delivery_gu_index=spec.get("delivery_gu_index"))
     except (KeyError, TypeError, ValueError) as e:
         raise HTTPException(422, f"store 입력 오류: {e}") from e
     S.set_store(store)
