@@ -50,7 +50,7 @@
 .m-stepper output { min-inline-size: 5.5em; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* option cards with a check circle on the right (profile answers, what-ifs) */
-.m-choices { display: grid; gap: 14px; margin-block-start: 32px; }
+.m-choices { display: grid; gap: 14px; margin-block: 32px 36px; }
 .m-choice { position: relative; display: block; }
 .m-choice input { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .m-choice > span { position: relative; display: block; padding: 22px 64px 22px 26px; border: 1px solid #edf0f4; border-radius: 20px; background: var(--bg); box-shadow: var(--card); font-size: 19px; font-weight: 500; }
@@ -64,7 +64,7 @@
 .m-choice small { margin-block-start: 2px; }
 
 /* ---- 1. profile ---- */
-.m-profile { flex: 1; inline-size: min(100%, 850px); margin-inline: auto; padding: clamp(24px, 5vh, 44px) 20px 64px; }
+.m-profile { flex: 1; zoom: 0.88; inline-size: min(100%, 850px); margin-inline: auto; padding: clamp(24px, 5vh, 44px) 20px 64px; }
 .m-bar { block-size: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; }
 .m-bar i { display: block; block-size: 100%; border-radius: 3px; background: var(--blue); transition: inline-size 240ms ease-out; }
 .m-progress { display: flex; gap: 14px; margin-block-start: 12px; font-size: 15px; color: var(--pencil); }
@@ -75,7 +75,7 @@
 @keyframes m-in { from { opacity: 0; transform: translateY(6px); } }
 .m-q legend { font: 700 clamp(30px, 3.6vw, 42px)/1.3 var(--display); letter-spacing: -0.02em; max-inline-size: 15em; }
 .m-help { margin-block-start: 12px; max-inline-size: 38em; font-size: 18px; color: var(--pencil); }
-.m-choices-gu { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+.m-choices-gu { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 16px 18px; }
 .m-choices-gu .m-choice > span { padding: 13px 16px; border-radius: 14px; font-size: 17px; text-align: center; }
 .m-choices-gu .m-choice > span::after { display: none; }
 .m-choices-gu .m-choice input:checked + span { background: var(--blue); color: #fff; }
@@ -609,9 +609,9 @@ html:has(.m-app) { background: #fff; }
 .fd-hub b { font-size: 17px; }
 .fd-hub span { font-size: 13px; color: #5a5d6b; }
 .fd-hub i { position: absolute; inset-inline-end: 18px; inset-block-start: 50%; transform: translateY(-50%); font-style: normal; font-size: 20px;  color: #3d63ea; }
-.m-funds ul.fd-banks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-.m-funds .fd-banks li { padding: 0; border: 0; }
-.fd-banks a { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #e3e5ec; border-radius: 16px; background: #fff; color: #17181c; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+.m-funds ul.fd-banks { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); grid-auto-rows: 1fr; gap: 10px; }
+.m-funds .fd-banks li { display: grid; padding: 0; border: 0; }
+.fd-banks a { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px; block-size: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #e3e5ec; border-radius: 16px; background: #fff; color: #17181c; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
 .fd-banks a:hover { border-color: #9ea2f0; box-shadow: 0 4px 14px rgba(54, 57, 184, .1); }
 .fd-banks img { inline-size: 44px; block-size: 44px; object-fit: contain; border-radius: 12px; border: 1px solid #eeeff4; background: #fff; }
 .fd-banks span { display: grid; gap: 2px; }
@@ -680,3 +680,18 @@ html:has(.m-app) { background: #fff; }
 /* 꾸미기 왼쪽 판의 선택 버튼 묶음: 판 폭에 맞춰 고르게, 줄이 바뀌어도 가운데 정렬 */
 .m-room > .m-seg { display: flex; flex-wrap: wrap; justify-content: center; inline-size: 100%; justify-self: stretch; }
 .m-room > .m-seg button { flex: 1 1 auto; text-align: center; }
+
+/* 물건 쟁반: 꼭 필요한 물건 안내가 버튼 옆으로 늘어나 카드 줄을 누르지 않게, 버튼 묶음은 세로로 */
+.m-tray-go { flex-direction: column; align-items: stretch; max-inline-size: 280px; }
+.m-tray-go .it-need { margin: 0; padding: 8px 12px; font-size: 13px; line-height: 1.45; }
+.m-catalog .it-card { inline-size: 200px; align-content: start; }
+.m-catalog .it-card svg { margin-block-end: 2px; }
+.m-catalog .it-card .m-stepper { margin-block-start: auto; }
+.m-catalog .it-full { color: var(--pencil); font-size: 12px; }
+.m-spent { max-block-size: 260px; overflow-y: auto; padding-inline-end: 6px; }
+.ap-buynote { display: block; margin-block-start: 6px; font-size: 12.5px; color: var(--ink2); line-height: 1.5; }
+/* 쟁반 카드는 내용 높이만큼 (정산 줄이 길어 쟁반이 높아져도 −/+ 가 아래로 밀리지 않게) */
+.m-catalog { align-items: flex-start; }
+.m-catalog .cs-card.it-card { block-size: auto; align-content: start; gap: 4px; }
+.m-catalog .cs-card.it-card .m-stepper { margin-block-start: 8px; }
+.m-spent { max-block-size: 220px; }

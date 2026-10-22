@@ -18,6 +18,8 @@ import { qfTries } from "./QfInsight";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine";
 import "./simulate-engine.css";
+import CostBar from "./CostBar";
+import { isDepLine } from "./shopItems";
 
 const TURNS = 6;
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
@@ -83,20 +85,6 @@ function MixPicker({ ind, plan, prev, set, seats, gu }: { ind: "chicken" | "buns
 }
 
 // 매출 100원이 어디로 갔나: 비용 항목과 남은 이익을 한 줄 막대로
-function CostBar({ items, revenue, op }: { items: [string, number][]; revenue: number; op: number }) {
-  const r = Math.max(1, revenue), xs = items.filter(([, v]) => v > 0.5);
-  const COL = ["#2f4fc4", "#4d6bd6", "#7089e0", "#94a8ea", "#b6c4f1", "#d3dcf7"]; // 파란 계열 한 가지로 진하기만 다르게 (앞 비용이 큰 순)
-  return (
-    <section className="sx-sec cb">
-      <h2>매출 100원이 어디로 갔나</h2>
-      <div className="cb-bar" role="img" aria-label={xs.map(([k, v]) => `${k} ${Math.round((v / r) * 100)}원`).join(", ") + `, 남은 이익 ${Math.round((op / r) * 100)}원`}>
-        {xs.map(([k, v], i) => <span key={k} className={i >= 3 ? "lt" : undefined} style={{ flexGrow: v, background: COL[i % COL.length] }} title={`${k} ${man(Math.round(v))}`}>{v / r >= 0.07 ? `${k} ${Math.round((v / r) * 100)}` : ""}</span>)}
-        {op > 0 && <span className="cb-op" style={{ flexGrow: op }}>{op / r >= 0.05 ? `이익 ${Math.round((op / r) * 100)}` : ""}</span>}
-      </div>
-      {op <= 0 && <p className="cb-loss">비용이 매출보다 {man(Math.round(-op))} 많았어요 (매출 100원당 {Math.round((-op / r) * 100)}원 적자).</p>}
-    </section>
-  );
-}
 
 const ico = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 const IconBike = () => <svg {...ico}><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M6 17h4l3-6h3l2 6M13 11l-2-4H8" /></svg>;
@@ -205,7 +193,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const cur = done.at(-1);
   const m = monthSeq[Math.min(idx, TURNS - 1)];
   const ev = eventOf(cfg.ind, m, seed + idx);
-  const dep = open.lines.filter((l) => ["interior", "equip", "kitchen", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) / 60; // 5년 감가상각
+  const dep = open.lines.filter((l) => isDepLine(l.key)).reduce((a, l) => a + l.amount, 0) / 60; // 5년 감가상각
   // 현금흐름표·영수증 (원). 엔진 현금 = 월초 + 영업이익 − 생활비 − 이자
   const cfMonths: CfMonth[] = months.map((c, i) => {
     const s0 = i ? months[i - 1].cash : start.cash, K = 1e4;
@@ -530,7 +518,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                       onApply={(patch) => { if (mode === "easy") setTweak(patch); else setPlan({ ...c.plan, ...patch }); next(); }} />
                     <CostBar items={[
                       ["식재료", c.food], ["배달 수수료", fees], ["포장 용기", c.packaging ?? 0], ["인건비", c.staffPay], ["월세", c.rent], ["기타", c.other], ["광고·홍보", c.adCost + c.marketing + c.eventCost],
-                    ]} revenue={c.revenue} op={c.op} />
+                    ]} revenue={c.revenue} op={c.op} fmt={(x) => man(Math.round(x))} />
                     <CashFlow months={cfMonths} kind="food" shop={name} compact />
                     <details className="sx-more">
                       <summary>정산표와 홀·포장·배달별 자세히 보기</summary>

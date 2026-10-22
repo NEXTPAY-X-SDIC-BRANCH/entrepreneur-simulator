@@ -11,6 +11,7 @@
 //   배달 시장의 달별 크기: 통계청 온라인쇼핑동향 음식서비스 거래액 달별 배율 (delivery_market.json)
 //   평당 월세·보증금 개월 수·사장 생활비·대출 금리: 다른 업종과 같은 값 (model.ts)
 //   그 밖(가격 탄력, 면적 효과, 배달 광고 효과, 기타경비 5%, 설비비, 사건 효과 크기)은 가정이고 아래에 '가정'으로 적었다.
+import { interiorLines, itemLines } from "./shopItems";
 import type { ShopLayout } from "./ShopRoom3D";
 import { snsMonth } from "./sns";
 import { DEPOSIT_MONTHS, LOAN_RATE, OWNER_DRAW, guStat, setQfDelivery, type CostLine, type Grade, type Profile } from "./model";
@@ -130,7 +131,8 @@ const HEADROOM = 1.4, CAP_K = 4; // 일손: 종사원 1명당 평균 매출 × 1
 const AD_BOOST = [1, 1.15, 1.28];   // 가정: 배달앱 광고 없음 / 기본 / 적극일 때 배달 주문 배수
 export const AD_COST = [0, 20, 50]; // 가정: 배달앱 광고비 (만원/월). 깃발형 광고 2~6개 수준
 export const SIGN = 250;            // 간판 (다른 업종과 같은 가정)
-export const EQUIP: Record<QfInd, number> = { chicken: 1500, bunsik: 1000 };
+// 주방 기본 설비. 예전 묶음값(치킨 1,500 · 분식 1,000)에서 따로 고르는 튀김기 2대·계산대(치킨), 조리 자리·계산대(분식)를 뺀 값
+export const EQUIP: Record<QfInd, number> = { chicken: 990, bunsik: 730 };
 // 가정: 주방 공사 (가스 배관·급배수·환기 덕트·칸막이). 치킨은 튀김기 덕트와 가스 용량이 커서 더 든다 (만원)
 export const KITCHEN_BUILD: Record<QfInd, number> = { chicken: 700, bunsik: 450 }; // 가정: 튀김기·냉장고·후드 / 조리대·냉장고·밥솥 (만원)
 const GRADE_MULT: Record<Grade, number> = { basic: 0.7, mid: 1, high: 1.4 }; // 가정: 조사 평균을 중급으로 놓고 ±
@@ -149,8 +151,9 @@ export function qfOpeningCost(cfg: QfCfg, gu: string, keyMoney = 0): { lines: Co
   const lines: CostLine[] = [
     ...(keyMoney > 0 ? [{ key: "keymoney", label: "권리금", amount: keyMoney, basis: "직접 넣은 값 (나갈 때 돌려받지 못해요)" }] : []),
     { key: "deposit", label: "보증금", amount: Math.round(st.rent * cfg.pyeong * DEPOSIT_MONTHS), basis: `월세 ${DEPOSIT_MONTHS}개월분 (서울시 상가임대차 실태조사)` },
-    { key: "interior", label: "인테리어 공사", amount: perPy * cfg.pyeong, basis: `${cfg.pyeong}평, 평당 ${perPy}만원 (${GRADE_LABEL[cfg.grade]}). 외식업체 경영실태조사 ${QF_NAME[cfg.ind]} 평균 평당 ${Math.round(d.interiorPerPy)}만원을 중급으로 놓음, 기본·고급은 가정` },
-    { key: "equip", label: cfg.ind === "chicken" ? "튀김기·냉장·후드" : "조리대·냉장·밥솥", amount: EQUIP[cfg.ind], basis: "가정" },
+    ...interiorLines(perPy * cfg.pyeong, `${cfg.pyeong}평, 평당 ${perPy}만원 (${GRADE_LABEL[cfg.grade]}). 외식업체 경영실태조사 ${QF_NAME[cfg.ind]} 평균 평당 ${Math.round(d.interiorPerPy)}만원을 중급으로 놓음, 기본·고급은 가정`),
+    { key: "equip", label: "주방 기본 설비 (후드·싱크·작업대·냉장)", amount: EQUIP[cfg.ind], basis: "가정. 튀김기·조리 자리·계산대는 고른 만큼 따로" },
+    ...itemLines(cfg.ind, cfg.pyeong, cfg.layout),
     { key: "kitchen", label: "주방 공사 (가스·배관·덕트·칸막이)", amount: KITCHEN_BUILD[cfg.ind], basis: "가정" },
     { key: "sign", label: "간판", amount: SIGN, basis: "전면 간판 1개, 가정" },
     { key: "stock", label: "첫 식재료", amount: stock, basis: `한 달 예상 매출의 1주일치를 식재료비율 ${Math.round(d.foodRatio * 100)}%로 (가정)` },

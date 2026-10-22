@@ -3,6 +3,9 @@
 import { Mark } from "./Checks";
 import Assume from "./Assume";
 import LayoutPicker from "./LayoutPicker";
+import ItemTray from "./ItemTray";
+import { missingItems } from "./shopItems";
+import { useEffect } from "react";
 import ShopRoom3D from "./ShopRoom3D";
 import { ASSUME } from "./assumptions";
 import { OWNER_DRAW, STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
@@ -42,6 +45,11 @@ export function QfFloorPlan({ cfg, people = 0, riders = 0 }: { cfg: QfCfg; peopl
 
 export default function QuickFoodBuild({ profile, cfg, setCfg, onNext }: { profile: Profile; cfg: QfCfg; setCfg: (c: QfCfg) => void; onNext: () => void }) {
   const set = (p: Partial<QfCfg>) => setCfg({ ...cfg, ...p });
+  const kind = cfg.ind === "chicken" ? "chicken" : "bunsik";
+  // 고깃집처럼 빈 가게(주방·벽만)에서 시작해 물건을 골라 채운다
+  useEffect(() => { if (!cfg.layout) set({ layout: { blank: true } }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const lay = cfg.layout ?? { blank: true };
+  const missing = missingItems(kind, cfg.pyeong, lay);
   const st = guStat(profile.gu), dv = derived(cfg.ind), name = QF_NAME[cfg.ind];
   const open = qfOpeningCost(cfg, profile.gu, profile.keyMoney ?? 0);
   const left = profile.capital + cfg.loan - open.total;
@@ -66,7 +74,7 @@ export default function QuickFoodBuild({ profile, cfg, setCfg, onNext }: { profi
   return (
     <main className="m-build">
       <div className="m-stage">
-        <div className="m-canvas"><ShopRoom3D kind={cfg.ind === "chicken" ? "chicken" : "bunsik"} pyeong={cfg.pyeong} layout={cfg.layout} height="fill" flow /></div>
+        <div className="m-canvas"><ShopRoom3D kind={kind} pyeong={cfg.pyeong} layout={lay} height="fill" flow /></div>
         <div className="m-room">
           <div className="m-stepper">
             <span id="qf-py">가게 크기</span>
@@ -80,12 +88,13 @@ export default function QuickFoodBuild({ profile, cfg, setCfg, onNext }: { profi
             ))}
           </div>
           <div className="m-stepper">
-            <span id="qf-staff">알바</span>
+            <span id="qf-staff">직원 수</span>
             <button type="button" aria-label="알바 1명 줄이기" disabled={cfg.staff <= 0} onClick={() => set({ staff: cfg.staff - 1 })}>−</button>
             <output aria-labelledby="qf-staff">{cfg.staff}명</output>
             <button type="button" aria-label="알바 1명 늘리기" disabled={cfg.staff >= 3} onClick={() => set({ staff: cfg.staff + 1 })}>+</button>
           </div>
-          <LayoutPicker kind={cfg.ind === "chicken" ? "chicken" : "bunsik"} pyeong={cfg.pyeong} layout={cfg.layout ?? {}} set={(l) => set({ layout: l })} />
+          <LayoutPicker kind={kind} pyeong={cfg.pyeong} layout={lay} set={(l) => set({ layout: l })} />
+          <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={() => set({ layout: { shape: lay.shape, door: lay.door, pos: lay.pos, rackDir: lay.rackDir } })}>추천 배치</button>
           <p>조사한 {name}은 평균 {Math.round(dv.areaPy)}평에 사장 포함 {(1 + dv.hired).toFixed(1)}명(가족 제외)이 일해요. 주문의 {Math.round(dv.share.delivery * 100)}%가 배달, {Math.round(dv.share.takeout * 100)}%가 포장이에요 (외식업체 경영실태조사).</p>
         </div>
         <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>
@@ -105,9 +114,11 @@ export default function QuickFoodBuild({ profile, cfg, setCfg, onNext }: { profi
         <dl className="m-spent">
           {open.lines.map((l) => <div key={l.key}><dt>{l.label}{(l.basis.includes("가정") || `open_${l.key}` in ASSUME) && <Assume id={`open_${l.key}` in ASSUME ? `open_${l.key}` : undefined} what={`open_${l.key}` in ASSUME ? undefined : `${l.label}: ${l.basis}`} />}</dt><dd>{man(l.amount)}</dd></div>)}
         </dl>
+        <ItemTray kind={kind} pyeong={cfg.pyeong} layout={lay} set={(l) => set({ layout: l })} />
         <div className="m-tray-go">
+          {missing.length > 0 && <p className="m-warn it-need">꼭 필요한 물건을 아직 안 놓았어요: {missing.join(", ")}</p>}
           <button type="button" className="m-btn m-btn-outline" onClick={() => document.querySelector(".m-checks")?.scrollIntoView({ behavior: "smooth", block: "start" })}>오픈 전 점검 보러가기</button>
-          <button type="button" className="m-btn" disabled={left < 0} onClick={onNext}>시뮬레이션 하러 가기</button>
+          <button type="button" className="m-btn" disabled={left < 0 || missing.length > 0} onClick={onNext}>시뮬레이션 하러 가기</button>
         </div>
       </div>
 

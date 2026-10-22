@@ -59,6 +59,7 @@ class MonthIn(BaseModel):
     price_change_pct: float | None = Field(None, ge=-20, le=30)        # one-time change this month; None = 0
     hours: Literal["short", "standard", "long"] | None = None          # None = keep last month's
     staff_policy: Literal["lean", "standard", "generous"] | None = None
+    staff_max: int | None = Field(None, ge=1, le=8)    # 바쁜 시간 최대 인원 (사장님 포함, None = 가게 설정 인원)
     marketing_krw: int | None = Field(None, ge=0, le=5_000_000)
     dessert: bool | None = None
     delivery: bool | None = None                  # 배달앱 입점 (None = 지난달 그대로)

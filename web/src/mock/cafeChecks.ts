@@ -1,7 +1,7 @@
 // 카페 열기 전 점검: 고깃집 checks()와 같은 다섯 질문, 숫자는 카페 자료로 계산한다.
 // 매출은 동네 점포당 월매출의 중앙값(model.ts CAFE_MEDIAN)과 4분의 1·4분의 3 분위로 세 가지 경우를 본다.
 // 비용 구조는 외식업체 경영실태조사 2025 커피전문점(전국, 프랜차이즈 포함, 2-2 정량 데이터 표 95~104·127)이고, 값마다 아래에 출처를 적었다.
-import { CAFE_GRADES, CAFE_SIGN, cafeOpeningCost } from "./cafe";
+import { CAFE_GRADES, CAFE_SIGN, cafeDefaultCounts, cafeOpeningCost } from "./cafe";
 import { guStat, man, type Check, type Grade, type Profile } from "./model";
 
 export const C = {
@@ -23,21 +23,21 @@ export const areaFx = (p: number) => (p < 10 ? 0.89 : p < 30 ? 1 : 1.37);
 // 가게 꾸미기 입력. 3D 목업의 배치 입력(tables~pos)은 비워 두면 평수에서 어림한 값(독립 카페 평당 테이블 0.36개, 좌석 1.27석)을 쓴다.
 // shape·door: 가게 모양과 출입문 (엔진 sim/cafe/layout.py가 배치를 다시 푼다). 비어 있으면 가로로 긴 가게, 오른쪽 문
 export type CafeCfg = { pyeong: number; grade: Grade; staff: number; tables?: number; chairs?: number; bar?: number; groups?: number; showcase?: number; oven?: number; kiosks?: number; pos?: number; shape?: "wide" | "square" | "deep"; door?: "left" | "right" };
-export const cafeLayoutOf = (c: CafeCfg) => ({
-  tables: c.tables ?? Math.max(1, Math.round(c.pyeong * 0.36)), chairs: c.chairs ?? Math.max(2, Math.round(c.pyeong * 1.27)), bar: c.bar ?? 0,
-  groups: c.groups ?? 2, showcase: c.showcase ?? 1, oven: c.oven ?? 0, kiosks: c.kiosks ?? 0, pos: c.pos ?? 1,
-});
+export const cafeLayoutOf = (c: CafeCfg) => {
+  const d = cafeDefaultCounts(c.pyeong);
+  return { tables: c.tables ?? d.tables, chairs: c.chairs ?? d.chairs, bar: c.bar ?? d.bar, groups: c.groups ?? d.groups, showcase: c.showcase ?? d.showcase, oven: c.oven ?? d.oven, kiosks: c.kiosks ?? d.kiosks, pos: c.pos ?? d.pos };
+};
 // 엔진(/cafe/preview, /cafe/season) 요청. 동네(행정동 코드)를 안 골랐으면 배치 미리보기용으로 대학로 코드를 쓰고, 시뮬은 동네를 요구한다.
 export const engineBody = (profile: Profile, c: CafeCfg, district: string) => {
   const l = cafeLayoutOf(c);
-  return { district, size_pyeong: c.pyeong, tables: l.tables, chairs: l.chairs, bar_seats: l.bar, espresso_groups: l.groups, showcase: l.showcase, oven: l.oven,
-    kiosks: l.kiosks, pos: l.pos, own_capital_krw: Math.round(profile.capital * 10000), staff_peak: c.staff + 1, seed: 7,
+  return { district, size_pyeong: c.pyeong, tables: l.tables, chairs: l.chairs, bar_seats: l.bar, espresso_groups: Math.max(1, l.groups), showcase: l.showcase, oven: l.oven,
+    kiosks: l.kiosks, pos: Math.max(1, l.pos), own_capital_krw: Math.round(profile.capital * 10000), staff_peak: c.staff + 1, seed: 7,
     ...(c.shape ? { shape: c.shape } : {}), ...(c.door ? { door: c.door } : {}) };
 };
 
 export function cafeRun(profile: Profile, cfg: CafeCfg, sales: number, shock: { food?: number; rent?: number; labor?: number; demand?: number } = {}) {
   const st = guStat(profile.gu);
-  const open = cafeOpeningCost(cfg.pyeong, cfg.grade, profile.gu, profile.keyMoney ?? 0);
+  const open = cafeOpeningCost(cfg.pyeong, cfg.grade, profile.gu, profile.keyMoney ?? 0, cafeLayoutOf(cfg));
   const start = profile.capital - open.total;
   const rent = st.rent * cfg.pyeong * (1 + (shock.rent ?? 0));
   const labor = cfg.staff * C.PART * (1 + (shock.labor ?? 0));

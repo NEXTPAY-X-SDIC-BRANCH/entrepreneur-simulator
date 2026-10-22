@@ -2,7 +2,7 @@
 // 아래 재생 바, 시작·운영 계획·정산·결과는 팝업. 엔진은 카페 월별 모델(sim/cafe, 포트 8010 /cafe/season)이다.
 // 엔진은 손님 한 명씩이 아니라 시간대별 주문·처리 능력을 계산하므로, 영업 장면은 하루 시간대를 따라 의자가 차고 비는 모습으로 보여 준다.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { profileOf } from "./area";
+import { cafeDong } from "./cafe";
 import { flowRatioNote } from "./DongFlow";
 import { areaFx, engineBody, type CafeCfg } from "./cafeChecks";
 import CafeRoom3D from "./CafeRoom3D";
@@ -13,6 +13,8 @@ import ModeSwitch, { type Mode } from "./ModeSwitch";
 import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import Insight, { type Try } from "./Insight";
 import CashFlow, { type CfMonth } from "./CashFlow";
+import CostBar from "./CostBar";
+import ChannelCards from "./ChannelCards";
 import { CAFE_REF, cafeBand } from "./priceCompare";
 import { IconBattery, IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "./SimulateEngine";
 import "./simulate-engine.css";
@@ -27,7 +29,7 @@ type Staff = "lean" | "standard" | "generous";
 // hard 모드 메뉴·판촉 (엔진 sim/cafe/season.py MENU_DEFAULT와 같은 키)
 type CafeMenu = { bean: "standard" | "specialty"; seasonal: boolean; dessert_price_pct: number; takeout_disc: number; loyalty: boolean; delivery_share: number | null; free_dlvy_krw: number };
 const MENU0: CafeMenu = { bean: "standard", seasonal: false, dessert_price_pct: 0, takeout_disc: 0, loyalty: false, delivery_share: null, free_dlvy_krw: 0 };
-type Dec = { price_change_pct: number; hours: Hours; staff_policy: Staff; marketing_krw: number; dessert: boolean; delivery: boolean; open_hour?: number; close_hour?: number; menu?: CafeMenu };
+type Dec = { price_change_pct: number; hours: Hours; staff_policy: Staff; marketing_krw: number; dessert: boolean; delivery: boolean; open_hour?: number; close_hour?: number; menu?: CafeMenu; staff_max?: number };
 const HOUR_PRESET: Record<Hours, [number, number]> = { short: [11, 20], standard: [10, 22], long: [8, 23] };
 // 엔진에 보낼 계획: easy 모드나 프리셋과 같은 시각이면 직접 정한 시각을 빼고 보낸다 (프리셋 영업시간이 그대로 먹게)
 const toEngine = (d: Dec, mode: "easy" | "hard"): Dec => {
@@ -40,8 +42,11 @@ const toEngine = (d: Dec, mode: "easy" | "hard"): Dec => {
 };
 const clockKo = (h: number) => (h < 12 ? `오전 ${h}시` : h === 12 ? "낮 12시" : h === 24 ? "밤 12시" : `${h < 18 ? "오후" : "밤"} ${h - 12}시`);
 const HOURS_KO: Record<Hours, string> = { short: "짧게 (11~20시)", standard: "기본 (10~22시)", long: "길게 (8~23시)" };
-const STAFF_KO: Record<Staff, string> = { lean: "빠듯하게", standard: "기본", generous: "넉넉하게" };
-const HOURS_ORDER: Hours[] = ["short", "standard", "long"], STAFF_ORDER: Staff[] = ["lean", "standard", "generous"];
+const HOURS_ORDER: Hours[] = ["short", "standard", "long"];
+// 바쁜 시간에 함께 일하는 사람 수 (사장님 포함). 엔진 staff_max, 한가한 시간은 일의 양만큼만 쓴다
+const STAFF_MIN = 1, STAFF_MAX = 8, STAFF0 = 3;
+const staffN = (d: Dec) => d.staff_max ?? STAFF0;
+const staffKo = (n: number) => (n <= 1 ? "사장님 혼자" : `사장님 + 직원 ${n - 1}명`);
 
 type Lever = { key: string; label: string; hint: string; text: (d: Dec) => string; can: (d: Dec, s: -1 | 1) => boolean; move: (d: Dec, s: -1 | 1) => Dec };
 const LEVERS: Lever[] = [
@@ -51,9 +56,9 @@ const LEVERS: Lever[] = [
   { key: "hours", label: "영업시간", hint: "길게 열면 손님을 더 받지만 일하는 시간(인건비)이 늘어요.",
     text: (d) => (d.open_hour != null && d.close_hour != null ? `${clockKo(d.open_hour)}~${clockKo(d.close_hour)}` : HOURS_KO[d.hours]), can: (d, s) => HOURS_ORDER.indexOf(d.hours) + s >= 0 && HOURS_ORDER.indexOf(d.hours) + s < 3,
     move: (d, s) => ({ ...d, hours: HOURS_ORDER[HOURS_ORDER.indexOf(d.hours) + s] }) },
-  { key: "staff", label: "직원 운영", hint: "빠듯하면 인건비가 줄지만 바쁜 시간에 손님이 돌아가요.",
-    text: (d) => STAFF_KO[d.staff_policy], can: (d, s) => STAFF_ORDER.indexOf(d.staff_policy) + s >= 0 && STAFF_ORDER.indexOf(d.staff_policy) + s < 3,
-    move: (d, s) => ({ ...d, staff_policy: STAFF_ORDER[STAFF_ORDER.indexOf(d.staff_policy) + s] }) },
+  { key: "staff", label: "바쁜 시간 인원", hint: "가장 바쁜 시간에 함께 일하는 사람 수예요 (사장님 포함). 한가한 시간엔 필요한 만큼만 써요. 적으면 인건비가 줄지만 줄이 길어져 손님이 돌아가요.",
+    text: (d) => staffKo(staffN(d)), can: (d, s) => staffN(d) + s >= STAFF_MIN && staffN(d) + s <= STAFF_MAX,
+    move: (d, s) => ({ ...d, staff_max: staffN(d) + s }) },
   { key: "marketing", label: "마케팅", hint: "한 달 광고·SNS 비용이에요. 늘리면 알려지는 데 도움이 돼요.",
     text: (d) => (d.marketing_krw ? `월 ${wman(d.marketing_krw)}` : "없음"), can: (d, s) => d.marketing_krw + s * 500_000 >= 0 && d.marketing_krw + s * 500_000 <= 5_000_000,
     move: (d, s) => ({ ...d, marketing_krw: d.marketing_krw + s * 500_000 }) },
@@ -62,13 +67,14 @@ const LEVERS: Lever[] = [
   { key: "delivery", label: "배달", hint: "배달앱에 들어가면 주문이 늘지만(배달하는 카페는 주문의 25%가 배달) 한 건마다 배달앱 258원·대행 1,147원·포장재가 빠져요 (외식업체 경영실태조사).",
     text: (d) => (d.delivery ? "배달앱 입점" : "안 해요"), can: (d, s) => (s > 0 ? !d.delivery : d.delivery), move: (d, s) => ({ ...d, delivery: s > 0 }) },
 ];
-const planKey = (l: Lever): keyof Dec => (l.key === "price" ? "price_change_pct" : l.key === "hours" ? "hours" : l.key === "staff" ? "staff_policy" : l.key === "marketing" ? "marketing_krw" : l.key === "delivery" ? "delivery" : "dessert");
+const planKey = (l: Lever): keyof Dec => (l.key === "price" ? "price_change_pct" : l.key === "hours" ? "hours" : l.key === "staff" ? "staff_max" : l.key === "marketing" ? "marketing_krw" : l.key === "delivery" ? "delivery" : "dessert");
 
 type Month = {
   month: number; calendar_month: number; status: "open" | "closed" | "finished"; owner_note_ko: string;
   decisions: Dec & { price_level: number; scenario?: Record<string, string> }; scenario_ko?: { title: string; choice: string }[];
   drivers?: { maturity: number; peak_util: number; bottleneck_label_ko: string };
   kpi: { revenue_krw: number; op_krw: number; cash_krw: number; customers: number; walkaways: number; walkaway_share: number; rating: number; regulars: number };
+  channels?: { dine: number; takeout: number; delivery: number };
   pnl: { revenue_krw: number; lines: { key: string; item_ko: string; krw: number }[]; op_krw: number };
   cash: { start_krw: number; op_krw: number; depreciation_addback_krw: number; loan_interest_krw: number; loan_principal_krw: number; vat_refund_krw: number; end_krw: number };
   events: { key: string; label_ko: string; effect_ko: string }[];
@@ -96,9 +102,9 @@ function recommend(last: Month | undefined, plan: Dec): Rec[] {
   };
   if (!last) { for (const lv of LEVERS) rec(lv.key, plan, ""); return out; }
   const k = last.kpi, walk = k.walkaway_share, op = k.op_krw, pct = Math.round(walk * 100);
-  const si = STAFF_ORDER.indexOf(lp.staff_policy), hi = HOURS_ORDER.indexOf(lp.hours);
-  if (walk >= 0.1 && si < 2) rec("staff", { ...lp, staff_policy: STAFF_ORDER[si + 1] }, `바쁜 시간에 돌아간 손님이 ${pct}%예요. 직원을 한 단계 늘리면 더 받을 수 있어요.`);
-  else if (walk < 0.03 && op < 0 && si > 0 && last.month >= 4) rec("staff", { ...lp, staff_policy: STAFF_ORDER[si - 1] }, `돌아간 손님이 ${pct}%뿐인데 적자예요. 인건비를 한 단계 줄여 보세요.`);
+  const sn = staffN(lp), hi = HOURS_ORDER.indexOf(lp.hours);
+  if (walk >= 0.1 && sn < STAFF_MAX) rec("staff", { ...lp, staff_max: sn + 1 }, `바쁜 시간에 돌아간 손님이 ${pct}%예요. 한 명 더 두면 더 받을 수 있어요.`);
+  else if (walk < 0.03 && op < 0 && sn > STAFF_MIN && last.month >= 4) rec("staff", { ...lp, staff_max: sn - 1 }, `돌아간 손님이 ${pct}%뿐인데 적자예요. 한 명 줄여 인건비를 아껴 보세요.`);
   else rec("staff", lp, `돌아간 손님 ${pct}%. 지금 직원 운영이 맞아요.`);
   if (walk >= 0.12) rec("price", { ...lp, price_change_pct: 5 }, `손님이 몰려 ${pct}%가 돌아갔어요. 가격을 5% 올려도 손님이 남을 만해요.`);
   else rec("price", lp, "바꿀 신호가 없어요. 올리면 손님이 줄고 내리면 객단가가 줄어요.");
@@ -120,10 +126,10 @@ function recommend(last: Month | undefined, plan: Dec): Rec[] {
 type StratId = "rec" | "grow" | "save";
 export function cafeStrategies(last: Month | undefined, plan: Dec, recs: Rec[]): { id: StratId; title: string; desc: string; plan: Dec; changes: string[] }[] {
   const lp: Dec = last ? { ...plan, ...last.decisions, price_change_pct: 0 } : { ...plan, price_change_pct: 0 };
-  const hi = HOURS_ORDER.indexOf(lp.hours), si = STAFF_ORDER.indexOf(lp.staff_policy);
+  const hi = HOURS_ORDER.indexOf(lp.hours), sn = staffN(lp);
   const rec = recs.reduce((p, r) => (r.change ? { ...p, [planKey(r.lever)]: r.next[planKey(r.lever)] } : p), lp);
-  const grow: Dec = { ...lp, hours: HOURS_ORDER[Math.min(2, hi + 1)], staff_policy: STAFF_ORDER[Math.max(1, si)], marketing_krw: Math.min(2_000_000, lp.marketing_krw + 500_000), dessert: true };
-  const save: Dec = { ...lp, hours: HOURS_ORDER[Math.max(0, hi - 1)], staff_policy: STAFF_ORDER[Math.max(0, si - 1)], marketing_krw: 0 };
+  const grow: Dec = { ...lp, hours: HOURS_ORDER[Math.min(2, hi + 1)], staff_max: Math.max(sn, STAFF0), marketing_krw: Math.min(2_000_000, lp.marketing_krw + 500_000), dessert: true };
+  const save: Dec = { ...lp, hours: HOURS_ORDER[Math.max(0, hi - 1)], staff_max: Math.max(STAFF_MIN, sn - 1), marketing_krw: 0 };
   const diff = (d: Dec) => LEVERS.filter((l) => l.text(d) !== l.text(lp)).map((l) => l.label + " " + l.text(d));
   return [
     { id: "rec", title: "추천대로", desc: last ? "지난달 결과를 보고 고칠 것만 고쳐요." : "처음 달은 기본 운영으로 시작해요.", plan: rec, changes: diff(rec) },
@@ -135,7 +141,7 @@ const PICKS: QPick<Dec>[] = [
   { key: "price_change_pct", label: "가격", hint: "이번 달 한 번 바꾸는 폭", opts: [{ label: "−5%", value: -5 }, { label: "그대로", value: 0 }, { label: "+5%", value: 5 }] },
   { key: "open_hour", label: "몇 시에 열까요?", hint: "일찍 열면 출근길 손님을 받지만 인건비·전기료가 늘어요", opts: Array.from({ length: 9 }, (_, i) => 6 + i).map((h) => ({ label: clockKo(h), value: h })) },
   { key: "close_hour", label: "몇 시에 닫을까요?", hint: "늦게 닫으면 저녁 손님을 더 받지만 손님이 적은 시간에도 인건비가 나가요", opts: Array.from({ length: 7 }, (_, i) => 18 + i).map((h) => ({ label: clockKo(h), value: h })) },
-  { key: "staff_policy", label: "직원", hint: "빠듯하면 인건비가 줄고, 바쁜 시간에 손님이 돌아가요", opts: STAFF_ORDER.map((x) => ({ label: STAFF_KO[x], value: x })) },
+  { key: "staff_max", label: "바쁜 시간 몇 명이 일할까요?", hint: "사장님 포함. 적으면 인건비가 줄고, 바쁜 시간에 손님이 돌아가요", opts: Array.from({ length: STAFF_MAX }, (_, i) => i + 1).map((n) => ({ label: `${n}명`, value: n })) },
   { key: "dessert", label: "디저트", hint: "객단가가 오르지만 폐기와 준비 시간이 생겨요", opts: [{ label: "팔아요", value: true }, { label: "안 팔아요", value: false }] },
   { key: "delivery", label: "배달", hint: "주문은 늘지만 한 건마다 수수료", opts: [{ label: "안 해요", value: false }, { label: "배달앱 입점", value: true }] },
 ];
@@ -210,7 +216,7 @@ function Cash({ start, months, total }: { start: number; months: Month[]; total:
 }
 
 export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cfg: CafeCfg; onBack: () => void }) {
-  const code = profile.dong && profile.dong.gu === profile.gu ? profileOf(profile.gu, profile.dong.name)?.code : undefined;
+  const dongPick = cafeDong(profile), code = dongPick?.code;
   const body = useMemo(() => code ? engineBody(profile, cfg, String(code)) : null, [code, cfg, profile.capital]); // eslint-disable-line react-hooks/exhaustive-deps
   const [top, setTop] = useState(108);
   const [start, setStart] = useState<any>(null);
@@ -299,7 +305,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
     if (!body || daily.current == null) return;
     setBusy(true); setErr("");
     post("/cafe/season", { ...body, daily_customers: daily.current, start_month: startMonth })
-      .then((s) => { hist.current = []; setAlts({}); setAltPick({}); setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setPlan({ price_change_pct: 0, hours: s.decisions.hours, staff_policy: s.decisions.staff_policy, marketing_krw: 0, dessert: true, delivery: false, open_hour: HOUR_PRESET[s.decisions.hours as Hours][0], close_hour: HOUR_PRESET[s.decisions.hours as Hours][1] }); setView("plan"); })
+      .then((s) => { hist.current = []; setAlts({}); setAltPick({}); setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setPlan({ price_change_pct: 0, hours: s.decisions.hours, staff_policy: "standard", staff_max: Math.min(STAFF_MAX, Math.max(STAFF_MIN, s.crew_peak ?? STAFF0)), marketing_krw: 0, dessert: true, delivery: false, open_hour: HOUR_PRESET[s.decisions.hours as Hours][0], close_hour: HOUR_PRESET[s.decisions.hours as Hours][1] }); setView("plan"); })
       .catch((e) => setErr(netErr(e))).finally(() => setBusy(false));
   };
   // 운영 계획을 확정하면 먼저 이번 달 사건과 대응 상황을 받는다
@@ -329,12 +335,12 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
     if (view !== "settle" || !h || !now || ins?.idx === idx) return;
     const d = { ...h.plan };
     const mn = { ...MENU0, ...(d.menu ?? {}) };
-    const si = STAFF_ORDER.indexOf(d.staff_policy), hi = HOURS_ORDER.indexOf(d.hours);
+    const sn = staffN(d), hi = HOURS_ORDER.indexOf(d.hours);
     const cands: Omit<Try<Partial<Dec>>, "d">[] = [
       { title: "가격 5% 올리기", why: "한 잔 값이 늘어요. 손님은 조금 줄어요.", patch: { price_change_pct: 5 } },
       { title: "가격 5% 내리기", why: "손님이 늘어요. 한 잔에 남는 돈은 줄어요.", patch: { price_change_pct: -5 } },
-      ...(si < 2 ? [{ title: `직원 ${STAFF_KO[STAFF_ORDER[si + 1]]}`, why: now.kpi.walkaway_share > 0.05 ? `바빠서 손님 ${Math.round(now.kpi.walkaway_share * 100)}%가 돌아갔어요.` : "바쁜 시간에 손님을 덜 놓쳐요.", patch: { staff_policy: STAFF_ORDER[si + 1] } }] : []),
-      ...(si > 0 ? [{ title: `직원 ${STAFF_KO[STAFF_ORDER[si - 1]]}`, why: "인건비를 아껴요.", patch: { staff_policy: STAFF_ORDER[si - 1] } }] : []),
+      ...(sn < STAFF_MAX ? [{ title: `바쁜 시간 ${sn + 1}명`, why: now.kpi.walkaway_share > 0.05 ? `바빠서 손님 ${Math.round(now.kpi.walkaway_share * 100)}%가 돌아갔어요.` : "바쁜 시간에 손님을 덜 놓쳐요.", patch: { staff_max: sn + 1 } }] : []),
+      ...(sn > STAFF_MIN ? [{ title: `바쁜 시간 ${sn - 1}명`, why: "인건비를 아껴요.", patch: { staff_max: sn - 1 } }] : []),
       ...(hi < 2 ? [{ title: `영업시간 ${HOURS_KO[HOURS_ORDER[hi + 1]]}`, why: "더 오래 열어 손님을 더 받아요.", patch: { hours: HOURS_ORDER[hi + 1], open_hour: undefined, close_hour: undefined } }] : []),
       ...(hi > 0 ? [{ title: `영업시간 ${HOURS_KO[HOURS_ORDER[hi - 1]]}`, why: "손님이 적은 시간의 인건비·전기료를 아껴요.", patch: { hours: HOURS_ORDER[hi - 1], open_hour: undefined, close_hour: undefined } }] : []),
       { title: d.delivery ? "배달 그만하기" : "배달앱 입점", why: d.delivery ? "한 건마다 빠지는 수수료를 아껴요." : "매장 밖 주문을 받아요. 수수료가 빠져요.", patch: { delivery: !d.delivery } },
@@ -380,8 +386,8 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
 
   if (!body) return (
     <main className="m-area"><section className="m-panel a-card">
-      <h1>동네를 먼저 골라 주세요</h1>
-      <p>카페 시뮬레이션은 행정동 단위로 돌아가요. 동네 분석에서 지도의 동네를 누르거나 목록에서 고르면 돼요.</p>
+      <h1>동네 자료를 불러오는 중이에요</h1>
+      <p>{profile.gu}의 동네 자료가 아직 없어요. 동네 분석 화면을 한 번 열었다가 다시 와 주세요.</p>
       <button type="button" className="a-back" onClick={onBack}>← 열기 전 점검으로</button>
     </section></main>
   );
@@ -393,7 +399,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const occupancy = view === null && sched[hourIdx] ? (sched[hourIdx].orders / maxOrders) * 0.9 : 0;
   const recs = view === "plan" ? recommend(cur, plan) : [];
   const nextMonth: number = cur ? (cur.calendar_month % 12) + 1 : start?.start_month ?? startMonth;
-  const place = `${profile.gu} ${profile.dong?.name ?? ""}`;
+  const place = dongPick?.scope === "dong" ? `${profile.gu} ${dongPick.name}` : `${profile.gu} (대표 동네 ${dongPick?.name ?? ""})`;
 
   return (
     <div className="sx-root" style={{ top }}>
@@ -632,12 +638,26 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
               <>
                 <div className="sx-scroll">
                   <h1>{cur.calendar_month}월 정산</h1>
-                  <Kpis items={[
-                    { label: "영업이익", value: sgn(cur.kpi.op_krw), tone: tone(cur.kpi.op_krw), main: true },
-                    { label: "매출", value: wman(cur.kpi.revenue_krw) },
-                    { label: "월말 현금", value: wman(cur.kpi.cash_krw) },
-                    { label: "돌아간 손님", value: `${cur.kpi.walkaways.toLocaleString("ko-KR")}명 (${Math.round(cur.kpi.walkaway_share * 100)}%)` },
-                  ]} />
+                  {(() => {
+                    const op = cur.kpi.op_krw, opM = Math.round(op / 1e4), walk = cur.kpi.walkaway_share;
+                    const why = opM >= 0 ? (walk >= 0.08 ? "더 받을 수 있었는데 바쁜 시간에 손님이 돌아갔어요" : "손님과 비용이 잘 맞았어요")
+                      : walk >= 0.1 ? "바쁜 시간에 손님을 놓쳤어요" : "매출이 고정비를 덮지 못했어요";
+                    return (
+                      <>
+                        <div className={`sc-hero ${opM >= 0 ? "" : "is-bad"}`}>
+                          <h2>{opM === 0 ? "본전" : op > 0 ? "흑자" : "적자"} {sgn(op)}</h2>
+                          <p>{why}. 손님 {cur.kpi.customers.toLocaleString("ko-KR")}명 · 돌아간 손님 {Math.round(walk * 100)}% · ★ {cur.kpi.rating.toFixed(1)}</p>
+                        </div>
+                        <Kpis items={[
+                          { label: "매출", value: wman(cur.kpi.revenue_krw) },
+                          { label: "나간 돈", value: wman(cur.kpi.revenue_krw - op) },
+                          { label: "영업이익", value: sgn(op), tone: tone(op) },
+                          { label: "월말 현금", value: wman(cur.kpi.cash_krw), main: true },
+                        ]} />
+                      </>
+                    );
+                  })()}
+                  {cur.closure.closed && <p className="se-err">가게를 닫았어요. {cur.closure.reason_ko}</p>}
                   <p className="sx-note">{cur.owner_note_ko}</p>
                   {ins?.idx === months.length - 1 ? (
                     <Insight tries={ins.tries} last={over} onApply={(patch) => {
@@ -647,6 +667,13 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                       nextAfterSettle();
                     }} />
                   ) : <section className="ins"><h2>다음 달에 이렇게 바꿔 보세요</h2><p className="ins-sub">같은 달을 계획 한 가지씩 바꿔 엔진으로 다시 계산하고 있어요…</p></section>}
+                  {(() => {
+                    const xs = cur.pnl.lines.filter((l) => l.krw > 0).sort((a, b) => b.krw - a.krw);
+                    const top: [string, number][] = xs.slice(0, 5).map((l) => [l.item_ko.replace(/\s*\(.*\)$/, ""), l.krw]);
+                    const rest = xs.slice(5).reduce((a, l) => a + l.krw, 0);
+                    return <CostBar items={rest > 0 ? [...top, ["기타", rest]] : top} revenue={cur.pnl.revenue_krw} op={cur.pnl.op_krw} fmt={(x) => wman(x)} />;
+                  })()}
+                  <CashFlow months={cfMonths} kind="food" shop="카페" compact />
                   {flowRatioNote(code ? String(code) : undefined, profile.gu, cur.kpi.customers) && <p className="sx-note">{flowRatioNote(code ? String(code) : undefined, profile.gu, cur.kpi.customers)}</p>}
                   {pts.length > 0 && hist.current[months.length - 1] && (
                     <section className="sx-sec">
@@ -687,22 +714,39 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                       </div>
                     </section>
                   )}
-                  {cur.events.length > 0 && <p className="sx-note"><b>이달의 사건:</b> {cur.events.map((e) => `${e.label_ko} (${e.effect_ko})`).join(", ")}</p>}
-                  <div className="sx-split">
-                    <section className="sx-sec"><h2>손익</h2>
-                      <table className="sx-table"><tbody>
+                  <details className="sx-more">
+                    <summary>손익표와 매장·포장·배달별 자세히 보기</summary>
+                    <section className="st-card">
+                      <header className="st-h"><span className="st-ico" aria-hidden>₩</span><div><h2>손익표</h2><small>이번 달 매출에서 비용을 하나씩 뺀 계산이에요</small></div></header>
+                      <table className="sx-table st-table"><tbody>
                         <tr><th>매출</th><td>{wman(cur.pnl.revenue_krw)}</td></tr>
                         {cur.pnl.lines.filter((l) => l.krw !== 0).map((l) => <tr key={l.key}><th>{l.item_ko}</th><td>{l.krw < 0 ? "+" : "−"}{wman(Math.abs(l.krw))}</td></tr>)}
                         <tr><th>영업이익</th><td className={tone(cur.pnl.op_krw)}>{sgn(cur.pnl.op_krw)}</td></tr>
                       </tbody></table>
-                    </section>
-                    <section className="sx-sec"><h2>지난달과 달라진 이유</h2>
-                      <ul className="sx-wf">{cur.waterfall.steps.filter((s) => Math.abs(s.krw) >= 10000).map((s) => <li key={s.key}><span>{s.label_ko}</span><b className={tone(s.krw)}>{sgn(s.krw)}</b></li>)}</ul>
                       <p className="sx-note">현금 변화: 영업이익 {sgn(cur.cash.op_krw)}, 감가상각 되돌림 +{wman(cur.cash.depreciation_addback_krw)}, 대출 이자 −{wman(cur.cash.loan_interest_krw)}, 원금 −{wman(cur.cash.loan_principal_krw)}{cur.cash.vat_refund_krw ? `, 부가세 환급 +${wman(cur.cash.vat_refund_krw)}` : ""}.</p>
                     </section>
-                  </div>
-                  {cur.closure.closed && <p className="se-err">가게를 닫았어요. {cur.closure.reason_ko}</p>}
-                  <CashFlow months={cfMonths} kind="food" shop="카페" />
+                    {cur.channels && (() => {
+                      const ch = cur.channels, n = Math.max(1, ch.dine + ch.takeout + ch.delivery), t = cur.pnl.revenue_krw / n;
+                      const ln = (k: string) => cur.pnl.lines.find((l) => l.key === k)?.krw ?? 0;
+                      const fr = ln("food") / Math.max(1, cur.pnl.revenue_krw);
+                      return (
+                        <section className="st-card">
+                          <header className="st-h"><span className="st-ico is-ch" aria-hidden>⇄</span><div><h2>매장·포장·배달, 어디서 남았나</h2><small>같은 커피라도 포장은 컵·뚜껑값이, 배달은 한 건마다 수수료가 빠져요. 월세·인건비는 갈래와 상관없이 나가요</small></div></header>
+                          <ChannelCards fmt={wman} perOne={1} rows={[
+                            { key: "visit", label: "매장", orders: ch.dine, rev: ch.dine * t, costs: [["식재료", ch.dine * t * fr]] },
+                            { key: "takeout", label: "포장", orders: ch.takeout, rev: ch.takeout * t, costs: [["식재료", ch.takeout * t * fr], ["컵·포장재", ln("packaging")]] },
+                            { key: "delivery", label: "배달", orders: ch.delivery, rev: ch.delivery * t, costs: [["식재료", ch.delivery * t * fr], ["배달 수수료·포장", ln("delivery")]] },
+                          ]} />
+                          {ch.delivery === 0 && <p className="sx-note">배달을 안 했어요. 배달앱에 들어가면 이 동네 카페 점포당 배달 주문(소상공인365 배달분석)에 맞춰 주문이 늘어요.</p>}
+                        </section>
+                      );
+                    })()}
+                    <section className="st-card">
+                      <header className="st-h"><span className="st-ico is-ch" aria-hidden>⇄</span><div><h2>지난달과 달라진 이유</h2><small>영업이익이 무엇 때문에 늘고 줄었나</small></div></header>
+                      <ul className="sx-wf">{cur.waterfall.steps.filter((s) => Math.abs(s.krw) >= 10000).map((s) => <li key={s.key}><span>{s.label_ko}</span><b className={tone(s.krw)}>{sgn(s.krw)}</b></li>)}</ul>
+                      {cur.events.length > 0 && <div className="st-ev"><b>이번 달 사건</b><ul className="sx-evs">{cur.events.map((e) => <li key={e.key}><b>{e.label_ko}</b><span>{e.effect_ko}</span></li>)}</ul></div>}
+                    </section>
+                  </details>
                 </div>
                 <footer className="sx-foot">
                   <button type="button" className="se-btn" onClick={nextAfterSettle}>{over ? "전체 결과 보기" : `${nextMonth}월 운영 계획 정하기`}</button>

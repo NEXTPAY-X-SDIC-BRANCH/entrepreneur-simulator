@@ -448,7 +448,8 @@ h1:has(> .sx-modesw), h1:has(> .sx-modelock) { display: flex; align-items: cente
 .st-ico { display: grid; place-items: center; inline-size: 34px; block-size: 34px; border-radius: 10px; background: #eef2fe; color: #3d63ea; font-weight: 800; }
 .st-ico.is-ch { background: #fdf3e3; color: #b0701a; }
 .st-table tr.sum th, .st-table tr.sum td { background: #f3f6ff; }
-.ch-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ch-cards { display: grid; grid-template-columns: repeat(var(--ch-n, 3), minmax(0, 1fr)); gap: 10px; }
+.ch-share { font-size: 12px; opacity: .9; }
 .ch-card { display: grid; grid-template-rows: auto 1fr auto; border: 1px solid #e3e8f4; border-radius: 14px; overflow: hidden; background: #fff; }
 .ch-card header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 12px; color: #fff; }
 .ch-card.is-visit header { background: #3d63ea; } .ch-card.is-takeout header { background: #27a06a; } .ch-card.is-delivery header { background: #e8952e; }
@@ -524,3 +525,9 @@ h1:has(> .sx-modesw), h1:has(> .sx-modelock) { display: flex; align-items: cente
 .sx-step-c:has(.sx-chips) { display: block; padding: 0; border: 0; background: none; inline-size: auto; }
 .sx-chips { justify-content: flex-start; max-inline-size: none; }
 .sx-chips button { flex: none; }
+
+/* 품목 고르기 칩: 스텝 버튼(40px 정사각) 규칙을 덮어 글자 폭만큼, 겹치지 않게 */
+.sx-step-c .sx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: 8px; }
+.sx-step-c .sx-chips button { inline-size: auto; block-size: auto; min-inline-size: 64px; padding: 8px 16px; border: 1px solid #d5deeb; border-radius: 999px; background: #fff; color: #3a404c; font-size: 14px; font-weight: 600; line-height: 1.2; }
+.sx-step-c .sx-chips button:hover:not(:disabled) { background: #f3f6fd; border-color: #9fb3f5; }
+.sx-step-c .sx-chips button.on, .sx-step-c .sx-chips button.on:hover { border-color: #3d63ea; background: #3d63ea; color: #fff; }

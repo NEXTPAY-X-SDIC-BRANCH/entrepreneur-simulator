@@ -629,6 +629,7 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
     _ci = (ctx or {}).get("industry")
     if _ci in ("chicken", "bunsik", "apparel", "cafe") and not tps & {"chicken", "bunsik", "apparel", "cafe"} and not MEAT_Q.search(q)             and tps & {"competition", "sales", "neighborhood", "myshop"}:
         tps.add(_ci)
+    ind_added = _ci in tps and not re.search(r"치킨|분식|떡볶이|옷가게|의류|카페|커피", q)
     near = match_dongs(q, dongs)
     named_dong = bool(near)
     if near:
@@ -669,7 +670,7 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
     if "apparel" in tps:
         # 옷가게를 물으면 옷가게 근거만. 구를 말했으면(또는 화면에서 고른 구가 있으면) 그 구 값, 아니면 서울 값과 비용·생존율만
         g = GU.search(q).group() if GU.search(q) else (ctx or {}).get("gu") if (ctx or {}).get("industry") == "apparel" else None
-        pool = [f for f in pool if f["id"].startswith(("apparel_", "sns_apparel")) and (not f["id"].startswith("apparel_gu_") or (g and f["id"] == f"apparel_gu_{g}"))]
+        pool = [f for f in pool if (f["id"].startswith(("apparel_", "sns_apparel")) or (ind_added and f["id"].startswith("live_"))) and (not f["id"].startswith("apparel_gu_") or (g and f["id"] == f"apparel_gu_{g}"))]
     # '30대 생존율', '20대 대출'처럼 나이대가 나와도 생존율·대출·지원사업·배달을 묻는 질문은 인구 질문이 아니다
     if "flow" in tps and not re.search(r"생존|폐업", q) and not tps & {"loan", "support", "delivery"}:
         # 사람 수 질문은 사람 근거만 쓴다. 이름이 나온 동이 없고 화면의 동네도 모르면 다른 주제의 문장으로 대신하지 않는다.
@@ -711,7 +712,7 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
     if not GU.search(q) and not named_dong and not (OWN.search(q) and want_gu) and tps & {"sales", "competition"} and "rent" not in tps:
         seoul = [f for f in pool if not PER_GU.match(f["id"])]
         pool = seoul or pool
-    if OWN.search(q) and live and not tps & {"delivery", "sns"}:   # '이 동네 배달·SNS'는 화면 값(live_)에 없어 업종·구 문장으로 답한다
+    if OWN.search(q) and live and not tps & {"delivery", "sns"} and not (ind_added and tps & {"competition", "sales"}):   # '이 동네 배달·SNS'는 화면 값(live_)에 없어 업종·구 문장으로 답한다
         own = [f for f in pool if f["id"].startswith("live_")]
         pool = own or pool
     # 은행끼리 비교하는 질문(어느 은행, 제일 낮은 등)은 은행 순위 문장으로. 은행 이름을 말했으면 그 은행 문장
@@ -732,10 +733,14 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
             surv = [f for f in surv if "나이대" not in f["text"]] or surv
         pool = surv or pool
     # 구 이름을 말한 경쟁·매출 질문은 그 구 문장을 먼저 (서울 1·꼴찌 구 문장이 끼지 않게)
+    gu_hit = False
     gq = GU.search(q)
     g_name = gq.group() if gq else (want_gu if OWN.search(q) else None)   # '이 동네·우리 구'는 화면에서 고른 구
     if g_name and tps & {"competition", "sales"} and not surv_q:
+        if "delivery" not in tps:   # 경쟁·매출 질문에 배달 문장이 끼지 않게
+            pool = [f for f in pool if not f["id"].startswith("sbizdlvy_")] or pool
         own_gu = [f for f in pool if f["id"].endswith("_" + g_name) or f.get("gu") == g_name]
+        gu_hit = bool(own_gu)
         pool = own_gu or pool
     ranked = C._rank_facts(q, pool)
     # 화면이 보낸 값은 지금 사용자가 보고 있는 가게의 값이라 같은 점수면 먼저 보여 준다
@@ -743,7 +748,7 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
                     key=lambda x: -x[0])
     top = ranked[0][0] if ranked else 0.0
     # 주제가 명확히 인식된 경우 임계값을 더 높게 (엉뚱한 답을 피하기 위해)
-    threshold = 0.0 if price_q or surv_q else 0.25 if tps else 0.20   # 품목 가격·생존율 질문은 이미 근거를 골라 뒀다
+    threshold = 0.0 if price_q or surv_q or (gu_hit and ind_added) else 0.25 if tps else 0.20   # 품목 가격·생존율 질문은 이미 근거를 골라 뒀다
     if top < threshold:
         # 범위 밖 질문이면 명확하게 답변
         if OFFTOPIC.search(q):
@@ -751,6 +756,8 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
         return {"answer": None, "facts": [], "citations": [], "message": NONE_MESSAGE}
     # 질문의 핵심 낱말(직장인구, 유형 등)이 고른 근거 어디에도 없으면, '이 동네' 같은 말만 겹친 것이라 답하지 않는다.
     keys = [w for w in specific_words(q, near) if not w.startswith(("고깃집", "치킨집", "분식집", "카페", "옷가게"))] if surv_q else specific_words(q, near)
+    if ind_added and tps & {"competition", "sales"}:   # 화면 업종으로 답하는 '이 동네 경쟁·매출'은 '경쟁' 같은 말이 문장에 없어도 된다
+        keys = [w for w in keys if not w.startswith(("경쟁", "매출"))]
     if keys and not any(covers(f, keys) for _, f in ranked[:k]) and not surv_q:
         return {"answer": None, "facts": [], "citations": [], "message": NONE_MESSAGE}
     hits, seen = [], set()
