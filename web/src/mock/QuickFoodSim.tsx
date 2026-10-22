@@ -2,7 +2,7 @@
 // 가게(평면)가 화면 전체, 위에 지표 줄, 왼쪽에 현금 그래프와 이달 계획, 오른쪽에 날짜별 영수증, 아래에 재생 막대,
 // 운영 계획 → 이달의 사건 → (하루씩 재생) → 정산 → 6개월 성적표는 팝업으로 뜬다.
 // 계산은 quickfood.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 업종의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import Assume from "./Assume";
 import { guStat, man, type Profile } from "./model";
 import {
@@ -44,6 +44,8 @@ const picksOf = (ind: "chicken" | "bunsik"): QPick<QfPlan>[] => [
     opts: [{ label: "조사 평균대로", value: mixStr(mixOf(ind, { ...DEFAULT_PLAN })) }, { label: "배달 위주", value: "15-15-70" }, { label: "홀·포장 위주", value: "55-35-10" }, { label: "배달 안 함", value: "65-35-0" }] },
   { key: "staff", label: "알바", hint: "바쁜 날 주문을 놓치지 않게", opts: [0, 1, 2, 3].map((n) => ({ label: n ? `${n}명` : "없이", value: n })) },
   { key: "ad", label: "배달앱 광고", hint: "배달 주문을 늘리지만 광고비가 들어요", opts: [{ label: "안 함", value: 0 }, { label: "기본", value: 1 }, { label: "적극", value: 2 }] },
+  { key: "open", label: "몇 시에 열까요?", hint: ind === "chicken" ? "치킨은 저녁 장사라 일찍 열어도 주문이 조금만 늘어요" : "분식은 점심(11~13시) 주문이 많아요",
+    opts: Array.from({ length: 13 }, (_, i) => 6 + i).map((h) => ({ label: clock(h), value: h })) },
   { key: "close", label: "몇 시에 닫을까요?", hint: ind === "chicken" ? "야식 주문은 밤 10시~새벽 1시에 몰려요" : "분식은 저녁 8시 뒤로 주문이 적어요",
     opts: Array.from({ length: HOURS_RANGE[ind].close[1] - HOURS_RANGE[ind].close[0] + 1 }, (_, i) => HOURS_RANGE[ind].close[0] + i).map((h) => ({ label: clock(h), value: h })) },
 ];
@@ -264,6 +266,8 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const people = curDay && view === null ? Math.round((curDay.tx - curDay.delivery) / 3) : 0;
   const riders = curDay && view === null ? Math.round(curDay.delivery / 4) : 0;
   const receiptDays = done.flatMap((x, mi) => (mi === done.length - 1 ? x.days.slice(0, dayIdx + 1) : x.days).map((d) => ({ ...d, mi })));
+  const receiptEnd = useRef<HTMLDivElement>(null);
+  useEffect(() => { receiptEnd.current?.scrollIntoView({ block: "end" }); }, [receiptDays.length, receipt]); // 새 날짜가 찍히면 영수증 끝으로
   const sc = months.length ? score(months) : null;
   const delivShare = cur ? cur.m.ch.delivery / Math.max(1, cur.m.revenue) : dv.share.delivery;
 
@@ -336,6 +340,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                 </section>
               );
             })}
+            <div ref={receiptEnd} />
           </div>
         </aside>
       )}

@@ -2,7 +2,7 @@
 // 가게(평면)가 화면 전체, 위에 지표 줄, 왼쪽에 현금 그래프와 이달 계획, 오른쪽에 날짜별 영수증, 아래에 재생 막대,
 // 운영 계획 → 이달의 사건 → (하루씩 재생) → 정산 → 6개월 성적표는 팝업으로 뜬다.
 // 계산은 apparel.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 옷가게의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import {
   BUY_MODES, CATS, MARKET, ONLINE, mixAvg, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
   playMonth, startState, stateAfter, stockValue,
@@ -259,6 +259,8 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
   const cashNow = view === null || view === "settle" || view === "report" ? curDay?.cash ?? state.cash : state.cash;
   const people = curDay && view === null ? Math.round(curDay.tx / 2) : 0; // 가게 안 손님 점: 하루 결제 건수의 절반 (그림용)
   const receiptDays = done.flatMap((x, mi) => (mi === done.length - 1 ? x.days.slice(0, dayIdx + 1) : x.days).map((d) => ({ ...d, mi })));
+  const receiptEnd = useRef<HTMLDivElement>(null);
+  useEffect(() => { receiptEnd.current?.scrollIntoView({ block: "end" }); }, [receiptDays.length, receipt]); // 새 날짜가 찍히면 영수증 끝으로
   const sc = months.length ? score(months) : null;
 
   return (
@@ -333,6 +335,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                 </section>
               );
             })}
+            <div ref={receiptEnd} />
           </div>
         </aside>
       )}

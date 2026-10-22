@@ -32,7 +32,8 @@ const HOUR_PRESET: Record<Hours, [number, number]> = { short: [11, 20], standard
 // 엔진에 보낼 계획: easy 모드나 프리셋과 같은 시각이면 직접 정한 시각을 빼고 보낸다 (프리셋 영업시간이 그대로 먹게)
 const toEngine = (d: Dec, mode: "easy" | "hard"): Dec => {
   const pre = HOUR_PRESET[d.hours];
-  if (mode === "easy" || d.open_hour == null || d.close_hour == null || (d.open_hour === pre[0] && d.close_hour === pre[1])) {
+  void mode;
+  if (d.open_hour == null || d.close_hour == null || (d.open_hour === pre[0] && d.close_hour === pre[1])) {
     const { open_hour: _o, close_hour: _c, ...rest } = d; void _o; void _c; return rest;
   }
   return d;
@@ -132,7 +133,8 @@ export function cafeStrategies(last: Month | undefined, plan: Dec, recs: Rec[]):
 }
 const PICKS: QPick<Dec>[] = [
   { key: "price_change_pct", label: "가격", hint: "이번 달 한 번 바꾸는 폭", opts: [{ label: "−5%", value: -5 }, { label: "그대로", value: 0 }, { label: "+5%", value: 5 }] },
-  { key: "hours", label: "영업시간", hint: "길수록 손님·인건비가 같이 늘어요", opts: HOURS_ORDER.map((h) => ({ label: HOURS_KO[h].split(" ")[0], value: h })) },
+  { key: "open_hour", label: "몇 시에 열까요?", hint: "일찍 열면 출근길 손님을 받지만 인건비·전기료가 늘어요", opts: Array.from({ length: 9 }, (_, i) => 6 + i).map((h) => ({ label: clockKo(h), value: h })) },
+  { key: "close_hour", label: "몇 시에 닫을까요?", hint: "늦게 닫으면 저녁 손님을 더 받지만 손님이 적은 시간에도 인건비가 나가요", opts: Array.from({ length: 7 }, (_, i) => 18 + i).map((h) => ({ label: clockKo(h), value: h })) },
   { key: "staff_policy", label: "직원", hint: "빠듯하면 인건비가 줄고, 바쁜 시간에 손님이 돌아가요", opts: STAFF_ORDER.map((x) => ({ label: STAFF_KO[x], value: x })) },
   { key: "dessert", label: "디저트", hint: "객단가가 오르지만 폐기와 준비 시간이 생겨요", opts: [{ label: "팔아요", value: true }, { label: "안 팔아요", value: false }] },
   { key: "delivery", label: "배달", hint: "주문은 늘지만 한 건마다 수수료", opts: [{ label: "안 해요", value: false }, { label: "배달앱 입점", value: true }] },
@@ -236,6 +238,9 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const [mode, setMode] = useState<Mode>("easy");
   const [, setStrat] = useState<StratId>("rec");
   const [tweak, setTweak] = useState<Partial<Dec>>({});
+  const [receipt, setReceipt] = useState(true);
+  const receiptEnd = useRef<HTMLDivElement>(null);
+  useEffect(() => { receiptEnd.current?.scrollIntoView({ block: "end" }); }, [months.length, receipt]);
   const [ins, setIns] = useState<{ idx: number; tries: Try<Partial<Dec>>[] } | null>(null);
   useEffect(() => { setStrat("rec"); setTweak({}); }, [months.length]);
   // 현금흐름표·영수증 (원). 엔진 현금 = 월초 + 감가상각 전 영업이익 − 이자 − 원금 + 개업 부가세 환급
@@ -294,7 +299,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
     if (!body || daily.current == null) return;
     setBusy(true); setErr("");
     post("/cafe/season", { ...body, daily_customers: daily.current, start_month: startMonth })
-      .then((s) => { hist.current = []; setAlts({}); setAltPick({}); setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setPlan({ price_change_pct: 0, hours: s.decisions.hours, staff_policy: s.decisions.staff_policy, marketing_krw: 0, dessert: true, delivery: false }); setView("plan"); })
+      .then((s) => { hist.current = []; setAlts({}); setAltPick({}); setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setPlan({ price_change_pct: 0, hours: s.decisions.hours, staff_policy: s.decisions.staff_policy, marketing_krw: 0, dessert: true, delivery: false, open_hour: HOUR_PRESET[s.decisions.hours as Hours][0], close_hour: HOUR_PRESET[s.decisions.hours as Hours][1] }); setView("plan"); })
       .catch((e) => setErr(netErr(e))).finally(() => setBusy(false));
   };
   // 운영 계획을 확정하면 먼저 이번 달 사건과 대응 상황을 받는다
@@ -418,6 +423,31 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
           {cur?.drivers ? `${Math.round(cur.drivers.peak_util * 100)}%` : "-"}
         </Metric>
       </header>
+
+      <button type="button" className="sx-rtoggle" aria-expanded={receipt} onClick={() => setReceipt((v) => !v)}>{receipt ? "현금 흐름 기록 접기" : "현금 흐름 기록 펴기"}</button>
+      {receipt && (
+        <aside className="sx-receipt" aria-label="현금 흐름 기록">
+          <div className="sx-paper">
+            <p className="sx-r-title">현금 흐름 영수증</p>
+            <p className="sx-r-sub">{place} · 시작 현금 {wman(startCash)}</p>
+            <p className="sx-r-acc">카페 엔진은 한 달을 한꺼번에 계산해서, 달이 끝날 때마다 한 장씩 쌓여요. 회색 줄은 현금이 아니라 이익 계산이에요.</p>
+            {months.length === 0 && <p className="sx-r-empty">아직 찍힌 내역이 없어요. 첫 달이 끝나면 한 장씩 쌓여요.</p>}
+            {months.map((m) => (
+              <section key={m.month} className="sx-r-day">
+                <p className="sx-r-month">{m.calendar_month}월</p>
+                <p className="sx-r-head"><b>{m.calendar_month}월 한 달</b><span>손님 {m.kpi.customers.toLocaleString("ko-KR")}명</span></p>
+                <ul>
+                  <li className="in"><span>매출</span><b>+{wman(m.pnl.revenue_krw)}</b></li>
+                  {m.pnl.lines.filter((l) => Math.abs(l.krw) >= 10000).map((l) => <li key={l.key} className="out"><span>{l.item_ko}</span><b>−{wman(Math.abs(l.krw))}</b></li>)}
+                  <li className={`acc-sum ${m.kpi.op_krw >= 0 ? "in" : "out"}`}><span>이달 영업이익</span><b>{m.kpi.op_krw >= 0 ? "+" : "−"}{wman(Math.abs(m.kpi.op_krw))}</b></li>
+                </ul>
+                <p className="sx-r-sum"><span>남은 현금</span><b>{wman(m.kpi.cash_krw)}</b></p>
+              </section>
+            ))}
+            <div ref={receiptEnd} />
+          </div>
+        </aside>
+      )}
 
       <button type="button" className="sx-ctoggle" aria-expanded={chartOpen} onClick={() => setChartOpen((v) => !v)}>{chartOpen ? "현금 그래프 접기" : "현금 그래프 펴기"}</button>
       <div className="sx-leftcol">
@@ -565,7 +595,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                     <h2>어떻게 대응할까요?</h2>
                     <p className="sx-note">고른 대응대로 그달 계산에 반영돼요. 처음에는 기본 대응이 골라져 있어요. 대응의 효과 크기는 가정값이에요.</p>
                   </section>
-                  <div className="sx-dps">
+                  <div className={`sx-dps${dps.points.length === 1 ? " is-single" : ""}`}>
                     {dps.points.map((dp) => (
                       <div key={dp.id} className="sx-dp" role="radiogroup" aria-labelledby={`${dp.id}-h`}
                         style={{ gridRow: `span ${2 + Math.max(...dps.points.map((x) => x.options.length))}` }}>

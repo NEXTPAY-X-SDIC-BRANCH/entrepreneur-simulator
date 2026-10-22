@@ -91,6 +91,7 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 const GRADES = ["imported", "domestic", "aged"] as const;
 const GRADE_KO: Record<string, string> = { imported: "수입 냉동", domestic: "국내산", aged: "숙성" };
 // easy 모드 '한 가지 더 정하기': hard 모드의 선택지 중 손님이 바로 느끼는 세 가지만 버튼으로
+const closeText = (h: number) => (h === 23 ? "밤 11시" : h === 24 ? "밤 12시" : "새벽 1시");
 const BBQ_PICKS: Pick<Plan>[] = [
   { key: "meat_price", label: "삼겹살 1인분 가격", hint: "대표 메뉴 값. 올리면 한 팀의 매출이 늘고 손님이 조금 줄어요",
     opts: [16000, 17000, 18000, 19000, 20000].map((x) => ({ label: `${x.toLocaleString("ko-KR")}원`, value: x })) },
@@ -101,6 +102,7 @@ const BBQ_PICKS: Pick<Plan>[] = [
   { key: "marketing_budget", label: "SNS 홍보할까요?", hint: "체험단·협찬으로 처음 보는 손님이 늘어요",
     opts: [{ label: "안 해요", value: 0 }, { label: "조금 (50만원)", value: 500_000 }, { label: "많이 (150만원)", value: 1_500_000 }] },
   { key: "delivery", label: "배달", hint: "배달앱에 올리면 주문이 늘지만 수수료·배달비가 나가요", opts: [{ label: "안 해요", value: "none" }, { label: "배달앱 입점", value: "mid50_80" }] },
+  { key: "close_hour", label: "몇 시에 닫을까요?", hint: "늦게 닫으면 2차 손님을 더 받지만 인건비와 공과금이 늘어요", opts: [23, 24, 25].map((h) => ({ label: closeText(h), value: h })) },
 ];
 const GRADE_HINT: Record<string, string> = { imported: "원가가 낮고 맛 평가도 낮아요", domestic: "기본이에요", aged: "원가가 높고 맛 평가도 높아요" };
 // 배민배달 매출 규모 구간 (research/season_params.yaml delivery.tier). 앱 안에서 내 가게의 순위로 정해져 사용자가 고른다.
@@ -110,7 +112,6 @@ const DELIVERY_KO: Record<string, string> = {
   mid35_50: "상위 35~50% · 6.8% + 3,100원", top35: "상위 35% · 7.8% + 3,400원",
 };
 const DELIVERY_HINT = "배달앱 안에서 내 매출 순위 구간이에요. 중개수수료와 건당 배달비(서울)가 달라지고, 결제 수수료·포장재도 나가요. 배달 손님 일부는 원래 매장에 올 손님이에요";
-const closeText = (h: number) => (h === 23 ? "밤 11시" : h === 24 ? "밤 12시" : "새벽 1시");
 const mktText = (v: number) => (v ? `${v / 1e4}만원` : "없음");
 
 type LeverDef = { key: keyof Plan; label: string; hint: string; text: (p: Plan) => string; can: (p: Plan, d: -1 | 1) => boolean; move: (p: Plan, d: -1 | 1) => Plan };
