@@ -1,5 +1,5 @@
 // 가게 배치 고르기: 계산대(포스) 자리, 테이블 수와 바 자리(음식점), 행거 수와 방향(옷가게). 3D 화면이 바로 따라 바뀐다.
-import { POS_LABEL, shopPlan, type PosSpot, type ShopKind, type ShopLayout } from "./ShopRoom3D";
+import { DOOR_LABEL, POS_LABEL, SHAPE_LABEL, shopPlan, type DoorSpot, type PosSpot, type RoomShape, type ShopKind, type ShopLayout } from "./ShopRoom3D";
 
 export default function LayoutPicker({ kind, pyeong, layout, set }: { kind: ShopKind; pyeong: number; layout: ShopLayout; set: (l: ShopLayout) => void }) {
   const plan = shopPlan(kind, pyeong, layout);
@@ -8,7 +8,23 @@ export default function LayoutPicker({ kind, pyeong, layout, set }: { kind: Shop
   const nT = plan.tables.length, nR = plan.racks.length;
   return (
     <div className="m-layout" role="group" aria-label="가게 배치">
-      <b className="m-layout-h">가게 배치</b>
+      <b className="m-layout-h">가게 배치 <small>파란 화살표가 손님 동선이에요</small></b>
+      <div className="m-layout-row">
+        <span id={`shape-${kind}`}>가게 모양</span>
+        <div className="m-seg" role="group" aria-labelledby={`shape-${kind}`}>
+          {(["wide", "square", "deep"] as RoomShape[]).map((x) => (
+            <button type="button" key={x} aria-pressed={(layout.shape ?? "wide") === x} onClick={() => up({ shape: x, tables: undefined, racks: undefined })}>{SHAPE_LABEL[x]}</button>
+          ))}
+        </div>
+      </div>
+      <div className="m-layout-row">
+        <span id={`door-${kind}`}>출입문</span>
+        <div className="m-seg" role="group" aria-labelledby={`door-${kind}`}>
+          {(["left", "center", "right"] as DoorSpot[]).map((x) => (
+            <button type="button" key={x} aria-pressed={(layout.door ?? "right") === x} onClick={() => up({ door: x, tables: undefined, racks: undefined })}>{DOOR_LABEL[x]}</button>
+          ))}
+        </div>
+      </div>
       <div className="m-layout-row">
         <span id={`pos-${kind}`}>계산대</span>
         <div className="m-seg" role="group" aria-labelledby={`pos-${kind}`}>

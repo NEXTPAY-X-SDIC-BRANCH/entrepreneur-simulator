@@ -650,3 +650,4 @@ html:has(.m-app) { background: #fff; }
 .m-layout .m-seg { display: flex; flex-wrap: wrap; inline-size: 100%; }
 .m-layout .m-seg button { flex: 1 1 auto; padding: 6px 10px; font-size: 14px; }
 .m-layout .m-stepper { inline-size: 100%; }
+.m-layout-h small { margin-inline-start: 6px; font-size: 12px; font-weight: 500; color: #5a6270; }

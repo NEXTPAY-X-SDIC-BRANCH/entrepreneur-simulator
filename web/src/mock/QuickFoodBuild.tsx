@@ -66,7 +66,7 @@ export default function QuickFoodBuild({ profile, cfg, setCfg, onNext }: { profi
   return (
     <main className="m-build">
       <div className="m-stage">
-        <div className="m-canvas"><ShopRoom3D kind={cfg.ind === "chicken" ? "chicken" : "bunsik"} pyeong={cfg.pyeong} layout={cfg.layout} height="fill" /></div>
+        <div className="m-canvas"><ShopRoom3D kind={cfg.ind === "chicken" ? "chicken" : "bunsik"} pyeong={cfg.pyeong} layout={cfg.layout} height="fill" flow /></div>
         <div className="m-room">
           <div className="m-stepper">
             <span id="qf-py">가게 크기</span>

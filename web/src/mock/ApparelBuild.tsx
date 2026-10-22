@@ -62,7 +62,7 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
   return (
     <main className="m-build">
       <div className="m-stage">
-        <div className="m-canvas"><ShopRoom3D kind="apparel" pyeong={cfg.pyeong} layout={cfg.layout} height="fill" /></div>
+        <div className="m-canvas"><ShopRoom3D kind="apparel" pyeong={cfg.pyeong} layout={cfg.layout} height="fill" flow /></div>
         <div className="m-room">
           <div className="m-stepper">
             <span id="ap-py">가게 크기</span>
