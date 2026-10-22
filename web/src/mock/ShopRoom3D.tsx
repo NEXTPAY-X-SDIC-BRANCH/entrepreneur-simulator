@@ -10,6 +10,11 @@ import { FitControls, FrontFade, Pendant, People, StoreLights, Storefront, ViewB
 import "./cafe-sim.css";
 
 export type ShopKind = "chicken" | "bunsik" | "apparel";
+// 사장님이 고르는 배치. 비어 있으면 평수에 맞춰 가능한 만큼 놓는다.
+// pos: 계산대(포스) 자리. door 입구 옆, window 창가 왼쪽, back 안쪽 (음식점은 주방 옆 오른쪽 벽, 옷가게는 뒷벽 가운데)
+export type PosSpot = "door" | "window" | "back";
+export type ShopLayout = { pos?: PosSpot; tables?: number; bar?: boolean; racks?: number; rackDir?: "row" | "col" };
+export const POS_LABEL: Record<PosSpot, string> = { door: "입구 옆", window: "창가 왼쪽", back: "안쪽" };
 type V3 = [number, number, number];
 
 const PAL: Record<ShopKind, { floor: string; wall: string; trim: string; sign: string; signText: string; accent: string }> = {
@@ -64,10 +69,10 @@ function Scooter({ x, z }: { x: number; z: number }) {
     </group>
   );
 }
-function Rack({ x, z, len, seed }: { x: number; z: number; len: number; seed: number }) {
+function Rack({ x, z, len, seed, rot = 0 }: { x: number; z: number; len: number; seed: number; rot?: number }) {
   const n = Math.max(4, Math.floor(len / 0.11));
   return (
-    <group position={[x, 0, z]}>
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
       {[-len / 2, len / 2].map((dx) => <Cy key={dx} p={[dx, 0.75, 0]} r={0.02} h={1.5} color={STEEL} metal={0.7} />)}
       <mesh position={[0, 1.5, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.015, 0.015, len, 8]} /><meshStandardMaterial color={STEEL} metalness={0.7} /></mesh>
       {Array.from({ length: n }, (_, i) => {
@@ -101,40 +106,88 @@ function Mannequin({ x, z, seed }: { x: number; z: number; seed: number }) {
   );
 }
 
-export default function ShopRoom3D({ kind, pyeong, people = 0, riders = 0, height = 420 }: { kind: ShopKind; pyeong: number; people?: number; riders?: number; height?: number | "fill" }) {
+const roomOf = (pyeong: number) => {
   const area = pyeong * 3.3058;
   const W = Math.min(12, Math.max(4.2, Math.sqrt(area * 1.35))), D = Math.max(3.6, area / W);
+  return { W, D };
+};
+type Rect = [number, number, number, number]; // x0 z0 x1 z1
+const inside = (x: number, z: number, r: Rect, pad = 0) => x > r[0] - pad && x < r[2] + pad && z > r[1] - pad && z < r[3] + pad;
+
+// 배치 계산 (화면 밖에서도 씀: 고를 수 있는 테이블·행거 최대 수, 좌석 수)
+export function shopPlan(kind: ShopKind, pyeong: number, lay: ShopLayout = {}) {
+  const { W, D } = roomOf(pyeong);
+  const pos: PosSpot = lay.pos ?? "door";
+  const seats: [number, number, number][] = [], spots: [number, number, number][] = [], staff: [number, number][] = [];
+  const tables: { x: number; z: number }[] = [], stools: { x: number; z: number }[] = [];
+  const racks: { x: number; z: number; rot: number }[] = [];
+  const kitchenZ = -D / 2 + 0.38;
+  let posBox: Rect, posRot = false, posStaff: [number, number];
+  if (kind !== "apparel") {
+    if (pos === "window") { posBox = [-W / 2 + 0.6, D / 2 - 1.68, -W / 2 + 2.0, D / 2 - 1.12]; posStaff = [-W / 2 + 1.3, D / 2 - 2.05]; }
+    else if (pos === "back") { posBox = [W / 2 - 0.9, -D / 2 + 1.3, W / 2 - 0.35, -D / 2 + 2.7]; posRot = true; posStaff = [W / 2 - 1.25, -D / 2 + 2.0]; }
+    else { posBox = [W / 2 - 2.0, D / 2 - 1.68, W / 2 - 0.6, D / 2 - 1.12]; posStaff = [W / 2 - 1.3, D / 2 - 1.75]; }
+    staff.push([-W / 4, kitchenZ + 0.7], posStaff);
+    const x0 = -W / 2 + 0.8, x1 = W / 2 - 1.9, z0 = -D / 2 + 1.9, z1 = D / 2 - 1.0;
+    const bar = kind === "bunsik" && lay.bar !== false;
+    if (bar) {
+      const zEnd = pos === "window" ? D / 2 - 2.0 : z1 - 0.1;
+      for (let z = z0 - 0.4; z < zEnd; z += 0.55) { stools.push({ x: -W / 2 + 0.55, z }); seats.push([-W / 2 + 0.55, z, -Math.PI / 2]); }
+    }
+    const tx0 = bar ? x0 + 0.8 : x0;
+    const cand: { x: number; z: number }[] = [];
+    for (let x = tx0; x <= x1; x += 1.3) for (let z = z0; z <= z1 - 0.3; z += 1.7) if (!inside(x, z, posBox, 0.75)) cand.push({ x, z });
+    const n = Math.min(cand.length, lay.tables ?? cand.length);
+    // 고른 수만큼 앞(창가)에서부터 채운다
+    cand.sort((p, q) => q.z - p.z || p.x - q.x).slice(0, n).forEach((t) => { tables.push(t); seats.push([t.x, t.z - 0.55, 0], [t.x, t.z + 0.55, Math.PI]); });
+    return { W, D, seats, spots, staff, tables, stools, racks, kitchenZ, posBox, posRot, maxTables: cand.length, maxRacks: 0, bar };
+  }
+  // 옷가게
+  if (pos === "window") { posBox = [-W / 2 + 0.6, D / 2 - 1.38, -W / 2 + 2.0, D / 2 - 0.82]; posStaff = [-W / 2 + 1.3, D / 2 - 1.75]; }
+  else if (pos === "back") { posBox = [-0.75, -D / 2 + 0.85, 0.75, -D / 2 + 1.4]; posStaff = [0, -D / 2 + 1.75]; }
+  else { posBox = [W / 2 - 1.9, D / 2 - 1.38, W / 2 - 0.5, D / 2 - 0.82]; posStaff = [W / 2 - 1.2, D / 2 - 1.5]; }
+  staff.push(posStaff);
+  const col = lay.rackDir === "col";
+  const cand: { x: number; z: number; rot: number }[] = [];
+  const zA = -D / 2 + 1.6 + (pos === "back" ? 0.8 : 0), zB = D / 2 - 1.4;
+  if (!col) { for (let z = zA; z < zB; z += 1.25) for (let x = -W / 2 + 1.75; x < W / 2 - 2.0; x += 1.8) if (!inside(x, z, posBox, 0.9)) cand.push({ x, z, rot: 0 }); }
+  else { for (let x = -W / 2 + 1.6; x < W / 2 - 1.6; x += 1.25) for (let z = zA + 0.2; z < zB; z += 1.8) if (!inside(x, z, posBox, 0.9)) cand.push({ x, z, rot: Math.PI / 2 }); }
+  const n = Math.min(cand.length, lay.racks ?? cand.length);
+  cand.slice(0, n).forEach((r) => {
+    racks.push(r);
+    if (r.rot) spots.push([r.x + 0.45, r.z, -Math.PI / 2], [r.x - 0.45, r.z + 0.3, Math.PI / 2]);
+    else spots.push([r.x, r.z + 0.45, Math.PI], [r.x + 0.3, r.z - 0.45, 0]);
+  });
+  for (let z = -D / 2 + 1.4; z < D / 2 - 0.8; z += 1.1) if (!inside(-W / 2 + 0.75, z, posBox, 0.3)) spots.push([-W / 2 + 0.75, z, -Math.PI / 2]);
+  return { W, D, seats, spots, staff, tables, stools, racks, kitchenZ, posBox, posRot, maxTables: 0, maxRacks: cand.length, bar: false };
+}
+
+// 계산대(포스): 상자 + 포스 단말
+function PosCounter({ box, rot, top = WOOD, body = CREAM }: { box: Rect; rot: boolean; top?: string; body?: string }) {
+  const [x0, z0, x1, z1] = box, mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, w = x1 - x0, d = z1 - z0;
+  return (
+    <group>
+      <B p={[mx, 0.44, mz]} s={[w, 0.88, d]} color={body} />
+      <B p={[mx, 0.9, mz]} s={[w + 0.02, 0.04, d + 0.02]} color={top} />
+      <group position={[rot ? mx - 0.05 : mx + w * 0.2, 0, rot ? mz : mz - 0.05]} rotation={[0, rot ? -Math.PI / 2 : 0, 0]}>
+        <B p={[0, 0.96, 0]} s={[0.22, 0.06, 0.18]} color={DARK} />
+        <B p={[0, 1.12, -0.04]} s={[0.26, 0.2, 0.03]} color="#1c2a3a" />
+        <B p={[0, 1.12, -0.024]} s={[0.22, 0.16, 0.005]} color="#5f8de0" />
+      </group>
+    </group>
+  );
+}
+
+export default function ShopRoom3D({ kind, pyeong, people = 0, riders = 0, height = 420, layout }: { kind: ShopKind; pyeong: number; people?: number; riders?: number; height?: number | "fill"; layout?: ShopLayout }) {
+  const { W, D } = roomOf(pyeong);
   const pal = PAL[kind];
   const door = { x: W / 2 - 0.9, w: 1.0 };
   const R = Math.max(W, D) / 2 + 2.5;
 
   // 업종별 배치: seats = 앉는 자리, spots = 서서 둘러보는 자리, staff = 직원 자리
-  const plan = useMemo(() => {
-    const seats: [number, number, number][] = [], spots: [number, number, number][] = [], staff: [number, number][] = [];
-    const tables: { x: number; z: number }[] = [], stools: { x: number; z: number }[] = [];
-    const kitchenZ = -D / 2 + 0.38;
-    if (kind !== "apparel") {
-      // 뒤쪽 주방 줄, 앞쪽 계산대
-      staff.push([-W / 4, kitchenZ + 0.7], [W / 2 - 1.3, D / 2 - 1.75]);
-      const x0 = -W / 2 + 0.8, x1 = W / 2 - 1.9, z0 = -D / 2 + 1.9, z1 = D / 2 - 1.0;
-      if (kind === "bunsik") {
-        // 왼쪽 벽 바 자리
-        for (let z = z0 - 0.4; z < z1 - 0.1; z += 0.55) { stools.push({ x: -W / 2 + 0.55, z }); seats.push([-W / 2 + 0.55, z, -Math.PI / 2]); }
-      }
-      const tx0 = kind === "bunsik" ? x0 + 0.8 : x0;
-      for (let x = tx0; x <= x1; x += 1.3) for (let z = z0; z <= z1 - 0.3; z += 1.7) {
-        tables.push({ x, z });
-        seats.push([x, z - 0.55, 0], [x, z + 0.55, Math.PI]);
-      }
-    } else {
-      staff.push([W / 2 - 1.2, D / 2 - 1.5]);
-      for (let z = -D / 2 + 1.6; z < D / 2 - 1.4; z += 1.25) for (let x = -W / 2 + 1.6; x < W / 2 - 2.2; x += 1.8) {
-        spots.push([x, z + 0.45, Math.PI], [x + 0.3, z - 0.45, 0]);
-      }
-      for (let z = -D / 2 + 1.4; z < D / 2 - 0.8; z += 1.1) spots.push([-W / 2 + 0.75, z, -Math.PI / 2]);
-    }
-    return { seats, spots, staff, tables, stools, kitchenZ };
-  }, [kind, W, D]);
+  const lk = JSON.stringify(layout ?? {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const plan = useMemo(() => shopPlan(kind, pyeong, layout), [kind, pyeong, lk]);
 
   const list = useMemo(() => {
     const out: Person[] = [];
@@ -178,8 +231,7 @@ export default function ShopRoom3D({ kind, pyeong, people = 0, riders = 0, heigh
         <Counter x0={-W / 2 + 0.1} x1={W / 2 - 0.1} z={plan.kitchenZ} />
         {Array.from({ length: Math.min(4, Math.max(2, Math.floor(W / 2))) }, (_, i) => <Fryer key={i} x={-W / 2 + 0.6 + i * 0.55} z={plan.kitchenZ} />)}
         <B p={[W / 4, 1.0, plan.kitchenZ]} s={[0.9, 0.12, 0.5]} color="#e9c46a" />
-        <Counter x0={W / 2 - 2.0} x1={W / 2 - 0.6} z={D / 2 - 1.4} d={0.55} top={WOOD} />
-        <B p={[W / 2 - 1.0, 1.0, D / 2 - 1.4]} s={[0.3, 0.22, 0.2]} color={DARK} />
+        <PosCounter box={plan.posBox} rot={plan.posRot} />
         {[0, 1, 2].map((i) => <B key={i} p={[W / 2 - 0.35, 0.3 + i * 0.4, D / 2 - 1.9]} s={[0.4, 0.32, 0.4]} color={i % 2 ? pal.accent : pal.sign} />)}
       </>}
       {kind === "bunsik" && <>
@@ -187,18 +239,18 @@ export default function ShopRoom3D({ kind, pyeong, people = 0, riders = 0, heigh
         <Cy p={[-W / 4, 0.95, plan.kitchenZ]} r={0.42} h={0.06} color="#c63a26" metal={0.2} />
         <Cy p={[-W / 4 + 1.0, 1.02, plan.kitchenZ]} r={0.22} h={0.24} color={STEEL} metal={0.6} />
         <B p={[W / 6, 0.95, plan.kitchenZ]} s={[1.0, 0.06, 0.45]} color="#5a8a3a" />
-        <B p={[-W / 2 + 0.25, 1.0, 0]} s={[0.4, 0.04, D - 2.4]} color={WOOD} />
-        <Counter x0={W / 2 - 2.0} x1={W / 2 - 0.6} z={D / 2 - 1.4} d={0.55} top={WOOD} />
+        {plan.bar && plan.stools.length > 0 && (() => { const za = plan.stools[0].z - 0.3, zb = plan.stools[plan.stools.length - 1].z + 0.3;
+          return <B p={[-W / 2 + 0.25, 1.0, (za + zb) / 2]} s={[0.4, 0.04, zb - za]} color={WOOD} />; })()}
+        <PosCounter box={plan.posBox} rot={plan.posRot} />
       </>}
       {kind === "apparel" && <>
         <Shelf x0={-W / 2 + 0.3} x1={W / 2 - 1.6} z={-D / 2 + 0.25} seed={11} />
         <group position={[-W / 2 + 0.25, 0, 0]} rotation={[0, Math.PI / 2, 0]}><Shelf x0={-D / 2 + 1.2} x1={D / 2 - 0.9} z={0} seed={47} /></group>
-        {plan.spots.filter((_, i) => i % 2 === 0 && i < plan.spots.length - 6).map(([x, z], i) => <Rack key={i} x={x + 0.15} z={z - 0.45} len={1.3} seed={i * 19 + 3} />)}
+        {plan.racks.map((r, i) => <Rack key={i} x={r.x} z={r.z} rot={r.rot} len={1.3} seed={i * 19 + 3} />)}
         <B p={[W / 2 - 0.65, 1.05, -D / 2 + 0.7]} s={[1.0, 2.1, 1.0]} color="#e2dccf" />
         <B p={[W / 2 - 0.65, 1.15, -D / 2 + 1.21]} s={[0.8, 1.9, 0.02]} color="#8a6e5a" />
-        <Counter x0={W / 2 - 1.9} x1={W / 2 - 0.5} z={D / 2 - 1.1} d={0.55} top={WOOD} body="#f2efe8" />
-        <B p={[W / 2 - 1.2, 1.0, D / 2 - 1.1]} s={[0.3, 0.2, 0.22]} color={DARK} />
-        {[-W / 2 + 0.7, -W / 2 + 1.4, -W / 2 + 2.1].filter((x) => x < door.x - 1).map((x, i) => <Mannequin key={x} x={x} z={D / 2 - 0.45} seed={i * 5 + 2} />)}
+        <PosCounter box={plan.posBox} rot={plan.posRot} body="#f2efe8" />
+        {[-W / 2 + 0.7, -W / 2 + 1.4, -W / 2 + 2.1].filter((x) => x < door.x - 1 && !inside(x, D / 2 - 0.45, plan.posBox, 0.35)).map((x, i) => <Mannequin key={x} x={x} z={D / 2 - 0.45} seed={i * 5 + 2} />)}
       </>}
       {plan.tables.map((t, i) => <Table2 key={i} x={t.x} z={t.z} />)}
       {plan.stools.map((s, i) => <Stool key={i} x={s.x} z={s.z} />)}

@@ -75,7 +75,7 @@ export function scoreOf(months: ScoreMonth[], startCash: number, lowestCash: num
       got: 15 * clamp((margin + 0.05) / 0.15) + 10 * (black / n),
       detail: `최근 3개월 영업이익률 ${pct(margin)}, 흑자인 달 ${black}/${months.length}. 매출에서 가장 큰 비용은 ${bigKo} ${pct(big.v)}예요.`,
       fix: retail ? (big.k === "rent" ? "고정비가 매출에 비해 커요. 매출을 늘리려면 알바를 둬 놓치는 손님을 줄이고, 아니면 평수를 줄이거나 월세가 낮은 구를 골라 봐요." : "할인을 줄이고, 철 지난 재고가 쌓이지 않게 매입량을 맞춰요. 남는 옷은 시즌 오프에 일찍 정리해요.")
-        : big.k === "cogs" ? "원가율이 높은 메뉴의 가격을 올리거나 비중을 줄여요 (자세히 모드에서 메뉴별로 볼 수 있어요)."
+        : big.k === "cogs" ? "원가율이 높은 메뉴의 가격을 올리거나 비중을 줄여요 (hard 모드에서 메뉴별로 볼 수 있어요)."
         : big.k === "labor" ? "손님이 적은 달은 알바를 줄이거나 마감을 당겨 일하는 시간을 줄여요."
         : "월세가 매출에 비해 커요. 평수를 줄이거나 월세가 낮은 동네를 다시 골라 봐요.",
     },
@@ -131,7 +131,7 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
     fetch(`${import.meta.env.BASE_URL}mock/survival_kosis.json`).then((r) => r.json())
       .then((d) => { const y = d._meta.latest; setSurv({ y, s3: d.region.seoul_food[y]["3"] }); }).catch(() => setSurv(null));
   }, []);
-  const modeKo = mode === "hard" ? "자세히" : "쉬운";
+  const modeKo = mode === "hard" ? "hard" : "easy";
   const load = (c: string) => fetch(`${API}/scores?${new URLSearchParams({ cls: c, shop, mode })}`).then((r) => r.json())
     .then((d) => setBoard({ top: d.top, count: d.count })).catch(() => setBoard(null));
   useEffect(() => { void load(cls); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -201,7 +201,7 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
         const recent = tries.slice(-5);
         return <>
           <h2>지난 시도와 비교</h2>
-          <p className="sx-note">{shop} · {mode === "hard" ? "자세히" : "쉬운"} 모드 {tries.length}번째 시도예요. 바로 전보다 <b className={d >= 0 ? "sc-up" : "sc-down"}>{d >= 0 ? `+${d}` : d}점</b>{d === 0 ? " (같아요)" : ""}.</p>
+          <p className="sx-note">{shop} · {mode === "hard" ? "hard" : "easy"} 모드 {tries.length}번째 시도예요. 바로 전보다 <b className={d >= 0 ? "sc-up" : "sc-down"}>{d >= 0 ? `+${d}` : d}점</b>{d === 0 ? " (같아요)" : ""}.</p>
           {moved.length > 0 && (
             <ul className="sc-diff">
               {moved.map(({ a, d: x }) => <li key={a.key}><span>{a.label}</span><b className={x > 0 ? "sc-up" : "sc-down"}>{x > 0 ? `+${x}` : x}</b></li>)}
@@ -236,7 +236,7 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
           <thead><tr><th>순위</th><th>별명</th><th>점수</th><th>등급</th><th>업종</th><th>모드</th><th>동네</th></tr></thead>
           <tbody>{board.top.map((r) => (
             <tr key={r.id} className={r.id === board.mine ? "me" : undefined}>
-              <td>{r.rank}</td><td>{r.name}</td><td>{r.score}</td><td>{r.grade}</td><td>{r.shop ?? "고깃집"}</td><td>{r.mode === "hard" ? "자세히" : "쉬운"}</td><td>{r.gu}</td>
+              <td>{r.rank}</td><td>{r.name}</td><td>{r.score}</td><td>{r.grade}</td><td>{r.shop ?? "고깃집"}</td><td>{r.mode === "hard" ? "hard" : "easy"}</td><td>{r.gu}</td>
             </tr>
           ))}</tbody>
         </table>

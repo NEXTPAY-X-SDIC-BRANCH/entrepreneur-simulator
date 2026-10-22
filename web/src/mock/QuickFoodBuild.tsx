@@ -2,6 +2,8 @@
 // 옷가게와 같은 틀(m-build)을 쓰고, 3D 대신 평면 그림을 그린다.
 import { Mark } from "./Checks";
 import Assume from "./Assume";
+import LayoutPicker from "./LayoutPicker";
+import ShopRoom3D from "./ShopRoom3D";
 import { ASSUME } from "./assumptions";
 import { OWNER_DRAW, STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
 import { AD_COST, DEFAULT_PLAN, GRADE_LABEL, QF_NAME, derived, expectedSales, qfOpeningCost, type QfCfg } from "./quickfood";
@@ -64,7 +66,7 @@ export default function QuickFoodBuild({ profile, cfg, setCfg, onNext }: { profi
   return (
     <main className="m-build">
       <div className="m-stage">
-        <div className="m-canvas ap-canvas"><QfFloorPlan cfg={cfg} /></div>
+        <div className="m-canvas"><ShopRoom3D kind={cfg.ind === "chicken" ? "chicken" : "bunsik"} pyeong={cfg.pyeong} layout={cfg.layout} height="fill" /></div>
         <div className="m-room">
           <div className="m-stepper">
             <span id="qf-py">가게 크기</span>
@@ -83,6 +85,7 @@ export default function QuickFoodBuild({ profile, cfg, setCfg, onNext }: { profi
             <output aria-labelledby="qf-staff">{cfg.staff}명</output>
             <button type="button" aria-label="알바 1명 늘리기" disabled={cfg.staff >= 3} onClick={() => set({ staff: cfg.staff + 1 })}>+</button>
           </div>
+          <LayoutPicker kind={cfg.ind === "chicken" ? "chicken" : "bunsik"} pyeong={cfg.pyeong} layout={cfg.layout ?? {}} set={(l) => set({ layout: l })} />
           <p>조사한 {name}은 평균 {Math.round(dv.areaPy)}평에 사장 포함 {(1 + dv.hired).toFixed(1)}명(가족 제외)이 일해요. 주문의 {Math.round(dv.share.delivery * 100)}%가 배달, {Math.round(dv.share.takeout * 100)}%가 포장이에요 (외식업체 경영실태조사).</p>
         </div>
         <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>

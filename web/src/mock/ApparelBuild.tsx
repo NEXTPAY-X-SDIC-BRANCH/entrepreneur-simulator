@@ -3,6 +3,8 @@
 import { BUY_MODES, DEFAULT_PLAN, KOSIS, STAFF_PAY, apparelOpeningCost, expectedSales, type ApparelCfg, type BuyMode } from "./apparel";
 import { Mark } from "./Checks";
 import Assume from "./Assume";
+import LayoutPicker from "./LayoutPicker";
+import ShopRoom3D from "./ShopRoom3D";
 import { ASSUME } from "./assumptions";
 import { GRADES, OWNER_DRAW, STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
 
@@ -60,7 +62,7 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
   return (
     <main className="m-build">
       <div className="m-stage">
-        <div className="m-canvas ap-canvas"><FloorPlan pyeong={cfg.pyeong} /></div>
+        <div className="m-canvas"><ShopRoom3D kind="apparel" pyeong={cfg.pyeong} layout={cfg.layout} height="fill" /></div>
         <div className="m-room">
           <div className="m-stepper">
             <span id="ap-py">가게 크기</span>
@@ -90,6 +92,7 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
               <button type="button" key={b} aria-pressed={cfg.buyMode === b} onClick={() => set({ buyMode: b })}>{BUY_MODES[b].label}</button>
             ))}
           </div>
+          <LayoutPicker kind="apparel" pyeong={cfg.pyeong} layout={cfg.layout ?? {}} set={(l) => set({ layout: l })} />
           <p>{BUY_MODES[cfg.buyMode].desc}.<Assume id="buyMode" /> 첫 재고는 팔 옷을 미리 들여놓는 양이에요. 많을수록 사이즈가 덜 빠지지만{cfg.buyMode === "consign" ? " 원가가 비싼 옷이 선반에 쌓여요." : " 현금이 선반에 묶여요."}</p>
         </div>
         <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>

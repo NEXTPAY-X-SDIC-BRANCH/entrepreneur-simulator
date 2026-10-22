@@ -8,24 +8,21 @@
 .cf-net th, .cf-net td { background: #f1f5ff; }
 .cf-count { font-size: 12px; color: #7a818c; font-weight: 500; }
 
-.cf-stack { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; align-items: start; }
-.cf-rcpt { position: relative; padding: 14px 14px 18px; background: #fffef9; border: 1px solid #e6e1d4; border-radius: 4px 4px 0 0;
-  box-shadow: 0 2px 6px rgba(40, 30, 10, .08); font-family: ui-monospace, "D2Coding", Consolas, monospace; font-size: 12px; color: #33302a;
-  /* 아래 톱니 */
-  -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 8px) no-repeat, radial-gradient(circle 6px at 8px 100%, #0000 98%, #000) bottom left / 16px 9px repeat-x;
-          mask: linear-gradient(#000 0 0) top / 100% calc(100% - 8px) no-repeat, radial-gradient(circle 6px at 8px 100%, #0000 98%, #000) bottom left / 16px 9px repeat-x; }
-.cf-rcpt header { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dashed #b9b3a4; }
-.cf-rcpt header b { font-size: 14px; letter-spacing: .04em; }
-.cf-rcpt header span { color: #7a7466; }
-.cf-rcpt dl { margin: 0; display: flex; flex-direction: column; gap: 3px; }
-.cf-rcpt dl div { display: flex; justify-content: space-between; gap: 8px; }
-.cf-rcpt dt { color: #5a554a; }
-.cf-rcpt dd { margin: 0; }
-.cf-rcpt .in dd { color: #1f7a4d; }
-.cf-r-start { padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px dotted #d8d2c3; }
-.cf-r-sum { padding-top: 6px; margin-top: 4px; border-top: 1px dashed #b9b3a4; font-weight: 700; font-size: 13px; }
-.cf-r-tax dd, .cf-r-tax dt { color: #8a5a12; }
-.cf-rcpt footer { margin-top: 10px; color: #8d8778; font-size: 11px; text-align: center; }
-.cf-rcpt.is-new { animation: cf-rise .7s cubic-bezier(.2, .8, .2, 1) both; border-color: #c9b98d; }
-@keyframes cf-rise { from { transform: translateY(40px) rotate(-1.5deg); opacity: 0; } to { transform: none; opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .cf-rcpt.is-new { animation: none; } }
+.cf-chart { overflow-x: auto; padding: 14px 12px 10px; border: 1px solid #e3e8f4; border-radius: 16px; background: #fff; }
+.cf-chart svg { display: block; inline-size: 100%; min-inline-size: 480px; max-block-size: 340px; }
+.cf-zero { stroke: #c9d0dc; stroke-width: 1; }
+.cf-link { stroke: #9aa5b8; stroke-width: 1; stroke-dasharray: 3 3; }
+.cf-b.is-total rect { fill: #3d63ea; }
+.cf-b.is-in rect { fill: #27a06a; }
+.cf-b.is-out rect { fill: #e2574c; }
+.cf-b.is-tax rect { fill: #f0a83a; }
+.cf-b.is-net rect { fill: #1f3f8f; }
+.cf-v { font-size: 11px; font-weight: 700; text-anchor: middle; fill: #2a2f3a; }
+.cf-v.up { fill: #1f8a5a; } .cf-v.down { fill: #c8443a; }
+.cf-l { font-size: 11px; text-anchor: middle; fill: #5a6270; }
+.cf-after { fill: none; stroke: #1f3f8f; stroke-width: 2; stroke-dasharray: 5 4; }
+.cf-after-d { fill: #fff; stroke: #1f3f8f; stroke-width: 2; }
+.cf-key { display: flex; flex-wrap: wrap; gap: 14px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 12.5px; color: #4a5160; }
+.cf-key li::before { content: ""; display: inline-block; inline-size: 10px; block-size: 10px; margin-inline-end: 6px; border-radius: 3px; vertical-align: -1px; background: #3d63ea; }
+.cf-key .is-in::before { background: #27a06a; } .cf-key .is-out::before { background: #e2574c; } .cf-key .is-tax::before { background: #f0a83a; }
+.cf-key .is-after::before { background: none; border-top: 2px dashed #1f3f8f; block-size: 0; inline-size: 14px; border-radius: 0; vertical-align: 3px; }

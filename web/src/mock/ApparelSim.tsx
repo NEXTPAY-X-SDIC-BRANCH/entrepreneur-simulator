@@ -19,7 +19,7 @@ import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine
 import "./simulate-engine.css";
 
 const TURNS = 6;
-// 쉬운 모드: 방향을 고른 뒤 버튼으로 바꾸는 세 가지
+// easy 모드: 방향을 고른 뒤 버튼으로 바꾸는 세 가지
 const PICKS: QPick<ApPlan>[] = [
   { key: "buy", label: "매입량", hint: "많이 사면 사이즈가 덜 빠지고, 적게 사면 현금이 남아요", opts: [{ label: "적게", value: 0.8 }, { label: "보통", value: 1 }, { label: "많이", value: 1.2 }] },
   { key: "markdownAge", label: "세일 시작", hint: "일찍 세일하면 돈이 빨리 돌고, 늦으면 정가로 더 팔아요", opts: [{ label: "2달 지나면", value: 2 }, { label: "3달", value: 3 }, { label: "4달", value: 4 }] },
@@ -213,7 +213,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
 
   return (
     <div className="sx-root" style={{ top }}>
-      <div className="sx-canvas"><ShopRoom3D kind="apparel" pyeong={cfg.pyeong} people={people} height="fill" /></div>
+      <div className="sx-canvas"><ShopRoom3D kind="apparel" pyeong={cfg.pyeong} layout={cfg.layout} people={people} height="fill" /></div>
 
       <header className="sx-hud">
         <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금이에요. 옷 매입과 월세는 1일, 알바 급여는 10일, 생활비·이자는 25일에 한꺼번에 나가요.</>}>{man(w(cashNow))}</Metric>
@@ -330,11 +330,11 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                     <legend>어떻게 해 볼까요?</legend>
                     <label className={mode === "easy" ? "on" : ""}>
                       <input type="radio" name="ap-mode" checked={mode === "easy"} onChange={() => setMode("easy")} />
-                      <span><b>쉬운 모드</b><small>달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 이달의 사건 대응도 골라요.</small></span>
+                      <span><b>easy 모드</b><small>달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 이달의 사건 대응도 골라요.</small></span>
                     </label>
                     <label className={mode === "hard" ? "on" : ""}>
                       <input type="radio" name="ap-mode" checked={mode === "hard"} onChange={() => setMode("hard")} />
-                      <span><b>자세히 모드</b><small>달마다 매입량·할인·알바·홍보비를 하나씩 정해요.</small></span>
+                      <span><b>hard 모드</b><small>달마다 매입량·할인·알바·홍보비를 하나씩 정해요.</small></span>
                     </label>
                   </fieldset>
                   <label className="sx-field">시작할 달
@@ -384,7 +384,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                           ))}
                         </div>
                         <QuickPicks picks={PICKS} base={strats.find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
-                        <p className="sx-note">자세히 모드에서는 매입량·더 들일 품목·상시 할인·세일 시작과 폭·알바·홍보비·온라인 판매를 숫자로 하나씩 정할 수 있어요.</p>
+                        <p className="sx-note">hard 모드에서는 매입량·더 들일 품목·상시 할인·세일 시작과 폭·알바·홍보비·온라인 판매를 숫자로 하나씩 정할 수 있어요.</p>
                       </section>
                     ) : (
                       <section className="sx-right" aria-label="이번 달 운영 계획">

@@ -13,6 +13,7 @@ import { flowShape, profileOf } from "./area";
 import "./simulate-engine.css";
 import { setEngineCtx } from "./chatContext";
 import Assume from "./Assume";
+import QuickPicks, { type Pick } from "./QuickPicks";
 import PriceTrend from "./PriceTrend";
 import { BBQ_REF, bbqBand } from "./priceCompare";
 import ModeSwitch from "./ModeSwitch";
@@ -27,7 +28,7 @@ const TURNS = 6;
 
 export type MenuItem = { name: string; price: number; cost: number; share: number }; // 1인분 원, 주문 비중 %
 type Plan = { meat_price: number; staff_per_shift: number; close_hour: number; marketing_budget: number; meat_grade: string; banchan: number; delivery: string; menu?: MenuItem[] };
-type Mode = "easy" | "hard"; // 쉬운 모드: 계획은 추천대로 자동, 사건 대응만 고른다. 자세히 모드: 메뉴·원가와 계획을 직접 정한다
+type Mode = "easy" | "hard"; // easy 모드: 계획은 추천대로 자동, 사건 대응만 고른다. hard 모드: 메뉴·원가와 계획을 직접 정한다
 type Night = { dow: string; rain: boolean; revenue: number; covers: number; walkaways: number; cogs: number; fees: number };
 type Ev = { id: string; label: string; group: string; mechanism: string | null; outcome?: string | null };
 type Option = { id: string; label: string; hint: string; downside: string; tag: string };
@@ -48,7 +49,9 @@ type MonthResult = {
 type Tick = { label: string; amount: number }; // 원
 type Day = { n: number; date: Date; open: boolean; covers: number; rain: boolean; revenue: number; ticks: Tick[]; notes: string[]; net: number; cash: number; fixedShare: number; cum: number };
 type Done = { result: MonthResult; plan: Plan; days: Day[]; cashStart: number; cashEnd: number; year: number; picked: Record<string, string>; rentPaid: number; rentFee: number };
-// 임대료 카드 할부 (자세히 모드, 시즌 시작 때 고르고 그 시즌 동안 고정). 달마다 월세를 카드로 내고, 수수료를 더한 금액을 N개월에 나눠 갚는다.
+// 화면에서는 일단 뺐다 (팀 결정, 2026-10). 계산은 남겨 두고 켜면 다시 고를 수 있다.
+const RENT_CARD_ON = false;
+// 임대료 카드 할부 (hard 모드, 시즌 시작 때 고르고 그 시즌 동안 고정). 달마다 월세를 카드로 내고, 수수료를 더한 금액을 N개월에 나눠 갚는다.
 // 손익(엔진 영업이익)은 그대로고 현금이 나가는 시점만 뒤로 밀린다. 수수료는 현금에서 따로 빠진다. 수수료율은 가정 (카드 임대료 결제 서비스 이용료 + 할부 수수료).
 type RentN = 0 | 3 | 6;
 const RENT_PAY: Record<RentN, { label: string; fee: number; desc: string }> = {
@@ -84,6 +87,15 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 // ---------------------------------------------------------------- 운영 계획 변수
 const GRADES = ["imported", "domestic", "aged"] as const;
 const GRADE_KO: Record<string, string> = { imported: "수입 냉동", domestic: "국내산", aged: "숙성" };
+// easy 모드 '한 가지 더 정하기': hard 모드의 선택지 중 손님이 바로 느끼는 세 가지만 버튼으로
+const BBQ_PICKS: Pick<Plan>[] = [
+  { key: "meat_grade", label: "어떤 고기를 쓸까요?", hint: "냉동은 원가가 싸고, 국내산·숙성은 비싸지만 만족과 재방문이 올라요",
+    opts: GRADES.map((g) => ({ label: GRADE_KO[g], value: g })) },
+  { key: "staff_per_shift", label: "알바는 몇 명?", hint: "많으면 손님을 빨리 받고, 인건비가 늘어요",
+    opts: [1, 2, 3].map((n) => ({ label: `${n}명`, value: n })) },
+  { key: "marketing_budget", label: "SNS 홍보할까요?", hint: "체험단·협찬으로 처음 보는 손님이 늘어요",
+    opts: [{ label: "안 해요", value: 0 }, { label: "조금 (50만원)", value: 500_000 }, { label: "많이 (150만원)", value: 1_500_000 }] },
+];
 const GRADE_HINT: Record<string, string> = { imported: "원가가 낮고 맛 평가도 낮아요", domestic: "기본이에요", aged: "원가가 높고 맛 평가도 높아요" };
 // 배민배달 매출 규모 구간 (research/season_params.yaml delivery.tier). 앱 안에서 내 가게의 순위로 정해져 사용자가 고른다.
 const DELIVERY = ["none", "bottom20", "mid50_80", "mid35_50", "top35"] as const;
@@ -447,7 +459,7 @@ function DecisionCard({ d, alts, busy, onTry }: { d: Decision; alts: Record<stri
 }
 
 // ---------------------------------------------------------------- 화면
-// ---------------------------------------------------------------- 쉬운 모드: 달마다 방향 세 가지
+// ---------------------------------------------------------------- easy 모드: 달마다 방향 세 가지
 // 추천대로 = 지난달 결과로 만든 규칙 추천(recommend)을 모두 적용. 손님 늘리기·비용 아끼기는 지난달 계획에서 몇 가지만 한 칸씩 움직인다.
 type StratId = "rec" | "grow" | "save";
 function strategies(cur: Done | undefined, plan: Plan): { id: StratId; title: string; desc: string; plan: Plan; changes: string[] }[] {
@@ -464,7 +476,7 @@ function strategies(cur: Done | undefined, plan: Plan): { id: StratId; title: st
   ];
 }
 
-// ---------------------------------------------------------------- 메뉴 등록 (자세히 모드)
+// ---------------------------------------------------------------- 메뉴 등록 (hard 모드)
 // 메뉴마다 1인분 가격, 원가, 주문 비중(%)을 넣으면 엔진은 비중 가중 평균 가격과 원가를 쓴다 (sim/season.py _menu).
 // 처음 줄의 원가 4,500원은 엔진의 국내산 200g 원가 (research/season_params.yaml meat_grade.domestic, S68·S69).
 export function menuAvg(menu: MenuItem[]) {
@@ -538,8 +550,9 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const [plan, setPlan] = useState<Plan>({ meat_price: levers.price, staff_per_shift: Math.min(4, levers.staff), close_hour: 24, marketing_budget: 0, meat_grade: "domestic", banchan: 5, delivery: "none" });
   const gfx = useGfx();
   const [mode, setMode] = useState<Mode>("easy");
-  const [rentN, setRentN] = useState<RentN>(0); // 쉬운 모드는 늘 현금
+  const [rentN, setRentN] = useState<RentN>(0); // easy 모드는 늘 현금
   const [strat, setStrat] = useState<StratId>("rec");
+  const [tweak, setTweak] = useState<Partial<Plan>>({});
   const [view, setView] = useState<View>("intro");
   const [fade, setFade] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -705,7 +718,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
       } catch (e) { setErr(String(e)); }
       return;
     }
-    setStrat("rec");
+    setStrat("rec"); setTweak({});
     swap("plan");
   };
 
@@ -903,14 +916,14 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                     <legend>어떻게 해 볼까요?</legend>
                     <label className={mode === "easy" ? "on" : ""}>
                       <input type="radio" name="mode" checked={mode === "easy"} onChange={() => setMode("easy")} />
-                      <span><b>쉬운 모드</b><small>달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 이달의 사건 대응도 골라요.</small></span>
+                      <span><b>easy 모드</b><small>달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 이달의 사건 대응도 골라요.</small></span>
                     </label>
                     <label className={mode === "hard" ? "on" : ""}>
                       <input type="radio" name="mode" checked={mode === "hard"} onChange={() => { setMode("hard"); if (!plan.menu) setPlan({ ...plan, menu: [{ name: "삼겹살", price: plan.meat_price, cost: 4500, share: 100 }] }); }} />
-                      <span><b>자세히 모드</b><small>메뉴와 원가를 직접 등록하고, 달마다 가격·알바·마감·반찬·협찬·고기·배달을 하나씩 정해요.</small></span>
+                      <span><b>hard 모드</b><small>메뉴와 원가를 직접 등록하고, 달마다 가격·알바·마감·반찬·협찬·고기·배달을 하나씩 정해요.</small></span>
                     </label>
                   </fieldset>
-                  {mode === "hard" && (
+                  {RENT_CARD_ON && mode === "hard" && (
                     <fieldset className="sx-mode">
                       <legend>임대료는 어떻게 낼까요? <Assume id="rentFee" /></legend>
                       {([0, 3, 6] as RentN[]).map((n) => (
@@ -991,7 +1004,8 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                           </label>
                         ))}
                       </div>
-                      <p className="sx-note">자세히 모드에서는 메뉴·원가와 가격·알바·마감 등을 하나씩 정할 수 있어요.</p>
+                      <QuickPicks picks={BBQ_PICKS} base={strategies(cur, plan).find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
+                      <p className="sx-note">hard 모드에서는 메뉴·원가와 가격·알바·마감·반찬·배달을 하나씩 정할 수 있어요.</p>
                     </section>
                     ) : (
                     <section className="sx-right" aria-label="이번 달 운영 계획">
@@ -1007,7 +1021,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                 <footer className="sx-foot">
                   <button type="button" className="se-btn" onClick={() => {
                     if (mode === "hard") return void startMonthCall();
-                    const chosen = strategies(cur, plan).find((x) => x.id === strat)!.plan;
+                    const chosen = { ...strategies(cur, plan).find((x) => x.id === strat)!.plan, ...tweak };
                     setPlan(chosen);
                     void startMonthCall(chosen);
                   }} disabled={busy}>{busy ? "엔진이 계산 중이에요" : `${planMonth}월 시작`}</button>

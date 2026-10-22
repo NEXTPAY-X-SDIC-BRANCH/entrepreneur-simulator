@@ -6,10 +6,10 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Assume from "./Assume";
 import { LOAN_RATE, guStat, man, type Profile } from "./model";
 import {
-  DEFAULT_PLAN, PLAN_TEXT, QF_NAME, deliveryGuInfo, derived, eventOf, foodMult, playMonth, qfOpeningCost, qfStrategies, startState,
+  DEFAULT_PLAN, EXTRAS, HOURS_DEFAULT, HOURS_RANGE, MAIN, PLAN_KEYS, QF_NAME, extraPrice, hoursText, mixOf, mixStr, planText, type PlanKey, deliveryGuInfo, derived, eventOf, foodMult, playMonth, qfOpeningCost, qfStrategies, startState,
   type QfCfg, type QfMonth, type QfPlan, type QfState, type QfStratId,
 } from "./quickfood";
-import ShopRoom3D from "./ShopRoom3D";
+import ShopRoom3D, { shopPlan } from "./ShopRoom3D";
 import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import ModeSwitch from "./ModeSwitch";
 import CashFlow, { type CfMonth } from "./CashFlow";
@@ -27,13 +27,52 @@ const w = (x: number) => Math.round(x); // 만원
 const signed = (x: number) => (w(x) === 0 ? "0원" : `${x > 0 ? "+" : "−"}${man(Math.abs(w(x)))}`);
 const tone = (x: number) => (w(x) > 0 ? "pos" : w(x) < 0 ? "neg" : "");
 const n0 = (x: number) => Math.round(x).toLocaleString("ko-KR");
-const STEPS: [keyof QfPlan, number, number, number][] = [["price", 0.85, 1.2, 0.05], ["staff", 0, 3, 1], ["ad", 0, 2, 1], ["marketing", 0, 100, 25], ["hours", 0, 2, 1], ["pickup", 0, 0.1, 0.1]];
-// 쉬운 모드: 방향을 고른 뒤 버튼으로 바꾸는 세 가지
-const PICKS: QPick<QfPlan>[] = [
-  { key: "price", label: "가격", hint: "올리면 한 건 값이 늘고 주문이 줄어요", opts: [{ label: "5% 싸게", value: 0.95 }, { label: "그대로", value: 1 }, { label: "5% 비싸게", value: 1.05 }] },
-  { key: "staff", label: "알바", hint: "바쁜 날 주문을 놓치지 않게", opts: [{ label: "없이", value: 0 }, { label: "1명", value: 1 }, { label: "2명", value: 2 }] },
+// hard 모드 단계: [항목, 최소, 최대, 한 번에]. 가격은 대표 메뉴 500원씩, 넓게 열어 둔다 (너무 비싸거나 싸면 주문이 크게 줄거나 남는 게 없어요)
+const stepsOf = (ind: "chicken" | "bunsik"): [Exclude<PlanKey, "mix">, number, number, number][] => [
+  ["price", 0.5, 2, 500 / MAIN[ind].p0], ["staff", 0, 6, 1], ["ad", 0, 2, 1], ["marketing", 0, 300, 25],
+  ["open", HOURS_RANGE[ind].open[0], HOURS_RANGE[ind].open[1], 1], ["close", HOURS_RANGE[ind].close[0], HOURS_RANGE[ind].close[1], 1], ["pickup", 0, 0.3, 0.05],
+];
+// easy 모드: 방향을 고른 뒤 버튼으로 바꾸는 세 가지
+// easy 모드에서는 꼭 정해야 하는 것만: 대표 메뉴 가격, 알바, 배달앱 광고
+const picksOf = (ind: "chicken" | "bunsik"): QPick<QfPlan>[] => [
+  { key: "price", label: `${MAIN[ind].name} 가격`, hint: "대표 메뉴 값. 올리면 한 건 값이 늘고 주문이 줄어요",
+    opts: [-2, -1, 0, 1, 2].map((d) => { const step = ind === "chicken" ? 1000 : 500, v = +((MAIN[ind].p0 + d * step) / MAIN[ind].p0).toFixed(4); return { label: `${(MAIN[ind].p0 + d * step).toLocaleString("ko-KR")}원`, value: v }; }) },
+  { key: "mix", label: "주로 어떻게 팔까요?", hint: "배달은 주문이 늘지만 수수료가 빠지고, 홀은 앉을 자리만큼만 받아요",
+    opts: [{ label: "조사 평균대로", value: mixStr(mixOf(ind, { ...DEFAULT_PLAN })) }, { label: "배달 위주", value: "15-15-70" }, { label: "홀·포장 위주", value: "55-35-10" }, { label: "배달 안 함", value: "65-35-0" }] },
+  { key: "staff", label: "알바", hint: "바쁜 날 주문을 놓치지 않게", opts: [0, 1, 2, 3].map((n) => ({ label: n ? `${n}명` : "없이", value: n })) },
   { key: "ad", label: "배달앱 광고", hint: "배달 주문을 늘리지만 광고비가 들어요", opts: [{ label: "안 함", value: 0 }, { label: "기본", value: 1 }, { label: "적극", value: 2 }] },
 ];
+
+// 홀·포장·배달 비중 정하기 (hard 모드). 한 갈래를 5% 올리면 나머지 중 큰 쪽에서 5%를 가져온다
+function MixPicker({ ind, plan, prev, set, seats }: { ind: "chicken" | "bunsik"; plan: QfPlan; prev?: QfPlan; set: (p: QfPlan) => void; seats: number }) {
+  const mx = mixOf(ind, plan), base = mixOf(ind, { ...DEFAULT_PLAN });
+  const keys = [["visit", "홀"], ["takeout", "포장"], ["delivery", "배달"]] as const;
+  const move = (k: keyof typeof mx, d: number) => {
+    const n = { ...mx };
+    const others = keys.map(([x]) => x).filter((x) => x !== k).sort((a, b) => (d > 0 ? n[b] - n[a] : n[a] - n[b]));
+    const from = others.find((x) => (d > 0 ? n[x] >= 5 : n[x] <= 95));
+    if (!from) return;
+    n[k] += d; n[from] -= d;
+    set({ ...plan, mix: mixStr(n) });
+  };
+  const pm = prev ? mixOf(ind, prev) : null;
+  return (
+    <div className="sx-mix">
+      <div className="sx-mix-h"><b>판매 비중</b><Assume id="qfMix" /><small>조사한 평균은 홀 {base.visit}% · 포장 {base.takeout}% · 배달 {base.delivery}%{seats ? ` · 홀 자리 ${seats}석` : ""}</small></div>
+      <div className="sx-mix-bar" aria-hidden>{keys.map(([k, l]) => <span key={k} className={`is-${k}`} style={{ flexGrow: mx[k] || 0.001 }}>{mx[k] >= 12 ? `${l} ${mx[k]}%` : ""}</span>)}</div>
+      <div className="sx-mix-c">
+        {keys.map(([k, l]) => (
+          <div key={k} className={`sx-mix-k is-${k}${pm && pm[k] !== mx[k] ? " is-changed" : ""}`}>
+            <span>{l}</span>
+            <button type="button" aria-label={`${l} 비중 5% 낮추기`} disabled={mx[k] < 5} onClick={() => move(k, -5)}>−</button>
+            <output>{mx[k]}%</output>
+            <button type="button" aria-label={`${l} 비중 5% 높이기`} disabled={mx[k] > 95} onClick={() => move(k, 5)}>+</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const ico = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 const IconBike = () => <svg {...ico}><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M6 17h4l3-6h3l2 6M13 11l-2-4H8" /></svg>;
@@ -100,7 +139,9 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1000));
   const [state, setState] = useState<QfState>(() => startState(profile, cfg));
   const [done, setDone] = useState<Done[]>([]);
-  const [plan, setPlan] = useState<QfPlan>({ ...DEFAULT_PLAN, staff: cfg.staff });
+  const [plan, setPlan] = useState<QfPlan>({ ...DEFAULT_PLAN, ...HOURS_DEFAULT[cfg.ind], staff: cfg.staff });
+  const PT = planText(cfg.ind), STEPS = stepsOf(cfg.ind), PICKS = picksOf(cfg.ind);
+  const seats = useMemo(() => shopPlan(cfg.ind === "chicken" ? "chicken" : "bunsik", cfg.pyeong, cfg.layout).seats.length, [cfg]);
   const [strat, setStrat] = useState<QfStratId>("rec");
   const [tweak, setTweak] = useState<Partial<QfPlan>>({});
   const [choice, setChoice] = useState("");
@@ -132,7 +173,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
       { label: "홍보·사건 대응", amount: -(c.marketing + c.eventCost) * K }, { label: "사장 생활비", amount: -c.draw * K }, { label: "대출 이자", amount: -c.interest * K },
     ], tax: { revenue: c.revenue * K, farmBuy: c.food * K, taxableBuy: (c.rent + c.other * 0.5 + c.appFees + c.agencyFees + c.adCost) * K, profit: (c.op - dep - c.interest) * K } };
   });
-  const strats = qfStrategies(cur?.m, plan);
+  const strats = qfStrategies(cur?.m, plan, cfg.ind);
   const curDay = cur ? cur.days[Math.min(dayIdx, cur.days.length - 1)] : null;
 
   useLayoutEffect(() => {
@@ -165,7 +206,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   };
   const play = () => {
     const opt = ev.options.find((o) => o.id === choice) ?? ev.options[0];
-    const r = playMonth(profile, cfg, state, m, plan, ev, opt);
+    const r = playMonth(profile, cfg, state, m, plan, ev, opt, seats);
     setDone((d) => [...d, { m: r.month, days: buildDays(r.month, yearOf(idx), state.cash, st.dow) }]);
     setState(r.next);
     setDayIdx(0); setPlaying(true); setView(null);
@@ -188,7 +229,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
 
   return (
     <div className="sx-root" style={{ top }}>
-      <div className="sx-canvas"><ShopRoom3D kind={cfg.ind === "chicken" ? "chicken" : "bunsik"} pyeong={cfg.pyeong} people={people} riders={riders} height="fill" /></div>
+      <div className="sx-canvas"><ShopRoom3D kind={cfg.ind === "chicken" ? "chicken" : "bunsik"} pyeong={cfg.pyeong} layout={cfg.layout} people={people} riders={riders} height="fill" /></div>
 
       <header className="sx-hud">
         <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금이에요. 식재료·배달 수수료는 그날그날, 월세·광고는 1일, 알바 급여는 10일, 생활비·이자는 25일에 나가요.</>}>{man(w(cashNow))}</Metric>
@@ -218,10 +259,12 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
           <aside className="sx-planpanel" aria-label={`${cur.m.month}월 운영 계획`}>
             <p className="sx-panel-h"><span>{cur.m.month}월 운영 계획</span></p>
             <dl>
-              {(Object.keys(PLAN_TEXT) as (keyof QfPlan)[]).map((k) => {
+              {PLAN_KEYS.filter((k) => k !== "close").map((k) => {
                 const before = done.length > 1 ? done[done.length - 2].m.plan : null;
-                return <div key={k} className={before && PLAN_TEXT[k].text(before) !== PLAN_TEXT[k].text(cur.m.plan) ? "is-changed" : undefined}><dt>{PLAN_TEXT[k].label}</dt><dd>{PLAN_TEXT[k].text(cur.m.plan)}</dd></div>;
+                const tx = (p: QfPlan) => (k === "open" ? hoursText(cfg.ind, p) : PT[k].text(p));
+                return <div key={k} className={before && tx(before) !== tx(cur.m.plan) ? "is-changed" : undefined}><dt>{k === "open" ? "영업시간" : PT[k].label}</dt><dd>{tx(cur.m.plan)}</dd></div>;
               })}
+              {EXTRAS[cfg.ind].map((e) => { const v = extraPrice(e, cur.m.plan); return <div key={e.key}><dt>{e.name.split(" (")[0]}</dt><dd>{v ? `${v.toLocaleString("ko-KR")}원` : "안 팔아요"}</dd></div>; })}
               <div><dt>이달의 사건</dt><dd>{cur.m.choice}</dd></div>
             </dl>
             {done.length > 1 && <small><i aria-hidden="true" />파란색은 지난달과 달라진 조건이에요.</small>}
@@ -297,11 +340,11 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                     <legend>어떻게 해 볼까요?</legend>
                     <label className={mode === "easy" ? "on" : ""}>
                       <input type="radio" name="qf-mode" checked={mode === "easy"} onChange={() => setMode("easy")} />
-                      <span><b>쉬운 모드</b><small>달마다 방향만 골라요: 추천대로 / 주문 늘리기 / 비용 아끼기. 이달의 사건 대응도 골라요.</small></span>
+                      <span><b>easy 모드</b><small>달마다 방향만 골라요: 추천대로 / 주문 늘리기 / 비용 아끼기. 이달의 사건 대응도 골라요.</small></span>
                     </label>
                     <label className={mode === "hard" ? "on" : ""}>
                       <input type="radio" name="qf-mode" checked={mode === "hard"} onChange={() => setMode("hard")} />
-                      <span><b>자세히 모드</b><small>달마다 가격·알바·배달앱 광고·홍보비를 하나씩 정해요.</small></span>
+                      <span><b>hard 모드</b><small>달마다 가격·알바·배달앱 광고·홍보비를 하나씩 정해요.</small></span>
                     </label>
                   </fieldset>
                   <label className="sx-field">시작할 달
@@ -347,32 +390,55 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                           ))}
                         </div>
                         <QuickPicks picks={PICKS} base={strats.find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
-                        <p className="sx-note">자세히 모드에서는 가격·알바·배달앱 광고·홍보비·영업시간·포장 할인을 숫자로 하나씩 정할 수 있어요.</p>
+                        <p className="sx-note">hard 모드에서는 여기에 더해 SNS 홍보비·여는 시각·닫는 시각·포장 할인과 사이드·음료·주류 같은 곁들임 메뉴 가격까지 하나씩 정해요.</p>
                       </section>
                     ) : (
                       <section className="sx-right" aria-label="이번 달 운영 계획">
                         <h2>{m}월에 이렇게 할게요</h2>
+                        <MixPicker ind={cfg.ind} plan={plan} prev={cur?.m.plan} set={setPlan} seats={seats} />
                         <div className="sx-steps">
                           {STEPS.map(([k, lo, hi, step]) => {
                             const before = cur?.m.plan;
-                            const changed = before && PLAN_TEXT[k].text(before) !== PLAN_TEXT[k].text(plan);
+                            const changed = before && PT[k].text(before) !== PT[k].text(plan);
                             return (
                               <div key={k} className={`sx-step${changed ? " is-changed" : ""}`}>
                                 <div className="sx-step-t">
-                                  <span className="sx-step-l">{PLAN_TEXT[k].label}{PLAN_TEXT[k].hint.includes("가정") && <Assume id={k === "ad" ? "adBoost" : k === "pickup" ? "pickup" : k === "price" ? "elastic" : undefined} what={PLAN_TEXT[k].hint} />}</span>
-                                  <small>{PLAN_TEXT[k].hint}</small>
-                                  {changed && <small className="sx-step-prev">지난달 {PLAN_TEXT[k].text(before!)}</small>}
+                                  <span className="sx-step-l">{PT[k].label}{PT[k].hint.includes("가정") && <Assume id={k === "ad" ? "adBoost" : k === "pickup" ? "pickup" : k === "price" ? "elastic" : k === "open" || k === "close" ? "qfHours" : undefined} what={PT[k].hint} />}</span>
+                                  <small>{PT[k].hint}</small>
+                                  {changed && <small className="sx-step-prev">지난달 {PT[k].text(before!)}</small>}
                                 </div>
                                 <div className="sx-step-c">
-                                  <button type="button" aria-label={`${PLAN_TEXT[k].label} 낮추기`} disabled={plan[k] - step < lo - 1e-9} onClick={() => setPlan({ ...plan, [k]: +(plan[k] - step).toFixed(2) })}>−</button>
-                                  <output>{PLAN_TEXT[k].text(plan)}</output>
-                                  <button type="button" aria-label={`${PLAN_TEXT[k].label} 높이기`} disabled={plan[k] + step > hi + 1e-9} onClick={() => setPlan({ ...plan, [k]: +(plan[k] + step).toFixed(2) })}>+</button>
+                                  <button type="button" aria-label={`${PT[k].label} 낮추기`} disabled={(plan[k] ?? HOURS_DEFAULT[cfg.ind][k as "open"]) - step < lo - 1e-9} onClick={() => setPlan({ ...plan, [k]: +((plan[k] ?? HOURS_DEFAULT[cfg.ind][k as "open"]) - step).toFixed(4) })}>−</button>
+                                  <output>{PT[k].text(plan)}</output>
+                                  <button type="button" aria-label={`${PT[k].label} 높이기`} disabled={(plan[k] ?? HOURS_DEFAULT[cfg.ind][k as "open"]) + step > hi + 1e-9} onClick={() => setPlan({ ...plan, [k]: +((plan[k] ?? HOURS_DEFAULT[cfg.ind][k as "open"]) + step).toFixed(4) })}>+</button>
                                 </div>
                               </div>
                             );
                           })}
                         </div>
-                        <p className="sx-note">처음 가격은 조사한 {name}의 객단가 {n0(dv.ticket)}원이에요. 지금 {n0(dv.ticket * plan.price)}원.</p>
+                        <p className="sx-note">영업시간 {hoursText(cfg.ind, plan)}. 처음 가격 기준 주문 한 건 평균은 조사한 {name}의 객단가 {n0(dv.ticket)}원이에요 (곁들임 포함).</p>
+                        <h3 className="sx-sub">곁들임 메뉴 가격 <Assume id="qfExtras" /></h3>
+                        <div className="sx-steps">
+                          {EXTRAS[cfg.ind].map((e) => {
+                            const v = extraPrice(e, plan), set = (x: number) => setPlan({ ...plan, extras: { ...(plan.extras ?? {}), [e.key]: x } });
+                            const bv = cur ? extraPrice(e, cur.m.plan) : v;
+                            return (
+                              <div key={e.key} className={`sx-step${bv !== v ? " is-changed" : ""}`}>
+                                <div className="sx-step-t">
+                                  <span className="sx-step-l">{e.name}</span>
+                                  <small>처음 {e.p0.toLocaleString("ko-KR")}원 · 홀 주문 100건 중 {Math.round(e.a0.visit * 100)}건, 배달 100건 중 {Math.round(e.a0.delivery * 100)}건이 같이 시켜요. 원가율 {Math.round(e.cost * 100)}%</small>
+                                  {bv !== v && <small className="sx-step-prev">지난달 {bv ? `${bv.toLocaleString("ko-KR")}원` : "안 팔아요"}</small>}
+                                </div>
+                                <div className="sx-step-c">
+                                  <button type="button" aria-label={`${e.name} 가격 낮추기`} disabled={v <= 0} onClick={() => set(Math.max(0, v - 500))}>−</button>
+                                  <output>{v ? `${v.toLocaleString("ko-KR")}원` : "안 팔아요"}</output>
+                                  <button type="button" aria-label={`${e.name} 가격 높이기`} disabled={v + 500 > e.max} onClick={() => set(v + 500)}>+</button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <p className="sx-note">가격을 0원까지 내리면 그 메뉴를 팔지 않아요. 곁들임은 대표 메뉴보다 가격에 민감하다고 봤어요.</p>
                       </section>
                     )}
                   </div>

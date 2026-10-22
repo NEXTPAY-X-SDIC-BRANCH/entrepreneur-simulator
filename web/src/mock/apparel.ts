@@ -13,13 +13,14 @@
 //   새 가게 인지도 0.6에서 매달 15%씩 1로, 협찬 100만원당 인지도 +0.15: 고깃집 시즌 엔진의 가정 (season_params.yaml)
 //   그 밖(면적 효과, 할인 탄력, 달별 품목 비중, 결품 곡선, 재고 값 하락, 세일 판매 속도, 매입 방식별 원가, 사건 효과 크기)은
 //   가정이고 아래에 '가정'으로 적었다. 인터뷰·POS 자료가 생기면 이 값부터 바꾼다.
+import type { ShopLayout } from "./ShopRoom3D";
 import { DEPOSIT_MONTHS, FTC_INTERIOR, GRADES, LOAN_RATE, OWNER_DRAW, guStat, type CostLine, type Grade, type Profile } from "./model";
 
 // 옷가게 평당 인테리어 공사비(만원): 공정위 의류 가맹 분위수를 기본·중급·고급에 맞춘다 (model.ts FTC_INTERIOR)
 const AP_GRADE_COST: Record<Grade, number> = { basic: FTC_INTERIOR.apparel.p25, mid: FTC_INTERIOR.apparel.median, high: FTC_INTERIOR.apparel.p75 };
 
 export type BuyMode = "react" | "pre" | "consign";
-export type ApparelCfg = { pyeong: number; grade: Grade; staff: number; stockMonths: number; loan: number; buyMode: BuyMode }; // loan 만원
+export type ApparelCfg = { pyeong: number; grade: Grade; staff: number; stockMonths: number; loan: number; buyMode: BuyMode; layout?: ShopLayout }; // loan 만원
 export const DEFAULT_APPAREL: ApparelCfg = { pyeong: 13, grade: "basic", staff: 0, stockMonths: 1.5, loan: 0, buyMode: "react" };
 
 type Band = { band: string; cogs_ratio: number; other_ratio: number; labor_ratio: number; rent_ratio: number; op_ratio: number; sales_per_store_month_man: number; workers_per_store: number };

@@ -11,6 +11,7 @@
 //   배달 시장의 달별 크기: 통계청 온라인쇼핑동향 음식서비스 거래액 달별 배율 (delivery_market.json)
 //   평당 월세·보증금 개월 수·사장 생활비·대출 금리: 다른 업종과 같은 값 (model.ts)
 //   그 밖(가격 탄력, 면적 효과, 배달 광고 효과, 기타경비 5%, 설비비, 사건 효과 크기)은 가정이고 아래에 '가정'으로 적었다.
+import type { ShopLayout } from "./ShopRoom3D";
 import { DEPOSIT_MONTHS, LOAN_RATE, OWNER_DRAW, guStat, setQfDelivery, type CostLine, type Grade, type Profile } from "./model";
 
 export type QfInd = "chicken" | "bunsik";
@@ -119,7 +120,7 @@ export const EQUIP: Record<QfInd, number> = { chicken: 1500, bunsik: 1000 }; // 
 const GRADE_MULT: Record<Grade, number> = { basic: 0.7, mid: 1, high: 1.4 }; // 가정: 조사 평균을 중급으로 놓고 ±
 export const GRADE_LABEL: Record<Grade, string> = { basic: "기본", mid: "중급", high: "고급" };
 
-export type QfCfg = { ind: QfInd; pyeong: number; grade: Grade; staff: number; loan: number };
+export type QfCfg = { ind: QfInd; pyeong: number; grade: Grade; staff: number; loan: number; layout?: ShopLayout };
 export const defaultQf = (ind: QfInd): QfCfg => ({ ind, pyeong: Math.round(derived(ind).areaPy), grade: "mid", staff: 1, loan: 0 });
 
 // 자리 잡은 뒤 한 달 매출 (만원). 면적 효과는 조사 평균 면적 기준 제곱근 (가정)
@@ -148,16 +149,86 @@ export function qfEstimate(profile: Profile, ind: QfInd): { pyeong: number; cost
 }
 
 // ---------------------------------------------------------------- 한 달
-// price: 처음 가격 대비 배수, staff: 알바(고용) 인원, marketing: SNS 홍보비(만원), ad: 배달앱 광고 0 없음 / 1 기본 / 2 적극
-// hours: 0 짧게 / 1 기본 / 2 늦게까지, pickup: 포장 할인율 (0 또는 0.1)
-export type QfPlan = { price: number; staff: number; marketing: number; ad: number; hours: number; pickup: number };
-export const DEFAULT_PLAN: QfPlan = { price: 1, staff: 1, marketing: 0, ad: 1, hours: 1, pickup: 0 };
-// 가정: 영업시간. 치킨은 저녁 매출이 82%라 늦게 열면 더 늘고, 분식은 점심 장사라 덜 는다. 알바비·공과금도 그만큼 는다
-export const HOURS = [
-  { label: "짧게", demand: { chicken: 0.9, bunsik: 0.92 }, cost: 0.85 },
-  { label: "기본", demand: { chicken: 1, bunsik: 1 }, cost: 1 },
-  { label: "늦게까지", demand: { chicken: 1.08, bunsik: 1.04 }, cost: 1.15 },
-];
+// price: 대표 메뉴 처음 가격 대비 배수, staff: 알바(고용) 인원, marketing: SNS 홍보비(만원), ad: 배달앱 광고 0 없음 / 1 기본 / 2 적극
+// open·close: 여는 시각·닫는 시각 (24 넘으면 다음 날 새벽, 25 = 새벽 1시), pickup: 포장 할인율
+// extras: hard 모드에서 정하는 곁들임 메뉴 가격 (원, 0이면 팔지 않음). 비어 있으면 처음 가격 그대로
+// mix: 홀/포장/배달 비중 "홀-포장-배달" (%, 합 100). 비어 있으면 조사한 업종 평균
+export type QfPlan = { price: number; staff: number; marketing: number; ad: number; open?: number; close?: number; pickup: number; extras?: Record<string, number>; mix?: string };
+export const DEFAULT_PLAN: QfPlan = { price: 1, staff: 1, marketing: 0, ad: 1, pickup: 0 };
+
+// 대표 메뉴. 처음 가격은 가정: 치킨은 주요 브랜드 후라이드 한 마리 2만원 안팎, 분식은 떡볶이 1인분 5천원 안팎 (2025년 가격 인상 보도)
+export const MAIN: Record<QfInd, { name: string; p0: number }> = {
+  chicken: { name: "후라이드 한 마리", p0: 20000 },
+  bunsik: { name: "떡볶이 1인분", p0: 5000 },
+};
+export const mainPrice = (ind: QfInd, p: QfPlan) => Math.round((MAIN[ind].p0 * p.price) / 100) * 100;
+
+// 곁들임 메뉴. a0 = 처음 가격일 때 주문 100건 중 같이 시키는 건수 (홀·포장·배달), cost = 처음 가격 대비 원가율. 모두 가정
+// 조사 객단가에는 이미 처음 가격의 곁들임이 들어 있다고 보고, 가격을 바꾸거나 빼면 그 차이만 더하고 뺀다
+export type Extra = { key: string; name: string; p0: number; cost: number; a0: { visit: number; takeout: number; delivery: number }; max: number };
+export const EXTRAS: Record<QfInd, Extra[]> = {
+  chicken: [
+    { key: "side", name: "사이드 (치즈볼·핫도그·감자튀김)", p0: 4500, cost: 0.35, a0: { visit: 0.3, takeout: 0.3, delivery: 0.35 }, max: 9000 },
+    { key: "drink", name: "음료 (콜라 1.25L)", p0: 2500, cost: 0.45, a0: { visit: 0.3, takeout: 0.35, delivery: 0.4 }, max: 5000 },
+    { key: "beer", name: "주류 (생맥주 500cc)", p0: 4500, cost: 0.3, a0: { visit: 0.8, takeout: 0.05, delivery: 0.05 }, max: 9000 },
+  ],
+  bunsik: [
+    { key: "side", name: "사이드 (튀김·순대)", p0: 4000, cost: 0.35, a0: { visit: 0.45, takeout: 0.4, delivery: 0.45 }, max: 8000 },
+    { key: "gimbap", name: "김밥 한 줄", p0: 3500, cost: 0.4, a0: { visit: 0.35, takeout: 0.4, delivery: 0.3 }, max: 7000 },
+    { key: "drink", name: "음료 (캔·쿨피스)", p0: 1500, cost: 0.45, a0: { visit: 0.2, takeout: 0.15, delivery: 0.25 }, max: 3000 },
+  ],
+};
+// 판매 방식 비중. 조사 평균에서 한 갈래를 키우면 그 갈래 주문이 늘지만 덜 늘고(지수 0.6), 줄이면 그만큼 손님을 놓친다 (가정).
+// 배달 0%면 배달앱에 안 올린 것이라 배달 주문이 없다. 홀 주문은 앉을 자리 × 하루 회전 수를 넘지 못한다.
+export const MIX_EXP = 0.6;
+export const TURNS: Record<QfInd, number> = { chicken: 2.5, bunsik: 4 }; // 가정: 자리 하나가 하루에 받는 팀 수 (2명 한 팀)
+export function mixOf(ind: QfInd, p: QfPlan): Channel {
+  const d = derived(ind).share;
+  if (!p.mix) return { visit: Math.round(d.visit * 100), takeout: Math.round(d.takeout * 100), delivery: 100 - Math.round(d.visit * 100) - Math.round(d.takeout * 100) };
+  const [v, t, dl] = p.mix.split("-").map(Number);
+  return { visit: v, takeout: t, delivery: dl };
+}
+export const mixStr = (m: Channel) => `${m.visit}-${m.takeout}-${m.delivery}`;
+export const mixText = (ind: QfInd, p: QfPlan) => { const m = mixOf(ind, p); return `홀 ${m.visit}% · 포장 ${m.takeout}% · 배달 ${m.delivery}%`; };
+const reach = (want: number, base: number) => (base <= 0 ? want : Math.pow(want / base, MIX_EXP));
+export const EXTRA_ELASTIC = 1.5; // 가정: 곁들임은 대표 메뉴보다 가격에 민감 (10% 올리면 같이 시키는 비율 약 13% 감소)
+export const extraPrice = (e: Extra, p: QfPlan) => p.extras?.[e.key] ?? e.p0;
+const attach = (e: Extra, price: number, ch: keyof Channel) => (price <= 0 ? 0 : e.a0[ch] * Math.pow(price / e.p0, -EXTRA_ELASTIC));
+// 한 주문당 곁들임 매출·원가가 처음 가격 때보다 얼마나 달라지나 (원)
+export function extrasDelta(ind: QfInd, p: QfPlan, ch: keyof Channel) {
+  let rev = 0, food = 0;
+  for (const e of EXTRAS[ind]) {
+    const pr = extraPrice(e, p), at = attach(e, pr, ch);
+    rev += at * pr - e.a0[ch] * e.p0;
+    food += e.p0 * e.cost * (at - e.a0[ch]);
+  }
+  return { rev, food };
+}
+
+// 영업시간. 시간대별 주문 무게 (가정): 치킨은 저녁 매출이 82%라 18~22시에 몰리고, 분식은 점심과 하교 시간에 몰린다.
+// 영등포구 식당운영정보(2022)에서 치킨집 81%가 자정 넘어서까지 연다. 여는 시간이 늘면 그 시간대 주문만큼 늘고 알바비·공과금도 는다
+const HOUR_W: Record<QfInd, Record<number, number>> = {
+  chicken: { 10: 0.3, 11: 0.6, 12: 1, 13: 0.8, 14: 0.5, 15: 0.6, 16: 1, 17: 2, 18: 4, 19: 5.5, 20: 5.5, 21: 5, 22: 4, 23: 3, 24: 2, 25: 1.2, 26: 0.6, 27: 0.3 },
+  bunsik: { 8: 0.3, 9: 0.6, 10: 1, 11: 3, 12: 5, 13: 4, 14: 2.5, 15: 2.5, 16: 3, 17: 3.5, 18: 3.5, 19: 2.5, 20: 1.5, 21: 1, 22: 0.6, 23: 0.3, 24: 0.2 },
+};
+export const HOURS_DEFAULT: Record<QfInd, { open: number; close: number }> = { chicken: { open: 15, close: 25 }, bunsik: { open: 10, close: 21 } };
+export const HOURS_RANGE: Record<QfInd, { open: [number, number]; close: [number, number] }> = {
+  chicken: { open: [10, 18], close: [21, 28] }, bunsik: { open: [8, 14], close: [17, 24] },
+};
+const hoursOf = (ind: QfInd, p: QfPlan) => ({ open: p.open ?? HOURS_DEFAULT[ind].open, close: p.close ?? HOURS_DEFAULT[ind].close });
+const wSum = (ind: QfInd, o: number, c: number) => { let t = 0; for (let h = o; h < c; h++) t += HOUR_W[ind][h] ?? 0; return t; };
+export function hoursFx(ind: QfInd, p: QfPlan) {
+  const { open, close } = hoursOf(ind, p), d = HOURS_DEFAULT[ind];
+  const len = close - open, len0 = d.close - d.open;
+  return { demand: wSum(ind, open, close) / wSum(ind, d.open, d.close), staff: len / len0, other: 0.5 + 0.5 * (len / len0), len };
+}
+export const clock = (h: number) => {
+  const hh = h % 24;
+  const ap = h >= 24 ? "새벽" : hh < 12 ? "오전" : hh === 12 ? "낮" : hh < 18 ? "오후" : "밤";
+  const n = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+  return `${ap} ${n}시`;
+};
+export const hoursText = (ind: QfInd, p: QfPlan) => { const { open, close } = hoursOf(ind, p); return `${clock(open)} ~ ${clock(close)} (${close - open}시간)`; };
 const PICKUP_LIFT = 2; // 가정: 포장 할인 10%면 포장 주문 +20%
 export type QfState = { cash: number; awareness: number; negMonths: number; closed: boolean };
 export type Fx = { demand?: number; visit?: number; delivery?: number; takeout?: number; food?: number; cost?: number; awareness?: number; extraWorker?: number; feeAdd?: number; price?: number };
@@ -172,33 +243,43 @@ export function startState(profile: Profile, cfg: QfCfg): QfState {
   return { cash: profile.capital + cfg.loan - qfOpeningCost(cfg, profile.gu, profile.keyMoney ?? 0).total, awareness: 0.6, negMonths: 0, closed: false };
 }
 
-export function playMonth(profile: Profile, cfg: QfCfg, s: QfState, month: number, plan: QfPlan, ev: QfEvent, opt: QfOption): { month: QfMonth; next: QfState } {
+export function playMonth(profile: Profile, cfg: QfCfg, s: QfState, month: number, plan: QfPlan, ev: QfEvent, opt: QfOption, seats = 0): { month: QfMonth; next: QfState } {
   const st = guStat(profile.gu), d = derived(cfg.ind), fx = opt.fx;
   const level = plan.price * (fx.price ?? 1);
-  const hrs = HOURS[plan.hours ?? 1] ?? HOURS[1];
+  const hrs = hoursFx(cfg.ind, plan);
   const pick = plan.pickup ?? 0;
   const base = expectedSales(cfg, profile.gu) * (st.qidx[Math.floor((month - 1) / 3)] ?? 1) * s.awareness * (ev.fx?.demand ?? 1) * (fx.demand ?? 1)
-    * Math.pow(level, 1 - ELASTIC) * hrs.demand[cfg.ind];  // 매출 = 주문 × 가격, 영업시간 배수
+    * Math.pow(level, 1 - ELASTIC) * hrs.demand;  // 매출 = 주문 × 가격, 영업시간 배수
+  const mx = mixOf(cfg.ind, plan), sh0 = d.share;
+  const mv = sh0.visit * reach(mx.visit / 100, sh0.visit), mt = sh0.takeout * reach(mx.takeout / 100, sh0.takeout), md = sh0.delivery * reach(mx.delivery / 100, sh0.delivery);
+  const seatCap = seats > 0 ? ((seats / 2) * TURNS[cfg.ind] * 30 * d.ticket * level) / 1e4 : Infinity; // 홀 매출 한도 (만원)
+  const visitWant = base * mv * (ev.fx?.visit ?? 1) * (fx.visit ?? 1);
   const want: Channel = {
-    visit: base * d.share.visit * (ev.fx?.visit ?? 1) * (fx.visit ?? 1),
-    takeout: base * d.share.takeout * (ev.fx?.takeout ?? 1) * (fx.takeout ?? 1) * (1 + PICKUP_LIFT * pick) * (1 - pick),  // 할인한 만큼 한 건 값이 준다
-    delivery: base * d.share.delivery * DELIVERY_MONTH[month] * deliveryGu(profile.gu) * AD_BOOST[plan.ad] * (ev.fx?.delivery ?? 1) * (fx.delivery ?? 1),
+    visit: Number.isFinite(seatCap) ? visitWant / Math.pow(1 + Math.pow(visitWant / seatCap, 4), 1 / 4) : visitWant,
+    takeout: base * mt * (ev.fx?.takeout ?? 1) * (fx.takeout ?? 1) * (1 + PICKUP_LIFT * pick) * (1 - pick),  // 할인한 만큼 한 건 값이 준다
+    delivery: base * md * DELIVERY_MONTH[month] * deliveryGu(profile.gu) * AD_BOOST[plan.ad] * (ev.fx?.delivery ?? 1) * (fx.delivery ?? 1),
   };
   const need = want.visit + want.takeout + want.delivery;
   const capacity = d.perWorker * HEADROOM * (1 + plan.staff + (fx.extraWorker ?? 0));
   const served = need > 0 ? need / Math.pow(1 + Math.pow(need / capacity, CAP_K), 1 / CAP_K) : 0;
   const k = need > 0 ? served / need : 1;
-  const ch: Channel = { visit: want.visit * k, takeout: want.takeout * k, delivery: want.delivery * k };
+  const ch0: Channel = { visit: want.visit * k, takeout: want.takeout * k, delivery: want.delivery * k };
+  const ticket0 = d.ticket * level;
+  const orders: Channel = { visit: (ch0.visit * 1e4) / ticket0, takeout: (ch0.takeout * 1e4) / ticket0, delivery: (ch0.delivery * 1e4) / ticket0 };
+  // 곁들임 메뉴 가격을 바꾸거나 뺀 만큼 매출·원가를 더하고 뺀다 (만원)
+  const xd = (["visit", "takeout", "delivery"] as const).map((c) => ({ c, ...extrasDelta(cfg.ind, plan, c) }));
+  const ch: Channel = { visit: ch0.visit, takeout: ch0.takeout, delivery: ch0.delivery };
+  let extraFood = 0;
+  for (const x of xd) { ch[x.c] = Math.max(0, ch[x.c] + (orders[x.c] * x.rev) / 1e4); extraFood += (orders[x.c] * x.food) / 1e4; }
   const revenue = ch.visit + ch.takeout + ch.delivery;
-  const ticket = Math.round(d.ticket * level);
-  const orders: Channel = { visit: (ch.visit * 1e4) / ticket, takeout: (ch.takeout * 1e4) / ticket, delivery: (ch.delivery * 1e4) / ticket };
+  const ticket = Math.round((revenue * 1e4) / Math.max(1, orders.visit + orders.takeout + orders.delivery));
   const appFees = orders.delivery * (d.appFee + (fx.feeAdd ?? 0));
   const agencyFees = orders.delivery * d.agencyFee;
   const fm = foodMult(cfg.ind, month).mult;
-  const food = (revenue / level) * d.foodRatio * fm * (ev.fx?.food ?? 1) * (fx.food ?? 1);   // 가격을 올려도 식재료는 그대로. fm = 이달 식재료 시세
-  const staffPay = d.wage * plan.staff * hrs.cost;
+  const food = ((ch0.visit + ch0.takeout + ch0.delivery) / level * d.foodRatio + extraFood) * fm * (ev.fx?.food ?? 1) * (fx.food ?? 1);   // 가격을 올려도 식재료는 그대로. fm = 이달 식재료 시세
+  const staffPay = d.wage * plan.staff * hrs.staff;
   const rent = st.rent * cfg.pyeong;
-  const other = revenue * OTHER * hrs.cost;
+  const other = revenue * OTHER * hrs.other;
   const adCost = AD_COST[plan.ad];
   const eventCost = fx.cost ?? 0;
   const op = revenue - food - staffPay - rent - other - plan.marketing - adCost - appFees - agencyFees - eventCost;
@@ -300,7 +381,7 @@ export function eventOf(ind: QfInd, month: number, seed: number): QfEvent {
 
 // ---------------------------------------------------------------- 쉬운 모드: 달마다 방향 세 가지
 export type QfStratId = "rec" | "grow" | "save";
-export function qfStrategies(last: QfMonth | undefined, plan: QfPlan): { id: QfStratId; title: string; desc: string; plan: QfPlan; changes: string[] }[] {
+export function qfStrategies(last: QfMonth | undefined, plan: QfPlan, ind: QfInd): { id: QfStratId; title: string; desc: string; plan: QfPlan; changes: string[] }[] {
   const b = last?.plan ?? plan;
   let rec = { ...b };
   if (last) {
@@ -314,19 +395,24 @@ export function qfStrategies(last: QfMonth | undefined, plan: QfPlan): { id: QfS
   const grow = { ...b, marketing: Math.max(50, b.marketing), ad: Math.min(2, b.ad + 1), staff: Math.min(3, b.staff + 1) };
   const save = { ...b, staff: Math.max(0, b.staff - 1), marketing: 0, ad: Math.max(0, b.ad - 1) };
   return [
-    { id: "rec", title: "추천대로", desc: last ? "지난달 결과를 보고 고칠 곳만 고쳐요." : "첫 달은 기본 계획으로 시작해요.", plan: rec, changes: diffPlan(b, rec) },
-    { id: "grow", title: "주문 늘리기", desc: "홍보·배달 광고·알바를 늘려 더 받아요. 돈이 더 나가요.", plan: grow, changes: diffPlan(b, grow) },
-    { id: "save", title: "비용 아끼기", desc: "알바·광고·홍보를 줄여요. 바쁜 날 주문을 놓칠 수 있어요.", plan: save, changes: diffPlan(b, save) },
+    { id: "rec", title: "추천대로", desc: last ? "지난달 결과를 보고 고칠 곳만 고쳐요." : "첫 달은 기본 계획으로 시작해요.", plan: rec, changes: diffPlan(ind, b, rec) },
+    { id: "grow", title: "주문 늘리기", desc: "홍보·배달 광고·알바를 늘려 더 받아요. 돈이 더 나가요.", plan: grow, changes: diffPlan(ind, b, grow) },
+    { id: "save", title: "비용 아끼기", desc: "알바·광고·홍보를 줄여요. 바쁜 날 주문을 놓칠 수 있어요.", plan: save, changes: diffPlan(ind, b, save) },
   ];
 }
 const AD_TEXT = ["안 함", "기본", "적극"];
-export const PLAN_TEXT: Record<keyof QfPlan, { label: string; text: (p: QfPlan) => string; hint: string }> = {
-  price: { label: "가격", text: (p) => (p.price === 1 ? "처음 가격" : `처음 가격의 ${Math.round(p.price * 100)}%`), hint: "올리면 한 건 값이 늘고 주문이 줄어요 (10% 올리면 주문 약 17% 감소, 가정)" },
+export type PlanKey = "price" | "mix" | "staff" | "ad" | "marketing" | "open" | "close" | "pickup";
+export const PLAN_KEYS: PlanKey[] = ["price", "mix", "staff", "ad", "marketing", "open", "close", "pickup"];
+const won = (x: number) => `${Math.round(x).toLocaleString("ko-KR")}원`;
+export const planText = (ind: QfInd): Record<PlanKey, { label: string; text: (p: QfPlan) => string; hint: string }> => ({
+  price: { label: `${MAIN[ind].name} 가격`, text: (p) => won(mainPrice(ind, p)), hint: `대표 메뉴 값이에요. 올리면 한 건 값이 늘고 주문이 줄어요 (10% 올리면 주문 약 17% 감소, 가정). 처음 가격 ${won(MAIN[ind].p0)}` },
+  mix: { label: "판매 비중", text: (p) => mixText(ind, p), hint: "홀·포장·배달을 얼마씩 받을지예요. 배달을 키우면 주문은 늘지만 한 건마다 배달앱·대행 수수료가 빠져요. 홀은 앉을 자리만큼만 받아요 (가정)" },
   staff: { label: "알바", text: (p) => `${p.staff}명`, hint: "모자라면 몰리는 날 주문을 놓치고, 많으면 인건비가 남아요" },
   ad: { label: "배달앱 광고", text: (p) => `${AD_TEXT[p.ad]}${p.ad ? ` (${AD_COST[p.ad]}만원)` : ""}`, hint: "배달 주문이 늘지만(기본 +15%, 적극 +28%, 가정) 한 건마다 수수료도 나가요. 주문이 적은 동네에서는 광고비를 못 뽑아요" },
   marketing: { label: "SNS 홍보비", text: (p) => (p.marketing ? `${p.marketing}만원` : "없음"), hint: "인지도가 올라 손님이 늘어요 (100만원당 인지도 +0.15, 고깃집과 같은 가정)" },
-  hours: { label: "영업시간", text: (p) => HOURS[p.hours ?? 1].label, hint: "늦게까지 열면 치킨 주문 +8%·분식 +4%, 알바비·공과금 +15%. 짧게 열면 반대로 (가정)" },
+  open: { label: "여는 시각", text: (p) => clock(hoursOf(ind, p).open), hint: ind === "chicken" ? "치킨은 저녁 장사라 일찍 열어도 주문이 조금만 늘어요. 여는 시간만큼 알바비가 늘어요 (시간대별 주문 무게, 가정)" : "분식은 점심(11~13시) 주문이 많아요. 늦게 열면 점심을 놓쳐요 (시간대별 주문 무게, 가정)" },
+  close: { label: "닫는 시각", text: (p) => clock(hoursOf(ind, p).close), hint: ind === "chicken" ? "밤 10시~새벽 1시에 야식 주문이 몰려요. 늦게 닫을수록 주문이 늘지만 알바비·공과금이 늘어요 (가정)" : "저녁 8시 뒤로는 주문이 적어요. 늦게 닫으면 알바비·공과금이 더 늘어요 (가정)" },
   pickup: { label: "포장 할인", text: (p) => ((p.pickup ?? 0) > 0 ? `${Math.round(p.pickup * 100)}%` : "없음"), hint: "포장 손님에게 깎아 주면 포장 주문이 늘고(10% 할인 = +20%, 가정) 배달 수수료가 안 드는 주문이 많아져요" },
-};
-const diffPlan = (a: QfPlan, b: QfPlan) => (Object.keys(PLAN_TEXT) as (keyof QfPlan)[])
-  .filter((k) => PLAN_TEXT[k].text(a) !== PLAN_TEXT[k].text(b)).map((k) => `${PLAN_TEXT[k].label} ${PLAN_TEXT[k].text(a)} → ${PLAN_TEXT[k].text(b)}`);
+});
+const diffPlan = (ind: QfInd, a: QfPlan, b: QfPlan) => { const T = planText(ind); return PLAN_KEYS
+  .filter((k) => T[k].text(a) !== T[k].text(b)).map((k) => `${T[k].label} ${T[k].text(a)} → ${T[k].text(b)}`); };

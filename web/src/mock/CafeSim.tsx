@@ -101,7 +101,7 @@ function recommend(last: Month | undefined, plan: Dec): Rec[] {
   return LEVERS.map((l) => out.find((r) => r.lever.key === l.key)!);
 }
 
-// 쉬운 모드: 달마다 방향 세 가지. 지난달 결정에서 출발해 추천/늘리기/아끼기로 몇 가지를 바꾼다
+// easy 모드: 달마다 방향 세 가지. 지난달 결정에서 출발해 추천/늘리기/아끼기로 몇 가지를 바꾼다
 type StratId = "rec" | "grow" | "save";
 function cafeStrategies(last: Month | undefined, plan: Dec, recs: Rec[]): { id: StratId; title: string; desc: string; plan: Dec; changes: string[] }[] {
   const lp: Dec = last ? { ...plan, ...last.decisions, price_change_pct: 0 } : { ...plan, price_change_pct: 0 };
@@ -389,11 +389,11 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                     <legend>어떻게 해 볼까요?</legend>
                     <label className={mode === "easy" ? "on" : ""}>
                       <input type="radio" name="cf-mode" checked={mode === "easy"} onChange={() => setMode("easy")} />
-                      <span><b>쉬운 모드</b><small>달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 가격·영업시간·배달은 버튼으로 바꿀 수 있어요.</small></span>
+                      <span><b>easy 모드</b><small>달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 가격·영업시간·배달은 버튼으로 바꿀 수 있어요.</small></span>
                     </label>
                     <label className={mode === "hard" ? "on" : ""}>
                       <input type="radio" name="cf-mode" checked={mode === "hard"} onChange={() => setMode("hard")} />
-                      <span><b>자세히 모드</b><small>달마다 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정해요.</small></span>
+                      <span><b>hard 모드</b><small>달마다 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정해요.</small></span>
                     </label>
                   </fieldset>
                   <label className="sx-field">시작할 달
@@ -460,7 +460,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                             ))}
                           </div>
                           <QuickPicks picks={PICKS} base={strats.find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
-                          <p className="sx-note">자세히 모드에서는 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정할 수 있어요.</p>
+                          <p className="sx-note">hard 모드에서는 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정할 수 있어요.</p>
                         </section>
                       );
                     })() : (

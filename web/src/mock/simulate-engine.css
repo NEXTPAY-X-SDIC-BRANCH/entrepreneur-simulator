@@ -353,7 +353,29 @@
 .qp-opts button.on { border-color: #256abf; background: #256abf; color: #fff; }
 .qp-reset { justify-self: start; border: 0; background: none; color: #256abf; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 0; }
 @media (max-width: 560px) { .qp-row { grid-template-columns: 1fr; } .qp-opts { justify-content: flex-start; } }
-.sx-modesw { display: inline-flex; margin-inline-start: 12px; padding: 2px; border: 1px solid #d5deeb; border-radius: 999px; background: #f4f7fb; vertical-align: middle; }
-.sx-modesw button { border: 0; background: none; padding: 4px 12px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600; color: #5b6573; cursor: pointer; }
-.sx-modesw button.on { background: #fff; color: #1f3f8f; box-shadow: 0 1px 3px rgba(20, 40, 80, .15); }
-.sx-modesw button:focus-visible { outline: 2px solid #3d63ea; }
+h1:has(> .sx-modesw) { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.sx-modesw { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+.sx-modesw-l { color: #8a919c; transition: color .2s; white-space: nowrap; }
+.sx-modesw-l.on { color: #3d63ea; font-weight: 700; }
+.sx-modesw-t { position: relative; inline-size: 52px; block-size: 28px; padding: 0; border: 0; border-radius: 999px; background: #c9d6f7; cursor: pointer; touch-action: none; transition: background .2s; }
+.sx-modesw-t.is-hard { background: #3d63ea; }
+.sx-modesw-k { position: absolute; inset-block-start: 3px; inset-inline-start: 3px; inline-size: 22px; block-size: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(20, 40, 80, .25); transition: inset-inline-start .2s; }
+.sx-modesw-t.is-hard .sx-modesw-k { inset-inline-start: 27px; }
+.sx-modesw-t:focus-visible { outline: 3px solid #3d63ea; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .sx-modesw-k, .sx-modesw-t { transition: none; } }
+/* 판매 비중 (치킨·분식 hard 모드) */
+.sx-mix { display: grid; gap: 10px; margin-block-end: 14px; padding: 14px 16px; border: 1px solid #e3e8f4; border-radius: 14px; background: #fff; }
+.sx-mix-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; }
+.sx-mix-h small { flex-basis: 100%; font-size: 12.5px; color: #5a6270; }
+.sx-mix-bar { display: flex; block-size: 26px; border-radius: 8px; overflow: hidden; font-size: 12px; font-weight: 700; color: #fff; }
+.sx-mix-bar span { display: grid; place-items: center; min-inline-size: 0; white-space: nowrap; transition: flex-grow .2s; }
+.sx-mix-bar .is-visit { background: #3d63ea; } .sx-mix-bar .is-takeout { background: #27a06a; } .sx-mix-bar .is-delivery { background: #f0a83a; }
+.sx-mix-c { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sx-mix-k { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 2px 4px; padding: 8px; border: 1px solid #e3e8f4; border-radius: 10px; }
+.sx-mix-k span { grid-column: 1 / -1; font-size: 13px; font-weight: 700; }
+.sx-mix-k.is-visit span { color: #3d63ea; } .sx-mix-k.is-takeout span { color: #1f8a5a; } .sx-mix-k.is-delivery span { color: #b0701a; }
+.sx-mix-k.is-changed { border-color: #3d63ea; background: #f3f6ff; }
+.sx-mix-k button { inline-size: 28px; block-size: 28px; border: 1px solid #d5deeb; border-radius: 8px; background: #f4f7fb; font: inherit; cursor: pointer; }
+.sx-mix-k button:disabled { opacity: .4; cursor: default; }
+.sx-mix-k output { text-align: center; font-weight: 700; }
+.sx-sub { margin: 18px 0 8px; font-size: 16px; }
