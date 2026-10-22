@@ -20,7 +20,7 @@
 .cs-h { flex: 1; display: grid; grid-template-rows: 1fr auto; justify-items: center; block-size: 100%; gap: 2px; font-size: 11px; color: #5b6b82; }
 .cs-h i { align-self: end; inline-size: 100%; max-inline-size: 22px; border-radius: 4px 4px 0 0; background: #6da7ec; }
 .cs-h.is-short i { background: #d64545; }
-.cs-chart { inline-size: 100%; block-size: auto; }
+.cs-chart { inline-size: 100%; block-size: auto; max-block-size: 220px; }
 .cs-zero { stroke: #b3261e; stroke-dasharray: 3 3; stroke-width: 1; }
 .cs-line { stroke: #256abf; stroke-width: 2; }
 .cs-dot { fill: #256abf; } .cs-dot.is-neg { fill: #b3261e; }

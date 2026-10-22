@@ -14,6 +14,7 @@ import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import Insight, { type Try } from "./Insight";
 import CashFlow, { type CfMonth } from "./CashFlow";
 import CostBar from "./CostBar";
+import Scorecard, { type ScoreMonth } from "./Scorecard";
 import ChannelCards from "./ChannelCards";
 import { CAFE_REF, cafeBand } from "./priceCompare";
 import { IconBattery, IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "./SimulateEngine";
@@ -73,7 +74,7 @@ type Month = {
   month: number; calendar_month: number; status: "open" | "closed" | "finished"; owner_note_ko: string;
   decisions: Dec & { price_level: number; scenario?: Record<string, string> }; scenario_ko?: { title: string; choice: string }[];
   drivers?: { maturity: number; peak_util: number; bottleneck_label_ko: string };
-  kpi: { revenue_krw: number; op_krw: number; cash_krw: number; customers: number; walkaways: number; walkaway_share: number; rating: number; regulars: number };
+  kpi: { revenue_krw: number; op_krw: number; cash_krw: number; customers: number; walkaways: number; walkaway_share: number; rating: number; regulars: number; loan_payment_krw?: number };
   channels?: { dine: number; takeout: number; delivery: number };
   pnl: { revenue_krw: number; lines: { key: string; item_ko: string; krw: number }[]; op_krw: number };
   cash: { start_krw: number; op_krw: number; depreciation_addback_krw: number; loan_interest_krw: number; loan_principal_krw: number; vat_refund_krw: number; end_krw: number };
@@ -760,13 +761,22 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                   <h1>{months.length}개월 결과</h1>
                   {!report ? <p>계산 중이에요.</p> : (
                     <>
-                      <Kpis items={[
-                        { label: "마지막 현금", value: wman(report.end_cash_krw), main: true },
-                        { label: "누적 영업이익", value: sgn(report.cumulative_op_krw), tone: tone(report.cumulative_op_krw) },
-                        { label: "가장 좋았던 달", value: `${report.best_month.calendar_month}월 ${sgn(report.best_month.op_krw)}` },
-                        { label: "가장 나빴던 달", value: `${report.worst_month.calendar_month}월 ${sgn(report.worst_month.op_krw)}` },
-                      ]} />
                       <p className="sx-note">{report.survived ? `${TOTAL}개월을 버텼어요. ` : <b>가게를 닫게 됐어요. </b>}{report.summary_ko}</p>
+                      {(() => {
+                        // 다른 업종과 같은 점수표: 카페 엔진의 달 기록을 점수 계산 모양으로 바꾼다
+                        const ln = (m: Month, k: string) => m.pnl.lines.find((l) => l.key === k)?.krw ?? 0;
+                        const sm: ScoreMonth[] = months.map((m) => ({
+                          month: m.calendar_month, revenue: m.pnl.revenue_krw, op: m.pnl.op_krw, cogs: ln(m, "food"), labor: ln(m, "labor"), rent: ln(m, "rent"),
+                          mgmt: m.pnl.lines.filter((l) => !["food", "labor", "rent", "card", "delivery"].includes(l.key)).reduce((a, l) => a + l.krw, 0),
+                          fees: ln(m, "card") + ln(m, "delivery"), covers: m.kpi.customers, walkaways: m.kpi.walkaways,
+                          util: Math.min(1, m.drivers?.peak_util ?? 0), fatigue: (m.drivers?.peak_util ?? 0) * 100, closed: m.closure.closed,
+                          decisions: (m.scenario_ko ?? []).map((x) => ({ title: x.title, chosen_label: x.choice, vs_default_op: 0 })),
+                        }));
+                        const cash = [startCash, ...months.map((m) => m.kpi.cash_krw)];
+                        const out = months.reduce((a, m) => a + ln(m, "rent") + ln(m, "labor") + (m.kpi.loan_payment_krw ?? 0), 0) / Math.max(1, months.length);
+                        return <Scorecard months={sm} startCash={startCash} lowestCash={Math.min(...cash)} endCash={cash[cash.length - 1]} monthlyCashOut={out}
+                          gu={profile.gu} mode={mode} kind="food" shop="카페" plans={months.map((m) => LEVERS.map((lv) => `${lv.label} ${lv.text(m.decisions)}`).join(" · "))} />;
+                      })()}
                       <section className="sx-sec"><h2>남은 현금</h2><Cash start={startCash} months={months} total={TOTAL} /></section>
                       <CashFlow months={cfMonths} kind="food" shop="카페" />
                       <section className="sx-sec"><h2>월별</h2>
