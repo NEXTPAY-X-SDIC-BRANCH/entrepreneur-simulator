@@ -27,14 +27,14 @@ export default function Assume({ id, what, why, f, src, need }: Props) {
     <span className="m-assume-w" ref={ref}>
       <button type="button" className={`m-assume${open ? " on" : ""}`} aria-expanded={open} aria-controls={pid}
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }} title="가정값 근거 보기">
-        <span className="m-assume-tri" aria-hidden>{open ? "▾" : "▸"}</span>가정
+        <span className="m-assume-tri" aria-hidden>{open ? "▾" : "▸"}</span>가정 근거
       </button>
       {open && (
         <span className="m-assume-pop" id={pid} role="note">
           <b className="m-assume-h">{info.what}</b>
+          <span className="m-assume-r"><i>쓴 자료</i>{info.src ?? "출처 있는 자료가 없어 정한 가정값이에요"}</span>
+          {info.f && <span className="m-assume-r"><i>계산식</i><code>{info.f}</code></span>}
           {info.why && <span className="m-assume-r"><i>왜</i>{info.why}</span>}
-          {info.f && <span className="m-assume-r"><i>식</i><code>{info.f}</code></span>}
-          {info.src && <span className="m-assume-r"><i>근거</i>{info.src}</span>}
           <span className="m-assume-r need"><i>바꾸려면</i>{info.need}</span>
         </span>
       )}

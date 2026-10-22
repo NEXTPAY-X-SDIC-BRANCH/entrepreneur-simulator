@@ -538,18 +538,18 @@ html:has(.m-app) { background: #fff; }
 .ap-label { font-size: 11px; fill: #5b5345; }
 
 /* 출처 없는 가정 표시 (Assume.tsx) */
-.m-assume-w { position: relative; display: inline-block; margin-inline-start: 4px; vertical-align: 1px; }
-.m-assume { display: inline-flex; align-items: center; gap: 2px; padding: 0 6px; border: 1px dashed #b07a1a; border-radius: 6px; background: #fff6e2; color: #8a5a12; font: inherit; font-size: 11px; font-weight: 700; line-height: 18px; cursor: pointer; white-space: nowrap; }
-.m-assume:hover, .m-assume.on { background: #ffeac0; border-style: solid; }
-.m-assume:focus-visible { outline: 2px solid #3d63ea; outline-offset: 1px; }
-.m-assume-tri { font-size: 9px; }
-.m-assume-pop { position: absolute; z-index: 60; top: calc(100% + 6px); left: 0; display: flex; flex-direction: column; gap: 6px; width: min(340px, 80vw); padding: 10px 12px; border: 1px solid #e3c98f; border-radius: 10px; background: #fffdf7; box-shadow: 0 8px 24px rgba(40, 30, 10, .16); color: #3a3426; font-size: 12.5px; font-weight: 400; line-height: 1.55; text-align: left; white-space: normal; }
-.m-assume-h { font-size: 13px; color: #6b4610; }
-.m-assume-r { display: grid; grid-template-columns: 52px 1fr; gap: 6px; }
-.m-assume-r i { font-style: normal; font-weight: 700; color: #8a5a12; }
-.m-assume-r code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: #f6efdd; padding: 1px 4px; border-radius: 4px; }
-.m-assume-r.need { padding-top: 6px; border-top: 1px dashed #e3c98f; }
-.m-assume-r.need i { color: #2e5bd8; }
+.m-assume-w { position: relative; display: inline-block; margin-inline-start: 6px; vertical-align: baseline; }
+.m-assume { display: inline-flex; align-items: center; gap: 3px; padding: 0; border: 0; background: none; color: #2e5bd8; font: inherit; font-size: 12px; font-weight: 500; line-height: 1.4; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap; }
+.m-assume:hover, .m-assume.on { color: #1d3fa8; }
+.m-assume:focus-visible { outline: 2px solid #3d63ea; outline-offset: 2px; border-radius: 3px; }
+.m-assume-tri { font-size: 10px; text-decoration: none; display: inline-block; }
+.m-assume-pop { position: absolute; z-index: 60; top: calc(100% + 6px); left: 0; display: flex; flex-direction: column; gap: 7px; width: min(360px, 82vw); padding: 12px 14px; border: 1px solid #d5dcf5; border-left: 3px solid #3639b8; border-radius: 12px; background: #f7f9ff; box-shadow: 0 8px 24px rgba(30, 40, 110, .14); color: #2a2d3a; font-size: 12.5px; font-weight: 400; line-height: 1.55; text-align: left; white-space: normal; }
+.m-assume-h { font-size: 13px; color: #26288a; }
+.m-assume-r { display: grid; grid-template-columns: 56px 1fr; gap: 6px; }
+.m-assume-r i { font-style: normal; font-weight: 700; color: #3639b8; }
+.m-assume-r code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: #e9edfc; color: #1d2470; padding: 1px 5px; border-radius: 4px; }
+.m-assume-r.need { padding-top: 7px; border-top: 1px dashed #cdd5f2; }
+.m-assume-r.need i { color: #5a5d6b; }
 
 /* 버튼 묶음 간격을 12px로 통일 (가게 꾸미기 아래 버튼, 가진 돈 바로 고르기, 머리글의 질문·계정 버튼) */
 .m-tray-go, .m-presets { gap: 12px; }
@@ -561,3 +561,63 @@ html:has(.m-app) { background: #fff; }
 .m-funds .m-bankgrid li { padding: 0; border: 0; }
 .m-bankgrid a { display: grid; justify-items: center; gap: 8px; color: var(--ink); text-decoration: none; font-size: 15px; font-weight: 600; }
 .m-bankgrid img { inline-size: 72px; block-size: 72px; object-fit: contain; border-radius: 16px; background: #fff; border: 1px solid var(--rule); }
+
+/* ---- 모자란 돈 탭 (분석 화면의 a-ktab·a-kw와 같은 파란 계열, 그라데이션 카드) ---- */
+.fd-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-block: 18px 16px; }
+.fd-tab { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border: 2px solid #e3e5ec; border-radius: 20px; background: #fff; text-align: start; font: inherit; color: #17181c; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.fd-tab:hover { border-color: #9ea2f0; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(54, 57, 184, .1); }
+.fd-tab:focus-visible { outline: 3px solid #3639b8; outline-offset: 2px; }
+.fd-tab b { font-size: 16px; font-weight: 700; line-height: 1.35; }
+.fd-tab small { font-size: 13px; color: #5a5d6b; }
+.fd-tab-top { display: flex; align-items: center; justify-content: space-between; }
+.fd-num { display: inline-grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 50%; background: #eef0ff; color: #3639b8; font-size: 14px; font-weight: 800; }
+.fd-cnt { padding: 2px 9px; border-radius: 999px; background: #eef0ff; color: #3639b8; font-size: 12px; font-weight: 700; }
+.fd-tab[aria-selected="true"] { border-color: transparent; color: #fff; background: linear-gradient(135deg, #26288a 0%, #3639b8 55%, #4f7cf0 100%); box-shadow: 0 8px 22px rgba(38, 40, 138, .28); }
+.fd-tab[aria-selected="true"] small { color: #dfe3ff; }
+.fd-tab[aria-selected="true"] .fd-num, .fd-tab[aria-selected="true"] .fd-cnt { background: rgba(255, 255, 255, .95); color: #26288a; }
+
+.fd-lead { display: grid; gap: 6px; margin: 0; padding: 20px 24px; border-radius: 22px; color: #e4e6ff; font-size: 15.5px; line-height: 1.6;
+  background: linear-gradient(120deg, #26288a 0%, #3639b8 50%, #5a86f2 100%); }
+.fd-lead b { font-size: 19px; color: #fff; }
+.fd-lead a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.fd-lead mark { padding: 1px 8px; border-radius: 999px; background: #fff; color: #26288a; font-weight: 700; }
+
+.m-funds ul.fd-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.m-funds li.fd-card { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border: 1px solid #e3e5ec; border-radius: 20px; background: #fff; box-shadow: 0 4px 18px rgba(35, 60, 130, .06); position: relative; overflow: hidden; }
+.fd-card::before { content: ""; position: absolute; inset: 0 0 auto 0; block-size: 4px; background: linear-gradient(90deg, #3639b8, #5a86f2); }
+.fd-chips { display: flex; flex-wrap: wrap; gap: 6px; min-block-size: 22px; }
+.fd-chip { padding: 2px 10px; border-radius: 999px; background: #eef0ff; color: #3639b8; font-size: 12px; font-weight: 700; }
+.fd-chip.is-warn { background: #fff1e0; color: #a5560c; }
+.fd-chip.is-good { background: #e3f6ec; color: #0f7a52; }
+.fd-chip.is-rate { background: #26288a; color: #fff; }
+.fd-name { font-size: 17px; font-weight: 700; color: #17181c; }
+.fd-org { font-size: 13px; color: #5a5d6b; }
+.fd-limit { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; color: #26288a; line-height: 1.3; }
+.m-funds li.fd-card p { margin: 0; font-size: 14.5px; }
+.fd-terms { color: #4a4d5a; }
+.fd-rate { padding: 8px 12px; border-radius: 12px; background: #eef6ff; color: #1d4fb8; font-weight: 600; }
+.fd-rate.is-high { background: #fff4e5; color: #a5560c; }
+.fd-note { font-size: 13px; color: #5a5d6b; line-height: 1.5; }
+.fd-go { margin-block-start: auto; padding-block-start: 8px; color: #3639b8; font-weight: 700; font-size: 14px; text-decoration: none; }
+.fd-go:hover { text-decoration: underline; }
+
+.fd-hubs { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.fd-hub { position: relative; display: grid; gap: 4px; padding: 18px 44px 18px 20px; border-radius: 20px; text-decoration: none; color: #fff;
+  background: linear-gradient(135deg, #3639b8 0%, #4f7cf0 100%); box-shadow: 0 6px 18px rgba(54, 57, 184, .22); transition: transform .15s; }
+.fd-hub:nth-child(2) { background: linear-gradient(135deg, #26288a 0%, #3d63ea 100%); }
+.fd-hub:nth-child(3) { background: linear-gradient(135deg, #1e4fa8 0%, #3fa0e8 100%); }
+.fd-hub:hover { transform: translateY(-2px); }
+.fd-hub small { font-size: 12px; font-weight: 700; color: #cfd6ff; }
+.fd-hub b { font-size: 17px; }
+.fd-hub span { font-size: 13px; color: #e4e8ff; }
+.fd-hub i { position: absolute; inset-inline-end: 18px; inset-block-start: 50%; transform: translateY(-50%); font-style: normal; font-size: 20px; }
+.m-funds ul.fd-banks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.m-funds .fd-banks li { padding: 0; border: 0; }
+.fd-banks a { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #e3e5ec; border-radius: 16px; background: #fff; color: #17181c; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+.fd-banks a:hover { border-color: #9ea2f0; box-shadow: 0 4px 14px rgba(54, 57, 184, .1); }
+.fd-banks img { inline-size: 44px; block-size: 44px; object-fit: contain; border-radius: 12px; border: 1px solid #eeeff4; background: #fff; }
+.fd-banks span { display: grid; gap: 2px; }
+.fd-banks b { font-size: 15px; }
+.fd-banks small { font-size: 12.5px; color: #5a5d6b; }
+.fd-banks em { font-style: normal; padding: 3px 9px; border-radius: 999px; background: #3639b8; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.fd-banks em.is-cmp { background: #eef0ff; color: #3639b8; }

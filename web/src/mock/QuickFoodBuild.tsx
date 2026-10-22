@@ -2,6 +2,7 @@
 // 옷가게와 같은 틀(m-build)을 쓰고, 3D 대신 평면 그림을 그린다.
 import { Mark } from "./Checks";
 import Assume from "./Assume";
+import { ASSUME } from "./assumptions";
 import { OWNER_DRAW, STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
 import { AD_COST, DEFAULT_PLAN, GRADE_LABEL, QF_NAME, derived, expectedSales, qfOpeningCost, type QfCfg } from "./quickfood";
 
@@ -99,7 +100,7 @@ export default function QuickFoodBuild({ profile, cfg, setCfg, onNext }: { profi
 
       <div className="m-tray">
         <dl className="m-spent">
-          {open.lines.map((l) => <div key={l.key}><dt>{l.label}{l.basis.includes("가정") && <Assume what={`${l.label}: ${l.basis}`} />}</dt><dd>{man(l.amount)}</dd></div>)}
+          {open.lines.map((l) => <div key={l.key}><dt>{l.label}{(l.basis.includes("가정") || `open_${l.key}` in ASSUME) && <Assume id={`open_${l.key}` in ASSUME ? `open_${l.key}` : undefined} what={`open_${l.key}` in ASSUME ? undefined : `${l.label}: ${l.basis}`} />}</dt><dd>{man(l.amount)}</dd></div>)}
         </dl>
         <div className="m-tray-go">
           <button type="button" className="m-btn m-btn-outline" onClick={() => document.querySelector(".m-checks")?.scrollIntoView({ behavior: "smooth", block: "start" })}>오픈 전 점검 보러가기</button>

@@ -25,7 +25,7 @@ export default function KStartup({ young, gu, before }: { young: boolean; gu: st
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}mock/kstartup.json`).then((r) => r.json()).then(setData).catch(() => setData(null));
   }, []);
-  const box = (t: React.ReactNode) => <p className="m-fund-head is-support">{t}</p>;
+  const box = (t: React.ReactNode) => <p className="fd-lead"><b>지금 접수 중인 창업 지원사업</b>{t}</p>;
   if (!data) return <div className="m-funds">{box(<>공고 데이터를 불러오지 못했어요. 전체 공고는 <a href="https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do" target="_blank" rel="noreferrer">K-Startup</a>에서 볼 수 있어요.</>)}{before}</div>;
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const ageOk = (a: string) => !a || (young ? a.includes("39세 이하") : a.includes("40세 이상"));

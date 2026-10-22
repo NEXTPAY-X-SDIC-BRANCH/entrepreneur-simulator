@@ -44,15 +44,19 @@ export const FUNDS_SRC = "예비창업 정책자금 정리표 (기관 안내와 
 // IBK 상품 상세는 "보안프로그램을 설치하셔야 이용이 가능" 창이 뜨고, 하나 상품 상세는 2019년 금리가 그대로라 앱으로 둔다.
 // 신한·NH는 로그인 없이 볼 수 있는 상품 페이지를 찾지 못했다 (NH 대출 메뉴는 로그인·설치 요구).
 // 대출 중개로 보이지 않게 은행을 추천하거나 순서를 매기지 않는다 (가나다순).
-const PLAY = (id: string) => `https://play.google.com/store/apps/details?id=${id}&hl=ko`;
-export const BANKS: { name: string; app: string; url: string; kind: "상품" | "앱"; icon: string }[] = [
+// 링크는 앱 설치 안내가 아니라 웹 페이지만 쓴다 (2026-10-22 Playwright로 열어 확인, 보안 프로그램·로그인 요구 없음).
+//   KB: 소상공인 신용대출 안내, 우리: 개인사업자대출 목록, 하나: 상품유형별 찾기(대출).
+//   IBK·신한·NH는 로그인 없이 열리는 사업자 대출 상품 페이지가 없어(IBK 상세는 보안 프로그램, 신한·NH는 로그인 요구)
+//   은행연합회 소비자포털의 은행별 개인사업자 대출 비교 페이지로 보낸다. 모든 은행의 상품과 금리가 한 표에 있다.
+export const BANK_COMPARE_URL = "https://portal.kfb.or.kr/compare/loan_snmindustry_4.php";
+export const BANK_SEARCH_URL = "https://portal.kfb.or.kr/compare/loan_search.php";
+export const SEMAS_FUND_URL = "https://ols.semas.or.kr/";
+export const BANKS: { name: string; app: string; url: string; kind: "상품" | "비교"; icon: string }[] = [
   { name: "KB국민은행", app: "KB소상공인 신용대출 안내", url: "https://obank.kbstar.com/products/kb-soho-credit-loan-guide.html", kind: "상품", icon: "kb.png" },
-  { name: "IBK기업은행", app: "i-ONE Bank", url: PLAY("com.ibk.android.ionebank"), kind: "앱", icon: "ibk.png" },
-  { name: "NH농협은행", app: "NH올원뱅크", url: PLAY("com.nonghyup.nhallonebank"), kind: "앱", icon: "nh.png" },
-  { name: "신한은행", app: "신한 슈퍼SOL", url: PLAY("com.shinhan.sbanking"), kind: "앱", icon: "shinhan.png" },
+  { name: "IBK기업은행", app: "은행연합회 비교표에서 보기", url: BANK_COMPARE_URL, kind: "비교", icon: "ibk.png" },
+  { name: "NH농협은행", app: "은행연합회 비교표에서 보기", url: BANK_COMPARE_URL, kind: "비교", icon: "nh.png" },
+  { name: "신한은행", app: "은행연합회 비교표에서 보기", url: BANK_COMPARE_URL, kind: "비교", icon: "shinhan.png" },
   { name: "우리은행", app: "개인사업자대출 목록", url: "https://spot.wooribank.com/pot/Dream?withyou=POLON0063", kind: "상품", icon: "woori.png" },
-  { name: "하나은행", app: "하나원큐", url: PLAY("com.hanabank.oqf"), kind: "앱", icon: "hana.png" },
+  { name: "하나은행", app: "대출 상품 찾기", url: "https://www.kebhana.com/cont/mall/mall08/mall0805/index.jsp", kind: "상품", icon: "hana.png" },
 ];
 export const BANK_GUARANTEE_URL = "https://www.koreg.or.kr/adit/onTact/onTact_01.html";
-// 은행연합회 소비자포털: 은행별 중소기업(개인사업자) 운전자금 대출금리 비교공시 (보증서담보·신용·마이너스)
-export const BANK_COMPARE_URL = "https://portal.kfb.or.kr/compare/loan_snmindustry_4.php";
