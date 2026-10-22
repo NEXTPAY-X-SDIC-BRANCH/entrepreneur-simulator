@@ -14,7 +14,9 @@ export type ScoreMonth = {
 type Area = { key: string; label: string; max: number; got: number; detail: string; fix: string };
 
 // 시도 기록: 이 브라우저(localStorage)에만 남는다. 같은 업종·모드의 바로 전 시도와 영역별 점수를 비교한다
-type Attempt = { ts: string; shop: string; mode: string; gu: string; seed?: number; total: number; endCash: number; areas: Record<string, number> };
+// 비교용 요약(없을 수 있음: 예전 기록): 매출·영업이익 합, 비용 비율, 최저 현금, 달별 영업이익, 달별 계획 한 줄
+type Attempt = { ts: string; shop: string; mode: string; gu: string; seed?: number; total: number; endCash: number; areas: Record<string, number>;
+  rev?: number; op?: number; ratios?: Record<string, number>; lowest?: number; ops?: number[]; months?: number[]; plans?: string[] };
 const ATTEMPTS = "cu-attempts";
 function readAttempts(): Attempt[] {
   try { return JSON.parse(localStorage.getItem(ATTEMPTS) ?? "[]") as Attempt[]; } catch { return []; }
@@ -105,10 +107,11 @@ export function scoreOf(months: ScoreMonth[], startCash: number, lowestCash: num
   return { total: Math.round(areas.reduce((a, x) => a + x.got, 0)), areas };
 }
 
-export default function Scorecard({ months, startCash, lowestCash, endCash, monthlyCashOut, gu, mode, kind = "food", benchmark, shop = "고깃집", seed }: {
+export default function Scorecard({ months, startCash, lowestCash, endCash, monthlyCashOut, gu, mode, kind = "food", benchmark, shop = "고깃집", seed, plans }: {
   months: ScoreMonth[]; startCash: number; lowestCash: number; endCash: number; monthlyCashOut: number; gu: string; mode: "easy" | "hard";
   kind?: "food" | "retail"; benchmark?: string; // benchmark: 생존율 참고 문장을 바꿀 때 (옷가게는 도소매업 값)
   shop?: string; // 업종 이름 (랭킹은 같은 반·업종·모드끼리)
+  plans?: string[]; // 달마다 계획 한 줄 (시도 비교에 보여 줌)
   seed?: number; // 이 판의 시드 (사건·날씨). 점수와 함께 저장한다
 }) {
   const { total, areas } = scoreOf(months, startCash, lowestCash, endCash, monthlyCashOut, kind);
@@ -122,8 +125,13 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
   const [msg, setMsg] = useState("");
   const [tries, setTries] = useState<Attempt[]>([]);
   useEffect(() => {
+    const rev = months.reduce((a, m) => a + m.revenue, 0), r1 = rev || 1;
+    const sumOf = (k: "cogs" | "labor" | "rent" | "fees") => months.reduce((a, m) => a + m[k], 0) / r1;
     const all = recordAttempt({ ts: new Date().toISOString(), shop, mode, gu, seed, total, endCash: Math.round(endCash),
-      areas: Object.fromEntries(areas.map((a) => [a.key, Math.round(a.got)])) });
+      areas: Object.fromEntries(areas.map((a) => [a.key, Math.round(a.got)])),
+      rev: Math.round(rev), op: Math.round(months.reduce((a, m) => a + m.op, 0)), lowest: Math.round(lowestCash),
+      ratios: { cogs: sumOf("cogs"), labor: sumOf("labor"), rent: sumOf("rent"), fees: sumOf("fees") },
+      ops: months.map((m) => Math.round(m.op)), months: months.map((m) => m.month), plans: plans?.slice(0, months.length) });
     setTries(all.filter((t) => t.shop === shop && t.mode === mode));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -216,6 +224,7 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
             ))}</tbody>
           </table>
           <p className="sx-note">시도 기록은 이 브라우저에만 저장돼요.</p>
+          <TryCompare tries={tries} areas={areas} />
         </>;
       })()}
       {benchmark ? <p className="sx-note">{benchmark}</p> : surv && <p className="sx-note">참고로 서울에서 새로 연 음식점(숙박·음식점업)은 3년 뒤 {surv.s3}%만 남아요 (통계청 기업생멸행정통계 {surv.y}년).</p>}
@@ -242,6 +251,66 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
         </table>
       ) : <p className="sx-note">{board ? `이 반의 ${shop} · ${modeKo} 모드에는 아직 기록이 없어요. 첫 기록을 남겨 보세요.` : "랭킹 서버에 연결하지 못했어요."}</p>}
       <small className="sx-note">같은 반 코드를 쓰는 사람끼리 순위를 봐요. 별명과 점수만 저장해요.</small>
+    </section>
+  );
+}
+
+// 두 시도를 골라 나란히: 점수·영역, 매출·이익·비용 비율·현금, 달별 영업이익 막대, 달별 계획. 가장 크게 달라진 곳을 한 줄로 짚는다
+function TryCompare({ tries, areas }: { tries: Attempt[]; areas: Area[] }) {
+  const n = tries.length;
+  const [ia, setIa] = useState(Math.max(0, n - 2));
+  const [ib, setIb] = useState(n - 1);
+  const a = tries[ia], b = tries[ib];
+  if (!a || !b) return null;
+  const opt = (i: number, set: (x: number) => void) => (
+    <select value={i} onChange={(e) => set(+e.target.value)} aria-label="비교할 시도">
+      {tries.map((t, k) => <option key={t.ts} value={k}>{k + 1}번째 · {t.ts.slice(5, 10).replace("-", "/")} · {t.total}점</option>)}
+    </select>
+  );
+  const ratioKo: Record<string, string> = { cogs: "재료비 비율", labor: "인건비 비율", rent: "월세 비율", fees: "수수료 비율" };
+  const rows: [string, (t: Attempt) => string, (t: Attempt) => number | undefined, boolean][] = [
+    ["점수", (t) => `${t.total}점`, (t) => t.total, true],
+    ...areas.map((x) => [x.label, (t: Attempt) => `${t.areas[x.key] ?? "-"} / ${x.max}`, (t: Attempt) => t.areas[x.key], true] as [string, (t: Attempt) => string, (t: Attempt) => number | undefined, boolean]),
+    ["6개월 매출", (t) => (t.rev != null ? won(t.rev) : "-"), (t) => t.rev, true],
+    ["6개월 영업이익", (t) => (t.op != null ? won(t.op) : "-"), (t) => t.op, true],
+    ...Object.keys(ratioKo).map((k) => [ratioKo[k], (t: Attempt) => (t.ratios ? pct(t.ratios[k]) : "-"), (t: Attempt) => t.ratios?.[k], false] as [string, (t: Attempt) => string, (t: Attempt) => number | undefined, boolean]),
+    ["가장 적었던 현금", (t) => (t.lowest != null ? won(t.lowest) : "-"), (t) => t.lowest, true],
+    ["6개월 뒤 현금", (t) => won(t.endCash), (t) => t.endCash, true],
+  ];
+  // 가장 크게 달라진 비용 비율과 영역
+  const rd = a.ratios && b.ratios ? Object.keys(ratioKo).map((k) => ({ k, d: b.ratios![k] - a.ratios![k] })).sort((x, y) => Math.abs(y.d) - Math.abs(x.d))[0] : null;
+  const ad = areas.map((x) => ({ x, d: (b.areas[x.key] ?? 0) - (a.areas[x.key] ?? 0) })).sort((p, q) => Math.abs(q.d) - Math.abs(p.d))[0];
+  const ops = [...(a.ops ?? []), ...(b.ops ?? [])], hi = Math.max(1, ...ops.map(Math.abs));
+  const bars = (t: Attempt, cls: string) => (
+    <div className={`tc-bars ${cls}`}>{(t.ops ?? []).map((v, i) => (
+      <span key={i} title={`${t.months?.[i] ?? i + 1}월 ${won(v)}`}><i className={v < 0 ? "neg" : ""} style={{ blockSize: `${Math.max(3, (Math.abs(v) / hi) * 100)}%` }} /><small>{t.months?.[i] ?? i + 1}월</small></span>
+    ))}</div>
+  );
+  return (
+    <section className="tc">
+      <h2>두 시도 나란히 보기</h2>
+      <div className="tc-pick"><label>왼쪽 {opt(ia, setIa)}</label><label>오른쪽 {opt(ib, setIb)}</label></div>
+      {(ad?.d || rd) && <p className="tc-say">
+        {ad && ad.d !== 0 ? <>오른쪽이 <b>{ad.x.label}</b>에서 {ad.d > 0 ? `${ad.d}점 더` : `${-ad.d}점 덜`} 받았어요. </> : null}
+        {rd && Math.abs(rd.d) >= 0.005 ? <><b>{ratioKo[rd.k]}</b>이 {pct(Math.abs(rd.d))}p {rd.d > 0 ? "높아졌어요" : "낮아졌어요"}.</> : null}
+      </p>}
+      <table className="sx-table tc-table">
+        <thead><tr><th /><th>왼쪽 ({ia + 1}번째)</th><th>오른쪽 ({ib + 1}번째)</th><th>차이</th></tr></thead>
+        <tbody>{rows.map(([label, txt, val, up]) => {
+          const va = val(a), vb = val(b), d = va != null && vb != null ? vb - va : null;
+          const good = d == null || d === 0 ? "" : (d > 0) === up ? "sc-up" : "sc-down";
+          return <tr key={label}><th>{label}</th><td>{txt(a)}</td><td>{txt(b)}</td><td className={good}>{d == null || d === 0 ? "" : label.includes("비율") ? `${d > 0 ? "+" : "−"}${pct(Math.abs(d))}p` : label.includes("점") || label === "점수" || areas.some((x) => x.label === label) ? `${d > 0 ? "+" : ""}${d}` : `${d > 0 ? "+" : "−"}${won(Math.abs(d))}`}</td></tr>;
+        })}</tbody>
+      </table>
+      {(a.ops?.length || b.ops?.length) ? <div className="tc-ops"><div><b>왼쪽 달별 영업이익</b>{bars(a, "l")}</div><div><b>오른쪽 달별 영업이익</b>{bars(b, "r")}</div></div> : null}
+      {(a.plans?.length || b.plans?.length) ? (
+        <table className="sx-table tc-plans">
+          <thead><tr><th>달</th><th>왼쪽 계획</th><th>오른쪽 계획</th></tr></thead>
+          <tbody>{Array.from({ length: Math.max(a.plans?.length ?? 0, b.plans?.length ?? 0) }, (_, i) => (
+            <tr key={i} className={a.plans?.[i] !== b.plans?.[i] ? "diff" : undefined}><th>{(b.months ?? a.months)?.[i] ?? i + 1}월</th><td>{a.plans?.[i] ?? "-"}</td><td>{b.plans?.[i] ?? "-"}</td></tr>
+          ))}</tbody>
+        </table>
+      ) : <p className="sx-note">예전 시도는 달별 계획이 저장되지 않았어요. 이번 시도부터 남아요.</p>}
     </section>
   );
 }

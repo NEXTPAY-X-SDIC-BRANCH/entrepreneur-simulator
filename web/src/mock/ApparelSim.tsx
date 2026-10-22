@@ -395,7 +395,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
             {view === "plan" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{m}월 운영 계획<ModeSwitch mode={mode} set={setMode} /></h1>
+                  <h1>{m}월 운영 계획<ModeSwitch locked mode={mode} set={setMode} /></h1>
                   <div className="sx-split">
                     <section className="sx-left" aria-label="지난달 결과">
                       <h2>{cur ? `${cur.m.month}월 결과` : "처음 여는 달이에요"}</h2>
@@ -578,6 +578,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                   <Scorecard
                     months={scoreMonths(months)} startCash={start.cash * 1e4} lowestCash={lowest() * 1e4}
                     endCash={(months.at(-1)?.cash ?? start.cash) * 1e4} monthlyCashOut={monthlyOut(months) * 1e4} gu={profile.gu} mode={mode} kind="retail" shop="옷가게" seed={seed}
+                    plans={months.map((x) => ["buy", "focus", "markdownAge", "online", "staff"].map((k) => `${PLAN_TEXT[k as keyof typeof PLAN_TEXT].label} ${PLAN_TEXT[k as keyof typeof PLAN_TEXT].text(x.plan)}`).join(" · "))}
                     benchmark={`참고로 서울에서 새로 연 도소매업 가게는 1년 뒤 ${KOSIS.survival1}%, 3년 뒤 ${KOSIS.survival3}%만 남아요 (통계청 기업생멸행정통계 2023년).`}
                   />
                   <section className="sx-sec"><h2>남은 현금</h2>

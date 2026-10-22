@@ -375,7 +375,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
             {view === "plan" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{m}월 운영 계획<ModeSwitch mode={mode} set={setMode} /></h1>
+                  <h1>{m}월 운영 계획<ModeSwitch locked mode={mode} set={setMode} /></h1>
                   <div className="sx-split">
                     <section className="sx-left" aria-label="지난달 결과">
                       <h2>{cur ? `${cur.m.month}월 결과` : "처음 여는 달이에요"}</h2>
@@ -558,6 +558,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                   <Scorecard
                     months={scoreMonths(months)} startCash={start.cash * 1e4} lowestCash={lowest() * 1e4}
                     endCash={(months.at(-1)?.cash ?? start.cash) * 1e4} monthlyCashOut={monthlyOut(months) * 1e4} gu={profile.gu} mode={mode} kind="food" shop={name} seed={seed}
+                    plans={months.map((x) => [PT.price.text(x.plan), PT.mix.text(x.plan), `알바 ${x.plan.staff}명`, hoursText(cfg.ind, x.plan)].join(" · "))}
                   />
                   <section className="sx-sec"><h2>남은 현금</h2>
                     <CashChart start={start.cash * 1e4} labels={monthSeq} months={done.map((x) => ({ days: x.days.map((d) => ({ cash: d.cash * 1e4 })) }))} />

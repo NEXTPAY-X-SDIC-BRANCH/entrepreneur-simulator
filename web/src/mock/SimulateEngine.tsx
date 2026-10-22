@@ -49,8 +49,8 @@ type MonthResult = {
 type Tick = { label: string; amount: number }; // 원
 type Day = { n: number; date: Date; open: boolean; covers: number; rain: boolean; revenue: number; ticks: Tick[]; notes: string[]; net: number; cash: number; fixedShare: number; cum: number };
 type Done = { result: MonthResult; plan: Plan; days: Day[]; cashStart: number; cashEnd: number; year: number; picked: Record<string, string>; rentPaid: number; rentFee: number };
-// 화면에서는 일단 뺐다 (팀 결정, 2026-10). 계산은 남겨 두고 켜면 다시 고를 수 있다.
-const RENT_CARD_ON = false;
+// 임대료 카드 할부 선택지 (hard 모드, 시작 화면). 끄려면 false
+const RENT_CARD_ON = true;
 // 임대료 카드 할부 (hard 모드, 시즌 시작 때 고르고 그 시즌 동안 고정). 달마다 월세를 카드로 내고, 수수료를 더한 금액을 N개월에 나눠 갚는다.
 // 손익(엔진 영업이익)은 그대로고 현금이 나가는 시점만 뒤로 밀린다. 수수료는 현금에서 따로 빠진다. 수수료율은 가정 (카드 임대료 결제 서비스 이용료 + 할부 수수료).
 type RentN = 0 | 3 | 6;
@@ -949,7 +949,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
             {view === "plan" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{planMonth}월 운영 계획<ModeSwitch mode={mode} set={(m) => { setMode(m); if (m === "hard" && !plan.menu) setPlan({ ...plan, menu: [{ name: "삼겹살", price: plan.meat_price, cost: 4500, share: 100 }] }); }} /></h1>
+                  <h1>{planMonth}월 운영 계획<ModeSwitch locked mode={mode} set={(m) => { setMode(m); if (m === "hard" && !plan.menu) setPlan({ ...plan, menu: [{ name: "삼겹살", price: plan.meat_price, cost: 4500, share: 100 }] }); }} /></h1>
                   <div className="sx-split">
                     <section className="sx-left" aria-label="지난달과 추천">
                       <h2>{lastPlanMonth ? `${lastPlanMonth}월 결과와 추천` : "처음 여는 달이에요"}</h2>
@@ -1153,6 +1153,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                         startCash={ledger.start_cash} lowestCash={ledger.lowest_cash} endCash={ledger.end_cash}
                         monthlyCashOut={monthlyOut(done)}
                         gu={profile.gu} mode={mode} seed={seed}
+                        plans={done.map((x) => LEVERS.map((lv) => `${lv.label} ${lv.text(x.plan)}`).join(" · "))}
                       />
                       <Kpis items={[
                         { label: "6개월 뒤 현금", value: man(won(ledger.end_cash)), main: true },

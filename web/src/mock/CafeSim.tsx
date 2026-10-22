@@ -491,7 +491,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
             {view === "plan" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{nextMonth}월 운영 계획<ModeSwitch mode={mode} set={setMode} /></h1>
+                  <h1>{nextMonth}월 운영 계획<ModeSwitch locked mode={mode} set={setMode} /></h1>
                   <div className="sx-split">
                     <section className="sx-left" aria-label="지난달 결과와 추천">
                       <h2>{cur ? `${cur.calendar_month}월 결과와 추천` : "처음 여는 달이에요"}</h2>

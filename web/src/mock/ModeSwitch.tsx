@@ -3,9 +3,11 @@
 import { useRef } from "react";
 
 export type Mode = "easy" | "hard";
-export default function ModeSwitch({ mode, set }: { mode: Mode; set: (m: Mode) => void }) {
+// locked: 시즌을 시작한 뒤에는 바꿀 수 없다 (같은 모드끼리 점수를 비교하려고). 바꾸려면 처음부터 다시 시작한다
+export default function ModeSwitch({ mode, set, locked }: { mode: Mode; set: (m: Mode) => void; locked?: boolean }) {
   const x0 = useRef<number | null>(null), dragged = useRef(false);
   const hard = mode === "hard";
+  if (locked) return <span className="sx-modelock" title="시즌 중에는 모드를 바꿀 수 없어요. 처음부터 다시 하면 바꿀 수 있어요."><b>{hard ? "hard 모드" : "easy 모드"}</b> · 이번 시즌 고정</span>;
   return (
     <span className="sx-modesw">
       <span className={`sx-modesw-l${hard ? "" : " on"}`} aria-hidden>easy 모드</span>

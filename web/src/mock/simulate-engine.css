@@ -414,3 +414,23 @@ h1:has(> .sx-modesw) { display: flex; align-items: center; justify-content: spac
 .cat-step button { inline-size: 28px; block-size: 28px; border: 1px solid #d5deeb; border-radius: 8px; background: #f4f7fb; font: inherit; cursor: pointer; }
 .cat-step button:disabled { opacity: .4; cursor: default; }
 .cat-step output { min-inline-size: 3em; text-align: center; font-weight: 700; }
+.sx-modelock { padding: 4px 12px; border-radius: 999px; background: #eef2fe; color: #4a5160; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.sx-modelock b { color: #3d63ea; }
+
+/* 성적표: 두 시도 나란히 보기 */
+.tc { margin-block: 18px; padding: 18px 20px; border: 1px solid #e3e8f4; border-radius: 18px; background: #fff; }
+.tc h2 { margin-block-start: 0; }
+.tc-pick { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-block-end: 10px; font-size: 14px; }
+.tc-pick select { margin-inline-start: 6px; padding: 6px 8px; border: 1px solid #d5deeb; border-radius: 8px; font: inherit; }
+.tc-say { padding: 10px 14px; border-radius: 12px; background: #f3f6ff; color: #2a3550; }
+.tc-table td, .tc-table th { white-space: nowrap; }
+.tc-ops { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-block: 12px; font-size: 13px; }
+.tc-bars { display: flex; align-items: flex-end; gap: 6px; block-size: 90px; margin-block-start: 6px; padding-block-end: 16px; position: relative; }
+.tc-bars span { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; block-size: 100%; }
+.tc-bars i { display: block; border-radius: 4px 4px 0 0; background: #3d63ea; }
+.tc-bars.r i { background: #27a06a; }
+.tc-bars i.neg { background: #e2574c; }
+.tc-bars small { position: absolute; inset-block-end: -16px; inset-inline: 0; text-align: center; font-size: 11px; color: #5a6270; }
+.tc-plans td { font-size: 12.5px; white-space: normal; }
+.tc-plans tr.diff td { background: #f3f6ff; }
+@media (max-width: 640px) { .tc-ops { grid-template-columns: minmax(0, 1fr); } }
