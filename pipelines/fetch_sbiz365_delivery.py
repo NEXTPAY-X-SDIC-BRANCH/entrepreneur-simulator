@@ -22,8 +22,8 @@ from pipelines.keys import key, mask
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "raw" / "sbiz365" / "delivery_dong.csv"
 BASE = "https://bigdata.sbiz.or.kr"
-# 위젯의 업종 이름 (upjong.json). 시뮬레이터 업종: 치킨, 분식, 카페, 고깃집(돼지고기 구이)
-INDS = {"chicken": "치킨", "bunsik": "김밥/만두/분식", "cafe": "카페", "bbq": "돼지고기 구이/찜"}
+# 위젯의 업종 이름. 시뮬레이터 업종: 치킨, 분식, 카페, 고깃집
+INDS = {"chicken": "치킨", "bunsik": "분식", "cafe": "카페·디저트", "bbq": "고기·구이"}  # upjong.json의 name (위젯이 보내는 값). 고기·구이는 곱창·소·돼지·닭 구이를 합친 값
 # 구 안의 한 점 (구청 근처). 응답의 ctyNm으로 맞는 구인지 확인한다
 GU_PT = {
     "종로구": (126.9790, 37.5735), "중구": (126.9977, 37.5641), "용산구": (126.9904, 37.5326), "성동구": (127.0369, 37.5634),
