@@ -32,7 +32,7 @@ function recordAttempt(a: Attempt): Attempt[] {
 }
 type Row = { id: string; rank: number; name: string; score: number; grade: string; mode: string; gu: string; shop?: string };
 
-const API = "http://127.0.0.1:8010";
+const API = (import.meta.env.VITE_ENGINE_API as string | undefined) ?? "http://127.0.0.1:8010"; // lab:merge 다른 포트로 켜도 랭킹이 저장되게
 const clamp = (x: number) => Math.max(0, Math.min(1, x));
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 const won = (x: number) => man(Math.round(x / 1e4));

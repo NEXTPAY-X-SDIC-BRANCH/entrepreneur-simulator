@@ -1,12 +1,14 @@
 # make help
 PY := .venv/bin/python
 
-.PHONY: help setup api cite web test pipelines
+.PHONY: help setup dev api cite web test pipelines
 help:       ## 목록
 	@grep -E '^[a-z-]+:.*## ' Makefile | sed 's/:.*## /\t/'
 setup:      ## .venv 만들고 패키지 설치 (Python 3.11 또는 3.12)
 	test -x $(PY) || $$(command -v python3.12 || command -v python3.11 || command -v python3) -m venv .venv
 	$(PY) -m pip install -q -r requirements.txt
+dev:        ## 엔진 :8010 + 챗봇 :8000 + 웹 :5173 을 한 번에 (Ctrl+C로 셋 다 끔)
+	bash scripts/dev.sh
 api:        ## 시뮬레이션 엔진 서버 :8010
 	$(PY) -m uvicorn api.changeup:app --host 127.0.0.1 --port 8010
 cite:       ## 챗봇 근거 검색 서버 :8000

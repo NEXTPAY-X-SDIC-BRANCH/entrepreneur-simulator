@@ -1,5 +1,29 @@
 # ChangeUp: 예비 창업자 시뮬레이터
 
+## 실행 방법
+
+필요한 것: Python 3.11 또는 3.12, Node.js 20 이상. API 키는 없어도 됩니다.
+
+처음 한 번만 설치합니다.
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cd web && npm ci && cd ..
+```
+
+켤 때는 명령 하나면 됩니다. 시뮬레이션 엔진, 챗봇, 웹 화면이 함께 켜집니다.
+
+```bash
+make dev          # make가 없으면 bash scripts/dev.sh
+```
+
+- 브라우저에서 http://127.0.0.1:5173 을 엽니다. 끌 때는 Ctrl+C 한 번이면 셋 다 꺼집니다.
+- 기본 포트는 웹 5173, 엔진 API 8010, 챗봇 API 8000 입니다.
+- 포트가 이미 쓰이고 있으면 다른 포트로 켭니다. 예: `ENGINE_PORT=8110 CITE_PORT=8100 WEB_PORT=5180 make dev`
+- Windows에서는 Git Bash나 WSL에서 같은 명령을 씁니다.
+
+
 가게를 열기 전에 "내 조건에서 몇 달 뒤 얼마가 남는가"를 미리 돌려 보는 시뮬레이터입니다.
 업종은 **고깃집**과 **카페**이고, 서울 어느 동네에 열지부터 가게 구성, 6개월 운영까지 한 흐름으로 체험합니다.
 
