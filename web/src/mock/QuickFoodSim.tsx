@@ -13,7 +13,8 @@ import ShopRoom3D, { shopPlan } from "./ShopRoom3D";
 import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import ModeSwitch from "./ModeSwitch";
 import CashFlow, { type CfMonth } from "./CashFlow";
-import QfInsight, { qfTries } from "./QfInsight";
+import Insight from "./Insight";
+import { qfTries } from "./QfInsight";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine";
 import "./simulate-engine.css";
@@ -509,7 +510,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                       { label: "월말 현금", value: man(w(c.cash)), main: true },
                     ]} />
                     {c.closed && <p className="se-err">현금이 두 달 연속 바닥이라 가게를 닫게 됐어요.</p>}
-                    <QfInsight tries={qfTries(profile, cfg, cur.s0, c, cur.ev, cur.opt, seats)} last={c.closed || done.length >= TURNS}
+                    <Insight tries={qfTries(profile, cfg, cur.s0, c, cur.ev, cur.opt, seats)} last={c.closed || done.length >= TURNS}
                       onApply={(patch) => { if (mode === "easy") setTweak(patch); else setPlan({ ...c.plan, ...patch }); next(); }} />
                     <CostBar items={[
                       ["식재료", c.food], ["배달 수수료", fees], ["인건비", c.staffPay], ["월세", c.rent], ["기타", c.other], ["광고·홍보", c.adCost + c.marketing + c.eventCost],

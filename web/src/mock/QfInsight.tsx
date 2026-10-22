@@ -6,14 +6,14 @@ import {
   type QfCfg, type QfEvent, type QfMonth, type QfOption, type QfPlan, type QfState,
 } from "./quickfood";
 
-type Try = { title: string; why: string; patch: Partial<QfPlan>; d: number };
+import type { Try } from "./Insight";
 
-export function qfTries(profile: Profile, cfg: QfCfg, s0: QfState, c: QfMonth, ev: QfEvent, opt: QfOption, seats: number): Try[] {
+export function qfTries(profile: Profile, cfg: QfCfg, s0: QfState, c: QfMonth, ev: QfEvent, opt: QfOption, seats: number): Try<Partial<QfPlan>>[] {
   const p = c.plan, ind = cfg.ind;
   const run = (patch: Partial<QfPlan>) => playMonth(profile, cfg, s0, c.month, { ...p, ...patch }, ev, opt, seats).month.op;
   const base = run({});
   const lostN = Math.round((c.lost * 1e4) / c.ticket);
-  const out: Omit<Try, "d">[] = [];
+  const out: Omit<Try<Partial<QfPlan>>, "d">[] = [];
   if (p.staff < 6) out.push({ title: `알바 ${p.staff + 1}명으로 늘리기`, why: lostN > 0 ? `일손이 모자라 주문 ${lostN}건을 놓쳤어요.` : "몰리는 날 주문을 더 받을 수 있어요.", patch: { staff: p.staff + 1 } });
   if (p.staff > 0) out.push({ title: `알바 ${p.staff - 1}명으로 줄이기`, why: `일손이 ${Math.round(c.load * 100)}%만 쓰였어요. 인건비를 아껴요.`, patch: { staff: p.staff - 1 } });
   const step = ind === "chicken" ? 1000 : 500, mp = mainPrice(ind, p);
@@ -44,27 +44,3 @@ export function qfTries(profile: Profile, cfg: QfCfg, s0: QfState, c: QfMonth, e
   return out.map((x) => ({ ...x, d: run(x.patch) - base })).filter((x) => x.d >= 3).sort((a, b) => b.d - a.d);
 }
 
-export default function QfInsight({ tries, onApply, last }: { tries: Try[]; onApply: (patch: Partial<QfPlan>) => void; last: boolean }) {
-  const top = tries.slice(0, 3);
-  return (
-    <section className="ins" aria-labelledby="ins-h">
-      <h2 id="ins-h">다음 달에 이렇게 바꿔 보세요</h2>
-      <p className="ins-sub">이번 달과 같은 날씨·사건·손님 조건에서 한 가지만 바꿔 다시 계산했어요. 영업이익이 많이 느는 순서예요.</p>
-      {top.length ? (
-        <ol className="ins-list">
-          {top.map((t, i) => (
-            <li key={t.title} className="ins-card">
-              <span className="ins-n" aria-hidden>{i + 1}</span>
-              <div className="ins-b">
-                <b>{t.title}</b>
-                <small>{t.why}</small>
-              </div>
-              <strong className="ins-d">+{man(Math.round(t.d))}<small>/월</small></strong>
-              {!last && <button type="button" className="ins-go" onClick={() => onApply(t.patch)}>다음 달에 적용</button>}
-            </li>
-          ))}
-        </ol>
-      ) : <p className="ins-none">한 가지만 바꿔서는 이번 달보다 나아지는 게 없었어요. 지금 계획이 이 조건에서 잘 맞아요.</p>}
-    </section>
-  );
-}

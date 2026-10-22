@@ -4,9 +4,9 @@
 // 계산은 apparel.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 옷가게의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
-  BUY_MODES, CATS, MARKET, ONLINE, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
+  BUY_MODES, CATS, MARKET, ONLINE, mixAvg, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
   playMonth, startState, stateAfter, stockValue,
-  type ApMonth, type ApPlan, type ApState, type ApStratId, type ApparelCfg, type Cat,
+  type ApEvent, type ApMonth, type ApOption, type ApPlan, type ApState, type ApStratId, type ApparelCfg, type Cat,
 } from "./apparel";
 import ShopRoom3D from "./ShopRoom3D";
 import Assume from "./Assume";
@@ -14,6 +14,8 @@ import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import { LOAN_RATE, guStat, man, type Profile } from "./model";
 import ModeSwitch from "./ModeSwitch";
 import CashFlow, { type CfMonth } from "./CashFlow";
+import Insight from "./Insight";
+import { apTries } from "./ApInsight";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine";
 import "./simulate-engine.css";
@@ -27,11 +29,58 @@ const PICKS: QPick<ApPlan>[] = [
   { key: "online", label: "온라인 판매", hint: "같은 재고를 온라인으로도 팔아요 (수수료·택배비)", opts: [{ label: "안 함", value: 0 }, { label: "스마트스토어", value: 1 }, { label: "플랫폼 입점", value: 2 }] },
   { key: "staff", label: "알바", hint: "손님이 몰리는 날 응대와 피팅을 도와요", opts: [0, 1, 2].map((n) => ({ label: n ? `${n}명` : "없이", value: n })) },
 ];
+type NumKey = "buy" | "discount" | "markdownAge" | "markdown" | "staff" | "marketing" | "online";
+// hard 모드: 품목별 매입. 이번 달과 다음 달의 품목별 수요 비중(계절)과 지금 선반 재고를 보고 품목마다 정한다
+function CatBuy({ plan, set, month, inv, costAvg }: { plan: ApPlan; set: (p: ApPlan) => void; month: number; inv: ApState["inv"]; costAvg: number }) {
+  const nx = (month % 12) + 1, avg = mixAvg();
+  const up = (c: Cat, d: number) => { const v = Math.max(0.5, Math.min(1.8, +((plan.buyCat?.[c] ?? 1) + d).toFixed(1))); set({ ...plan, buyCat: { ...(plan.buyCat ?? {}), [c]: v } }); };
+  return (
+    <>
+      <h3 className="sx-sub">품목별 매입과 시즌 <Assume id="outerMix" /></h3>
+      <table className="sx-table cat-buy">
+        <thead><tr><th>품목</th><th>{month}월 수요</th><th>{nx}월 수요</th><th>지금 재고</th><th>이번 달 매입</th></tr></thead>
+        <tbody>
+          {CATS.map((c) => {
+            const a = mixOf(month)[c.id] / avg[c.id], b = mixOf(nx)[c.id] / avg[c.id], v = plan.buyCat?.[c.id] ?? 1;
+            const tag = (x: number) => <span className={`cat-tag ${x >= 1.15 ? "hot" : x <= 0.85 ? "cold" : ""}`}>{x >= 1.15 ? "제철" : x <= 0.85 ? "비수기" : "보통"} {Math.round(x * 100)}%</span>;
+            return (
+              <tr key={c.id}>
+                <th>{c.label}</th><td>{tag(a)}</td><td>{tag(b)}</td>
+                <td>{man(Math.round(invOf(inv, c.id, 0, 99) * costAvg))}</td>
+                <td><span className="cat-step">
+                  <button type="button" aria-label={`${c.label} 매입 줄이기`} disabled={v <= 0.5} onClick={() => up(c.id, -0.1)}>−</button>
+                  <output>{Math.round(v * 100)}%</output>
+                  <button type="button" aria-label={`${c.label} 매입 늘리기`} disabled={v >= 1.8} onClick={() => up(c.id, 0.1)}>+</button>
+                </span></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="sx-note">수요 %는 1년 평균 대비 이 달의 품목 비중이에요. 제철 품목을 더 들이면 결품이 줄고, 비수기 품목을 많이 들이면 오래된 재고가 돼요. 재고는 원가 기준이에요.</p>
+    </>
+  );
+}
+// hard 모드: 온라인 광고비와 배송비 부담
+function OnlineBox({ plan, set }: { plan: ApPlan; set: (p: ApPlan) => void }) {
+  const ad = plan.onlineAd ?? 0;
+  return (
+    <>
+      <h3 className="sx-sub">온라인 판매 운영</h3>
+      <div className="sx-steps">
+        <div className="sx-step"><div className="sx-step-t"><span className="sx-step-l">{PLAN_TEXT.onlineAd.label}</span><small>{PLAN_TEXT.onlineAd.hint}</small></div>
+          <div className="sx-step-c"><button type="button" aria-label="온라인 광고 줄이기" disabled={ad <= 0} onClick={() => set({ ...plan, onlineAd: ad - 10 })}>−</button><output>{PLAN_TEXT.onlineAd.text(plan)}</output><button type="button" aria-label="온라인 광고 늘리기" disabled={ad >= 150} onClick={() => set({ ...plan, onlineAd: ad + 10 })}>+</button></div></div>
+        <div className="sx-step"><div className="sx-step-t"><span className="sx-step-l">{PLAN_TEXT.freeShip.label}</span><small>{PLAN_TEXT.freeShip.hint}</small></div>
+          <div className="sx-step-c"><button type="button" aria-label="고객 부담으로" disabled={plan.freeShip === false} onClick={() => set({ ...plan, freeShip: false })}>−</button><output>{PLAN_TEXT.freeShip.text(plan)}</output><button type="button" aria-label="무료배송으로" disabled={plan.freeShip !== false} onClick={() => set({ ...plan, freeShip: true })}>+</button></div></div>
+      </div>
+    </>
+  );
+}
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
 type View = "intro" | "plan" | "scenario" | "settle" | "report" | null;
 type Tick = { label: string; amount: number }; // 만원
 type Day = { date: Date; tx: number; revenue: number; cogs: number; other: number; ticks: Tick[]; notes: string[]; fixedShare: number; cash: number };
-type Done = { m: ApMonth; days: Day[] };
+type Done = { m: ApMonth; days: Day[]; s0: ApState; ev: ApEvent; opt: ApOption };
 const w = (x: number) => Math.round(x); // 만원
 const signed = (x: number) => (w(x) === 0 ? "0원" : `${x > 0 ? "+" : "−"}${man(Math.abs(w(x)))}`);
 const tone = (x: number) => (w(x) > 0 ? "pos" : w(x) < 0 ? "neg" : "");
@@ -190,7 +239,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
     const opt = ev.options.find((o) => o.id === choice) ?? ev.options[0];
     const r = playMonth(profile, cfg, state, m, plan, ev, opt);
     const days = buildDays(r.month, yearOf(idx), state.cash, st.dow);
-    setDone((d) => [...d, { m: r.month, days }]);
+    setDone((d) => [...d, { m: r.month, days, s0: state, ev, opt }]);
     setState(r.next);
     setDayIdx(0); setPlaying(true); setView(null);
   };
@@ -395,7 +444,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                               </select>
                             </div>
                           </div>
-                          {([["buy", 0.7, 1.5, 0.1], ["discount", 0, 0.3, 0.05], ["markdownAge", 2, 4, 1], ["markdown", 0.1, 0.5, 0.1], ["staff", 0, 2, 1], ["marketing", 0, 100, 25], ["online", 0, 2, 1]] as [Exclude<keyof ApPlan, "focus">, number, number, number][]).map(([k, lo, hi, step]) => {
+                          {([["buy", 0.5, 2, 0.1], ["discount", 0, 0.3, 0.05], ["markdownAge", 1, 5, 1], ["markdown", 0.1, 0.6, 0.1], ["staff", 0, 3, 1], ["marketing", 0, 200, 25], ["online", 0, 2, 1]] as [NumKey, number, number, number][]).map(([k, lo, hi, step]) => {
                             const before = cur?.m.plan;
                             const changed = before && PLAN_TEXT[k].text(before) !== PLAN_TEXT[k].text(plan);
                             return (
@@ -414,6 +463,8 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                             );
                           })}
                         </div>
+                        <CatBuy plan={plan} set={setPlan} month={m} inv={state.inv} costAvg={state.costAvg} />
+                        {(plan.online ?? 0) > 0 && <OnlineBox plan={plan} set={setPlan} />}
                       </section>
                     )}
                   </div>
@@ -473,6 +524,10 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                       { label: "월말 현금", value: man(w(c.cash)), main: true },
                     ]} />
                     {c.closed && <p className="se-err">현금이 두 달 연속 바닥이라 가게를 닫게 됐어요.</p>}
+                    <Insight tries={apTries(profile, cfg, cur.s0, c, cur.ev, cur.opt)} last={c.closed || done.length >= TURNS}
+                      onApply={(patch) => { if (mode === "easy") setTweak(patch); else setPlan({ ...c.plan, ...patch }); next(); }} />
+                    <CashFlow months={cfMonths} kind="retail" shop="옷가게" compact />
+                    <details className="sx-more"><summary>정산표·품목별 재고 자세히 보기</summary>
                     <div className="sx-settle">
                       <section className="sx-sec">
                         <h2>정산표</h2>
@@ -506,7 +561,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                         <ul className="sx-evs"><li><b>{c.event}</b><span>고른 대응: {c.choice}</span></li></ul>
                       </section>
                     </div>
-                    <CashFlow months={cfMonths} kind="retail" shop="옷가게" />
+                    </details>
                   </div>
                   <footer className="sx-foot">
                     <button type="button" className="se-btn" onClick={next}>{c.closed || done.length >= TURNS ? "6개월 결과 보기" : `${monthSeq[done.length]}월 운영 계획`}</button>

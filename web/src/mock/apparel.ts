@@ -63,7 +63,7 @@ const OUTER: Record<number, number> = { 1: 0.30, 2: 0.18, 3: 0.12, 4: 0.06, 5: 0
 const OUTER_AVG = Object.values(OUTER).reduce((a, b) => a + b, 0) / 12;
 const BOTTOM = 0.25;
 export const mixOf = (m: number): Record<Cat, number> => ({ top: 1 - BOTTOM - MARKET.acc_share - OUTER[m], bottom: BOTTOM, outer: OUTER[m], acc: MARKET.acc_share });
-const mixAvg = (): Record<Cat, number> => ({ top: 1 - BOTTOM - MARKET.acc_share - OUTER_AVG, bottom: BOTTOM, outer: OUTER_AVG, acc: MARKET.acc_share });
+export const mixAvg = (): Record<Cat, number> => ({ top: 1 - BOTTOM - MARKET.acc_share - OUTER_AVG, bottom: BOTTOM, outer: OUTER_AVG, acc: MARKET.acc_share });
 export const AGES = 7;    // 나이 칸 0~6달, 마지막 칸은 6달 넘은 옷
 export const OLD_AGE = 3; // 석 달 넘게 안 팔린 옷 = 오래된 옷
 export type Inv = Record<Cat, number[]>; // 원가 기준 금액(만원). 기준 원가율로 샀을 때 값이라 매입 방식과 상관없이 '옷의 양'이다
@@ -125,7 +125,9 @@ export function apparelEstimate(profile: Profile): { pyeong: number; cost: Retur
 
 // ---------------------------------------------------------------- 한 달
 // buy: 예상 판매분 대비 매입 배수, marketing 만원, markdownAge: 몇 달 지난 옷부터 세일 칸으로 옮길지, markdown: 세일 폭, focus: 더 들일 품목
-export type ApPlan = { buy: number; discount: number; staff: number; marketing: number; markdownAge: number; markdown: number; focus: Cat | "none"; online: number };
+// buyCat: hard 모드 품목별 매입 배수 (상의·하의·아우터·잡화 따로, 1 = 예상 판매만큼). onlineAd: 온라인 광고비(만원), freeShip: 무료배송
+export type ApPlan = { buy: number; discount: number; staff: number; marketing: number; markdownAge: number; markdown: number; focus: Cat | "none"; online: number;
+  buyCat?: Partial<Record<Cat, number>>; onlineAd?: number; freeShip?: boolean };
 // 온라인 판매 (online: 0 안 함 / 1 스마트스토어 / 2 패션 플랫폼 입점). 같은 재고로 판다. 근거: 2026 SS 패션 구매의 52.3%가 온라인 (S105).
 // 매장 대비 늘어나는 주문(lift), 판매 수수료(fee), 월 고정비(fixed, 사진·등록·광고), 주문당 택배비(ship, 만원)와 반품률은 가정이다
 export const ONLINE = [
@@ -133,6 +135,13 @@ export const ONLINE = [
   { label: "스마트스토어", lift: 0.15, fee: 0.056, fixed: 15, ship: 0.3 },
   { label: "패션 플랫폼 입점", lift: 0.35, fee: 0.28, fixed: 10, ship: 0.3 },
 ];
+// 가정: 온라인 광고는 최대 +50%까지 온라인 주문을 늘리고(반은 50만원에서), 고객이 택배비를 내면 온라인 주문이 25% 적다
+const ONLINE_AD_MAX = 0.5, ONLINE_AD_HALF = 50, PAID_SHIP_LIFT = 0.75;
+export const onlineLift = (plan: ApPlan) => {
+  const on = ONLINE[plan.online ?? 0] ?? ONLINE[0];
+  if (!on.lift) return 0;
+  return on.lift * (1 + ONLINE_AD_MAX * (1 - Math.exp(-(plan.onlineAd ?? 0) / ONLINE_AD_HALF))) * (plan.freeShip === false ? PAID_SHIP_LIFT : 1);
+};
 const ONLINE_RETURN = 0.15; // 가정: 온라인 주문 중 반품 비율 (반품 택배비만 더 든다고 본다)
 export const ONLINE_ASSUME = "온라인 주문 증가(스마트스토어 매장의 +15%, 플랫폼 +35%), 수수료(5.6% / 28%), 택배비 3,000원, 반품 15%, 월 고정비(15만 / 10만원), 온라인 매출의 기타경비 15%, 포장 일손은 가정. 인터뷰로 확인 필요";
 // 세일 시작 2달·폭 30%: "직영점이나 백화점에서 통상 1~2개월 정상판매되고 … 정상가의 20~30% 할인된 가격으로" (장은영 2001)
@@ -172,14 +181,15 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   const baseAt = (mm: number) => expectedSales(profile.gu, cfg.pyeong) * (st.qidx[Math.floor((mm - 1) / 3)] ?? 1) * MONTH_IN_QUARTER[mm];
   const demandStore = baseAt(month) * s.awareness * (ev.demand ?? 1) * (fx.demand ?? 1) * (1 + ELASTIC * discount); // 매장에서 정가로 팔고 싶은 양 (만원)
   const on = ONLINE[plan.online ?? 0] ?? ONLINE[0];
-  const demand = demandStore * (1 + on.lift);   // 온라인 주문도 같은 재고·같은 일손(포장)으로 받는다
+  const lift = onlineLift(plan);
+  const demand = demandStore * (1 + lift);   // 온라인 주문도 같은 재고·같은 일손(포장)으로 받는다
   // 사장 + 알바가 감당하는 매출. 온라인 주문 포장은 영업시간 밖에 한다고 보고 그 절반만큼 일손을 더 쳐 준다 (가정)
-  const capacity = KOSIS.perWorker * HEADROOM * (1 + plan.staff) * (1 + on.lift * 0.5);
+  const capacity = KOSIS.perWorker * HEADROOM * (1 + plan.staff) * (1 + lift * 0.5);
   const mix = mixOf(month);
   const inv: Inv = { top: [...s.inv.top], bottom: [...s.inv.bottom], outer: [...s.inv.outer], acc: [...s.inv.acc] };
   const mdAge = plan.markdownAge;
   const buyMul = Math.max(0.3, plan.buy + (fx.buy ?? 0));
-  const tilt = (c: Cat) => (plan.focus === c ? 1.3 : 1);
+  const tilt = (c: Cat) => (plan.focus === c ? 1.3 : 1) * (plan.buyCat?.[c] ?? 1);
 
   // 1) 매입 (월초). 새 옷은 나이 0 칸에 들어간다. 세일 칸(나이 ≥ markdownAge)은 채워야 할 양에 세지 않는다
   const ordered = cfg.buyMode === "pre" && ORDER_MONTHS.includes(month);
@@ -265,9 +275,11 @@ export function playMonth(profile: Profile, cfg: ApparelCfg, s: ApState, month: 
   const writeOff = woUnits * costAvg * own;
   const revenue = fullRev * (1 - discount) + mdRev + clearRev;
   // 온라인 몫: 정가 판매 중 온라인 주문 비중만큼. 수수료 + (주문 + 반품) 택배비 + 월 고정비
-  const onlineRev = on.lift > 0 ? fullRev * (1 - discount) * (on.lift / (1 + on.lift)) : 0;
+  const onlineRev = lift > 0 ? fullRev * (1 - discount) * (lift / (1 + lift)) : 0;
   const onlineOrders = (onlineRev * 1e4) / st.ticket;
-  const onlineCost = on.lift > 0 ? onlineRev * on.fee + onlineOrders * (1 + ONLINE_RETURN) * on.ship + on.fixed : 0;
+  // 택배비: 무료배송이면 보내는 택배 + 반품 택배, 고객이 내면 반품 택배만 가게가 낸다. 온라인 광고비는 온라인 비용에 넣는다
+  const shipN = plan.freeShip === false ? ONLINE_RETURN : 1 + ONLINE_RETURN;
+  const onlineCost = lift > 0 ? onlineRev * on.fee + onlineOrders * shipN * on.ship + on.fixed + (plan.onlineAd ?? 0) : 0;
   const cogs = soldUnits * (consign ? bm.cost : costAvg);
   const staffPay = STAFF_PAY * plan.staff;
   const rent = st.rent * cfg.pyeong;
@@ -395,6 +407,9 @@ export const PLAN_TEXT: Record<keyof ApPlan, { label: string; text: (p: ApPlan) 
   markdown: { label: "세일 폭", text: (p) => `${Math.round(p.markdown * 100)}%`, hint: "폭이 클수록 세일 칸이 빨리 비지만 남는 돈이 줄어요. 30%면 제철 품목은 한 달에 55%가 팔려요 (가정)" },
   staff: { label: "알바", text: (p) => `${p.staff}명`, hint: `한 명에 월 ${STAFF_PAY}만원. 일손이 모자라면 바쁜 날 손님을 놓쳐요` },
   marketing: { label: "SNS 홍보비", text: (p) => (p.marketing ? `${p.marketing}만원` : "없음"), hint: "인지도가 올라 손님이 늘어요 (100만원당 인지도 +0.15, 고깃집과 같은 가정)" },
+  buyCat: { label: "품목별 매입", text: (p) => (p.buyCat && Object.values(p.buyCat).some((x) => x !== 1) ? CATS.map((c) => `${c.label} ${Math.round((p.buyCat?.[c.id] ?? 1) * 100)}%`).join(" · ") : "고르게"), hint: "품목마다 예상 판매의 몇 %를 들일지예요" },
+  onlineAd: { label: "온라인 광고", text: (p) => (p.onlineAd ? `${p.onlineAd}만원` : "없음"), hint: "검색·플랫폼 광고. 온라인 주문이 늘지만 효과는 점점 줄어요 (최대 +50%, 50만원에서 절반, 가정)" },
+  freeShip: { label: "배송비", text: (p) => (p.freeShip === false ? "고객 부담" : "무료배송"), hint: "무료배송이면 주문이 많고 택배비를 가게가 내요. 고객이 내면 주문이 25% 적어요 (가정)" },
   online: { label: "온라인 판매", text: (p) => ONLINE[p.online ?? 0].label, hint: "같은 재고를 온라인으로도 팔아요. 스마트스토어는 수수료가 싸고 손님이 적게 늘고, 플랫폼은 손님이 많이 늘지만 수수료가 28%예요 (가정). 택배비와 반품도 들어요" },
 };
 const diffPlan = (a: ApPlan, b: ApPlan) => (Object.keys(PLAN_TEXT) as (keyof ApPlan)[])

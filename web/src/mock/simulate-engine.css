@@ -407,3 +407,10 @@ h1:has(> .sx-modesw) { display: flex; align-items: center; justify-content: spac
 .sx-more > summary { padding: 12px 16px; cursor: pointer; font-weight: 700; color: #3d63ea; }
 .sx-more[open] > summary { border-block-end: 1px solid #eef0f4; }
 .sx-more > :not(summary) { padding: 12px 16px; }
+.cat-buy th, .cat-buy td { white-space: nowrap; }
+.cat-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #eef0f4; color: #4a5160; font-size: 12px; font-weight: 700; }
+.cat-tag.hot { background: #fde8e6; color: #c8443a; } .cat-tag.cold { background: #e8eefc; color: #2f4fc4; }
+.cat-step { display: inline-flex; align-items: center; gap: 6px; }
+.cat-step button { inline-size: 28px; block-size: 28px; border: 1px solid #d5deeb; border-radius: 8px; background: #f4f7fb; font: inherit; cursor: pointer; }
+.cat-step button:disabled { opacity: .4; cursor: default; }
+.cat-step output { min-inline-size: 3em; text-align: center; font-weight: 700; }
