@@ -174,9 +174,13 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
   const hiOp = Math.max(1, ...months.map((m) => Math.abs(m.op)));
   return (
     <section className="sx-sec sc-card" aria-label="6개월 성적표">
-      <div className={`sc-hero ${tone}`}>
-        <h2>{headline}</h2>
-        <p>{cause}</p>
+      <div className={`sc-hero sc-top ${tone}`}>
+        <div className="sc-score"><b>{total}</b><span>/ 100점</span></div>
+        <div>
+          <p className="sc-grade">{grade.label}</p>
+          <h2>{headline}</h2>
+          <p>{cause}</p>
+        </div>
       </div>
       <ul className="sc-badges" aria-label="기록">
         <li><small>흑자인 달</small><b>{black} / {n}</b></li>
@@ -184,13 +188,6 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
         <li><small>가장 힘들었던 달</small><b>{worst.month}월 {signedMan(worst.op)}</b></li>
         <li><small>마지막 현금</small><b>{won(endCash)}</b></li>
       </ul>
-      <div className="sc-head">
-        <div className="sc-score"><b>{total}</b><span>/ 100점</span></div>
-        <div>
-          <p className="sc-grade">{grade.label}</p>
-          <p className="sx-note">{grade.note}</p>
-        </div>
-      </div>
       <div className="sc-ops" role="img" aria-label="달별 영업이익">
         {months.map((m) => (
           <span key={m.month} title={`${m.month}월 ${signedMan(m.op)}`}>
@@ -206,15 +203,14 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
             <span className="sc-label">{a.label}{a.key === "cash" && <Assume id="scoreCash" />}</span>
             <span className="sc-bar" aria-hidden="true"><i style={{ width: `${(a.got / a.max) * 100}%` }} /></span>
             <span className="sc-pts">{Math.round(a.got)}/{a.max}</span>
-            <small>{a.detail}</small>
           </li>
         ))}
       </ul>
 
-      <h2>무엇을 고치면 점수가 오를까요</h2>
+      <h2>다음 판에 이것만 고쳐 보세요</h2>
       {weak.length === 0 ? <p className="sx-note">깎인 점수가 거의 없어요. 다른 동네나 업종으로도 돌려 보세요.</p> : (
         <ol className="sc-fix">
-          {weak.map((a) => <li key={a.key}><b>{a.label} +{Math.round(a.max - a.got)}점 가능</b><span>{a.fix}</span></li>)}
+          {weak.map((a) => <li key={a.key}><b>{a.label} <em>+{Math.round(a.max - a.got)}점</em></b><span>{a.fix}</span><small>{a.detail}</small></li>)}
         </ol>
       )}
       {tries.length >= 2 && (() => {
@@ -222,8 +218,8 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
         const d = total - prev.total;
         const moved = areas.map((a) => ({ a, d: Math.round(a.got) - (prev.areas[a.key] ?? 0) })).filter((x) => x.d !== 0).sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
         const recent = tries.slice(-5);
-        return <>
-          <h2>지난 시도와 비교</h2>
+        return <details className="sx-more sc-more">
+          <summary>지난 시도와 비교 · {tries.length}번째 시도, 바로 전보다 {d >= 0 ? `+${d}` : d}점</summary>
           <p className="sx-note">{shop} · {mode === "hard" ? "hard" : "easy"} 모드 {tries.length}번째 시도예요. 바로 전보다 <b className={d >= 0 ? "sc-up" : "sc-down"}>{d >= 0 ? `+${d}` : d}점</b>{d === 0 ? " (같아요)" : ""}.</p>
           {moved.length > 0 && (
             <ul className="sc-diff">
@@ -240,10 +236,14 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
           </table>
           <p className="sx-note">시도 기록은 이 브라우저에만 저장돼요.</p>
           <TryCompare tries={tries} areas={areas} />
-        </>;
+        </details>;
       })()}
-      {benchmark ? <p className="sx-note">{benchmark}</p> : surv && <p className="sx-note">참고로 서울에서 새로 연 음식점(숙박·음식점업)은 3년 뒤 {surv.s3}%만 남아요 (통계청 기업생멸행정통계 {surv.y}년).</p>}
-      <p className="sx-note">배점(생존 30, 수익성 25, 현금 여유 20, 운영 효율 15, 위기 대응 10)과 만점 기준은 교육용으로 정한 가정이에요<Assume id="score" />. 진단은 결과 숫자로 만든 규칙이에요.</p>
+      <details className="sx-more sc-more">
+        <summary>점수는 이렇게 매겨요</summary>
+        <ul className="sc-why">{areas.map((a) => <li key={a.key}><b>{a.label} {Math.round(a.got)}/{a.max}</b><span>{a.detail}</span></li>)}</ul>
+        <p className="sx-note">{grade.note} 배점(생존 30, 수익성 25, 현금 여유 20, 운영 효율 15, 위기 대응 10)과 만점 기준은 교육용으로 정한 가정이에요<Assume id="score" />.</p>
+        {benchmark ? <p className="sx-note">{benchmark}</p> : surv && <p className="sx-note">참고로 서울에서 새로 연 음식점(숙박·음식점업)은 3년 뒤 {surv.s3}%만 남아요 (통계청 기업생멸행정통계 {surv.y}년).</p>}
+      </details>
 
       <h2>랭킹</h2>
       <div className="sc-save">
@@ -255,6 +255,8 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
       </div>
       {msg && <p className="sx-note" role="status">{msg}</p>}
       {board && board.top.length > 0 ? (
+        <details className="sx-more sc-more" open={!!board.mine}>
+        <summary>{cls.trim() || "공개"} 반 랭킹 보기 · {board.count}명</summary>
         <table className="sx-table sc-rank">
           <caption>{cls.trim() || "공개"} 반 · {shop} · {modeKo} 모드 랭킹</caption>
           <thead><tr><th>순위</th><th>별명</th><th>점수</th><th>등급</th><th>업종</th><th>모드</th><th>동네</th></tr></thead>
@@ -264,8 +266,9 @@ export default function Scorecard({ months, startCash, lowestCash, endCash, mont
             </tr>
           ))}</tbody>
         </table>
+        </details>
       ) : <p className="sx-note">{board ? `이 반의 ${shop} · ${modeKo} 모드에는 아직 기록이 없어요. 첫 기록을 남겨 보세요.` : "랭킹 서버에 연결하지 못했어요."}</p>}
-      <small className="sx-note">같은 반 코드를 쓰는 사람끼리 순위를 봐요. 별명과 점수만 저장해요.</small>
+      <small className="sx-note">같은 반 코드끼리 순위를 봐요. 별명과 점수만 저장해요.</small>
     </section>
   );
 }
