@@ -17,7 +17,15 @@ import { QF_NAME, derived as qfDerived, qfEstimate } from "./quickfood";
 import { DEPOSIT_MONTHS, LOAN_RATE, METRICS, ecosRates, ymKo, RAMP, T, iga, dongsOf, guStat, krei, kreiMean, man, openingCost, rankOf, recommend, rentData, type Gu, type Metric, type Profile } from "./model";
 
 type Tab = "place" | "budget" | "fund";
-const TABS: { key: Tab; label: string }[] = [{ key: "place", label: "동네" }, { key: "budget", label: "드는 돈" }, { key: "fund", label: "모자란 돈" }];
+// '모자란 돈' 안의 토글: 네 묶음을 색과 번호 도형으로 구분한다 (색은 mock.css의 .m-ftab.is-*, .m-fund-head.is-*).
+type FundTab = "pre" | "post" | "bank" | "support";
+const FUND_TABS: { key: FundTab; label: string; title: string; lead: string }[] = [
+  { key: "pre", label: "사업자등록 전 정책자금", title: "사업자등록 전에 받을 수 있는 정책자금", lead: "가게를 열기 전, 예비창업자 신분으로 신청하는 자금이에요. 조건부 상품도 있어요." },
+  { key: "post", label: "개업 후 정책자금", title: "가게를 연 뒤에 받을 수 있는 정책자금", lead: "사업자등록 후 영업을 시작한 뒤에 신청하는 자금이에요." },
+  { key: "bank", label: "은행 대출 상품", title: "은행에서 사업자 대출 알아보기", lead: "은행 대출은 신용과 담보에 따라 조건이 달라요. 이 화면은 은행을 추천하거나 신청을 받지 않아요." },
+  { key: "support", label: "접수 중인 창업 지원사업", title: "지금 접수 중인 창업 지원사업", lead: "" },
+];
+const TABS: { key: Tab; label: string }[] =[{ key: "place", label: "동네" }, { key: "budget", label: "드는 돈" }, { key: "fund", label: "모자란 돈" }];
 const RUNWAY_MONTHS = 3; // 가정: 자리 잡기 전 석 달 치 적자와 생활비
 const MONTHLY_BURN = 550;
 const sign = (v: number) => (v > 0 ? "+" : "");
@@ -54,6 +62,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
   profile: Profile; setProfile: (p: Profile) => void; gus: Gu[]; onNext: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("place");
+  const [ftab, setFtab] = useState<FundTab>("pre");
   const [ktab, setKtab] = useState<KTab>("sales");
   const [recOpen, setRecOpen] = useState(false);
   const [metric, setMetric] = useState<Metric>("demand");
@@ -433,99 +442,99 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
           </div>
         )}
 
-        {tab === "fund" && (() => {
-          // 모자란 돈: 갈래마다 박스로 나눈다. 청년 전용(만 39세 이하)은 맨 앞 박스, 그다음 정책 대출·보증, 은행 대출, 교육·프로그램, 접수 중 공고
-          const youthFunds = young ? FUNDS.filter((f) => f.youth) : [];
-          const loans = FUNDS.filter((f) => !f.program && !f.youth);
-          const programs = FUNDS.filter((f) => f.program && !f.youth);
-          const WHEN: Record<Fund["pre"], string> = { "가능": "사업자등록 전 가능", "조건부": "조건이 맞으면", "등록 후": "가게를 연 뒤" };
-          const sections = [
-            ...(youthFunds.length ? [{ id: "fs-youth", label: "청년 지원" }] : []),
-            { id: "fs-loan", label: "정책 대출·보증" }, { id: "fs-bank", label: "은행 대출" },
-            { id: "fs-edu", label: "교육·프로그램" }, { id: "fs-now", label: "접수 중 공고" },
-          ];
-          const card = (f: Fund) => {
-            const rt = f.rate || f.floating ? rateVsBank(f) : null;
-            return (
-              <li key={f.name} className="fd-card">
-                <div className="fd-tags">
-                  {f.youth && <span className="fd-tag is-youth">청년</span>}
-                  <span className={`fd-tag ${f.program ? "is-edu" : ""}`}>{f.program ? "빌리는 돈 아님" : WHEN[f.pre]}</span>
-                  {f.rate && <span className="fd-tag is-rate">연 {f.rate[0] === f.rate[1] ? f.rate[0] : `${f.rate[0]}~${f.rate[1]}`}%</span>}
-                </div>
-                <h3>{f.url ? <a href={f.url} target="_blank" rel="noreferrer">{f.name}</a> : f.name}</h3>
-                <p className="fd-who">{f.org} · {f.who}</p>
-                <p className="fd-terms">{f.limit}. {f.terms}</p>
-                {rt && <p className={`m-rate fd-rate ${rt.includes("높아요") ? "is-high" : ""}`}>{rt}</p>}
-                <p className="fd-note">{f.where}. {f.note}</p>
-              </li>
-            );
-          };
-          return (
-            <div className="m-finding fd" key="fund">
-              {gap > 0 ? (
-                <>
-                  <h1>가진 돈으로는 <mark>{man(gap)}</mark>이 모자라요.</h1>
-                  <ul className="fd-ways">
-                    <li><b>줄이기</b><span>평수나 마감을 낮춰요 ('드는 돈' 탭)</span></li>
-                    <li><b>옮기기</b><span>월세가 싼 구를 골라요 ('동네' 탭 지도)</span></li>
-                    <li><b>구하기</b><span>아래 정책자금·대출을 알아봐요</span></li>
-                  </ul>
-                </>
-              ) : (
-                <>
-                  <h1>가진 돈으로 열 수 있고 <mark>{man(-gap)}</mark>이 남아요.</h1>
-                  <p>남는 돈은 장사가 자리 잡기 전까지 버티는 데 쓰여요. 한 달에 {man(MONTHLY_BURN)}쯤 줄어든다고 보면 {Math.floor(-gap / MONTHLY_BURN) + RUNWAY_MONTHS}개월을 버틸 수 있어요. 교육·지원 프로그램은 돈이 충분해도 들어 둘 만해요.</p>
-                </>
-              )}
-              <nav className="fd-jump" aria-label="모자란 돈 구역">
-                {sections.map((s) => <a key={s.id} href={`#${s.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>{s.label}</a>)}
-              </nav>
-
-              {youthFunds.length > 0 && (
-                <section id="fs-youth" className="fd-box is-youth">
-                  <header><h2>청년 지원</h2><p>만 39세 이하만 받을 수 있는 자금과 프로그램이에요. 나이 조건이 있어 경쟁이 덜하고 금리가 낮은 편이에요.</p></header>
-                  <ul className="fd-list">{youthFunds.map(card)}</ul>
-                </section>
-              )}
-
-              {gap > 0 && (
-                <section id="fs-loan" className="fd-box is-loan">
-                  <header><h2>정책 대출·보증</h2><p>빌리는 돈이에요. 갚아야 해요. 받을 수 있는 시점(사업자등록 전/후)을 먼저 보세요.</p></header>
-                  <ul className="fd-list">{loans.map(card)}</ul>
-                  {!young && <p className="fd-foot">나이 조건(만 39세 이하)이 있는 청년 자금은 뺐어요.</p>}
-                </section>
-              )}
-
-              {gap > 0 && (
-                <section id="fs-bank" className="fd-box is-bank">
-                  <header><h2>은행 대출</h2><p>지역신용보증재단 보증서를 담보로 한 대출은 아래 은행에서 방문 없이 신청할 수 있어요 (<a href={BANK_GUARANTEE_URL} target="_blank" rel="noreferrer">신용보증재단중앙회 안내</a>). 지금 은행 중소기업대출 평균 금리는 연 {+(LOAN_RATE * 100).toFixed(2)}%예요.</p></header>
-                  <ul className="fd-banks">
+        {tab === "fund" && (
+          <div className="m-finding" key="fund">
+            {gap > 0 ? (
+              <>
+                <h1>가진 돈으로는 <mark>{man(gap)}</mark>이 모자라요.</h1>
+                <p>모자란 돈을 구하는 길은 셋이에요. 평수나 마감을 낮추거나, 월세가 싼 구로 옮기거나, 정책자금을 알아보는 거예요.</p>
+              </>
+            ) : (
+              <>
+                <h1>가진 돈으로 열 수 있고 <mark>{man(-gap)}</mark>이 남아요.</h1>
+                <p>남는 돈은 장사가 자리 잡기 전까지 버티는 데 쓰여요. 한 달에 {man(MONTHLY_BURN)}쯤 줄어든다고 보면 {Math.floor(-gap / MONTHLY_BURN) + RUNWAY_MONTHS}개월을 버틸 수 있어요.</p>
+              </>
+            )}
+            <div className="m-ftabs" role="tablist" aria-label="돈을 구하는 방법">
+              {FUND_TABS.map((t, i) => {
+                const n = t.key === "pre" ? FUNDS.filter((f) => (f.pre === "가능" || f.pre === "조건부") && !f.program && (!f.youth || young)).length
+                  : t.key === "post" ? FUNDS.filter((f) => f.pre === "등록 후" && !f.program && (!f.youth || young)).length
+                  : t.key === "bank" ? BANKS.length : null;
+                return (
+                  <button key={t.key} type="button" role="tab" id={`ftab-${t.key}`} aria-selected={ftab === t.key} aria-controls="fpanel"
+                    className={`m-ftab is-${t.key}`} onClick={() => setFtab(t.key)}>
+                    <span className="m-fund-badge" aria-hidden="true">{i + 1}</span>
+                    <span>{t.label}{n != null && <small>{n}</small>}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="m-fpanel" id="fpanel" role="tabpanel" aria-labelledby={`ftab-${ftab}`} key={ftab}>
+              {(ftab === "pre" || ftab === "post") && (() => {
+                const t = FUND_TABS.find((x) => x.key === ftab)!;
+                const list = FUNDS.filter((f) => (ftab === "pre" ? f.pre === "가능" || f.pre === "조건부" : f.pre === "등록 후") && !f.program && (!f.youth || young));
+                return (
+                  <div className="m-funds">
+                    <p className={`m-fund-head is-${ftab}`}>{t.lead}</p>
+                    {list.length ? (
+                      <ul>
+                        {list.map((f) => (
+                          <li key={f.name}>
+                            {f.pre === "조건부" && <ul className="m-chips" aria-label="조건"><li className="m-chip is-warn">조건부</li></ul>}
+                            <b>{f.url ? <a href={f.url} target="_blank" rel="noreferrer">{f.name}</a> : f.name}</b> <small>{f.org} · {f.who}</small>
+                            <p>{f.limit}. {f.terms}</p>
+                            {(f.rate || f.floating) && (() => { const r = rateVsBank(f); return <p className={`m-rate ${r.includes("높아요") ? "is-high" : ""}`}>{r}</p>; })()}
+                            <small>{f.where}. {f.note}</small>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="m-aside">지금 조건에 맞는 자금이 목록에 없어요.</p>}
+                    {!young && <p className="m-aside">나이 조건(만 39세 이하)이 있는 청년 자금은 목록에서 뺐어요.</p>}
+                    <small className="m-src">{FUNDS_SRC}. 업계 글을 모은 표라 한도와 금리는 기관 공고 원문으로 확인해야 해요.</small>
+                  </div>
+                );
+              })()}
+              {ftab === "bank" && (
+                <div className="m-funds">
+                  <p className="m-fund-head is-bank">
+                    지역신용보증재단 보증서를 담보로 한 대출은 아래 은행 앱에서 방문 없이 신청할 수 있어요 (<a href={BANK_GUARANTEE_URL} target="_blank" rel="noreferrer">신용보증재단중앙회 안내</a>).
+                    <b>지금 은행 중소기업대출 평균 금리는 연 {+(LOAN_RATE * 100).toFixed(2)}%예요.</b>
+                  </p>
+                  <ul className="m-bankgrid">
                     {BANKS.map((b) => (
-                      <li key={b.name}><a href={b.url} target="_blank" rel="noreferrer" title={b.kind === "앱" ? `${b.app} 앱 안내 (Google Play)` : `${b.name} ${b.app} (은행 홈페이지)`}>
-                        <b>{b.name}</b><span>{b.kind === "앱" ? `${b.app} 앱` : b.app}</span><small>{b.kind === "앱" ? "앱 안내" : "상품 페이지"}</small>
-                      </a></li>
+                      <li key={b.name}>
+                        <a href={b.url} target="_blank" rel="noreferrer">
+                          <img src={`${import.meta.env.BASE_URL}mock/banks/${b.icon}`} alt="" width={72} height={72} />
+                          <span>{b.name}</span>
+                        </a>
+                      </li>
                     ))}
                   </ul>
-                  <p className="fd-foot">은행마다 금리가 어떻게 다른지는 <a href={BANK_COMPARE_URL} target="_blank" rel="noreferrer">은행연합회 개인사업자 대출금리 비교</a>에서 볼 수 있어요. 모두 보안 프로그램을 깔지 않아도 열려요 (2026년 10월 확인). 이 화면은 은행을 추천하거나 신청을 받지 않아요.</p>
-                </section>
+                  <small>은행마다 금리가 어떻게 다른지는 <a href={BANK_COMPARE_URL} target="_blank" rel="noreferrer">은행연합회 개인사업자 대출금리 비교</a>에서 볼 수 있어요. {FUND_TABS[2].lead}</small>
+                  <small className="m-src">이 시뮬레이터의 대출 이자는 정책자금이 아니라 일반 은행 대출로 본 연 {+(LOAN_RATE * 100).toFixed(2)}%예요.</small>
+                </div>
               )}
-
-              <section id="fs-edu" className="fd-box is-edu">
-                <header><h2>교육·지원 프로그램</h2><p>빌리는 돈이 아니에요. 배우고 준비하는 과정이고, 일부는 끝나면 자금을 연결해 줘요.</p></header>
-                <ul className="fd-list">{programs.map(card)}</ul>
-              </section>
-
-              <section id="fs-now" className="fd-box is-now">
-                <header><h2>지금 접수 중인 공고</h2><p>창업진흥원 K-Startup에 올라온 공고 중 이 구·서울·전국 대상이에요. 마감이 가까운 순이에요.</p></header>
-                <KStartup young={young} gu={profile.gu} bare />
-              </section>
-
-              <small className="m-src">{FUNDS_SRC}. 업계 글을 모은 표라 한도와 금리는 기관 공고 원문으로 확인해야 해요. 이 시뮬레이터의 대출 이자는 정책자금이 아니라 일반 은행 대출로 본 연 {+(LOAN_RATE * 100).toFixed(2)}%예요.</small>
-              <button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button>
+              {ftab === "support" && (
+                <KStartup young={young} gu={profile.gu} before={(() => {
+                  const progs = FUNDS.filter((f) => f.program && (!f.youth || young));
+                  return progs.length ? (
+                    <ul>
+                      {progs.map((f) => (
+                        <li key={f.name}>
+                          <ul className="m-chips" aria-label="종류"><li className="m-chip is-good">교육 프로그램</li></ul>
+                          <b>{f.url ? <a href={f.url} target="_blank" rel="noreferrer">{f.name}</a> : f.name}</b> <small>{f.org} · {f.who}</small>
+                          <p>{f.limit}. {f.terms}</p>
+                          <small>{f.where}. {f.note}</small>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null;
+                })()} />
+              )}
             </div>
-          );
-        })()}
+            <button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button>
+          </div>
+        )}
       </section>
     </main>
   );

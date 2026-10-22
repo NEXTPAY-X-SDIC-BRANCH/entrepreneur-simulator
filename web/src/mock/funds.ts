@@ -45,13 +45,13 @@ export const FUNDS_SRC = "예비창업 정책자금 정리표 (기관 안내와 
 // 신한·NH는 로그인 없이 볼 수 있는 상품 페이지를 찾지 못했다 (NH 대출 메뉴는 로그인·설치 요구).
 // 대출 중개로 보이지 않게 은행을 추천하거나 순서를 매기지 않는다 (가나다순).
 const PLAY = (id: string) => `https://play.google.com/store/apps/details?id=${id}&hl=ko`;
-export const BANKS: { name: string; app: string; url: string; kind: "상품" | "앱" }[] = [
-  { name: "KB국민은행", app: "KB소상공인 신용대출 안내", url: "https://obank.kbstar.com/products/kb-soho-credit-loan-guide.html", kind: "상품" },
-  { name: "IBK기업은행", app: "i-ONE Bank", url: PLAY("com.ibk.android.ionebank"), kind: "앱" },
-  { name: "NH농협은행", app: "NH올원뱅크", url: PLAY("com.nonghyup.nhallonebank"), kind: "앱" },
-  { name: "신한은행", app: "신한 슈퍼SOL", url: PLAY("com.shinhan.sbanking"), kind: "앱" },
-  { name: "우리은행", app: "개인사업자대출 목록", url: "https://spot.wooribank.com/pot/Dream?withyou=POLON0063", kind: "상품" },
-  { name: "하나은행", app: "하나원큐", url: PLAY("com.hanabank.oqf"), kind: "앱" },
+export const BANKS: { name: string; app: string; url: string; kind: "상품" | "앱"; icon: string }[] = [
+  { name: "KB국민은행", app: "KB소상공인 신용대출 안내", url: "https://obank.kbstar.com/products/kb-soho-credit-loan-guide.html", kind: "상품", icon: "kb.png" },
+  { name: "IBK기업은행", app: "i-ONE Bank", url: PLAY("com.ibk.android.ionebank"), kind: "앱", icon: "ibk.png" },
+  { name: "NH농협은행", app: "NH올원뱅크", url: PLAY("com.nonghyup.nhallonebank"), kind: "앱", icon: "nh.png" },
+  { name: "신한은행", app: "신한 슈퍼SOL", url: PLAY("com.shinhan.sbanking"), kind: "앱", icon: "shinhan.png" },
+  { name: "우리은행", app: "개인사업자대출 목록", url: "https://spot.wooribank.com/pot/Dream?withyou=POLON0063", kind: "상품", icon: "woori.png" },
+  { name: "하나은행", app: "하나원큐", url: PLAY("com.hanabank.oqf"), kind: "앱", icon: "hana.png" },
 ];
 export const BANK_GUARANTEE_URL = "https://www.koreg.or.kr/adit/onTact/onTact_01.html";
 // 은행연합회 소비자포털: 은행별 중소기업(개인사업자) 운전자금 대출금리 비교공시 (보증서담보·신용·마이너스)

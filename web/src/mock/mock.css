@@ -447,10 +447,25 @@ html:has(.m-app) { background: #fff; }
 .m-funds li > small { display: block; margin-block-start: 2px; }
 .m-funds li p.m-rate { margin-block-start: 4px; font-size: 14px; font-weight: 600; color: var(--ok-ink); }
 .m-funds li p.m-rate.is-high { color: var(--warn-ink); }
-.m-funds .m-banks { margin: 10px 0; }
-.m-funds .m-banks li { font-size: 14px; }
-.m-funds .m-banks a { color: inherit; text-decoration: none; }
-.m-funds .m-banks li:hover { border-color: currentColor; }
+
+/* '모자란 돈' 토글: 네 묶음을 색과 번호 도형(원)으로 구분한다. 1 등록 전(파랑) 2 개업 후(초록) 3 은행(보라) 4 지원사업(주황) */
+.m-ftabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-block: 16px 14px; }
+.m-ftab { --c: #2f5fe0; --tint: #e8eeff; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 2px solid var(--tint); border-radius: 14px; background: var(--tint); color: var(--ink); font-size: 15px; font-weight: 600; text-align: start; cursor: pointer; }
+.m-ftab small { display: inline-block; margin-block: 0; margin-inline-start: 6px; line-height: 1.5; padding: 1px 7px; border-radius: 999px; background: #fff; color: var(--c); font-size: 12px; font-weight: 700; }
+.m-ftab:hover { border-color: var(--c); }
+.m-ftab:focus-visible { outline: 3px solid var(--c); outline-offset: 2px; }
+.m-ftab[aria-selected="true"] { background: var(--c); border-color: var(--c); color: #fff; }
+.m-ftab[aria-selected="true"] small { background: rgba(255, 255, 255, 0.92); }
+.m-ftab.is-post { --c: #0f8a5f; --tint: #def5ea; }
+.m-ftab.is-bank { --c: #6a4bd4; --tint: #ece6ff; }
+.m-ftab.is-support { --c: #d9730d; --tint: #ffecd6; }
+.m-fund-badge { display: inline-grid; place-items: center; flex: none; inline-size: 26px; block-size: 26px; border-radius: 50%; background: var(--c, #2f5fe0); color: #fff; font-size: 14px; font-weight: 800; }
+.m-ftab[aria-selected="true"] .m-fund-badge { background: #fff; color: var(--c); }
+.m-fund-head { --c: #2f5fe0; --tint: #e8eeff; display: block; margin: 0; padding: 14px 18px; border-radius: 12px; background: var(--tint); font-size: 16px; line-height: 1.55; font-weight: 400; color: var(--ink); }
+.m-fund-head.is-post { --c: #0f8a5f; --tint: #def5ea; }
+.m-fund-head.is-bank { --c: #6a4bd4; --tint: #ece6ff; }
+.m-fund-head.is-support { --c: #d9730d; --tint: #ffecd6; }
+.m-fpanel { margin-block-end: 18px; }
 
 .m-recbtn { inline-size: 100%; padding: 10px 16px; font-size: 16px; }
 
@@ -540,43 +555,9 @@ html:has(.m-app) { background: #fff; }
 .m-tray-go, .m-presets { gap: 12px; }
 .m-top .m-chatbtn + .m-acct, .m-top .m-chatbtn + .m-acct-wrap { margin-inline-start: -12px; }
 
-/* ---- 모자란 돈 탭: 갈래별 박스 (Analysis.tsx fund) ---- */
-.fd { display: grid; gap: 18px; }
-.fd-ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
-.fd-ways li { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 12px; background: #fff; }
-.fd-ways b { font-size: 15px; }
-.fd-ways span { font-size: 13px; color: var(--muted, #5b6b82); }
-.fd-jump { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; background: var(--paper, #fff); }
-.fd-jump a { padding: 6px 12px; border: 1px solid var(--rule); border-radius: 999px; font-size: 14px; text-decoration: none; color: inherit; background: #fff; }
-.fd-jump a:hover { border-color: #3f62e8; color: #3f62e8; }
-.fd-box { scroll-margin-top: 60px; border: 1px solid var(--rule); border-radius: 16px; background: #fff; overflow: hidden; }
-.fd-box > header { padding: 14px 18px 12px; border-block-start: 6px solid #9fb0c8; background: #f6f8fc; }
-.fd-box > header h2 { margin: 0; font-size: 18px; }
-.fd-box > header p { margin: 4px 0 0; font-size: 14px; color: var(--muted, #5b6b82); line-height: 1.55; }
-.fd-box.is-youth > header { border-block-start-color: #3f62e8; background: #eef2ff; }
-.fd-box.is-loan > header { border-block-start-color: #d98a1c; background: #fff7ea; }
-.fd-box.is-bank > header { border-block-start-color: #2f8f6b; background: #edf8f3; }
-.fd-box.is-edu > header { border-block-start-color: #8a5cd6; background: #f5f0fd; }
-.fd-box.is-now > header { border-block-start-color: #d4547a; background: #fdf0f4; }
-.fd-box > .m-funds, .fd-box > .fd-foot { padding: 0 18px 14px; }
-.fd-box > .m-funds { padding-block-start: 12px; }
-.fd-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 0; padding: 14px 18px; list-style: none; }
-.fd-card { display: grid; gap: 4px; align-content: start; padding: 14px; border: 1px solid var(--rule); border-radius: 12px; background: #fff; }
-.fd-card h3 { margin: 2px 0 0; font-size: 16px; }
-.fd-card p { margin: 0; }
-.fd-who { font-size: 13px; color: var(--muted, #5b6b82); }
-.fd-terms { font-size: 15px; line-height: 1.5; }
-.fd-note { font-size: 13px; color: var(--muted, #5b6b82); line-height: 1.5; }
-.fd-rate { font-size: 13px; font-weight: 600; color: var(--ok-ink, #1b6e43); }
-.fd-rate.is-high { color: var(--warn-ink, #8a5200); }
-.fd-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.fd-tag { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #eef1f6; color: #4a5b73; }
-.fd-tag.is-youth { background: #e3e9ff; color: #2c47b8; }
-.fd-tag.is-edu { background: #efe7fb; color: #6a3fb4; }
-.fd-tag.is-rate { background: #e3f2ea; color: #1b6e43; }
-.fd-banks { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 0; padding: 14px 18px; list-style: none; }
-.fd-banks a { display: grid; gap: 2px; padding: 12px; border: 1px solid var(--rule); border-radius: 12px; text-decoration: none; color: inherit; }
-.fd-banks a:hover { border-color: #2f8f6b; }
-.fd-banks span { font-size: 13px; }
-.fd-banks small { font-size: 12px; color: #2f8f6b; font-weight: 600; }
-.fd-foot { margin: 0; font-size: 13px; color: var(--muted, #5b6b82); line-height: 1.55; }
+
+/* 은행 앱 아이콘 2행 x 3열 */
+.m-funds ul.m-bankgrid { grid-template-columns: repeat(3, 88px); gap: 18px 38px; justify-items: center; justify-content: center; }
+.m-funds .m-bankgrid li { padding: 0; border: 0; }
+.m-bankgrid a { display: grid; justify-items: center; gap: 8px; color: var(--ink); text-decoration: none; font-size: 15px; font-weight: 600; }
+.m-bankgrid img { inline-size: 72px; block-size: 72px; object-fit: contain; border-radius: 16px; background: #fff; border: 1px solid var(--rule); }
