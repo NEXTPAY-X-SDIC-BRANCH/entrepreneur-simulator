@@ -523,7 +523,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                         <h2>정산표</h2>
                         <table className="sx-table"><tbody>
                           <tr><th>매출</th><td>{man(w(c.revenue))}</td><td>주문 약 {n0(c.tx)}건, 한 건 {n0(c.ticket)}원<Assume id="elastic" what="평수 효과(제곱근), 새 가게 인지도, 가격 탄력성 2" /></td></tr>
-                          <tr><th>식재료비</th><td>−{man(w(c.food))}</td><td>매출의 {Math.round((c.food / Math.max(1, c.revenue)) * 100)}%, 이달 식재료 시세 {c.foodMult.toFixed(2)}배</td></tr>
+                          <tr><th>식재료비</th><td>−{man(w(c.food))}</td><td>매출의 {Math.round((c.food / Math.max(1, c.revenue)) * 100)}%, 이달 식재료 시세 {c.foodMult.toFixed(2)}배<Assume id="priceCheck" /></td></tr>
                           <tr><th>배달 수수료</th><td>−{man(w(fees))}</td><td>배달 {n0(c.orders.delivery)}건 × {n0(dv.appFee * 1e4 + dv.agencyFee * 1e4)}원</td></tr>
                           <tr><th>인건비</th><td>{c.staffPay ? `−${man(w(c.staffPay))}` : "0원"}</td><td>알바 {c.plan.staff}명</td></tr>
                           <tr><th>월세</th><td>−{man(w(c.rent))}</td><td /></tr>

@@ -73,6 +73,9 @@ const FOOD_MAP: Record<QfInd, [string, string[]][]> = {
   bunsik: [["쌀", ["rice"]], ["축산물", ["egg", "pork"]], ["가공식품(공산품)", ["tteok", "fishcake"]]],
 };
 export type FoodPart = { group: string; items: string[]; share: number; factor: number };
+// 달별 계절 배수는 백테스트(pipelines/backtest_prices.py)에서 '그대로 유지'보다 잘 맞힌 품목에만 쓴다: 돼지고기 (6개월 앞 오차 4.9% vs 6.3%).
+// 닭고기·쌀·달걀·식용유·우유는 그대로 유지가 더 잘 맞아서 지금 수준(level_vs_2024)만 곱한다
+const SEASONAL_OK = new Set(["pork"]);
 export function foodMult(ind: QfInd, month: number): { mult: number; parts: FoodPart[] } {
   const mix = K[ind].food_mix_pct ?? {};
   const parts: FoodPart[] = [];
@@ -81,7 +84,7 @@ export function foodMult(ind: QfInd, month: number): { mult: number; parts: Food
     const share = (mix[group] ?? 0) / 100;
     const fs = items.map((i) => FOOD?.[i]).filter((x): x is FoodItem => !!x && x.level_vs_2024 != null);
     if (!share || !fs.length) continue;
-    const factor = fs.reduce((a, x) => a + x.level_vs_2024! * (x.month_index[String(month)] ?? 1), 0) / fs.length;
+    const factor = fs.reduce((a, x, k) => a + x.level_vs_2024! * (SEASONAL_OK.has(items[k]) ? x.month_index[String(month)] ?? 1 : 1), 0) / fs.length;
     mult += share * (factor - 1);
     parts.push({ group, items: fs.map((x) => x.label), share, factor });
   }

@@ -1,6 +1,7 @@
 // 재료 시세 대시보드: 돼지고기·채소값이 지난 시즌들에 10월 대비 어떻게 움직였는지 (예측이 아니다).
 // 데이터: web/public/mock/cost_index.json (pipelines/fetch_cost_index.py). 시즌마다 그해 10월 = 1.
 // 엔진도 같은 파일의 평균(index)을 calendar.yaml cost_index로 원가에 곱한다.
+import Assume from "./Assume";
 import { useEffect, useState } from "react";
 
 type Path = { seasons: string[]; index: Record<string, number>; low: Record<string, number>; high: Record<string, number>; by_season: Record<string, Record<string, number>> };
@@ -49,7 +50,8 @@ export default function PriceTrend({ month }: { month: number }) {
       <button type="button" className="sx-ghost" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? "재료 시세 접기" : "재료 시세 보기 (지난 시즌)"}</button>
       {open && (
         <>
-          <p className="sx-note">10월 값을 1로 놓고 지난 시즌마다 그린 선이에요. 굵은 선이 평균이고 색칠한 띠가 가장 싼 해~가장 비싼 해예요. <b>예측이 아니라</b> 과거 같은 시기에 이만큼 움직였다는 뜻이에요. 엔진은 평균값을 이달 원가에 곱해요.</p>
+          <p className="sx-note">10월 값을 1로 놓고 지난 시즌마다 그린 선이에요. 굵은 선이 평균이고 색칠한 띠가 가장 싼 해~가장 비싼 해예요. <b>예측이 아니라</b> 과거 같은 시기에 이만큼 움직였다는 뜻이에요. 엔진은 평균값을 이달 원가에 곱해요.<Assume id="priceCheck" /></p>
+          <p className="sx-note pt-check">검증해 보니 돼지고기는 계절 평균을 쓰면 6개월 뒤 값을 평균 4.9% 오차로 맞혀요 ('지금 값 그대로'는 6.3%). 다만 실제 값이 과거 띠 안에 든 건 절반쯤이라, 띠 밖으로 크게 오를 수도 있어요.</p>
           <div className="pt-grid2">
             <Chart title="돼지고기" path={d.pork} month={month} lo={plo} hi={phi} note={`통계청 생활물가지수 돼지고기 서울, ${d.pork.seasons[0]}~${d.pork.seasons.at(-1)} 시즌. 10월부터 3월까지 꾸준히 싸져요`} />
             <Chart title="쌈채소·양념 채소" path={d.veg} month={month} lo={vlo} hi={vhi} note={`KAMIS 서울 도매가 상추·깻잎·풋고추·양파·대파 평균, ${d.veg.seasons[0]}~${d.veg.seasons.at(-1)} 시즌. 해마다 차이가 커요`} />
