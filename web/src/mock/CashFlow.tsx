@@ -19,7 +19,7 @@ function fill(m: CfMonth): CfLine[] {
   return Math.abs(gap) >= 10_000 ? [...lines, { label: "그 밖의 현금", amount: gap }] : lines;
 }
 
-export default function CashFlow({ months, kind }: { months: CfMonth[]; kind: TaxKind; shop?: string; latestOnly?: boolean }) {
+export default function CashFlow({ months, kind, compact }: { months: CfMonth[]; kind: TaxKind; shop?: string; latestOnly?: boolean; compact?: boolean }) {
   const taxes = useMemo(() => taxByMonth(months.map((m) => m.tax), kind), [months, kind]);
   const rows = useMemo(() => months.map(fill), [months]);
   if (!months.length) return null;
@@ -34,6 +34,17 @@ export default function CashFlow({ months, kind }: { months: CfMonth[]; kind: Ta
 
   return (
     <div className="cf">
+      <div className="cf-pair">
+        <section className="sx-sec">
+          <h2>{months.at(-1)!.month}월 돈의 흐름</h2>
+          <Waterfall m={months.at(-1)!} lines={rows.at(-1)!} tax={taxes.at(-1)!.vat + taxes.at(-1)!.income} />
+        </section>
+        <section className="sx-sec">
+          <h2>달마다 남은 현금</h2>
+          <CashBars months={months} after={afterTax} />
+        </section>
+      </div>
+      {compact ? <details className="sx-more"><summary>현금흐름표와 세금 떼어 둘 돈 보기</summary>
       <section className="sx-sec">
         <h2>현금흐름표</h2>
         <div className="cf-scroll">
@@ -58,21 +69,37 @@ export default function CashFlow({ months, kind }: { months: CfMonth[]; kind: Ta
           {" "}종합소득세는 다음 해 5월에 내요. 엔진의 현금은 세금을 내기 전 금액이라, 그때 한꺼번에 나갈 돈을 미리 떼어 봤어요.
         </p>
       </section>
+      </details> : <>
       <section className="sx-sec">
-        <h2>{months.at(-1)!.month}월, 돈이 이렇게 들어오고 나갔어요</h2>
-        <Waterfall m={months.at(-1)!} lines={rows.at(-1)!} tax={taxes.at(-1)!.vat + taxes.at(-1)!.income} />
+        <h2>현금흐름표</h2>
+        <div className="cf-scroll">
+          <table className="sx-table cf-table">
+            <thead><tr><th>항목</th>{months.map((m) => <th key={m.month}>{m.month}월</th>)}<th>합계</th></tr></thead>
+            <tbody>
+              <tr className="sub"><th>월초 현금</th>{months.map((m) => <td key={m.month}>{man(m10k(m.start))}</td>)}<td /></tr>
+              {ins.map((lb) => <tr key={lb} className="cf-in"><th>{lb}</th>{months.map((m, i) => <td key={m.month}>{sg(cell(i, lb))}</td>)}<td>{sg(rows.reduce((a, _, i) => a + cell(i, lb), 0))}</td></tr>)}
+              {outs.map((lb) => <tr key={lb}><th>{lb}</th>{months.map((m, i) => <td key={m.month}>{sg(cell(i, lb))}</td>)}<td>{sg(rows.reduce((a, _, i) => a + cell(i, lb), 0))}</td></tr>)}
+              <tr className="sum"><th>이달 현금 변화</th>{months.map((m) => <td key={m.month}>{sg(m.end - m.start)}</td>)}<td>{sg(months.at(-1)!.end - months[0].start)}</td></tr>
+              <tr className="sum"><th>월말 현금</th>{months.map((m) => <td key={m.month}>{man(m10k(m.end))}</td>)}<td /></tr>
+              <tr className="cf-tax"><th>부가세 떼어 둘 돈<Assume id="vat" /></th>{taxes.map((t, i) => <td key={i}>{t.vat ? `−${man(m10k(t.vat))}` : "0원"}</td>)}<td>−{man(m10k(taxes.reduce((a, t) => a + t.vat, 0)))}</td></tr>
+              <tr className="cf-tax"><th>소득세 떼어 둘 돈<Assume id="incomeTax" /></th>{taxes.map((t, i) => <td key={i}>{t.income ? `−${man(m10k(t.income))}` : "0원"}</td>)}<td>−{man(m10k(taxes.reduce((a, t) => a + t.income, 0)))}</td></tr>
+              <tr className="sum cf-net"><th>세금 떼어 둔 뒤 현금</th>{afterTax.map((x, i) => <td key={i}>{man(m10k(x))}</td>)}<td /></tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="sx-note">
+          {t0.exempt ? "이 속도면 1년 매출이 4,800만원보다 적어 부가세 납부가 면제돼요."
+            : t0.simplified ? "이 속도면 1년 매출이 1억 400만원보다 적어 간이과세자예요. 부가세는 매출의 1.5%에서 카드 매출 공제를 뺀 만큼, 다음 해 1월 25일에 한 번 내요."
+            : `이 속도면 1년 매출이 1억 400만원을 넘어 일반과세자예요. 부가세는 1~6월분을 7월 25일, 7~12월분을 다음 해 1월 25일에 내요${kind === "food" ? ". 고기·채소 같은 농축산물 원가는 의제매입세액으로 일부 돌려받아요" : ""}.`}
+          {" "}종합소득세는 다음 해 5월에 내요. 엔진의 현금은 세금을 내기 전 금액이라, 그때 한꺼번에 나갈 돈을 미리 떼어 봤어요.
+        </p>
       </section>
-      {months.length > 1 && (
-        <section className="sx-sec">
-          <h2>달마다 남은 현금</h2>
-          <CashBars months={months} after={afterTax} />
-        </section>
-      )}
+      </>}
     </div>
   );
 }
 
-const W = 64; // 막대 한 칸 폭 (svg 단위)
+const W = 56; // 막대 한 칸 폭 (svg 단위)
 const short = (lb: string) => (lb.length > 7 ? lb.slice(0, 7) + "…" : lb);
 const mk = (x: number) => { const v = Math.round(x / 1e4); return Math.abs(v) >= 1e4 ? `${(v / 1e4).toFixed(1)}억` : `${v.toLocaleString("ko-KR")}만`; };
 
@@ -88,7 +115,7 @@ function Waterfall({ m, lines, tax }: { m: CfMonth; lines: CfLine[]; tax: number
   if (tax > 0) { bars.push({ label: "세금 떼어 둘 돈", from: m.end, to: m.end - tax, kind: "tax" }); bars.push({ label: "세금 뗀 뒤", from: 0, to: m.end - tax, kind: "net" }); }
   const vals = bars.flatMap((x) => [x.from, x.to]);
   const hi = Math.max(0, ...vals), lo = Math.min(0, ...vals);
-  const H = 220, top = 22, y = (v: number) => top + ((hi - v) / Math.max(1, hi - lo)) * H;
+  const H = 150, top = 20, y = (v: number) => top + ((hi - v) / Math.max(1, hi - lo)) * H;
   const width = bars.length * W + 8;
   return (
     <div className="cf-chart">
@@ -119,7 +146,7 @@ function Waterfall({ m, lines, tax }: { m: CfMonth; lines: CfLine[]; tax: number
 // 달마다 월말 현금(파란 막대)과 세금을 떼어 둔 뒤의 현금(진한 점선). 이달 현금이 늘었는지 줄었는지 막대 위에 적는다.
 function CashBars({ months, after }: { months: CfMonth[]; after: number[] }) {
   const hi = Math.max(0, ...months.map((m) => m.end), ...after), lo = Math.min(0, ...months.map((m) => m.end), ...after);
-  const H = 180, top = 22, y = (v: number) => top + ((hi - v) / Math.max(1, hi - lo)) * H;
+  const H = 150, top = 20, y = (v: number) => top + ((hi - v) / Math.max(1, hi - lo)) * H;
   const width = months.length * W + 8;
   const pts = after.map((v, i) => `${4 + i * W + W / 2},${y(v)}`).join(" ");
   return (

@@ -221,6 +221,21 @@ season:   # step 3 월별 운영 (sim/cafe/season.py). Every effect size here is
     note: "델리 매장 자료를 카페에 옮긴 값, 카페 실측은 GAP"
   balk_mid_util: {value: 0.95, grade: 가정, source: "none", note: "피크 수요 ÷ 처리량이 이 값일 때 돌아가는 비율이 절반 (로지스틱, research §6 형태)"}
   balk_width: {value: 0.05, grade: 가정, source: "none"}
+  # ---- hard 모드 메뉴·판촉 (sim/cafe/season.py MENU_DEFAULT). 효과 크기는 모두 가정
+  custom_hours_range: {value: [6, 24], grade: 가정, source: "none", note: "직접 정하는 영업 시각 범위 (최소 4시간)"}
+  bean_specialty_cost: {value: 1.15, grade: 가정, source: "none", note: "스페셜티 원두로 바꾸면 음료 식재료비 15% 증가 (원두가 음료 원가의 절반쯤이고 원두값이 30% 비싸다고 봄)"}
+  bean_specialty_demand: {value: 1.04, grade: 가정, source: "none", note: "스페셜티 원두로 손님 4% 증가"}
+  satisfaction_specialty: {value: 0.04, grade: 가정, source: "none"}
+  seasonal_demand: {value: 1.05, grade: 가정, source: "none", note: "시즌 음료(딸기 라떼 등)를 내면 손님 5% 증가"}
+  seasonal_ticket: {value: 1.03, grade: 가정, source: "none", note: "시즌 음료가 비싸 객단가 3% 증가"}
+  seasonal_cost_krw: {value: 300000, grade: 가정, source: "none", note: "시즌 음료 개발·시럽·남는 재료 한 달"}
+  satisfaction_seasonal: {value: 0.03, grade: 가정, source: "none"}
+  dessert_price_elasticity: {value: 1.5, grade: 가정, source: "none", note: "디저트는 음료보다 가격에 민감 (10% 올리면 사는 비율 약 13% 감소)"}
+  takeout_disc_lift: {value: 2.0, grade: 가정, source: "none", note: "포장 할인 10%면 포장 손님 20% 증가 (치킨·분식과 같은 가정)"}
+  loyalty_demand: {value: 1.04, grade: 가정, source: "none", note: "스탬프 적립(10잔에 1잔 무료)으로 손님 4% 증가"}
+  loyalty_free_share: {value: 0.03, grade: 가정, source: "none", note: "적립으로 공짜로 나가는 잔이 매출의 3%쯤 (10잔 중 1잔 × 적립 손님 30%)"}
+  delivery_share_exp: {value: 0.6, grade: 가정, source: "none", note: "배달 비중을 키운 만큼보다 배달 주문이 덜 는다 (치킨·분식과 같은 가정)"}
+  free_dlvy_lift_per_1000: {value: 0.08, grade: 가정, source: "none", note: "무료배달로 가게가 건당 1,000원을 부담할 때마다 배달 주문 8% 증가"}
   marketing_max_lift: {value: 0.15, grade: 가정, source: "none", note: "마케팅으로 늘릴 수 있는 손님 최대 15%"}
   marketing_half_krw: {value: 2000000, grade: 가정, source: "none", note: "효과 = 최대 x (1 - exp(-예산 ÷ 이 값))"}
   marketing_max_krw: {value: 5000000, grade: 가정, source: "none", note: "한 달 추가 마케팅 예산 상한"}

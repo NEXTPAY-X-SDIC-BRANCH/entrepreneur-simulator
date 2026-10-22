@@ -23,7 +23,9 @@ const TURNS = 6;
 const PICKS: QPick<ApPlan>[] = [
   { key: "buy", label: "매입량", hint: "많이 사면 사이즈가 덜 빠지고, 적게 사면 현금이 남아요", opts: [{ label: "적게", value: 0.8 }, { label: "보통", value: 1 }, { label: "많이", value: 1.2 }] },
   { key: "markdownAge", label: "세일 시작", hint: "일찍 세일하면 돈이 빨리 돌고, 늦으면 정가로 더 팔아요", opts: [{ label: "2달 지나면", value: 2 }, { label: "3달", value: 3 }, { label: "4달", value: 4 }] },
+  { key: "focus", label: "더 들일 품목", hint: "이번 시즌에 잘 나갈 품목을 더 사 둬요", opts: [{ label: "고르게", value: "none" }, ...CATS.map((c) => ({ label: c.label, value: c.id }))] },
   { key: "online", label: "온라인 판매", hint: "같은 재고를 온라인으로도 팔아요 (수수료·택배비)", opts: [{ label: "안 함", value: 0 }, { label: "스마트스토어", value: 1 }, { label: "플랫폼 입점", value: 2 }] },
+  { key: "staff", label: "알바", hint: "손님이 몰리는 날 응대와 피팅을 도와요", opts: [0, 1, 2].map((n) => ({ label: n ? `${n}명` : "없이", value: n })) },
 ];
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
 type View = "intro" | "plan" | "scenario" | "settle" | "report" | null;

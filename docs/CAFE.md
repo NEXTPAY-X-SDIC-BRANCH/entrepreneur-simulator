@@ -242,6 +242,9 @@ Body (every field optional; an empty body or no body plays the month with last m
 | `staff_policy` | "lean" / "standard" / "generous" | Kept until changed |
 | `marketing_krw` | 0..5,000,000 per month | Kept until changed |
 | `dessert` | true / false | Kept until changed; default true |
+| `delivery` | true / false | 배달앱 입점. Kept until changed; default false |
+| `open_hour`, `close_hour` | 6..24, at least 4 hours | hard 모드: 영업 시각을 직접 정함 (보내지 않으면 `hours` 프리셋). Kept until changed |
+| `menu` | object | hard 모드 메뉴·판촉: `bean` "standard"/"specialty", `seasonal` bool, `dessert_price_pct` -30..50, `takeout_disc` 0..0.3, `loyalty` bool, `delivery_share` 0.05..0.6 or null (조사 값 25%), `free_dlvy_krw` 0..3000. Omitted keys = 효과 없음. Kept until changed |
 | `month_index` | 0-based month this request is for | Optional. A repeat of a played month with the same decisions returns that month again (a retry after a timeout); any other mismatch is 409 `{error: "month_mismatch", month_index, months_played}` |
 
 409 `{error: "season_over", detail, months_played}` once the run is closed or all months (6) are played. 404 for an
@@ -535,6 +538,20 @@ dessert margin).
 | season | `dessert_min_spoilage_krw` | 300000 | 가정 | none; 쇼케이스를 채워 두는 최소 재고의 월 폐기 |
 | season | `dessert_prep_hours_per_day` | 2 | 가정 | none; 디저트 준비 유급 시간 |
 | season | `dessert_no_showcase_factor` | 0.5 | 가정 | none; 쇼케이스가 없으면 포장 디저트만, 디저트 매출 절반 |
+| season | `custom_hours_range` | [6, 24] | 가정 | none; 직접 정하는 영업 시각 범위 (최소 4시간) |
+| season | `bean_specialty_cost` | 1.15 | 가정 | none; 스페셜티 원두로 바꾸면 음료 식재료비 15% 증가 (원두가 음료 원가의 절반쯤이고 원두값이 30% 비싸다고 봄) |
+| season | `bean_specialty_demand` | 1.04 | 가정 | none; 스페셜티 원두로 손님 4% 증가 |
+| season | `satisfaction_specialty` | 0.04 | 가정 | none;  |
+| season | `seasonal_demand` | 1.05 | 가정 | none; 시즌 음료(딸기 라떼 등)를 내면 손님 5% 증가 |
+| season | `seasonal_ticket` | 1.03 | 가정 | none; 시즌 음료가 비싸 객단가 3% 증가 |
+| season | `seasonal_cost_krw` | 300000 | 가정 | none; 시즌 음료 개발·시럽·남는 재료 한 달 |
+| season | `satisfaction_seasonal` | 0.03 | 가정 | none;  |
+| season | `dessert_price_elasticity` | 1.5 | 가정 | none; 디저트는 음료보다 가격에 민감 (10% 올리면 사는 비율 약 13% 감소) |
+| season | `takeout_disc_lift` | 2.0 | 가정 | none; 포장 할인 10%면 포장 손님 20% 증가 (치킨·분식과 같은 가정) |
+| season | `loyalty_demand` | 1.04 | 가정 | none; 스탬프 적립(10잔에 1잔 무료)으로 손님 4% 증가 |
+| season | `loyalty_free_share` | 0.03 | 가정 | none; 적립으로 공짜로 나가는 잔이 매출의 3%쯤 (10잔 중 1잔 × 적립 손님 30%) |
+| season | `delivery_share_exp` | 0.6 | 가정 | none; 배달 비중을 키운 만큼보다 배달 주문이 덜 는다 (치킨·분식과 같은 가정) |
+| season | `free_dlvy_lift_per_1000` | 0.08 | 가정 | none; 무료배달로 가게가 건당 1,000원을 부담할 때마다 배달 주문 8% 증가 |
 | season | `loan_rate` | 0.045 | M | 한국은행 「2026년 8월 금융기관 가중평균금리」 예금은행 신규취급액 중소기업 대출 4.38% (2026-09-30 공보); 소상공인시장진흥공단 2026년 4/4분기 정책자금 금리 일반경영안정자금 연 4.72% (기준 4.12% + 0.6%P, ols.semas.or.kr); 연 4.5%, 원리금 균등 상환. 4.5%는 은행 중소기업 대출 4.38%와 정책자금 4.72% 사이, 개인사업자 신규 창업 대출만의 금리는 따로 없어 M |
 | season | `loan_term_months` | 60 | 가정 | none; 5년 원리금 균등, 거치 기간 없음 (보수적) |
 | season | `working_capital_months` | 3 | 가정 | none; 운전자금 기본값: 문을 열 때 통장에 월 고정비 3개월치가 있도록 모자란 만큼 빌림, extra_loan_krw로 바꿀 수 있음 |

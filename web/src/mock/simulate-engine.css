@@ -382,3 +382,28 @@ h1:has(> .sx-modesw) { display: flex; align-items: center; justify-content: spac
 .sx-mix-h .sx-mix-src { padding: 8px 10px; border-radius: 8px; background: #f3f6ff; color: #2a3550; line-height: 1.55; }
 .sx-scroll .sx-note.sx-modenote { margin: -4px 0 14px; padding: 10px 14px; border-radius: 12px; background: #f3f6ff; color: #2a3550; }
 .sx-modenote b { color: #3d63ea; }
+
+/* 정산: 다음 달에 고칠 것 (QfInsight 등 다섯 업종 공통) */
+.ins { margin-block: 16px; padding: 18px 20px; border: 1px solid #d5def5; border-radius: 18px; background: #f6f8ff; }
+.ins h2 { margin: 0 0 4px; font-size: 18px; color: #17181c; }
+.ins-sub { margin: 0 0 12px; font-size: 13px; color: #5a6270; }
+.ins-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ins-card { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #e3e8f4; border-radius: 14px; background: #fff; }
+.ins-n { display: grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 50%; background: #3d63ea; color: #fff; font-size: 14px; font-weight: 800; }
+.ins-b { display: grid; gap: 2px; min-inline-size: 0; }
+.ins-b b { font-size: 15px; }
+.ins-b small { font-size: 13px; color: #5a6270; }
+.ins-d { font-size: 18px; color: #1f8a5a; white-space: nowrap; }
+.ins-d small { font-size: 12px; color: #5a6270; font-weight: 500; margin-inline-start: 2px; }
+.ins-go { padding: 8px 12px; border: 1px solid #3d63ea; border-radius: 10px; background: #fff; color: #3d63ea; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.ins-go:hover { background: #3d63ea; color: #fff; }
+.ins-none { margin: 0; color: #2a3550; }
+@media (max-width: 640px) { .ins-card { grid-template-columns: 28px minmax(0, 1fr); } .ins-d, .ins-go { grid-column: 2; justify-self: start; } }
+.cb-bar { display: flex; block-size: 34px; border-radius: 10px; overflow: hidden; font-size: 12px; font-weight: 700; color: #fff; }
+.cb-bar span { display: grid; place-items: center; min-inline-size: 0; white-space: nowrap; overflow: hidden; }
+.cb-bar .cb-op { background: #27a06a; }
+.cb-loss { margin: 8px 0 0; color: #c8443a; font-weight: 600; }
+.sx-more { margin-block: 14px; border: 1px solid #e3e8f4; border-radius: 14px; background: #fff; }
+.sx-more > summary { padding: 12px 16px; cursor: pointer; font-weight: 700; color: #3d63ea; }
+.sx-more[open] > summary { border-block-end: 1px solid #eef0f4; }
+.sx-more > :not(summary) { padding: 12px 16px; }

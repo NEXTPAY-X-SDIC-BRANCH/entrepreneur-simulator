@@ -89,12 +89,15 @@ const GRADES = ["imported", "domestic", "aged"] as const;
 const GRADE_KO: Record<string, string> = { imported: "수입 냉동", domestic: "국내산", aged: "숙성" };
 // easy 모드 '한 가지 더 정하기': hard 모드의 선택지 중 손님이 바로 느끼는 세 가지만 버튼으로
 const BBQ_PICKS: Pick<Plan>[] = [
+  { key: "meat_price", label: "삼겹살 1인분 가격", hint: "대표 메뉴 값. 올리면 한 팀의 매출이 늘고 손님이 조금 줄어요",
+    opts: [16000, 17000, 18000, 19000, 20000].map((x) => ({ label: `${x.toLocaleString("ko-KR")}원`, value: x })) },
   { key: "meat_grade", label: "어떤 고기를 쓸까요?", hint: "냉동은 원가가 싸고, 국내산·숙성은 비싸지만 만족과 재방문이 올라요",
     opts: GRADES.map((g) => ({ label: GRADE_KO[g], value: g })) },
   { key: "staff_per_shift", label: "알바는 몇 명?", hint: "많으면 손님을 빨리 받고, 인건비가 늘어요",
     opts: [1, 2, 3].map((n) => ({ label: `${n}명`, value: n })) },
   { key: "marketing_budget", label: "SNS 홍보할까요?", hint: "체험단·협찬으로 처음 보는 손님이 늘어요",
     opts: [{ label: "안 해요", value: 0 }, { label: "조금 (50만원)", value: 500_000 }, { label: "많이 (150만원)", value: 1_500_000 }] },
+  { key: "delivery", label: "배달", hint: "배달앱에 올리면 주문이 늘지만 수수료·배달비가 나가요", opts: [{ label: "안 해요", value: "none" }, { label: "배달앱 입점", value: "mid50_80" }] },
 ];
 const GRADE_HINT: Record<string, string> = { imported: "원가가 낮고 맛 평가도 낮아요", domestic: "기본이에요", aged: "원가가 높고 맛 평가도 높아요" };
 // 배민배달 매출 규모 구간 (research/season_params.yaml delivery.tier). 앱 안에서 내 가게의 순위로 정해져 사용자가 고른다.

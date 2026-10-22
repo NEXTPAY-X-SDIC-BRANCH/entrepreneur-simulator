@@ -4,15 +4,16 @@
 // 계산은 quickfood.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 업종의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Assume from "./Assume";
-import { LOAN_RATE, guStat, man, type Profile } from "./model";
+import { guStat, man, type Profile } from "./model";
 import {
-  DEFAULT_PLAN, EXTRAS, HOURS_DEFAULT, HOURS_RANGE, MAIN, PLAN_KEYS, QF_NAME, extraPrice, hoursText, mixOf, mixStr, planText, sbizDelivery, type PlanKey, deliveryGuInfo, derived, eventOf, foodMult, playMonth, qfOpeningCost, qfStrategies, startState,
-  type QfCfg, type QfMonth, type QfPlan, type QfState, type QfStratId,
+  DEFAULT_PLAN, EXTRAS, HOURS_DEFAULT, HOURS_RANGE, MAIN, PLAN_KEYS, QF_NAME, clock, extraPrice, hoursText, mixOf, mixStr, planText, sbizDelivery, type PlanKey, deliveryGuInfo, derived, eventOf, playMonth, qfOpeningCost, qfStrategies, startState,
+  type QfCfg, type QfEvent, type QfMonth, type QfOption, type QfPlan, type QfState, type QfStratId,
 } from "./quickfood";
 import ShopRoom3D, { shopPlan } from "./ShopRoom3D";
 import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import ModeSwitch from "./ModeSwitch";
 import CashFlow, { type CfMonth } from "./CashFlow";
+import QfInsight, { qfTries } from "./QfInsight";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine";
 import "./simulate-engine.css";
@@ -22,7 +23,7 @@ const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
 type View = "intro" | "plan" | "scenario" | "settle" | "report" | null;
 type Tick = { label: string; amount: number }; // 만원
 type Day = { date: Date; tx: number; delivery: number; revenue: number; ticks: Tick[]; notes: string[]; fixedShare: number; cash: number };
-type Done = { m: QfMonth; days: Day[] };
+type Done = { m: QfMonth; days: Day[]; s0: QfState; ev: QfEvent; opt: QfOption };
 const w = (x: number) => Math.round(x); // 만원
 const signed = (x: number) => (w(x) === 0 ? "0원" : `${x > 0 ? "+" : "−"}${man(Math.abs(w(x)))}`);
 const tone = (x: number) => (w(x) > 0 ? "pos" : w(x) < 0 ? "neg" : "");
@@ -41,6 +42,8 @@ const picksOf = (ind: "chicken" | "bunsik"): QPick<QfPlan>[] => [
     opts: [{ label: "조사 평균대로", value: mixStr(mixOf(ind, { ...DEFAULT_PLAN })) }, { label: "배달 위주", value: "15-15-70" }, { label: "홀·포장 위주", value: "55-35-10" }, { label: "배달 안 함", value: "65-35-0" }] },
   { key: "staff", label: "알바", hint: "바쁜 날 주문을 놓치지 않게", opts: [0, 1, 2, 3].map((n) => ({ label: n ? `${n}명` : "없이", value: n })) },
   { key: "ad", label: "배달앱 광고", hint: "배달 주문을 늘리지만 광고비가 들어요", opts: [{ label: "안 함", value: 0 }, { label: "기본", value: 1 }, { label: "적극", value: 2 }] },
+  { key: "close", label: "몇 시에 닫을까요?", hint: ind === "chicken" ? "야식 주문은 밤 10시~새벽 1시에 몰려요" : "분식은 저녁 8시 뒤로 주문이 적어요",
+    opts: (ind === "chicken" ? [23, 25, 27] : [20, 21, 22]).map((h) => ({ label: clock(h), value: h })) },
 ];
 
 // 홀·포장·배달 비중 정하기 (hard 모드). 한 갈래를 5% 올리면 나머지 중 큰 쪽에서 5%를 가져온다
@@ -72,6 +75,22 @@ function MixPicker({ ind, plan, prev, set, seats, gu }: { ind: "chicken" | "buns
         ))}
       </div>
     </div>
+  );
+}
+
+// 매출 100원이 어디로 갔나: 비용 항목과 남은 이익을 한 줄 막대로
+function CostBar({ items, revenue, op }: { items: [string, number][]; revenue: number; op: number }) {
+  const r = Math.max(1, revenue), xs = items.filter(([, v]) => v > 0.5);
+  const COL = ["#f0a83a", "#e2574c", "#9b6fb0", "#5a6b8c", "#a3adbf", "#4f9aa3"];
+  return (
+    <section className="sx-sec cb">
+      <h2>매출 100원이 어디로 갔나</h2>
+      <div className="cb-bar" role="img" aria-label={xs.map(([k, v]) => `${k} ${Math.round((v / r) * 100)}원`).join(", ") + `, 남은 이익 ${Math.round((op / r) * 100)}원`}>
+        {xs.map(([k, v], i) => <span key={k} style={{ flexGrow: v, background: COL[i % COL.length] }} title={`${k} ${man(Math.round(v))}`}>{v / r >= 0.07 ? `${k} ${Math.round((v / r) * 100)}` : ""}</span>)}
+        {op > 0 && <span className="cb-op" style={{ flexGrow: op }}>{op / r >= 0.05 ? `이익 ${Math.round((op / r) * 100)}` : ""}</span>}
+      </div>
+      {op <= 0 && <p className="cb-loss">비용이 매출보다 {man(Math.round(-op))} 많았어요 (매출 100원당 {Math.round((-op / r) * 100)}원 적자).</p>}
+    </section>
   );
 }
 
@@ -208,7 +227,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const play = () => {
     const opt = ev.options.find((o) => o.id === choice) ?? ev.options[0];
     const r = playMonth(profile, cfg, state, m, plan, ev, opt, seats);
-    setDone((d) => [...d, { m: r.month, days: buildDays(r.month, yearOf(idx), state.cash, st.dow) }]);
+    setDone((d) => [...d, { m: r.month, days: buildDays(r.month, yearOf(idx), state.cash, st.dow), s0: state, ev, opt }]);
     setState(r.next);
     setDayIdx(0); setPlaying(true); setView(null);
   };
@@ -485,39 +504,43 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                     </div>
                     <Kpis items={[
                       { label: "매출", value: man(w(c.revenue)) },
-                      { label: "주문", value: `${n0(c.tx)}건` },
-                      { label: "배달 수수료", value: man(w(fees)) },
+                      { label: "나간 돈", value: man(w(c.revenue - c.op)) },
+                      { label: "영업이익", value: signed(c.op), tone: tone(c.op) },
                       { label: "월말 현금", value: man(w(c.cash)), main: true },
                     ]} />
                     {c.closed && <p className="se-err">현금이 두 달 연속 바닥이라 가게를 닫게 됐어요.</p>}
-                    <div className="sx-settle">
+                    <QfInsight tries={qfTries(profile, cfg, cur.s0, c, cur.ev, cur.opt, seats)} last={c.closed || done.length >= TURNS}
+                      onApply={(patch) => { if (mode === "easy") setTweak(patch); else setPlan({ ...c.plan, ...patch }); next(); }} />
+                    <CostBar items={[
+                      ["식재료", c.food], ["배달 수수료", fees], ["인건비", c.staffPay], ["월세", c.rent], ["기타", c.other], ["광고·홍보", c.adCost + c.marketing + c.eventCost],
+                    ]} revenue={c.revenue} op={c.op} />
+                    <CashFlow months={cfMonths} kind="food" shop={name} compact />
+                    <details className="sx-more">
+                      <summary>정산표와 홀·포장·배달별 자세히 보기</summary>
+                      <div className="sx-settle">
                       <section className="sx-sec">
                         <h2>정산표</h2>
                         <table className="sx-table"><tbody>
                           <tr><th>매출</th><td>{man(w(c.revenue))}</td><td>주문 약 {n0(c.tx)}건, 한 건 {n0(c.ticket)}원<Assume id="elastic" what="평수 효과(제곱근), 새 가게 인지도, 가격 탄력성 2" /></td></tr>
-                          <tr><th>식재료비</th><td>−{man(w(c.food))}</td><td>처음 가격 기준 매출의 {Math.round(dv.foodRatio * 100)}% (2024년 경영실태조사) × 이달 식재료 시세 {c.foodMult.toFixed(3)}배: {foodMult(cfg.ind, c.month).parts.map((p) => `${p.items.join("·")} ${p.factor.toFixed(2)}배(식재료비의 ${Math.round(p.share * 100)}%)`).join(", ")} (생활물가지수, 2024년 대비)</td></tr>
-                          <tr className="sub"><th>매출총이익</th><td>{signed(c.revenue - c.food)}</td><td /></tr>
-                          <tr><th>배달 수수료</th><td>−{man(w(fees))}</td><td>배달 {n0(c.orders.delivery)}건 × (배달앱 {n0(dv.appFee * 1e4)}원 + 배달대행 {n0(dv.agencyFee * 1e4)}원)</td></tr>
-                          <tr><th>인건비</th><td>{c.staffPay ? `−${man(w(c.staffPay))}` : "0원"}</td><td>알바 {c.plan.staff}명, 한 명 월 {man(Math.round(dv.wage))} (사장 인건비 제외)</td></tr>
+                          <tr><th>식재료비</th><td>−{man(w(c.food))}</td><td>매출의 {Math.round((c.food / Math.max(1, c.revenue)) * 100)}%, 이달 식재료 시세 {c.foodMult.toFixed(2)}배</td></tr>
+                          <tr><th>배달 수수료</th><td>−{man(w(fees))}</td><td>배달 {n0(c.orders.delivery)}건 × {n0(dv.appFee * 1e4 + dv.agencyFee * 1e4)}원</td></tr>
+                          <tr><th>인건비</th><td>{c.staffPay ? `−${man(w(c.staffPay))}` : "0원"}</td><td>알바 {c.plan.staff}명</td></tr>
                           <tr><th>월세</th><td>−{man(w(c.rent))}</td><td /></tr>
-                          <tr><th>기타경비</th><td>−{man(w(c.other))}</td><td>카드 수수료·가스·전기 등, 매출의 5%<Assume id="otherCost" /></td></tr>
-                          {c.adCost + c.marketing + c.eventCost > 0 && <tr><th>광고·홍보·사건 대응</th><td>−{man(w(c.adCost + c.marketing + c.eventCost))}</td><td>배달앱 광고 {man(c.adCost)}, SNS {man(c.marketing)}, 사건 대응 {man(c.eventCost)}</td></tr>}
-                          <tr className="sum"><th>영업이익</th><td>{signed(c.op)}</td><td>감가상각 전. 조사한 {name}의 영업이익률은 {Math.round(dv.opMargin * 1000) / 10}%</td></tr>
-                          <tr><th>감가상각비</th><td>−{man(w(dep))}</td><td>인테리어·설비·간판을 5년에 나눈 몫. 현금은 안 나가요</td></tr>
-                          {c.interest > 0 && <tr><th>이자비용</th><td>−{man(w(c.interest))}</td><td>연 {+(LOAN_RATE * 100).toFixed(2)}%</td></tr>}
-                          <tr className="sum"><th>세전이익</th><td>{signed(pre)}</td><td>부가세·소득세는 아직 계산하지 않아요</td></tr>
+                          <tr><th>기타경비</th><td>−{man(w(c.other))}</td><td>카드 수수료·가스·전기 등<Assume id="otherCost" /></td></tr>
+                          {c.adCost + c.marketing + c.eventCost > 0 && <tr><th>광고·홍보·사건 대응</th><td>−{man(w(c.adCost + c.marketing + c.eventCost))}</td><td /></tr>}
+                          <tr className="sum"><th>영업이익</th><td>{signed(c.op)}</td><td>조사한 {name} 평균 이익률 {Math.round(dv.opMargin * 1000) / 10}%</td></tr>
+                          <tr><th>감가상각·이자</th><td>−{man(w(dep + c.interest))}</td><td>감가상각은 현금이 안 나가요</td></tr>
+                          <tr className="sum"><th>세전이익</th><td>{signed(pre)}</td><td /></tr>
                         </tbody></table>
                       </section>
                       <section className="sx-sec">
                         <h2>홀·포장·배달, 어디서 남았나</h2>
                         <ChannelTable m={c} />
-                        <p className="sx-note">배달은 주문을 늘리지만 한 건마다 수수료가 빠져서, 같은 메뉴라도 홀·포장보다 한 건에 남는 돈이 적어요. 월세·알바비는 갈래와 상관없이 나가요.
-                          {c.lost > 0 ? ` 일손이 모자라 받지 못한 주문은 약 ${n0((c.lost * 1e4) / c.ticket)}건이에요.` : ""}</p>
                         <h2>이번 달 사건</h2>
                         <ul className="sx-evs"><li><b>{c.event}</b><span>고른 대응: {c.choice}</span></li></ul>
                       </section>
-                    </div>
-                    <CashFlow months={cfMonths} kind="food" shop={name} />
+                      </div>
+                    </details>
                   </div>
                   <footer className="sx-foot">
                     <button type="button" className="se-btn" onClick={next}>{c.closed || done.length >= TURNS ? "6개월 결과 보기" : `${monthSeq[done.length]}월 운영 계획`}</button>

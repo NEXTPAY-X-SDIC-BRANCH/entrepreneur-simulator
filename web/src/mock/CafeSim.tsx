@@ -119,6 +119,8 @@ function cafeStrategies(last: Month | undefined, plan: Dec, recs: Rec[]): { id: 
 const PICKS: QPick<Dec>[] = [
   { key: "price_change_pct", label: "가격", hint: "이번 달 한 번 바꾸는 폭", opts: [{ label: "−5%", value: -5 }, { label: "그대로", value: 0 }, { label: "+5%", value: 5 }] },
   { key: "hours", label: "영업시간", hint: "길수록 손님·인건비가 같이 늘어요", opts: HOURS_ORDER.map((h) => ({ label: HOURS_KO[h].split(" ")[0], value: h })) },
+  { key: "staff_policy", label: "직원", hint: "빠듯하면 인건비가 줄고, 바쁜 시간에 손님이 돌아가요", opts: STAFF_ORDER.map((x) => ({ label: STAFF_KO[x], value: x })) },
+  { key: "dessert", label: "디저트", hint: "객단가가 오르지만 폐기와 준비 시간이 생겨요", opts: [{ label: "팔아요", value: true }, { label: "안 팔아요", value: false }] },
   { key: "delivery", label: "배달", hint: "주문은 늘지만 한 건마다 수수료", opts: [{ label: "안 해요", value: false }, { label: "배달앱 입점", value: true }] },
 ];
 

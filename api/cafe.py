@@ -60,6 +60,9 @@ class MonthIn(BaseModel):
     marketing_krw: int | None = Field(None, ge=0, le=5_000_000)
     dessert: bool | None = None
     delivery: bool | None = None                  # 배달앱 입점 (None = 지난달 그대로)
+    open_hour: int | None = Field(None, ge=0, le=24)    # hard 모드: 여는 시각 직접 (None = 프리셋)
+    close_hour: int | None = Field(None, ge=0, le=24)
+    menu: dict | None = None                      # hard 모드 메뉴·판촉 (sim/cafe/season.py MENU_DEFAULT)
     scenario: dict[str, str] | None = None        # {decision point id: option id}; missing ones take the default
     month_index: int | None = Field(None, ge=0)   # optional: 0-based month this request is for (= months played); a
                                                   # repeat of a played month with the same decisions returns it again

@@ -16,13 +16,16 @@ from .params import g, load_districts, load_params, v, weakest
 
 HOURS_KO = {"short": "짧게", "standard": "기본", "long": "길게"}
 STAFF_KO = {"lean": "빠듯하게", "standard": "기본", "generous": "넉넉하게"}
-DECISION_KEYS = ("price_change_pct", "hours", "staff_policy", "marketing_krw", "dessert", "delivery")
+DECISION_KEYS = ("price_change_pct", "hours", "staff_policy", "marketing_krw", "dessert", "delivery", "open_hour", "close_hour", "menu")
+# hard 모드 메뉴·판촉 (보내지 않으면 이 값 = 효과 없음)
+MENU_DEFAULT = {"bean": "standard", "seasonal": False, "dessert_price_pct": 0.0, "takeout_disc": 0.0, "loyalty": False,
+                "delivery_share": None, "free_dlvy_krw": 0}
 # waterfall: factors are switched from the reference month to this month one at a time, in this order
 STEPS = (("season", "계절"), ("ingredient", "원두·우유 시세"), ("delivery", "배달"), ("reputation", "별점과 단골"), ("price", "가격"), ("hours", "영업시간"),
-         ("staff", "직원 운영"), ("marketing", "마케팅"), ("dessert", "디저트"), ("rival", "경쟁 카페"),
+         ("staff", "직원 운영"), ("marketing", "마케팅"), ("dessert", "디저트"), ("menu", "메뉴·판촉"), ("rival", "경쟁 카페"),
          ("viral", "SNS 화제"), ("breakdown", "설비 고장"), ("rent", "임대료 인상"), ("scn", "이번 달 대응"))
 STEP_FACTORS = {"season": ("season",), "ingredient": ("ingredient",), "delivery": ("delivery", "delivery_mult"), "reputation": ("rating", "maturity"), "price": ("price_level",),
-                "hours": ("hours",), "staff": ("staff",), "marketing": ("marketing_krw",), "dessert": ("dessert",),
+                "hours": ("hours", "hours_t"), "staff": ("staff",), "marketing": ("marketing_krw",), "dessert": ("dessert",), "menu": ("menu",),
                 "rival": ("rival",), "viral": ("viral",), "breakdown": ("breakdown",), "rent": ("rent_mult",), "scn": ("scn",)}
 DAYS = m.DAYS_PER_MONTH_DATA
 
@@ -37,6 +40,16 @@ def s(key: str):
 
 def _clamp(x: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, x))
+
+
+def _hrs(f: dict) -> tuple[int, int]:
+    """영업 시각: 직접 정한 시각(hours_t)이 있으면 그것, 없으면 짧게/기본/길게 프리셋."""
+    t = f.get("hours_t")
+    return tuple(t) if t else tuple(s("hours")[f["hours"]])
+
+
+def _menu(f: dict) -> dict:
+    return {**MENU_DEFAULT, **(f.get("menu") or {})}
 
 
 # ---------------------------------------------------------------------------------------------- store context
@@ -82,7 +95,7 @@ def _day_rows(ctx: dict, f: dict, day_orders: float) -> list[dict]:
     capped at the peak crew (staff_peak, 사장님 included). Lean staffs by workload only: no extra person to cover a
     rush, so it saves wages and loses customers when an hour outruns its people."""
     core = ctx["core"]
-    return m._schedule(ctx["cfg"], day_orders, core["crew"], hours=tuple(s("hours")[f["hours"]]),
+    return m._schedule(ctx["cfg"], day_orders, core["crew"], hours=_hrs(f),
                        util=s("staff_utilization")[f["staff"]], cover=s("staff_cover")[f["staff"]])
 
 
@@ -95,7 +108,7 @@ def _served_day(ctx: dict, f: dict, day_orders: float, rows: list[dict]) -> tupl
     cups, surge = v("demand", "cups_per_tx"), v("demand", "peak_surge")
     bm = s("staff_balk_mult")[f["staff"]]
     served, peak, key = 0.0, 0.0, eq_key
-    for row, share in zip(rows, m._hour_shares(cfg["district"], tuple(s("hours")[f["hours"]])).values()):
+    for row, share in zip(rows, m._hour_shares(cfg["district"], _hrs(f)).values()):
         orders = day_orders * share
         drinks = orders * cups * surge
         c = m.crew_throughput(cfg, row["staff"], drinks, core["seats_total"])
@@ -160,7 +173,7 @@ def _scn_effects(scn: dict) -> dict:
 def evaluate(ctx: dict, f: dict) -> dict:
     """One month's outcome for the factor set f (season, reputation, decisions, events). No state change."""
     cfg = ctx["cfg"]
-    hours = tuple(s("hours")[f["hours"]])
+    hours = _hrs(f)
     eps = s("price_elasticity") + (s("rival_elasticity_add") if f["rival"] else 0)
     lift = s("marketing_max_lift") * (1 - math.exp(-f["marketing_krw"] / s("marketing_half_krw")))
     mult = {
@@ -170,6 +183,12 @@ def evaluate(ctx: dict, f: dict) -> dict:
         "rival": s("rival_demand_mult") if f["rival"] else 1.0, "viral": f["viral"],
         "hours": _coverage(cfg["district"], hours), "scn": _scn_effects(f.get("scn"))["demand_mult"],
     }
+    mn = _menu(f)
+    to_sh = v("opex", "takeout_share")
+    mult["menu"] = ((s("bean_specialty_demand") if mn["bean"] == "specialty" else 1.0)
+                    * (s("seasonal_demand") if mn["seasonal"] else 1.0)
+                    * (s("loyalty_demand") if mn["loyalty"] else 1.0)
+                    * (1 + to_sh * s("takeout_disc_lift") * mn["takeout_disc"]))
     scn = _scn_effects(f.get("scn"))
     avg_day = ctx["avg_day"] * math.prod(mult.values())
     open_share = 1 - (s("breakdown_down_days") / DAYS if f["breakdown"] else 0)
@@ -190,20 +209,30 @@ def evaluate(ctx: dict, f: dict) -> dict:
 
     ds = s("dessert_share")
     ds_eff = ds * (1 if cfg["showcase"] else s("dessert_no_showcase_factor")) if f["dessert"] else 0.0
+    # 디저트 가격: 같이 사는 비율이 가격^(-탄력)으로 변하고, 디저트 매출 몫은 가격 × 수량만큼 (원가는 수량만큼)
+    dp = 1 + mn["dessert_price_pct"] / 100
+    dq = dp ** (-s("dessert_price_elasticity"))
+    ds_rev = ds_eff * dp * dq / (1 - ds_eff + ds_eff * dp * dq) if ds_eff else 0.0
     drink_ticket = ctx["ticket"] * (1 - ds)
-    ticket = drink_ticket / (1 - ds_eff) * f["price_level"] * scn["ticket_mult"]
+    ticket = drink_ticket / (1 - ds_rev) * f["price_level"] * scn["ticket_mult"]
+    ticket *= (s("seasonal_ticket") if mn["seasonal"] else 1.0) * (1 - s("loyalty_free_share") if mn["loyalty"] else 1.0)
+    ticket *= 1 - to_sh * mn["takeout_disc"]   # 포장 손님에게 깎아 준 만큼
     # 배달: 배달하는 달에는 전체 주문의 delivery_order_share가 배달이고, 그중 delivery_cannibal은 원래 매장에 왔을 손님이다.
     # 배달 주문은 구·달별 배달 수요 배수를 곱하고, 한 건마다 배달앱·대행 수수료와 포장재가 든다 (주방 일손 한도는 보지 않음)
     deliv, served_store = 0.0, served
     if f.get("delivery"):
-        sh = s("delivery_order_share")
-        deliv = served * sh / (1 - sh) * f.get("delivery_mult", 1.0)
+        sh0 = s("delivery_order_share")
+        sh = mn["delivery_share"] if mn["delivery_share"] is not None else sh0
+        # 배달 비중을 조사 값보다 키우면 덜 늘고(지수 0.6), 무료배달을 부담하면 주문이 는다 (가정)
+        deliv = served * sh0 / (1 - sh0) * (sh / sh0) ** s("delivery_share_exp") * f.get("delivery_mult", 1.0)
+        deliv *= 1 + s("free_dlvy_lift_per_1000") * mn["free_dlvy_krw"] / 1000
         served = served - deliv * s("delivery_cannibal") + deliv
     revenue = served * ticket
-    dessert_rev = revenue * ds_eff
+    dessert_rev = revenue * ds_rev
     drink_food = (v("opex", "food_cost_share") - ds * s("dessert_food_cost_share")) / (1 - ds)
     drink_food *= f.get("ingredient", 1.0)   # 원두·우유 시세 (2024년 대비, 달별)
-    food = served * drink_ticket / (1 - ds_eff) * ((1 - ds_eff) * drink_food + ds_eff * s("dessert_food_cost_share"))
+    drink_food *= s("bean_specialty_cost") if mn["bean"] == "specialty" else 1.0
+    food = served * drink_ticket / (1 - ds_eff) * ((1 - ds_eff) * drink_food + ds_eff * dq * s("dessert_food_cost_share"))
     rate = m.card_fee_rate(revenue * 12)
     takeout_cups = served * v("demand", "cups_per_tx") * v("opex", "takeout_share")
     paid_h, labor = _labor(ctx, f, day_rows)
@@ -228,6 +257,8 @@ def evaluate(ctx: dict, f: dict) -> dict:
         ("utilities", "전기 관리비 수도 통신", elec + ctx["maint"] + ctx["water_gas"] + ctx["misc"], "가정",
          "전기는 영업시간에 비례"),
         ("scenario", "이번 달 대응 비용", scn["cost_krw"], "가정", "고른 대응에 드는 돈"),
+        ("menu", "시즌 음료·무료배달 부담", (s("seasonal_cost_krw") if mn["seasonal"] else 0) + deliv * mn["free_dlvy_krw"], "가정",
+         "시즌 음료 개발·재료 손실, 배달 한 건마다 가게가 내는 무료배달 몫"),
         ("repair", "설비 수리", s("breakdown_repair_krw") if f["breakdown"] else 0, "가정", "고장 난 달만"),
     ]
     cost = [{"key": k, "item_ko": n, "krw": round(x), "grade": gr, "note_ko": note} for k, n, x, gr, note in lines]
@@ -278,7 +309,12 @@ def baseline_factors(decisions: dict) -> dict:
     return {"season": 1.0, "rating": s("rating_start"), "maturity": 1.0, "price_level": 1.0,
             "hours": decisions["hours"], "staff": decisions["staff_policy"], "marketing_krw": decisions["marketing_krw"],
             "dessert": decisions["dessert"], "rival": False, "viral": 1.0, "breakdown": False, "rent_mult": 1.0, "scn": {},
-            "delivery": decisions.get("delivery", False), "delivery_mult": 1.0}
+            "delivery": decisions.get("delivery", False), "delivery_mult": 1.0,
+            "hours_t": _dec_hours(decisions), "menu": {**MENU_DEFAULT, **(decisions.get("menu") or {})}}
+
+
+def _dec_hours(d: dict):
+    return [int(d["open_hour"]), int(d["close_hour"])] if d.get("open_hour") is not None and d.get("close_hour") is not None else None
 
 
 def _loan(principal: int) -> dict:
@@ -416,6 +452,20 @@ def apply_decisions(prev: dict, body: dict) -> dict:
         raise ValueError("unknown hours or staff_policy")
     d["dessert"] = bool(d["dessert"])
     d["delivery"] = bool(d.get("delivery", False))
+    if d.get("open_hour") is not None or d.get("close_hour") is not None:
+        o, c = int(d.get("open_hour") or s("hours")[d["hours"]][0]), int(d.get("close_hour") or s("hours")[d["hours"]][1])
+        lo, hi = s("custom_hours_range")
+        o, c = int(_clamp(o, lo, hi - 4)), int(_clamp(c, o + 4, hi))
+        d["open_hour"], d["close_hour"] = o, c
+    mn = {**MENU_DEFAULT, **(d.get("menu") or {})}
+    if mn["bean"] not in ("standard", "specialty"):
+        raise ValueError("unknown bean")
+    mn["seasonal"], mn["loyalty"] = bool(mn["seasonal"]), bool(mn["loyalty"])
+    mn["dessert_price_pct"] = _clamp(float(mn["dessert_price_pct"]), -30, 50)
+    mn["takeout_disc"] = _clamp(float(mn["takeout_disc"]), 0, 0.3)
+    mn["delivery_share"] = None if mn["delivery_share"] is None else _clamp(float(mn["delivery_share"]), 0.05, 0.6)
+    mn["free_dlvy_krw"] = int(_clamp(int(mn["free_dlvy_krw"]), 0, 3000))
+    d["menu"] = mn
     return d
 
 
@@ -445,7 +495,8 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
          "staff": dec["staff_policy"], "marketing_krw": dec["marketing_krw"], "dessert": dec["dessert"],
          "rival": st["rival"], "viral": viral, "breakdown": "breakdown" in keys, "rent_mult": st["rent_mult"],
          "scn": scn, "ingredient": s("ingredient_index")[cal], "delivery": dec.get("delivery", False),
-         "delivery_mult": s("delivery_gu_index").get(run["cfg"]["district"], 1.0) * s("delivery_month_index")[cal]}
+         "delivery_mult": s("delivery_gu_index").get(run["cfg"]["district"], 1.0) * s("delivery_month_index")[cal],
+         "hours_t": _dec_hours(dec), "menu": dec["menu"]}
     e = evaluate(ctx, f)
 
     # cash: OP + depreciation (non-cash) - loan interest and principal + VAT refund
@@ -462,6 +513,7 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
     # reputation drift from this month's service
     sat = (s("satisfaction_walkaway") * e["walkaway_share"] + s("satisfaction_price") * (st["price_level"] - 1)
            + _scn_effects(scn)["satisfaction"] + s("satisfaction_staff")[dec["staff_policy"]] + (s("satisfaction_dessert") if dec["dessert"] else 0)
+           + (s("satisfaction_specialty") if dec["menu"]["bean"] == "specialty" else 0) + (s("satisfaction_seasonal") if dec["menu"]["seasonal"] else 0)
            + (s("satisfaction_breakdown") if f["breakdown"] else 0))
     rating0, idx0 = st["rating"], st["regulars_idx"]
     st["rating"] = rating0 + s("rating_speed") * (_clamp(s("rating_start") + s("rating_per_satisfaction") * sat,
@@ -481,7 +533,7 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
         "month": i + 1, "calendar_month": cal, "months_total": run["months_total"],
         "status": "closed" if st["closed"] else ("finished" if i + 1 == run["months_total"] else "open"),
         "decisions": {**dec, "price_level": round(st["price_level"], 4),
-                      "open_hour": s("hours")[dec["hours"]][0], "close_hour": s("hours")[dec["hours"]][1],
+                      "open_hour": _hrs({"hours": dec["hours"], "hours_t": _dec_hours(dec)})[0], "close_hour": _hrs({"hours": dec["hours"], "hours_t": _dec_hours(dec)})[1],
                       "scenario": scn},
         "scenario_ko": [{"title": p["title"], "choice": o["label"]} for p in scenario_points(cal) for o in p["options"]
                         if o["id"] == scn[p["id"]]],
