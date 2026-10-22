@@ -1196,8 +1196,9 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       <section className="sx-sec">
                         <h2>남은 현금</h2>
                         <CashChart start={cashAtStart.current[0] ?? startCash} months={done} labels={monthSeq} />
-                        <CashFlow months={cfOf(done)} kind="food" shop="고깃집" />
                       </section>
+                      <details className="sx-more sc-more rp-more"><summary>돈의 흐름 · 현금흐름표 · 달마다 기록 자세히 보기</summary>
+                        <CashFlow months={cfOf(done)} kind="food" shop="고깃집" />
                       <section className="sx-sec">
                         <h2>월별 현금</h2>
                         <table className="sx-table">
@@ -1222,6 +1223,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                           </details>
                         ))}
                       </section>
+                      </details>
                     </>
                   )}
                   {err && <p className="se-err" role="alert">{err}</p>}

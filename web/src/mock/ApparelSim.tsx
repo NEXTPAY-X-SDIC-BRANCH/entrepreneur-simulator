@@ -598,6 +598,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                   <section className="sx-sec"><h2>남은 현금</h2>
                     <CashChart start={start.cash * 1e4} labels={monthSeq} months={done.map((x) => ({ days: x.days.map((d) => ({ cash: d.cash * 1e4 })) }))} />
                   </section>
+                  <details className="sx-more sc-more rp-more"><summary>돈의 흐름 · 현금흐름표 · 달마다 기록 자세히 보기</summary>
                   <CashFlow months={cfMonths} kind="retail" shop="옷가게" />
                   <section className="sx-sec">
                     {(() => {
@@ -620,6 +621,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                       ))}</tbody>
                     </table>
                   </section>
+                  </details>
                 </div>
                 <footer className="sx-foot">
                   <button type="button" className="se-btn" onClick={restart}>처음부터 다시</button>

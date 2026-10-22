@@ -778,11 +778,13 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                           gu={profile.gu} mode={mode} kind="food" shop="카페" plans={months.map((m) => LEVERS.map((lv) => `${lv.label} ${lv.text(m.decisions)}`).join(" · "))} />;
                       })()}
                       <section className="sx-sec"><h2>남은 현금</h2><Cash start={startCash} months={months} total={TOTAL} /></section>
+                      <details className="sx-more sc-more rp-more"><summary>돈의 흐름 · 현금흐름표 · 달마다 기록 자세히 보기</summary>
                       <CashFlow months={cfMonths} kind="food" shop="카페" />
                       <section className="sx-sec"><h2>월별</h2>
                         <table className="sx-table"><thead><tr><th>달</th><th>매출</th><th>영업이익</th><th>월말 현금</th></tr></thead>
                           <tbody>{report.months.map((x: any) => <tr key={x.month}><td>{x.calendar_month}월</td><td>{wman(x.revenue_krw)}</td><td className={tone(x.op_krw)}>{sgn(x.op_krw)}</td><td>{wman(x.cash_krw)}</td></tr>)}</tbody></table>
                       </section>
+                      </details>
                     </>
                   )}
                   {err && <p className="se-err" role="alert">{err}</p>}

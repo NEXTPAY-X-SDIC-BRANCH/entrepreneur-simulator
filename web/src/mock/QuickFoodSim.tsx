@@ -565,6 +565,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                   <section className="sx-sec"><h2>남은 현금</h2>
                     <CashChart start={start.cash * 1e4} labels={monthSeq} months={done.map((x) => ({ days: x.days.map((d) => ({ cash: d.cash * 1e4 })) }))} />
                   </section>
+                  <details className="sx-more sc-more rp-more"><summary>돈의 흐름 · 현금흐름표 · 달마다 기록 자세히 보기</summary>
                   <CashFlow months={cfMonths} kind="food" shop={name} />
                   <section className="sx-sec">
                     <h2>달마다</h2>
@@ -575,6 +576,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                       ))}</tbody>
                     </table>
                   </section>
+                  </details>
                 </div>
                 <footer className="sx-foot">
                   <button type="button" className="se-btn" onClick={restart}>처음부터 다시</button>

@@ -552,3 +552,6 @@ h1:has(> .sx-modesw), h1:has(> .sx-modelock) { display: flex; align-items: cente
 .sc-why li { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; } .sc-why span { color: #5a6270; }
 @media (max-width: 560px) { .sc-top { grid-template-columns: 1fr; } .sc-why li { grid-template-columns: 1fr; } }
 .sc-top.is-bad .sc-score b { color: #b4372c; } .sc-top.is-mid .sc-score b { color: #8a5a12; }
+
+.rp-more > summary { font-size: 15px; }
+.rp-more[open] > summary { margin-block-end: 12px; }
