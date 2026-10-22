@@ -22,7 +22,9 @@ STAFF_KO = {"lean": "빠듯하게", "standard": "기본", "generous": "넉넉하
 DECISION_KEYS = ("price_change_pct", "hours", "staff_policy", "marketing_krw", "dessert", "delivery", "open_hour", "close_hour", "menu", "staff_max")
 # hard 모드 메뉴·판촉 (보내지 않으면 이 값 = 효과 없음)
 MENU_DEFAULT = {"bean": "standard", "seasonal": False, "dessert_price_pct": 0.0, "takeout_disc": 0.0, "loyalty": False,
-                "delivery_share": None, "free_dlvy_krw": 0}
+                "delivery_share": None, "free_dlvy_krw": 0, "min_order_krw": 12000}
+# 배달 최소주문금액 (가정): 12,000원 기준, 2배로 올리면 주문 ×0.71·한 건 ×1.23
+MIN_ORDER_BASE, MIN_ORDER_ORDERS_EXP, MIN_ORDER_BASKET_EXP = 12000, 0.5, 0.3
 # waterfall: factors are switched from the reference month to this month one at a time, in this order
 STEPS = (("season", "계절"), ("ingredient", "원두·우유 시세"), ("delivery", "배달"), ("reputation", "별점과 단골"), ("price", "가격"), ("hours", "영업시간"),
          ("staff", "직원 운영"), ("marketing", "마케팅"), ("dessert", "디저트"), ("menu", "메뉴·판촉"), ("rival", "경쟁 카페"),
@@ -259,8 +261,13 @@ def evaluate(ctx: dict, f: dict) -> dict:
         # 배달 비중을 조사 값보다 키우면 덜 늘고(지수 0.6), 무료배달을 부담하면 주문이 는다 (가정)
         deliv = served * sh0 / (1 - sh0) * (sh / sh0) ** s("delivery_share_exp") * f.get("delivery_mult", 1.0)
         deliv *= 1 + s("free_dlvy_lift_per_1000") * mn["free_dlvy_krw"] / 1000
+        mo = max(5000, mn.get("min_order_krw", MIN_ORDER_BASE)) / MIN_ORDER_BASE
+        deliv *= mo ** -MIN_ORDER_ORDERS_EXP
+        basket = mo ** MIN_ORDER_BASKET_EXP
         served = served - deliv * s("delivery_cannibal") + deliv
-    revenue = served * ticket
+    else:
+        basket = 1.0
+    revenue = served * ticket + deliv * ticket * (basket - 1)   # 배달 한 건이 커진 몫
     dessert_rev = revenue * ds_rev
     drink_food = (v("opex", "food_cost_share") - ds * s("dessert_food_cost_share")) / (1 - ds)
     drink_food *= f.get("ingredient", 1.0)   # 원두·우유 시세 (2024년 대비, 달별)
@@ -506,6 +513,7 @@ def apply_decisions(prev: dict, body: dict) -> dict:
     mn["takeout_disc"] = _clamp(float(mn["takeout_disc"]), 0, 0.3)
     mn["delivery_share"] = None if mn["delivery_share"] is None else _clamp(float(mn["delivery_share"]), 0.05, 0.6)
     mn["free_dlvy_krw"] = int(_clamp(int(mn["free_dlvy_krw"]), 0, 3000))
+    mn["min_order_krw"] = int(round(_clamp(float(mn.get("min_order_krw") or MIN_ORDER_BASE), 0, 30000) / 1000) * 1000)
     d["menu"] = mn
     return d
 

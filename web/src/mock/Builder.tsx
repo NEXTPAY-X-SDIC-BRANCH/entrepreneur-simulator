@@ -42,7 +42,7 @@ function Scene({ portal, store, tool, selected, ghost, onFloorMove, onFloorClick
   return (
     <>
       <StoreLights w={w} d={d} r={Math.max(w, d) / 2 + 3} />
-      <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} door={store.door} items={store.items.filter((i) => !(tool?.kind === "move" && tool.uid === i.uid))} />
+      <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} door={store.door} doors={store.doors} items={store.items.filter((i) => !(tool?.kind === "move" && tool.uid === i.uid))} />
       <FlowPath pts={flowOf(store, w, d)} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} visible={false}
         onPointerMove={(e: ThreeEvent<PointerEvent>) => onFloorMove(e.point.x, e.point.z)}
@@ -178,7 +178,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
     setMsg(gone ? `${pyeong}평으로 바꿨어요. 자리가 없어진 ${gone}개는 치우고 돈을 돌려받았어요.` : `${pyeong}평으로 바꿨어요.`);
   };
   // 가게 모양·출입문을 바꾸면 벽이 움직인다. 주방은 새 구석으로 옮기고, 자리가 없어진 물건은 치운다
-  const relay = (lay: { door?: Store["door"]; shape?: Store["shape"] }) => {
+  const relay = (lay: { door?: Store["door"]; shape?: Store["shape"]; doors?: number }) => {
     const next: Store = { ...store, ...lay, items: [] };
     const kitchen = store.items.find((i) => i.id === "kitchen")!;
     next.items.push({ ...kitchen, ...kitchenSpot(store.pyeong, next) });
@@ -227,7 +227,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
             <span id="py">가게 크기</span>
             <button type="button" aria-label="1평 줄이기" disabled={store.pyeong <= 12} onClick={() => resize(store.pyeong - 1)}>−</button>
             <output aria-labelledby="py">{store.pyeong}평</output>
-            <button type="button" aria-label="1평 늘리기" disabled={store.pyeong >= 40} onClick={() => resize(store.pyeong + 1)}>+</button>
+            <button type="button" aria-label="1평 늘리기" disabled={store.pyeong >= 80} onClick={() => resize(store.pyeong + 1)}>+</button>
           </div>
           <div className="m-seg" role="group" aria-label="마감 수준">
             {(Object.keys(GRADES) as Grade[]).map((g) => (
@@ -255,6 +255,12 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
                 <button type="button" key={k} aria-pressed={(store.door ?? "right") === k} onClick={() => relay({ door: k })}>{l}</button>
               ))}
             </div>
+          </div>
+          <div className="m-stepper">
+            <span id="bb-doors">출입문 수</span>
+            <button type="button" aria-label="출입문 1개 빼기" disabled={(store.doors ?? 1) <= 1} onClick={() => ((n: number) => relay({ doors: n }))((store.doors ?? 1) - 1)}>−</button>
+            <output aria-labelledby="bb-doors">{(store.doors ?? 1)}개 · {man(150 * (store.doors ?? 1))}</output>
+            <button type="button" aria-label="출입문 1개 더 달기" disabled={(store.doors ?? 1) >= 3} onClick={() => ((n: number) => relay({ doors: n }))((store.doors ?? 1) + 1)}>+</button>
           </div>
           <p>테이블 {stats.tables}개, {stats.seats}석 · 주방에서 테이블까지 평균 {serveWalk(store, w, d).toFixed(1)}m</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={() => {

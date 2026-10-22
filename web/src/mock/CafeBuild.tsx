@@ -39,7 +39,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
   const EMPTY = { tables: 0, chairs: 0, bar: 0, groups: 0, showcase: 0, oven: 0, kiosks: 0, pos: 0 };
   useEffect(() => { if (!cfgIn || cfgIn.tables === undefined) setCfgOut({ ...cfg, ...EMPTY }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const missing = CATS.flatMap((c) => c.items).filter((it) => it.need && (lay[it.key] as number) < 1).map((it) => it.name);
-  const open = cafeOpeningCost(cfg.pyeong, cfg.grade, profile.gu, profile.keyMoney ?? 0, lay);
+  const open = cafeOpeningCost(cfg.pyeong, cfg.grade, profile.gu, profile.keyMoney ?? 0, lay, cfg.doors);
   const st = guStat(profile.gu);
   const left = profile.capital - open.total;
   const set = (p: Partial<CafeCfg>) => setCfgOut({ ...cfg, ...p });
@@ -58,7 +58,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
     <main className="m-build">
       <div className="m-stage">
         <div className="m-canvas">
-          {d ? <CafeRoom3D room={d.room} layout={d.layout} roster={d.staff.roster} height="fill" /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
+          {d ? <CafeRoom3D room={d.room} layout={d.layout} roster={d.staff.roster} height="fill" doors={cfg.doors} /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
         </div>
 
         <div className="m-room">
@@ -66,7 +66,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
             <span id="py">가게 크기</span>
             <button type="button" aria-label="1평 줄이기" disabled={cfg.pyeong <= 10} onClick={() => set({ pyeong: cfg.pyeong - 1 })}>−</button>
             <output aria-labelledby="py">{cfg.pyeong}평</output>
-            <button type="button" aria-label="1평 늘리기" disabled={cfg.pyeong >= 30} onClick={() => set({ pyeong: cfg.pyeong + 1 })}>+</button>
+            <button type="button" aria-label="1평 늘리기" disabled={cfg.pyeong >= 80} onClick={() => set({ pyeong: cfg.pyeong + 1 })}>+</button>
           </div>
           <div className="m-seg" role="group" aria-label="마감 수준">
             {(Object.keys(CAFE_GRADES) as Grade[]).map((g) => (
@@ -94,6 +94,12 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
                 <button type="button" key={k} aria-pressed={(cfg.door ?? "right") === k} onClick={() => set({ door: k })}>{l}</button>
               ))}
             </div>
+          </div>
+          <div className="m-stepper">
+            <span id="cf-doors">출입문 수</span>
+            <button type="button" aria-label="출입문 1개 빼기" disabled={(cfg.doors ?? 1) <= 1} onClick={() => ((n: number) => set({ doors: n }))((cfg.doors ?? 1) - 1)}>−</button>
+            <output aria-labelledby="cf-doors">{(cfg.doors ?? 1)}개 · {man(150 * (cfg.doors ?? 1))}</output>
+            <button type="button" aria-label="출입문 1개 더 달기" disabled={(cfg.doors ?? 1) >= 3} onClick={() => ((n: number) => set({ doors: n }))((cfg.doors ?? 1) + 1)}>+</button>
           </div>
           <p>테이블 {lay.tables}개, {seats}석</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn"
@@ -137,7 +143,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
         </ul>
         <div className="m-tray-go">
           <button type="button" className="m-btn m-btn-outline" onClick={() => document.querySelector(".m-checks")?.scrollIntoView({ behavior: "smooth", block: "start" })}>오픈 전 점검 보러가기</button>
-          {missing.length > 0 && <p className="m-warn it-need">꼭 필요한 물건을 아직 안 놓았어요: {missing.join(", ")}</p>}
+          {missing.length > 0 && <p className="m-warn it-need">꼭 필요한 물건을 아직 안 놓았어요: {missing.join(", ")} <button type="button" className="it-needbtn" onClick={() => set({ groups: Math.max(1, lay.groups), pos: Math.max(1, lay.pos) })}>한 번에 놓기</button></p>}
           <button type="button" className="m-btn" disabled={seats === 0 || missing.length > 0} onClick={onNext}>시뮬레이션 하러 가기</button>
         </div>
       </div>

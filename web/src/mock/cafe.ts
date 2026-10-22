@@ -21,7 +21,7 @@ export const CAFE_GRADES: Record<Grade, { label: string; interior: number; kitch
 export const CAFE_SIGN = 250, CAFE_FIRST_STOCK = 300; // 가정 (고깃집과 같은 값)
 export const CAFE_KEY_MONEY = { low: 1500, base: 2500, high: 4000 }; // 권리금을 낸 독립 매장의 분위수 (cst_key_money)
 
-export function cafeOpeningCost(pyeong: number, grade: Grade, gu: string, keyMoney = 0, counts?: CafeCounts): { lines: CostLine[]; total: number } {
+export function cafeOpeningCost(pyeong: number, grade: Grade, gu: string, keyMoney = 0, counts?: CafeCounts, doors?: number): { lines: CostLine[]; total: number } {
   const st = guStat(gu), g = CAFE_GRADES[grade], c = counts ?? cafeDefaultCounts(pyeong), gm = CAFE_ITEM_GRADE[grade];
   const sum = (ks: (keyof CafeCounts)[]) => ks.reduce((a, k) => a + Math.round(CAFE_ITEM_PRICE[k] * gm) * c[k], 0);
   const say = (ks: (keyof CafeCounts)[], nm: Record<string, string>) => ks.filter((k) => c[k] > 0).map((k) => `${nm[k]} ${c[k]}개 × ${Math.round(CAFE_ITEM_PRICE[k] * gm)}만원`).join(", ") + " (가정)";
@@ -34,6 +34,7 @@ export function cafeOpeningCost(pyeong: number, grade: Grade, gu: string, keyMon
     { key: "item_equip", label: "머신·계산대·키오스크", amount: sum(["groups", "pos", "kiosks"]), basis: say(["groups", "pos", "kiosks"], NM) },
     { key: "item_deco", label: "진열장·오븐", amount: sum(["showcase", "oven"]), basis: say(["showcase", "oven"], NM) },
     { key: "seat", label: "테이블·의자·바 좌석", amount: sum(["tables", "chairs", "bar"]), basis: say(["tables", "chairs", "bar"], NM) },
+    { key: "door", label: "출입문", amount: 150 * (doors ?? 1), basis: `${doors ?? 1}개 × 150만원 (유리문·문틀·도어클로저, 가정)` },
     { key: "sign", label: "간판", amount: CAFE_SIGN, basis: "전면 간판 1개, 가정" },
     { key: "stock", label: "첫 재료와 소모품", amount: CAFE_FIRST_STOCK, basis: "원두, 우유, 컵, 디저트, 가정" },
   ];

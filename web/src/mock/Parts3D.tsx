@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { Box, C } from "../store3d/Building";
 import { bladeSign, cardSign, fasciaSign, grate } from "../store3d/textures";
 import { FrontFade, Pendant, Storefront, WALL_H, Wall } from "./Scene3D";
-import { CELL, GRADES, ITEM, doorX, kitchenSpot, type Grade, type Placed } from "./model";
+import { CELL, GRADES, ITEM, doorX, moreDoorXs, kitchenSpot, type Grade, type Placed } from "./model";
 
 const WOOD = "#8a5a3c", DARK = "#2b2d30", LEAF = "#4d7a4a", PARTITION = "#e9e2d4";
 const STEEL_DARK = "#5d6166", VINYL = "#b8372b", SOJU = "#2f8f5b", BEER = "#9a6a24", CREAM = "#f4f1ea";
@@ -345,7 +345,7 @@ export function TableLife({ items, seated }: { items: Placed[]; seated: number[]
 
 // the floor, walls, storefront and the street-side life: fascia sign, blade sign, posters, menu board, warm lights,
 // planters, an A-frame board and beer crates. `items` draws the exhaust trunks over the tables.
-function RoomImpl({ w, d, grade, pyeong, items = [], door: doorAt }: { w: number; d: number; grade: Grade; pyeong?: number; items?: Placed[]; door?: "left" | "center" | "right" }) {
+function RoomImpl({ w, d, grade, pyeong, items = [], door: doorAt, doors = 1 }: { w: number; d: number; grade: Grade; pyeong?: number; items?: Placed[]; door?: "left" | "center" | "right"; doors?: number }) {
   const g = GRADES[grade];
   const lines = useMemo(() => {
     const pts: number[] = [];
@@ -389,7 +389,7 @@ function RoomImpl({ w, d, grade, pyeong, items = [], door: doorAt }: { w: number
       <Wall p={[w / 2 + 0.06, WALL_H / 2, 0]} s={[0.12, WALL_H, d]} color={g.wall} outside={(c) => c.x > w / 2} />
       {/* 줌인하면 손님 쪽 앞벽(유리 전면, 간판, 네온, 돌출 간판)이 흐려져 안쪽 배치가 보인다 */}
       <FrontFade z={d / 2 + 0.04}>
-      <Storefront x0={-w / 2} x1={w / 2} z={d / 2 + 0.04} door={door} mat={false} />
+      <Storefront x0={-w / 2} x1={w / 2} z={d / 2 + 0.04} door={door} more={moreDoorXs(w, doorAt, doors).map((x) => ({ x, w: 1 }))} mat={false} />
       {/* fascia sign over the storefront, neon line under it, blade sign at the left corner */}
       <Box p={[0, WALL_H + 0.27, d / 2 + 0.1]} s={[fw + 0.24, fw * (192 / 1024) + 0.1, 0.12]} color="#4a2a20" />
       <mesh position={[0, WALL_H + 0.27, d / 2 + 0.165]}>

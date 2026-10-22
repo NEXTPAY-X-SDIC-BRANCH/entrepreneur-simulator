@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { man } from "./model";
 import { ITEM_CATS, RETAIL_CATS, SHOP_ITEMS, itemCount, itemMax, withCount, type ItemCat } from "./shopItems";
-import { shopPlan, type ShopKind, type ShopLayout } from "./ShopRoom3D";
+import { POS_LABEL, shopPlan, type PosSpot, type ShopKind, type ShopLayout } from "./ShopRoom3D";
 
 // 평면 기호 (고깃집 쟁반의 Stamp처럼 위에서 본 모양). 카페 쟁반(CafeBuild)도 같이 쓴다
 export function ItemIcon({ k: k0 }: { k: string }) {
@@ -21,6 +21,8 @@ export function ItemIcon({ k: k0 }: { k: string }) {
         : k === "plant" ? <><circle r="12" /><circle r="5" className="seat" /></>
         : k === "bench" ? <rect x={-22} y={-6} width={44} height={12} rx="2" />
         : k === "fryer" ? <><rect x={-12} y={-14} width={24} height={28} rx="1.5" /><rect x={-7} y={-9} width={14} height={18} className="seat" /></>
+        : k === "doors" ? <><rect x={-16} y={-18} width={32} height={36} rx="1.5" /><line x1={0} y1={-18} x2={0} y2={18} /><circle cx={-4} cy={2} r="2" className="seat" /></>
+        : k === "shelf" ? <><rect x={-26} y={-6} width={52} height={12} rx="1.5" />{[-16, -6, 4, 14].map((x) => <rect key={x} x={x} y={-3} width={7} height={6} className="seat" />)}</>
         : k === "chair" ? <><rect x={-9} y={-9} width={18} height={18} rx="3" /><line x1={-9} y1={-12} x2={9} y2={-12} /></>
         : k === "machine" ? <><rect x={-20} y={-12} width={40} height={24} rx="2" />{[-10, 0, 10].map((x) => <circle key={x} cx={x} cy={4} r="3" className="seat" />)}</>
         : k === "posN" ? <><rect x={-22} y={-8} width={44} height={16} rx="1.5" /><rect x={-6} y={-5} width={12} height={10} className="seat" /></>
@@ -56,6 +58,11 @@ export default function ItemTray({ kind, pyeong, layout, set }: { kind: ShopKind
                   <output>{it.key === "bar" ? (v ? "놓기" : "빼기") : `${v}개`}</output>
                   <button type="button" aria-label={`${it.name} 더 놓기`} disabled={v >= mx} onClick={() => set(withCount(layout, it.key, v + 1))}>+</button>
                 </div>
+                {it.key === "posN" && v > 0 && (
+                  <div className="it-where" role="group" aria-label="계산대 자리">
+                    {(["door", "window", "back"] as PosSpot[]).map((x) => <button type="button" key={x} aria-pressed={(layout.pos ?? "door") === x} onClick={() => set({ ...layout, pos: x })}>{POS_LABEL[x]}</button>)}
+                  </div>
+                )}
                 {v >= mx && mx > 0 && it.max > mx && <small className="it-full">이 평수에 놓을 자리는 여기까지예요</small>}
               </div>
             </li>

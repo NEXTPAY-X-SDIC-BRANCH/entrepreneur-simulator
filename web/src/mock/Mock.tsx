@@ -156,7 +156,7 @@ export default function Mock() {
       {idx >= 1 && chat && <Chat profile={profile} store={store} levers={levers} shocks={[]} gus={gus} onClose={() => setChat(false)} alt={
         ind === "chicken" || ind === "bunsik" ? { cost: qfOpeningCost(qfCfg, profile.gu, profile.keyMoney ?? 0), pyeong: qfCfg.pyeong, staff: qfCfg.staff }
           : ind === "apparel" ? { cost: apparelOpeningCost(apparelCfg, profile.gu, profile.keyMoney ?? 0), pyeong: apparelCfg.pyeong, staff: apparelCfg.staff }
-          : ind === "cafe" ? { cost: cafeOpeningCost(cafeCfg?.pyeong ?? 20, cafeCfg?.grade ?? "basic", profile.gu, profile.keyMoney ?? 0, cafeCfg ? cafeLayoutOf(cafeCfg) : undefined), pyeong: cafeCfg?.pyeong ?? 20, staff: cafeCfg?.staff ?? 1 }
+          : ind === "cafe" ? { cost: cafeOpeningCost(cafeCfg?.pyeong ?? 20, cafeCfg?.grade ?? "basic", profile.gu, profile.keyMoney ?? 0, cafeCfg ? cafeLayoutOf(cafeCfg) : undefined, cafeCfg?.doors), pyeong: cafeCfg?.pyeong ?? 20, staff: cafeCfg?.staff ?? 1 }
           : null} />}
     </div>
   );

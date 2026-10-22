@@ -31,7 +31,7 @@ class CafeIn(BaseModel):
         if v not in load_districts():
             raise ValueError(f"unknown district {v}")
         return v
-    size_pyeong: int = Field(..., ge=10, le=40)
+    size_pyeong: int = Field(..., ge=10, le=80)
     tables: int = Field(..., ge=0, le=40)
     chairs: int = Field(..., ge=0, le=160)
     bar_seats: int = Field(0, ge=0, le=30)

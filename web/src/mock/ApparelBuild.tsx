@@ -5,9 +5,9 @@ import { Mark } from "./Checks";
 import Assume from "./Assume";
 import LayoutPicker from "./LayoutPicker";
 import ItemTray from "./ItemTray";
-import { missingItems } from "./shopItems";
+import { missingItems, withNeeded } from "./shopItems";
 import { useEffect } from "react";
-import ShopRoom3D from "./ShopRoom3D";
+import ShopRoom3D, { shopPlan } from "./ShopRoom3D";
 import { ASSUME } from "./assumptions";
 import { GRADES, OWNER_DRAW, STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
 
@@ -67,6 +67,14 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
     { title: "첫 달 (손님이 아직 적을 때)", assume: "새 가게 인지도 0.6 (고깃집 엔진과 같은 가정)", ok: firstMonth >= 0, line: `새 가게는 알려지기 전이라 손님이 60%쯤이에요. 첫 달은 ${firstMonth >= 0 ? "+" : "−"}${man(Math.abs(firstMonth))}이에요.` },
     { title: "버틸 돈", ok: left >= fixed * 3, line: `남는 현금 ${man(Math.max(0, left))}은 한 달 고정 지출(${man(fixed)})의 ${(Math.max(0, left) / fixed).toFixed(1)}개월치예요. 이 시뮬레이터는 3개월치를 기준으로 봐요.`, assume: "버틸 돈 기준 3개월치" },
   ];
+  // 추천 배치: 자리만큼 채우되, 여는 돈을 내고도 석 달 고정비가 남도록 행거를 줄인다 (최소 2개)
+  const recommendLayout = () => {
+    const l0 = { shape: lay.shape, door: lay.door, pos: lay.pos, doors: lay.doors };
+    let n = shopPlan(kind, cfg.pyeong, l0).racks.length;
+    const leftWith = (k: number) => profile.capital + cfg.loan - apparelOpeningCost({ ...cfg, layout: { ...l0, racks: k } }, profile.gu, profile.keyMoney ?? 0).total;
+    while (n > 2 && leftWith(n) < fixed * 3) n--;
+    set({ layout: { ...l0, racks: n } });
+  };
   return (
     <main className="m-build">
       <div className="m-stage">
@@ -76,7 +84,7 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
             <span id="ap-py">가게 크기</span>
             <button type="button" aria-label="1평 줄이기" disabled={cfg.pyeong <= 7} onClick={() => set({ pyeong: cfg.pyeong - 1 })}>−</button>
             <output aria-labelledby="ap-py">{cfg.pyeong}평</output>
-            <button type="button" aria-label="1평 늘리기" disabled={cfg.pyeong >= 30} onClick={() => set({ pyeong: cfg.pyeong + 1 })}>+</button>
+            <button type="button" aria-label="1평 늘리기" disabled={cfg.pyeong >= 80} onClick={() => set({ pyeong: cfg.pyeong + 1 })}>+</button>
           </div>
           <div className="m-seg" role="group" aria-label="마감 수준">
             {(Object.keys(GRADES) as Grade[]).map((g) => (
@@ -90,7 +98,7 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
             <button type="button" aria-label="알바 1명 늘리기" disabled={cfg.staff >= 2} onClick={() => set({ staff: cfg.staff + 1 })}>+</button>
           </div>
           <LayoutPicker kind={kind} pyeong={cfg.pyeong} layout={lay} set={(l) => set({ layout: l })} />
-          <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={() => set({ layout: { shape: lay.shape, door: lay.door, pos: lay.pos, rackDir: lay.rackDir } })}>추천 배치</button>
+          <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={recommendLayout}>추천 배치</button>
         </div>
         <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>
           <p><span>{left < 0 ? "모자란 현금" : "현금"}</span><strong>{man(Math.abs(left))}</strong></p>
@@ -123,7 +131,7 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
         </dl>
         <ItemTray kind={kind} pyeong={cfg.pyeong} layout={lay} set={(l) => set({ layout: l })} />
         <div className="m-tray-go">
-          {missing.length > 0 && <p className="m-warn it-need">꼭 필요한 물건을 아직 안 놓았어요: {missing.join(", ")}</p>}
+          {missing.length > 0 && <p className="m-warn it-need">꼭 필요한 물건을 아직 안 놓았어요: {missing.join(", ")} <button type="button" className="it-needbtn" onClick={() => set({ layout: withNeeded(kind, cfg.pyeong, lay) })}>한 번에 놓기</button></p>}
           <button type="button" className="m-btn m-btn-outline" onClick={() => document.querySelector(".m-checks")?.scrollIntoView({ behavior: "smooth", block: "start" })}>오픈 전 점검 보러가기</button>
           <button type="button" className="m-btn" disabled={left < 0 || missing.length > 0} onClick={onNext}>시뮬레이션 하러 가기</button>
         </div>

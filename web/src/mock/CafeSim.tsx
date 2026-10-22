@@ -28,8 +28,12 @@ const tone = (v: number) => (v < 0 ? "neg" : "pos");
 type Hours = "short" | "standard" | "long";
 type Staff = "lean" | "standard" | "generous";
 // hard 모드 메뉴·판촉 (엔진 sim/cafe/season.py MENU_DEFAULT와 같은 키)
-type CafeMenu = { bean: "standard" | "specialty"; seasonal: boolean; dessert_price_pct: number; takeout_disc: number; loyalty: boolean; delivery_share: number | null; free_dlvy_krw: number };
-const MENU0: CafeMenu = { bean: "standard", seasonal: false, dessert_price_pct: 0, takeout_disc: 0, loyalty: false, delivery_share: null, free_dlvy_krw: 0 };
+type CafeMenu = { bean: "standard" | "specialty"; seasonal: boolean; dessert_price_pct: number; takeout_disc: number; loyalty: boolean; delivery_share: number | null; free_dlvy_krw: number; min_order_krw?: number };
+const MENU0: CafeMenu = { bean: "standard", seasonal: false, dessert_price_pct: 0, takeout_disc: 0, loyalty: false, delivery_share: null, free_dlvy_krw: 0, min_order_krw: 12000 };
+// 음료 가격을 원으로 보여 주기: 개업 때 아메리카노 = 조사 중앙값 4,000원, 지난달까지 바꾼 가격 배수(CUP_LEVEL)에 이번 달 조정을 곱한다
+let CUP_LEVEL = 1;
+const cupWon = (pct: number) => Math.round((4000 * CUP_LEVEL * (1 + pct / 100)) / 50) * 50;
+const cupKo = (pct: number) => `${cupWon(pct).toLocaleString("ko-KR")}원`;
 type Dec = { price_change_pct: number; hours: Hours; staff_policy: Staff; marketing_krw: number; dessert: boolean; delivery: boolean; open_hour?: number; close_hour?: number; menu?: CafeMenu; staff_max?: number };
 const HOUR_PRESET: Record<Hours, [number, number]> = { short: [11, 20], standard: [10, 22], long: [8, 23] };
 // 엔진에 보낼 계획: easy 모드나 프리셋과 같은 시각이면 직접 정한 시각을 빼고 보낸다 (프리셋 영업시간이 그대로 먹게)
@@ -51,8 +55,8 @@ const staffKo = (n: number) => (n <= 1 ? "사장님 혼자" : `사장님 + 직�
 
 type Lever = { key: string; label: string; hint: string; text: (d: Dec) => string; can: (d: Dec, s: -1 | 1) => boolean; move: (d: Dec, s: -1 | 1) => Dec };
 const LEVERS: Lever[] = [
-  { key: "price", label: "가격 조정", hint: "이번 달에 메뉴 가격을 한 번 바꿔요. 올리면 손님이 줄고 객단가가 늘어요.",
-    text: (d) => (d.price_change_pct === 0 ? "그대로" : `${d.price_change_pct > 0 ? "+" : ""}${d.price_change_pct}%`),
+  { key: "price", label: "음료 가격 (아메리카노)", hint: "한 잔 값을 정해요. 다른 메뉴도 같은 비율로 바뀌어요. 올리면 손님이 줄고 한 잔에 남는 돈이 늘어요.",
+    text: (d) => (d.price_change_pct === 0 ? `${cupKo(0)} 그대로` : `${cupKo(d.price_change_pct)} (${d.price_change_pct > 0 ? "+" : ""}${d.price_change_pct}%)`),
     can: (d, s) => d.price_change_pct + s * 5 >= -20 && d.price_change_pct + s * 5 <= 30, move: (d, s) => ({ ...d, price_change_pct: d.price_change_pct + s * 5 }) },
   { key: "hours", label: "영업시간", hint: "길게 열면 손님을 더 받지만 일하는 시간(인건비)이 늘어요.",
     text: (d) => (d.open_hour != null && d.close_hour != null ? `${clockKo(d.open_hour)}~${clockKo(d.close_hour)}` : HOURS_KO[d.hours]), can: (d, s) => HOURS_ORDER.indexOf(d.hours) + s >= 0 && HOURS_ORDER.indexOf(d.hours) + s < 3,
@@ -139,7 +143,7 @@ export function cafeStrategies(last: Month | undefined, plan: Dec, recs: Rec[]):
   ];
 }
 const PICKS: QPick<Dec>[] = [
-  { key: "price_change_pct", label: "가격", hint: "이번 달 한 번 바꾸는 폭", opts: [{ label: "−5%", value: -5 }, { label: "그대로", value: 0 }, { label: "+5%", value: 5 }] },
+  { key: "price_change_pct", label: "아메리카노 한 잔", hint: "다른 메뉴도 같은 비율로 바뀌어요", opts: [-10, -5, 0, 5, 10].map((v) => ({ label: v === 0 ? "그대로" : `${v > 0 ? "+" : ""}${v}%`, value: v })) },
   { key: "open_hour", label: "몇 시에 열까요?", hint: "일찍 열면 출근길 손님을 받지만 인건비·전기료가 늘어요", opts: Array.from({ length: 9 }, (_, i) => 6 + i).map((h) => ({ label: clockKo(h), value: h })) },
   { key: "close_hour", label: "몇 시에 닫을까요?", hint: "늦게 닫으면 저녁 손님을 더 받지만 손님이 적은 시간에도 인건비가 나가요", opts: Array.from({ length: 7 }, (_, i) => 18 + i).map((h) => ({ label: clockKo(h), value: h })) },
   { key: "staff_max", label: "바쁜 시간 몇 명이 일할까요?", hint: "사장님 포함. 적으면 인건비가 줄고, 바쁜 시간에 손님이 돌아가요", opts: Array.from({ length: STAFF_MAX }, (_, i) => i + 1).map((n) => ({ label: `${n}명`, value: n })) },
@@ -182,6 +186,7 @@ function CafeHard({ plan, set }: { plan: Dec; set: (d: Dec) => void }) {
         {row("포장 할인", "테이크아웃 손님에게 깎아 주면 포장 손님이 늘어요 (자리가 모자랄 때 좋아요)", mn.takeout_disc ? `${Math.round(mn.takeout_disc * 100)}%` : "없음", mn.takeout_disc > 0 ? () => um({ takeout_disc: +(mn.takeout_disc - 0.05).toFixed(2) }) : null, mn.takeout_disc < 0.3 ? () => um({ takeout_disc: +(mn.takeout_disc + 0.05).toFixed(2) }) : null)}
         {row("스탬프 적립", "10잔에 1잔 무료. 단골이 늘지만 공짜로 나가는 잔이 생겨요", mn.loyalty ? "해요" : "안 해요", mn.loyalty ? () => um({ loyalty: false }) : null, !mn.loyalty ? () => um({ loyalty: true }) : null)}
         {plan.delivery && row("배달 비중", "전체 주문 중 배달 몫. 키울수록 배달은 덜 늘고 한 건마다 수수료가 빠져요", `${Math.round(dsh * 100)}%`, dsh > 0.05 ? () => um({ delivery_share: +(dsh - 0.05).toFixed(2) }) : null, dsh < 0.6 ? () => um({ delivery_share: +(dsh + 0.05).toFixed(2) }) : null)}
+        {plan.delivery && row("배달 최소주문금액", "올리면 주문은 줄지만 한 건이 커져 건당 수수료 부담이 줄어요 (기준 12,000원, 가정)", `${(mn.min_order_krw ?? 12000).toLocaleString("ko-KR")}원`, (mn.min_order_krw ?? 12000) > 6000 ? () => um({ min_order_krw: (mn.min_order_krw ?? 12000) - 1000 }) : null, (mn.min_order_krw ?? 12000) < 25000 ? () => um({ min_order_krw: (mn.min_order_krw ?? 12000) + 1000 }) : null)}
         {plan.delivery && row("무료배달 부담", "가게가 배달비를 대신 내면 배달 주문이 늘어요 (1,000원당 +8%)", mn.free_dlvy_krw ? `건당 ${mn.free_dlvy_krw.toLocaleString("ko-KR")}원` : "안 해요", mn.free_dlvy_krw > 0 ? () => um({ free_dlvy_krw: mn.free_dlvy_krw - 1000 }) : null, mn.free_dlvy_krw < 3000 ? () => um({ free_dlvy_krw: mn.free_dlvy_krw + 1000 }) : null)}
       </div>
     </>
@@ -396,6 +401,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const TOTAL: number = start?.months_total ?? 6; // 한 시즌의 달 수 (엔진 season.months)
   const startCash: number = start ? start.start.cash_krw : 0;
   const cur = last;
+  CUP_LEVEL = cur?.decisions.price_level ?? 1; // 음료 가격 원 표시용
   const prevPlan = months.length > 1 ? months[months.length - 2].decisions : undefined;
   const occupancy = view === null && sched[hourIdx] ? (sched[hourIdx].orders / maxOrders) * 0.9 : 0;
   const recs = view === "plan" ? recommend(cur, plan) : [];
@@ -405,7 +411,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   return (
     <div className="sx-root" style={{ top }}>
       <div className="sx-canvas">
-        {pv ? <CafeRoom3D room={pv.room} layout={pv.layout} roster={view === null ? pv.staff.roster : []} occupancy={occupancy} height="fill" /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
+        {pv ? <CafeRoom3D doors={cfg.doors} room={pv.room} layout={pv.layout} roster={view === null ? pv.staff.roster : []} occupancy={occupancy} height="fill" /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
       </div>
 
       <header className="sx-hud">
@@ -567,7 +573,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                       return (
                         <section className="sx-right" aria-label="이번 달 운영 계획">
                           <h2>{nextMonth}월에 이렇게 할게요</h2>
-                          <QuickPicks picks={PICKS} base={plan} prev={cur ? { ...plan, ...cur.decisions, price_change_pct: 0 } : undefined} tweak={tweak} setTweak={setTweak} />
+                          <QuickPicks picks={PICKS.map((pk) => pk.key === "price_change_pct" ? { ...pk, opts: pk.opts.map((o) => ({ ...o, label: cupKo(o.value as number) })) } : pk)} base={plan} prev={cur ? { ...plan, ...cur.decisions, price_change_pct: 0 } : undefined} tweak={tweak} setTweak={setTweak} />
                           <p className="sx-note">hard 모드에서는 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정할 수 있어요.</p>
                         </section>
                       );

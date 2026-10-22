@@ -255,7 +255,7 @@ function BackWallDecor({ runs, z }: { runs: [number, number][]; z: number }) {
 const seedOf = (id: string) => Array.from(id).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 // occupancy: 0~1, 의자(와 바 좌석) 가운데 손님이 앉은 비율. 앉는 자리 순서는 id 해시로 고정해 손님이 늘 때 앉아 있던 사람은 그대로 있다.
-export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, height = 420 }: { room: Room3D; layout: LayoutItem[]; roster?: RosterItem[]; occupancy?: number; height?: number | "fill" }) {
+export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, height = 420, doors = 1 }: { doors?: number;  room: Room3D; layout: LayoutItem[]; roster?: RosterItem[]; occupancy?: number; height?: number | "fill" }) {
   const { width_m: W, depth_m: D } = room;
   // 엔진 좌표 -> 장면 좌표
   const sx = (x: number) => x - W / 2;
@@ -350,7 +350,7 @@ export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, h
           </Wall>
           <Wall p={[W / 2 + 0.06, WALL_H / 2, 0]} s={[0.12, WALL_H, D]} color={ROOM.wall} outside={(c) => c.x > W / 2} />
           {/* 줌인하면 손님 쪽 앞벽(유리 전면)이 흐려져 안쪽 배치가 보인다 (고깃집과 같은 방식) */}
-          <FrontFade z={D / 2}><Storefront x0={-W / 2} x1={W / 2} z={D / 2} door={door} /></FrontFade>
+          <FrontFade z={D / 2}><Storefront x0={-W / 2} x1={W / 2} z={D / 2} door={door} more={[-door.x, 0].slice(0, Math.min(3, Math.max(1, doors)) - 1).map((x) => ({ x, w: door.w }))} /></FrontFade>
           {[door.x - door.w / 2 - 0.35, door.x + door.w / 2 + 0.35].filter((x) => x > -W / 2 && x < W / 2 + 1).map((x) => (
             <group key={x} position={[x, 0, D / 2 + 0.35]}>
               <Cy p={[0, 0.2, 0]} r={0.17} r2={0.14} h={0.4} color="#b9836a" />

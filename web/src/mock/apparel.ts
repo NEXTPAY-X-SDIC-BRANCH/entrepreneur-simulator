@@ -108,7 +108,6 @@ export function apparelOpeningCost(cfg: ApparelCfg, gu: string, keyMoney = 0): {
     ...(keyMoney > 0 ? [{ key: "keymoney", label: "권리금", amount: keyMoney, basis: "직접 넣은 값 (나갈 때 돌려받지 못해요)" }] : []),
     { key: "deposit", label: "보증금", amount: Math.round(st.rent * cfg.pyeong * DEPOSIT_MONTHS), basis: `월세 ${DEPOSIT_MONTHS}개월분 (서울시 상가임대차 실태조사)` },
     ...interiorLines(g.perPyeong * cfg.pyeong, `${cfg.pyeong}평, 평당 ${g.perPyeong}만원 (${g.label}). 공정위 정보공개서 의류 가맹 ${FTC_INTERIOR.apparel.n}개 브랜드의 25·50·75% 값이라 표본이 적어요`),
-    { key: "seat", label: "벽 선반·진열 조명", amount: FIXTURES, basis: "가정. 행거·피팅룸·계산대는 고른 만큼 따로" },
     ...itemLines("apparel", cfg.pyeong, cfg.layout),
     { key: "sign", label: "간판", amount: SIGN, basis: "전면 간판 1개, 가정" },
     { key: "stock", label: "첫 재고", amount: stock, basis: cfg.buyMode === "consign"

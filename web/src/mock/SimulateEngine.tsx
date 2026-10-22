@@ -20,6 +20,7 @@ import { BBQ_REF, bbqBand } from "./priceCompare";
 import ModeSwitch from "./ModeSwitch";
 import CashFlow, { type CfMonth } from "./CashFlow";
 import CostBar from "./CostBar";
+import { isDepLine } from "./shopItems";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, roomSize, storeStats, type Levers, type Profile, type Store } from "./model";
 
@@ -31,7 +32,7 @@ const TURNS = 6;
 export type MenuItem = { name: string; price: number; cost: number; share: number }; // 1인분 원, 주문 비중 %
 // hard 모드에서 더 정하는 것 (엔진 research/season_params.yaml base_plan에 있는 값. 안 보내면 엔진 기본값)
 type Plan = { meat_price: number; staff_per_shift: number; close_hour: number; marketing_budget: number; meat_grade: string; banchan: number; delivery: string; menu?: MenuItem[];
-  soju_price?: number; lunch?: boolean; review_event?: boolean; group_reservations?: boolean; hygiene?: string; staff_grilling?: boolean; menu_extras?: string[] };
+  soju_price?: number; lunch?: boolean; review_event?: boolean; group_reservations?: boolean; hygiene?: string; staff_grilling?: boolean; menu_extras?: string[]; min_order?: number };
 type Mode = "easy" | "hard"; // easy 모드: 계획은 추천대로 자동, 사건 대응만 고른다. hard 모드: 메뉴·원가와 계획을 직접 정한다
 type Night = { dow: string; rain: boolean; revenue: number; covers: number; walkaways: number; cogs: number; fees: number };
 type Ev = { id: string; label: string; group: string; mechanism: string | null; outcome?: string | null };
@@ -152,6 +153,9 @@ const LEVERS: LeverDef[] = [
     can: (p, d) => { const i = DELIVERY.indexOf(p.delivery as (typeof DELIVERY)[number]); return i + d >= 0 && i + d < DELIVERY.length; },
     move: (p, d) => ({ ...p, delivery: DELIVERY[DELIVERY.indexOf(p.delivery as (typeof DELIVERY)[number]) + d] }),
   },
+  { key: "min_order", label: "배달 최소주문금액", hint: "배달할 때만. 올리면 주문은 줄지만 한 건이 커져 건당 배달비 부담이 줄어요 (기준 2만원, 가정)",
+    text: (p) => (p.delivery === "none" ? "배달 안 함" : `${fmt(p.min_order ?? 20000)}원`),
+    can: (p, d) => { const v = (p.min_order ?? 20000) + d * 1000; return p.delivery !== "none" && v >= 10000 && v <= 35000; }, move: (p, d) => ({ ...p, min_order: (p.min_order ?? 20000) + d * 1000 }) },
 ];
 
 type Rec = { lever: LeverDef; last: string; next: Plan; nextText: string; change: boolean; why: string };
@@ -553,7 +557,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const startCash = (profile.capital + store.loan - cost.total) * 1e4; // 원
   const interest = (store.loan * 1e4 * LOAN_RATE) / 12;
   // 감가상각: 보증금·권리금·첫 재료처럼 쓰고 사라지지 않거나 바로 쓰는 돈은 빼고, 시설·가구만 60개월로 나눈다 (SettleTable 주석)
-  const dep = (cost.lines.filter((l) => ["interior", "equip", "seat", "deco", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) * 1e4) / 60;
+  const dep = (cost.lines.filter((l) => isDepLine(l.key) || l.key === "door").reduce((a, l) => a + l.amount, 0) * 1e4) / 60;
   // 현금흐름표·영수증 (원). 사장 가상 급여는 현금이 안 나가므로 인건비에서 뺀다
   const cfOf = (ds: Done[]): CfMonth[] => ds.map((d) => {
     const k = d.result.kpis, rp = d.rentPaid ? d.rentPaid - d.rentFee : k.rent;
@@ -808,7 +812,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
         <GLGuard>
           <Canvas key={gfx} frameloop={gfxFrameloop(gfx)} shadows={gfxShadows(gfx)} camera={{ position: [w * 0.7, Math.max(w, d) * 1.2, d * 1.6], fov: 38 }} dpr={gfxDpr(gfx)}>
             <StoreLights w={w} d={d} r={Math.max(w, d) / 2 + 3} dim={!curDay || curDay.open ? 1 : 0.45} />
-            <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} door={store.door} items={store.items} />
+            <Room w={w} d={d} grade={store.grade} pyeong={store.pyeong} door={store.door} doors={store.doors} items={store.items} />
             <Items items={store.items} />
             <Guests store={store} filled={view === "intro" || view === "plan" || view === "scenario" ? 0 : filled} />
             <FitControls box={[-w / 2, -d / 2, w / 2, d / 2 + 0.6]} dir={[0.7, 1.2, 1.6]} />
