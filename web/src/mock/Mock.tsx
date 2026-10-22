@@ -5,16 +5,16 @@ import ProfileStep from "./Profile";
 import Login, { AccountButton } from "./Login";
 import { setAreaData, setFlowData, setShopData, setTrdarData, useIndustry } from "./area";
 import Analysis from "./Analysis";
-import Chat from "./Chat";
+import Chat, { type ChatShop } from "./Chat";
 import CafeBuild from "./CafeBuild";
 import CafeSim from "./CafeSim";
 import ApparelBuild from "./ApparelBuild";
 import ApparelSim from "./ApparelSim";
-import { DEFAULT_APPAREL, apparelOpeningCost, setApparelKosis, setFashionMarket, type ApparelCfg } from "./apparel";
+import { DEFAULT_APPAREL, apparelEstimate, apparelOpeningCost, setApparelKosis, setFashionMarket, type ApparelCfg } from "./apparel";
 import { setSns } from "./sns";
-import { cafeOpeningCost } from "./cafe";
+import { cafeEstimate, cafeOpeningCost } from "./cafe";
 import { setSbizDelivery } from "./quickfood";
-import type { CafeCfg } from "./cafeChecks";
+import { cafeLayoutOf, type CafeCfg } from "./cafeChecks";
 import { isLab } from "../lab/industry/industries"; // lab:industry
 import { IndustryArea, IndustryBuild, IndustrySim, type IndustryCfg } from "../lab/industry/screens"; // lab:industry
 import "./mock.css";
@@ -113,6 +113,21 @@ export default function Mock() {
     else setCafeCfg({ pyeong: h.pyeong, grade: "basic", staff: h.staff });
     go("build");
   };
+  // 챗봇에 넘길 카페·옷가게의 가게 값 (만원). 동네 분석 단계에서는 그 화면과 같은 추천 구성, 가게 꾸미기부터는 고른 구성이다.
+  // 카페 시뮬레이션은 엔진 값(권리금·부가세 선납 포함)을 chatContext로 따로 넘긴다. lab 새 업종은 미리보기 값을 chatContext로 넘긴다 (Chat이 읽음).
+  const chatShop = ((): ChatShop | null => {
+    const key = profile.keyMoney ?? 0;
+    if (ind === "cafe") {
+      const c = step === "area" || !cafeCfg ? { pyeong: cafeEstimate(profile, 3 * 550).pyeong, grade: "basic" as const, staff: 1 } : cafeCfg; // Analysis와 같은 기준 (석 달 × 550만원)
+      const lay = cafeLayoutOf(c);
+      return { cost: cafeOpeningCost(c.pyeong, c.grade, profile.gu, key), pyeong: c.pyeong, staff: c.staff, tables: lay.tables, seats: lay.chairs, loan: 0 };
+    }
+    if (ind === "apparel") {
+      const c = step === "area" ? { ...apparelCfg, pyeong: apparelEstimate(profile).pyeong } : apparelCfg;
+      return { cost: apparelOpeningCost(c, profile.gu, key), pyeong: c.pyeong, staff: c.staff, loan: c.loan };
+    }
+    return null;
+  })();
   setRentInput(profile.rent && profile.rent.gu === profile.gu ? profile.rent : null); // 하위 화면이 읽기 전에 맞춰 둔다
   setAreaInput(profile.dong && profile.dong.gu === profile.gu ? profile.dong : null);
 
@@ -167,10 +182,7 @@ export default function Mock() {
         </Suspense>
       )}
 
-      {idx >= 1 && chat && <Chat profile={profile} store={store} levers={levers} shocks={[]} gus={gus} onClose={() => setChat(false)} alt={
-        ind === "apparel" ? { cost: apparelOpeningCost(apparelCfg, profile.gu, profile.keyMoney ?? 0), pyeong: apparelCfg.pyeong, staff: apparelCfg.staff }
-          : ind === "cafe" ? { cost: cafeOpeningCost(cafeCfg?.pyeong ?? 20, cafeCfg?.grade ?? "basic", profile.gu, profile.keyMoney ?? 0), pyeong: cafeCfg?.pyeong ?? 20, staff: cafeCfg?.staff ?? 1 }
-          : null} />}
+      {idx >= 1 && chat && <Chat profile={profile} store={store} levers={levers} shocks={[]} gus={gus} onClose={() => setChat(false)} alt={chatShop} />}
     </div>
   );
 }

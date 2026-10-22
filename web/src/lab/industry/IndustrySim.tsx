@@ -6,6 +6,7 @@ import CafeRoom3D from "../../mock/CafeRoom3D";
 import { man, type Profile } from "../../mock/model";
 import { IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "../../mock/SimulateEngine";
 import { engineBody, netErr, post, sgn, usePreview, wman, type IndustryCfg, type Month, type Start } from "./api";
+import { paybackOf, setEngineCtx } from "../../mock/chatContext";
 import { LAB_TXT, type LabIndustry } from "./industries";
 import ScoreCard from "../score/ScoreCard"; // lab:score 6개월 성적표 (카페·고깃집 결과 화면과 같은 카드)
 import RecordAttempt from "../modes/RecordAttempt"; // lab:modes 하드 모드 판 기록 (다시 해보기 비교)
@@ -89,6 +90,31 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
     if (!cur) return 0;
     return Math.min(1, cur.kpi.hall_covers / Math.max(1, cur.drivers.days_open) / Math.max(1, cur.drivers.seat_units_day) * 1.6);
   }, [cur]);
+
+  // 챗봇이 "몇 달째부터 남아요?", "하루 몇 명 받아야 본전이에요?", "여는 데 돈이 제일 많이 드는 곳은?"에 이 판의 결과로 답하게 넘긴다 (원).
+  // 손익 줄을 고깃집과 같은 칸으로: 매출 비례 재료·배달 원가는 cogs, 카드·세금·기타 비율 비용은 fees, 나머지(홍보·사건·수리·감가상각)는 mgmt.
+  // 이 엔진의 영업이익은 사장님 몫을 빼기 전이라(경영실태조사 대표자 인건비 참고값) 손익분기에는 owner_fixed로 더하고, 회수는 그 몫과 이자를 뺀 영업 현금으로 센다.
+  useEffect(() => {
+    const capex = start?.capex ?? p?.capex;
+    const opening = capex ? { total: capex.total_krw / 1e4, lines: capex.lines.map((l) => ({ label: l.item_ko, amount: l.krw / 1e4 })) } : undefined;
+    const owner = cur?.kpi.owner_pay_ref_krw ?? p?.rough_month.owner_pay_ref_krw ?? 0;
+    const base = { owner_fixed: owner, owner_note: `사장님 몫 월 ${Math.round(owner / 1e4).toLocaleString("ko-KR")}만원 포함, 경영실태조사 대표자 인건비 참고값`, ...(opening ? { opening } : {}) };
+    if (!months.length) { setEngineCtx(opening ? { start_month: start?.start_month ?? startMonth, months: [], closed: false, finished: false, cash_now: startCash, ...base } : null); return; }
+    const sum = (m: Month, keys: string[]) => m.pnl.lines.filter((l) => keys.includes(l.key)).reduce((a, l) => a + l.krw, 0);
+    const rows = months.map((m) => {
+      const cogs = sum(m, ["food", "delivery"]), fees = sum(m, ["card", "tax", "other"]), labor = sum(m, ["labor"]), rent = sum(m, ["rent"]);
+      return { month: m.calendar_month, revenue: m.pnl.revenue_krw, cogs, fees, labor, rent, mgmt: m.pnl.revenue_krw - cogs - fees - labor - rent - m.pnl.op_krw,
+        covers: m.kpi.covers, op: m.pnl.op_krw, open_days: m.drivers.days_open, cash_end: m.kpi.cash_krw };
+    });
+    const deposit = capex?.lines.filter((l) => l.key === "deposit").reduce((a, l) => a + l.krw, 0) ?? 0;
+    const spent = (capex?.total_krw ?? 0) - deposit;
+    setEngineCtx({
+      start_month: months[0].calendar_month, months: rows, closed: cur.closure.closed, finished: over || months.length >= TOTAL, cash_now: cur.kpi.cash_krw,
+      payback: paybackOf(spent, months.map((m) => m.pnl.op_krw - (m.kpi.owner_pay_ref_krw ?? 0) - m.cash.loan_interest_krw)), spent,
+      end_cash: cur.kpi.cash_krw, lowest_cash: Math.min(startCash, ...months.map((m) => m.kpi.cash_krw)), ...base,
+    });
+  }, [months, p, start]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => setEngineCtx(null), []);
 
   const begin = () => {
     if (!p) return;

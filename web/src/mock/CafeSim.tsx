@@ -26,6 +26,7 @@ import { fetchTemplate, toEngine as menuToEngine, type MenuDoc } from "../lab/me
 import ScoreCard from "../lab/score/ScoreCard"; // lab:score
 import { cafeSummary } from "../lab/score/summary"; // lab:score
 import RecordAttempt from "../lab/modes/RecordAttempt"; // lab:modes 하드 모드 판 기록 (다시 해보기 비교)
+import { paybackOf, setEngineCtx } from "./chatContext";
 
 const wman = (krw: number) => man(krw / 10000);
 const sgn = (krw: number) => `${krw >= 0 ? "+" : "−"}${man(Math.abs(krw / 10000))}`;
@@ -390,6 +391,34 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
   };
   const nextAfterSettle = () => (over ? toReport() : setView("plan"));
   const restart = () => { setMonths([]); setStart(null); setReport(null); setView("intro"); setErr(""); };
+
+  // 챗봇이 "몇 달째부터 남아요?", "하루 몇 명 받아야 본전이에요?", "여는 데 돈이 제일 많이 드는 곳은?"에 이 판의 결과로 답하게 넘긴다 (원).
+  // 여는 돈은 엔진 값(권리금·부가세 선납 포함, cafeOpenFromEngine). 손익 줄을 고깃집과 같은 칸으로 나눈다: 재료·포장·폐기는 cogs,
+  // 카드수수료와 매출 비례 소모품·기본 마케팅은 fees, 나머지(사장 가상 급여, 전기·관리비, 추가 마케팅, 대응 비용, 수리)는 mgmt.
+  // 카페 엔진은 사장 가상 급여를 손익에 넣으므로(lab:cost) 손익분기에 따로 더하지 않고, 회수는 영업이익에서 이자만 뺀다.
+  useEffect(() => {
+    const f = pv?.funding ? cafeOpenFromEngine(pv.capex, pv.funding) : null;
+    const opening = f ? { total: f.total, lines: f.lines.map((l) => ({ label: l.label, amount: l.amount })) } : undefined;
+    const ownerLine = (m?: Month) => m?.pnl.lines.find((l) => l.key === "owner")?.krw ?? 0;
+    const ow = ownerLine(months[0]);
+    const owner_note = ow ? `사장 가상 급여 월 ${Math.round(ow / 1e4).toLocaleString("ko-KR")}만원 포함` : "사장 가상 급여 포함";
+    if (!months.length) { setEngineCtx(opening ? { start_month: startMonth, months: [], closed: false, finished: false, cash_now: f ? f.cash * 1e4 : 0, opening, owner_note } : null); return; }
+    const sum = (m: Month, keys: string[]) => m.pnl.lines.filter((l) => keys.includes(l.key)).reduce((a, l) => a + l.krw, 0);
+    const rows = months.map((m) => {
+      const cogs = sum(m, ["food", "packaging", "dessert_waste", "delivery"]), fees = sum(m, ["card", "shares"]), labor = sum(m, ["labor"]), rent = sum(m, ["rent"]);
+      return { month: m.calendar_month, revenue: m.pnl.revenue_krw, cogs, fees, labor, rent, mgmt: m.pnl.revenue_krw - cogs - fees - labor - rent - m.pnl.op_krw,
+        covers: m.kpi.customers, op: m.pnl.op_krw, open_days: new Date(2026, m.calendar_month, 0).getDate(), cash_end: m.kpi.cash_krw };
+    });
+    const total = start?.months_total ?? 6;
+    const spent = f ? f.sunk * 1e4 : 0; // 보증금과 돌려받는 부가세 선납을 뺀 쓴 돈
+    const cashStart: number = start ? start.start.cash_krw : 0;
+    setEngineCtx({
+      start_month: months[0].calendar_month, months: rows, closed: last.closure.closed, finished: over || months.length >= total, cash_now: last.kpi.cash_krw,
+      payback: paybackOf(spent, months.map((m) => m.pnl.op_krw - m.cash.loan_interest_krw)), spent,
+      end_cash: last.kpi.cash_krw, lowest_cash: Math.min(cashStart, ...months.map((m) => m.kpi.cash_krw)), owner_note, ...(opening ? { opening } : {}),
+    });
+  }, [months, pv, start]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => setEngineCtx(null), []);
 
   if (!body) return (
     <main className="m-area"><section className="m-panel a-card">

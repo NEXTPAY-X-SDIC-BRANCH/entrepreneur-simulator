@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { Grade, Profile } from "../../mock/model";
 import { ENGINE } from "../../mock/useCafePreview";
 import type { LabIndustry } from "./industries";
+import { setShopCtx } from "../../mock/chatContext";
 
 export type IndustryCfg = { industry: LabIndustry; pyeong?: number; tables?: number; staff?: number; grade: Grade; delivery: boolean };
 export type Line = { key: string; item_ko: string; krw: number; grade: string; note_ko?: string };
@@ -67,6 +68,12 @@ export const netErr = (e: unknown) => (/fetch/i.test(String(e))
   ? "엔진 서버에 연결하지 못했어요. uvicorn api.changeup:app --host 127.0.0.1 --port 8010 으로 켜 주세요."
   : String((e as Error)?.message ?? e));
 
+// 챗봇(Chat.tsx)이 '여는 데 드는 돈', 평수, 직원, 대출을 이 업종 값으로 답하게 미리보기 값을 남긴다 (만원)
+export const shopOf = (d: Preview) => ({
+  industry: d.industry, pyeong: d.input.pyeong, staff: d.input.staff, tables: d.seats.tables, seats: d.seats.total, loan: d.capex.loan_needed_krw / 1e4,
+  cost: { total: d.capex.total_krw / 1e4, lines: d.capex.lines.map((l) => ({ key: l.key, label: l.item_ko, amount: l.krw / 1e4 })) },
+});
+
 // 입력이 바뀔 때마다 (0.3초 모아서) 미리보기를 다시 부른다
 export function usePreview(profile: Profile, cfg: IndustryCfg): { data: Preview | null; err: string } {
   const [data, setData] = useState<Preview | null>(null);
@@ -75,7 +82,7 @@ export function usePreview(profile: Profile, cfg: IndustryCfg): { data: Preview 
   useEffect(() => {
     let alive = true;
     const t = setTimeout(() => {
-      post<Preview>("/preview", JSON.parse(key)).then((d) => { if (alive) { setData(d); setErr(""); } }).catch((e) => alive && setErr(netErr(e)));
+      post<Preview>("/preview", JSON.parse(key)).then((d) => { if (alive) { setData(d); setErr(""); setShopCtx(shopOf(d)); } }).catch((e) => alive && setErr(netErr(e)));
     }, 300);
     return () => { alive = false; clearTimeout(t); };
   }, [key]);

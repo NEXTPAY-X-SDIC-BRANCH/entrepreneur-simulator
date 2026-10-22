@@ -59,6 +59,8 @@ def industries_of(q: str) -> list[str]:  # lab:industry 질문에 나온 새 업
     return [i for i, rx in IND_Q if rx.search(q)]
 
 
+IND_IDS = {i for i, _ in IND_Q}  # lab:merge lab 새 업종 id (화면 ctx.industry)
+IND_WORD = {"hansik": "백반집", "pub": "호프 주점", "bunsik": "분식집", "bakery": "베이커리 빵집", "chicken": "치킨집"}
 IND_ONLY = {"industry", "sales", "competition", "cost"}  # lab:industry 이 주제들만이면 새 업종 근거로 답한다 (월세·대출·지원사업은 원래 근거)
 
 
@@ -514,16 +516,22 @@ def live_facts(ctx: dict | None) -> list[dict]:
     p = ctx.get("pyeong")
     if p:
         add("shop", ["점포", "직원", "알바", "인원", "평수", "테이블", "좌석", "규모", "몇 명", "몇 평"],
-            f"지금 입력한 가게는 {where}에 {p}평, 테이블 {ctx.get('tables', '?')}개({ctx.get('seats', '?')}석), 직원 {ctx.get('staff', '?')}명이에요."
+            f"지금 입력한 가게는 {where}에 {p}평, "
+            + (f"테이블 {ctx.get('tables', '?')}개({ctx.get('seats', '?')}석), " if ctx.get("tables") is not None else "")   # 옷가게는 테이블이 없다
+            + f"직원 {ctx.get('staff', '?')}명이에요."
             + (f" 동네 유형은 {ctx['area_type']}이에요." if ctx.get("area_type") else ""))
     if ctx.get("area_type"):
         add("type", ["유형", "동네 유형", "동네", "이 동네", "특성", "성격"],
             f"{where or '이 동네'}의 유형은 {yeyo(ctx['area_type'])}.")
     if ctx.get("pork_area") is not None or ctx.get("pork_gu") is not None:
-        n = ctx.get("pork_area") if ctx.get("pork_area") is not None else ctx.get("pork_gu")
-        st = f", 한식음식점 {ctx['stores_area']:,}곳" if ctx.get("stores_area") else ""
-        add("area", ["경쟁", "점포", "고깃집", "돼지고기", "동네", "몇 곳", "이 동네", "가게 수"],
-            f"{where or ctx.get('gu', '')}에는 돼지고기 구이·찜 가게가 {n:,}곳{st} 있어요." + (f" 서울 25개 구 중 {ctx['pork_rank']}번째로 많은 구예요." if ctx.get("pork_rank") else ""))
+        # 화면이 고른 업종의 가게 수다(pork_gu는 이름만 남은 것). 업종을 안 보내는 옛 화면은 고깃집으로 본다.
+        meat = ctx.get("industry", "bbq") == "bbq"
+        kind = "돼지고기 구이·찜 가게" if meat else ctx.get("kind") or "같은 업종 가게"
+        n = ctx.get("pork_area") if meat and ctx.get("pork_area") is not None else ctx.get("pork_gu")
+        at = where if meat else ctx.get("gu", "")   # 동네 단위 가게 수는 고깃집 자료만 있다
+        st = f", 한식음식점 {ctx['stores_area']:,}곳" if meat and ctx.get("stores_area") else ""
+        add("area", ["경쟁", "점포", "동네", "몇 곳", "이 동네", "가게 수", *(["고깃집", "돼지고기"] if meat else [kind])],
+            f"{at or ctx.get('gu', '')}에는 {kind}{'이' if (ord(kind[-1]) - 0xAC00) % 28 else '가'} {n:,}곳{st} 있어요." + (f" 서울 25개 구 중 {ctx['pork_rank']}번째로 많은 구예요." if ctx.get("pork_rank") else ""))
     if ctx.get("rent") is not None and p:
         add("rent", ["월세", "임대", "평당", "임대료"],
             f"월세는 평당 약 {ctx['rent']}만원({ctx.get('rent_src', '입력')})으로 잡았어요. {p}평이면 한 달 약 {man(ctx['rent'] * p)}이에요.")
@@ -551,9 +559,12 @@ def live_facts(ctx: dict | None) -> list[dict]:
         add("sim_none", ["본전", "회수", "되찾", "몇 달", "개월", "흑자", "남기", "시작", "시뮬레이션", "영업이익", "투자금", "하루", "몇 명"],
             "아직 시뮬레이션을 돌리지 않았어요. 시뮬레이션 탭에서 6개월을 돌리면 몇 달째부터 남는지, 투자금을 언제 되찾는지 알려 드릴 수 있어요.")
         return out
+    # 옷가게는 손님 대신 결제 건수를 센다(unit "건"). 사장님 몫은 업종마다 손익에 든 방식이 달라 화면이 기준 문장(owner_note)을 보낸다.
+    sale = eng.get("unit") == "건"
+    who = (lambda n: f"결제는 {n:,}건") if sale else (lambda n: f"손님은 {n:,}명")
     for m in eng["months"]:
         add(f"month_{m['month']}", [f"{m['month']}월", "영업이익", "매출", "손님", "시뮬레이션", "결과", "이번 달", "지난달"],
-            f"시뮬레이션 {m['month']}월은 매출 {won(m['revenue'])}, 영업이익 {signed(m['op'])}이었어요. 손님은 {round(m['covers']):,}명이에요.")
+            f"시뮬레이션 {m['month']}월은 매출 {won(m['revenue'])}, 영업이익 {signed(m['op'])}이었어요. {who(round(m['covers']))}이에요.")
     n = len(eng["months"])
     if eng.get("finished"):
         pb = eng.get("payback") or {}
@@ -573,13 +584,18 @@ def live_facts(ctx: dict | None) -> list[dict]:
     last = next((m for m in reversed(eng["months"]) if m.get("covers")), None)
     if last:
         contrib = (last["revenue"] - last["cogs"] - last["fees"]) / last["covers"]
-        fixed = last["labor"] + last["rent"] + last["mgmt"]
+        fixed = last["labor"] + last["rent"] + last["mgmt"] + (eng.get("owner_fixed") or 0)
         if contrib > 0:
             per_month = fixed / contrib
             days = last.get("open_days") or 26
-            add("breakeven", ["본전", "하루", "몇 명", "손님", "손익분기", "받아야", "시뮬레이션"],
-                f"{last['month']}월 비용 기준으로 영업이익이 0이 되려면 한 달 약 {round(per_month):,}명, 하루 약 {round(per_month / days):,}명이 와야 해요 "
-                f"(사장 가상 급여 300만원 포함). 그달에는 하루 평균 {round(last['covers'] / days):,}명이 왔어요.")
+            note = eng.get("owner_note") or "사장 가상 급여 300만원 포함"
+            if sale:
+                text = (f"{last['month']}월 비용 기준으로 본전이 되려면 한 달 약 {round(per_month):,}건, 하루 약 {round(per_month / days):,}건을 팔아야 해요 "
+                        f"({note}). 그달에는 하루 평균 {round(last['covers'] / days):,}건을 팔았어요.")
+            else:
+                text = (f"{last['month']}월 비용 기준으로 영업이익이 0이 되려면 한 달 약 {round(per_month):,}명, 하루 약 {round(per_month / days):,}명이 와야 해요 "
+                        f"({note}). 그달에는 하루 평균 {round(last['covers'] / days):,}명이 왔어요.")
+            add("breakeven", ["본전", "하루", "몇 명", "몇 건", "손님", "손익분기", "받아야", "팔아야", "시뮬레이션"], text)
     return out
 
 
@@ -647,8 +663,16 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
     tps = topics(q, dongs)
     # 업종 말 없이 '이 동네 경쟁·매출'을 물으면 화면의 업종(치킨·분식·옷가게·카페)을 주제에 더해 그 업종의 구 근거를 쓴다
     _ci = (ctx or {}).get("industry")
-    if _ci in ("chicken", "bunsik", "apparel", "cafe") and not tps & {"chicken", "bunsik", "apparel", "cafe"} and not MEAT_Q.search(q)             and tps & {"competition", "sales", "neighborhood", "myshop"}:
+    # lab:merge 치킨·분식 화면은 lab 엔진 화면이라 upstream 치킨·분식 근거 대신 아래 lab 업종 근거(ind_)와 화면 값(live_)으로 답한다
+    if _ci in ("apparel", "cafe") and not tps & {"chicken", "bunsik", "apparel", "cafe"} and not MEAT_Q.search(q)             and tps & {"competition", "sales", "neighborhood", "myshop"}:
         tps.add(_ci)
+    # lab:merge 질문에 업종 말이 없으면 화면의 lab 업종(치킨·분식 포함)으로 본다 ('매출은 어때요?' -> 그 업종 근거).
+    # '이 동네·내 가게'처럼 화면 값을 묻는 질문은 화면 값(live_)으로 답한다
+    ctx_ind = (_ci in IND_IDS and not industries_of(q) and not CAFE_Q.search(q) and not MEAT_Q.search(q)
+               and bool(tps & {"sales", "competition", "cost"}) and not OWN.search(q))
+    if ctx_ind:
+        tps.add("industry")
+        q = q + " " + IND_WORD[_ci]   # 근거 고르기(유사도)에 업종 이름을 보탠다
     near = match_dongs(q, dongs)
     named_dong = bool(near)
     if near:
@@ -689,7 +713,9 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
     if "apparel" in tps:
         # 옷가게를 물으면 옷가게 근거만. 구를 말했으면(또는 화면에서 고른 구가 있으면) 그 구 값, 아니면 서울 값과 비용·생존율만
         g = GU.search(q).group() if GU.search(q) else (ctx or {}).get("gu") if (ctx or {}).get("industry") == "apparel" else None
-        pool = [f for f in pool if f["id"].startswith(("apparel_", "sns_apparel")) and (not f["id"].startswith("apparel_gu_") or (g and f["id"] == f"apparel_gu_{g}"))]
+        # lab:merge '이 동네·내 가게'처럼 화면 값을 묻는 질문은 화면이 보낸 값(live_: 가게 수, 시뮬레이션 결과, 본전)도 남긴다
+        pool = [f for f in pool if f["id"].startswith(("apparel_", "sns_apparel")) and (not f["id"].startswith("apparel_gu_") or (g and f["id"] == f"apparel_gu_{g}"))
+                or ((OWN.search(q) or "myshop" in tps) and f["id"].startswith("live_"))]
     # '30대 생존율', '20대 대출'처럼 나이대가 나와도 생존율·대출·지원사업·배달을 묻는 질문은 인구 질문이 아니다
     if "flow" in tps and not re.search(r"생존|폐업", q) and not tps & {"loan", "support", "delivery"}:
         # 사람 수 질문은 사람 근거만 쓴다. 이름이 나온 동이 없고 화면의 동네도 모르면 다른 주제의 문장으로 대신하지 않는다.
@@ -699,7 +725,7 @@ def run(q: str, ctx: dict | None = None, k: int = 3) -> dict:
         if OWN.search(q):
             here = [f for f in pool if f["id"].startswith("live_")]
             pool = here or pool
-    ind_hits = industries_of(q)  # lab:industry 새 업종 질문
+    ind_hits = industries_of(q) or ([_ci] if ctx_ind else [])  # lab:industry 새 업종 질문 (lab:merge 업종 말이 없으면 화면 업종)
     if ind_hits:
         gq = GU.search(q)
         def ours(f: dict) -> bool:

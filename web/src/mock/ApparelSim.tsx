@@ -11,7 +11,8 @@ import {
 import ShopRoom3D from "./ShopRoom3D";
 import Assume from "./Assume";
 import QuickPicks, { type Pick as QPick } from "./QuickPicks";
-import { LOAN_RATE, guStat, man, type Profile } from "./model";
+import { LOAN_RATE, OWNER_DRAW, guStat, man, type Profile } from "./model";
+import { paybackOf, setEngineCtx } from "./chatContext";
 import ModeSwitch from "./ModeSwitch";
 import CashFlow, { type CfMonth } from "./CashFlow";
 import Insight from "./Insight";
@@ -226,6 +227,27 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
   }));
   const lowest = () => Math.min(start.cash, ...done.flatMap((x) => x.days.map((d) => d.cash)));
   const score = (ms: ApMonth[]) => scoreOf(scoreMonths(ms), start.cash * 1e4, lowest() * 1e4, (ms.at(-1)?.cash ?? start.cash) * 1e4, monthlyOut(ms) * 1e4, "retail");
+
+  // 챗봇이 이 판의 결과와 여는 데 든 돈으로 답하게 넘긴다 (금액은 원). 옷가게 영업이익은 사장님 생활비(OWNER_DRAW)를 빼기 전이라
+  // 손익분기에는 owner_fixed로 더하고, 회수는 sim/venture.py처럼 생활비와 이자를 뺀 영업 현금으로 센다.
+  // 매출에 비례하는 기타경비(카드 수수료·공과금 등)와 온라인 판매 비용은 fees, 재고 폐기는 cogs, 홍보·사건 비용은 mgmt. 손님 대신 결제 건수(tx)를 센다.
+  useEffect(() => {
+    const opening = { total: open.total, lines: open.lines.map((l) => ({ label: l.label, amount: l.amount })) };
+    const base = { owner_fixed: OWNER_DRAW * 1e4, owner_note: `사장님 생활비 월 ${OWNER_DRAW}만원 포함`, unit: "건" as const, opening };
+    if (!done.length) { setEngineCtx({ start_month: startMonth, months: [], closed: false, finished: false, cash_now: start.cash * 1e4, ...base }); return; }
+    const ms = done.map((x) => x.m), last = ms[ms.length - 1];
+    const spent = (open.total - (open.lines.find((l) => l.key === "deposit")?.amount ?? 0)) * 1e4;
+    setEngineCtx({
+      start_month: startMonth, closed: last.closed, finished: last.closed || ms.length >= TURNS, cash_now: last.cash * 1e4,
+      months: done.map(({ m: x, days }) => ({
+        month: x.month, revenue: x.revenue * 1e4, cogs: (x.cogs + x.writeOff) * 1e4, fees: (x.other + x.onlineCost) * 1e4, labor: x.staffPay * 1e4, rent: x.rent * 1e4,
+        mgmt: (x.marketing + x.eventCost) * 1e4, covers: x.tx, op: x.op * 1e4, open_days: days.length, cash_end: x.cash * 1e4,
+      })),
+      payback: paybackOf(spent, ms.map((x) => (x.op - x.draw - x.interest) * 1e4)), spent,
+      end_cash: last.cash * 1e4, lowest_cash: lowest() * 1e4, ...base,
+    });
+  }, [done, cfg, profile.gu]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => setEngineCtx(null), []);
 
   const restart = () => { setState(startState(profile, cfg, startMonth)); setDone([]); setPlan({ ...DEFAULT_PLAN, staff: cfg.staff }); setSeed(Math.floor(Math.random() * 1000)); setView("intro"); };
   const toScenario = () => {
