@@ -32,6 +32,7 @@ ALIASES = {
     "KMA_APIHUB_KEY": ["KMA_API_HUB_KEY"],
     "ASOS_HOURLY_KEY": ["KMA_ASOS_HOURLY_KEY"],
     "LIVESTOCK_AUCTION_KEY": ["MEAT_PRICE_API_KEY"],
+    "GANGWON_LIVESTOCK_KEY": ["강원특별자치도_축산물_가격동향"],
 }
 
 
@@ -44,6 +45,12 @@ def key(name: str, fallback: str | None = "DATA_GO_KR_KEY") -> str:
     if not v:
         raise SystemExit(f"{name}가 없습니다. 환경변수나 저장소 루트 .env에 넣어 주세요 (.env.example 참고)")
     return v
+
+
+def sbiz365_keys() -> dict[str, str]:
+    """소상공인365 오픈API 키 전부 (이름 -> 값). 키마다 API가 달라 SBIZ365_ 로 시작하는 이름을 모은다. 값은 출력하지 않는다."""
+    names = {k for k in list(_FILE) + list(os.environ) if k.startswith("SBIZ365_")}
+    return {k: v for k in sorted(names) if (v := os.environ.get(k) or _FILE.get(k, ""))}
 
 
 def mask(text: str) -> str:

@@ -1,0 +1,230 @@
+// 치킨집·분식집·옷가게 3D. 엔진이 배치를 주지 않는 업종이라, 평수로 방 크기를 정하고 업종마다 정해 둔 규칙으로 놓는다.
+// 고깃집·카페 장면과 같은 면 스타일, 같은 벽·유리 전면·조명·사람·카메라(Scene3D)를 쓴다. 모든 모양은 코드로 만든다.
+// 장면 좌표: 방 가운데가 원점, 앞(거리 쪽) 벽이 +z. 문은 앞벽 오른쪽.
+import { useMemo } from "react";
+import { Canvas } from "@react-three/fiber";
+import { GLGuard } from "../shared/GLGuard";
+import { Box } from "../store3d/Building";
+import { hash } from "../store3d/Figures";
+import { FitControls, FrontFade, Pendant, People, StoreLights, Storefront, ViewBar, WALL_H, Wall, gfxDpr, gfxFrameloop, gfxShadows, useGfx, type Person } from "./Scene3D";
+import "./cafe-sim.css";
+
+export type ShopKind = "chicken" | "bunsik" | "apparel";
+type V3 = [number, number, number];
+
+const PAL: Record<ShopKind, { floor: string; wall: string; trim: string; sign: string; signText: string; accent: string }> = {
+  chicken: { floor: "#d9cfc0", wall: "#f6efe4", trim: "#c9a46a", sign: "#d8462f", signText: "#ffe9a8", accent: "#f2b233" },
+  bunsik: { floor: "#e2d8c8", wall: "#fbf3e6", trim: "#e48a5c", sign: "#f06b3f", signText: "#fff4dc", accent: "#e0402b" },
+  apparel: { floor: "#e8e4de", wall: "#f7f6f3", trim: "#cfc8bd", sign: "#2b2d30", signText: "#f2efe8", accent: "#3d63ea" },
+};
+const STEEL = "#b9bec4", DARK = "#2f3337", WOOD = "#b98c5f", CREAM = "#f4f1ea";
+const CLOTH = ["#3f6fb5", "#e9c46a", "#e0735a", "#6a8f5b", "#2f3a4a", "#f2f0ea", "#9b6fb0", "#d98aa0", "#8a5a33", "#4f9aa3"];
+const pick = (a: string[], s: number) => a[Math.floor(hash(s) * a.length)];
+
+function Cy({ p, r, r2, h, color, metal = 0 }: { p: V3; r: number; r2?: number; h: number; color: string; metal?: number }) {
+  return <mesh position={p} castShadow><cylinderGeometry args={[r, r2 ?? r, h, 16]} /><meshStandardMaterial color={color} metalness={metal} roughness={0.55} /></mesh>;
+}
+const B = ({ p, s, color, metal, cast = true }: { p: V3; s: V3; color: string; metal?: number; cast?: boolean }) =>
+  <Box p={p} s={s} color={color} metal={metal} cast={cast} receive />;
+
+// 2인 테이블과 의자 두 개. 의자 자리(앉는 사람 위치)를 돌려준다
+function Table2({ x, z, rot = 0, color = WOOD }: { x: number; z: number; rot?: number; color?: string }) {
+  return (
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
+      <B p={[0, 0.72, 0]} s={[0.7, 0.04, 0.6]} color={color} />
+      <Cy p={[0, 0.36, 0]} r={0.04} h={0.7} color={DARK} metal={0.4} />
+      <B p={[0, 0.01, 0]} s={[0.4, 0.02, 0.4]} color={DARK} />
+      {[-0.55, 0.55].map((dz) => (
+        <group key={dz} position={[0, 0, dz]}>
+          <B p={[0, 0.44, 0]} s={[0.4, 0.04, 0.4]} color={DARK} />
+          <B p={[0, 0.7, dz > 0 ? 0.19 : -0.19]} s={[0.4, 0.5, 0.03]} color={DARK} />
+          <Cy p={[0, 0.22, 0]} r={0.025} h={0.44} color={STEEL} metal={0.5} />
+        </group>
+      ))}
+    </group>
+  );
+}
+function Stool({ x, z }: { x: number; z: number }) {
+  return <group position={[x, 0, z]}><Cy p={[0, 0.74, 0]} r={0.17} h={0.05} color="#d24f3a" /><Cy p={[0, 0.37, 0]} r={0.03} h={0.72} color={STEEL} metal={0.6} /><Cy p={[0, 0.02, 0]} r={0.16} h={0.03} color={STEEL} metal={0.6} /></group>;
+}
+function Counter({ x0, x1, z, d = 0.65, top = STEEL, body = CREAM }: { x0: number; x1: number; z: number; d?: number; top?: string; body?: string }) {
+  const w = x1 - x0, m = (x0 + x1) / 2;
+  return <group><B p={[m, 0.44, z]} s={[w, 0.88, d]} color={body} /><B p={[m, 0.9, z]} s={[w + 0.02, 0.04, d + 0.02]} color={top} metal={top === STEEL ? 0.5 : 0} /></group>;
+}
+function Fryer({ x, z }: { x: number; z: number }) {
+  return <group position={[x, 0, z]}><B p={[0, 0.45, 0]} s={[0.45, 0.9, 0.6]} color={STEEL} metal={0.6} /><B p={[0, 0.91, 0.02]} s={[0.36, 0.02, 0.42]} color="#c98a1d" /><B p={[0, 1.15, -0.24]} s={[0.45, 0.4, 0.08]} color={DARK} /></group>;
+}
+function Scooter({ x, z }: { x: number; z: number }) {
+  return (
+    <group position={[x, 0, z]} rotation={[0, Math.PI / 2, 0]}>
+      {[-0.55, 0.55].map((dx) => <mesh key={dx} position={[dx, 0.22, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow><cylinderGeometry args={[0.22, 0.22, 0.1, 18]} /><meshStandardMaterial color={DARK} /></mesh>)}
+      <B p={[0, 0.45, 0]} s={[1.0, 0.25, 0.32]} color="#e9ecef" />
+      <B p={[-0.35, 0.85, 0]} s={[0.45, 0.4, 0.42]} color="#d8462f" />
+      <B p={[0.5, 0.9, 0]} s={[0.06, 0.6, 0.06]} color={DARK} />
+    </group>
+  );
+}
+function Rack({ x, z, len, seed }: { x: number; z: number; len: number; seed: number }) {
+  const n = Math.max(4, Math.floor(len / 0.11));
+  return (
+    <group position={[x, 0, z]}>
+      {[-len / 2, len / 2].map((dx) => <Cy key={dx} p={[dx, 0.75, 0]} r={0.02} h={1.5} color={STEEL} metal={0.7} />)}
+      <mesh position={[0, 1.5, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.015, 0.015, len, 8]} /><meshStandardMaterial color={STEEL} metalness={0.7} /></mesh>
+      {Array.from({ length: n }, (_, i) => {
+        const h = 0.6 + 0.35 * hash(seed + i * 3);
+        return <B key={i} p={[-len / 2 + 0.08 + i * ((len - 0.16) / (n - 1)), 1.48 - h / 2, 0]} s={[0.05, h, 0.42]} color={pick(CLOTH, seed * 13 + i)} />;
+      })}
+    </group>
+  );
+}
+function Shelf({ x0, x1, z, seed }: { x0: number; x1: number; z: number; seed: number }) {
+  const w = x1 - x0, m = (x0 + x1) / 2, n = Math.floor(w / 0.32);
+  return (
+    <group>
+      {[0.5, 1.0, 1.5].map((y, r) => (
+        <group key={y}>
+          <B p={[m, y, z]} s={[w, 0.03, 0.38]} color={WOOD} cast={false} />
+          {Array.from({ length: n }, (_, i) => <B key={i} p={[x0 + 0.18 + i * 0.32, y + 0.08, z]} s={[0.26, 0.13, 0.3]} color={pick(CLOTH, seed + r * 31 + i)} />)}
+        </group>
+      ))}
+    </group>
+  );
+}
+function Mannequin({ x, z, seed }: { x: number; z: number; seed: number }) {
+  return (
+    <group position={[x, 0, z]}>
+      <Cy p={[0, 0.03, 0]} r={0.18} h={0.04} color={DARK} />
+      <Cy p={[0, 0.5, 0]} r={0.02} h={0.95} color={STEEL} metal={0.7} />
+      <Cy p={[0, 1.25, 0]} r={0.17} r2={0.13} h={0.6} color={pick(CLOTH, seed)} />
+      <mesh position={[0, 1.68, 0]} castShadow><sphereGeometry args={[0.1, 14, 12]} /><meshStandardMaterial color="#ece6dc" /></mesh>
+    </group>
+  );
+}
+
+export default function ShopRoom3D({ kind, pyeong, people = 0, riders = 0, height = 420 }: { kind: ShopKind; pyeong: number; people?: number; riders?: number; height?: number | "fill" }) {
+  const area = pyeong * 3.3058;
+  const W = Math.min(12, Math.max(4.2, Math.sqrt(area * 1.35))), D = Math.max(3.6, area / W);
+  const pal = PAL[kind];
+  const door = { x: W / 2 - 0.9, w: 1.0 };
+  const R = Math.max(W, D) / 2 + 2.5;
+
+  // 업종별 배치: seats = 앉는 자리, spots = 서서 둘러보는 자리, staff = 직원 자리
+  const plan = useMemo(() => {
+    const seats: [number, number, number][] = [], spots: [number, number, number][] = [], staff: [number, number][] = [];
+    const tables: { x: number; z: number }[] = [], stools: { x: number; z: number }[] = [];
+    const kitchenZ = -D / 2 + 0.38;
+    if (kind !== "apparel") {
+      // 뒤쪽 주방 줄, 앞쪽 계산대
+      staff.push([-W / 4, kitchenZ + 0.7], [W / 2 - 1.3, D / 2 - 1.75]);
+      const x0 = -W / 2 + 0.8, x1 = W / 2 - 1.9, z0 = -D / 2 + 1.9, z1 = D / 2 - 1.0;
+      if (kind === "bunsik") {
+        // 왼쪽 벽 바 자리
+        for (let z = z0 - 0.4; z < z1 - 0.1; z += 0.55) { stools.push({ x: -W / 2 + 0.55, z }); seats.push([-W / 2 + 0.55, z, -Math.PI / 2]); }
+      }
+      const tx0 = kind === "bunsik" ? x0 + 0.8 : x0;
+      for (let x = tx0; x <= x1; x += 1.3) for (let z = z0; z <= z1 - 0.3; z += 1.7) {
+        tables.push({ x, z });
+        seats.push([x, z - 0.55, 0], [x, z + 0.55, Math.PI]);
+      }
+    } else {
+      staff.push([W / 2 - 1.2, D / 2 - 1.5]);
+      for (let z = -D / 2 + 1.6; z < D / 2 - 1.4; z += 1.25) for (let x = -W / 2 + 1.6; x < W / 2 - 2.2; x += 1.8) {
+        spots.push([x, z + 0.45, Math.PI], [x + 0.3, z - 0.45, 0]);
+      }
+      for (let z = -D / 2 + 1.4; z < D / 2 - 0.8; z += 1.1) spots.push([-W / 2 + 0.75, z, -Math.PI / 2]);
+    }
+    return { seats, spots, staff, tables, stools, kitchenZ };
+  }, [kind, W, D]);
+
+  const list = useMemo(() => {
+    const out: Person[] = [];
+    const places = kind === "apparel" ? plan.spots : plan.seats;
+    const order = places.map((_, i) => i).sort((a, b) => hash(a * 17 + 3) - hash(b * 17 + 3));
+    const n = Math.min(places.length, Math.max(0, Math.round(people)));
+    for (const i of order.slice(0, n)) {
+      const [x, z, h] = places[i];
+      out.push(kind === "apparel"
+        ? { x, z, heading: h, seated: false, seed: i * 7 + 1, armsUp: 0.2 }
+        : { x, z, heading: h, seated: true, seed: i * 7 + 1, lift: kind === "bunsik" && i < plan.stools.length ? 0.3 : 0, armsUp: 0.35 });
+    }
+    plan.staff.forEach(([x, z], i) => out.push({ x, z, heading: i === 0 && kind !== "apparel" ? Math.PI : Math.PI, seated: false, seed: 900 + i, shirt: "#f2f0ea", apron: kind === "apparel" ? null : pal.sign }));
+    for (let i = 0; i < Math.min(3, riders); i++) out.push({ x: door.x - 0.4 - i * 0.6, z: D / 2 + 0.9, heading: Math.PI, seated: false, seed: 700 + i, shirt: "#d8462f" });
+    return out;
+  }, [kind, plan, people, riders, pal.sign, door.x, D]);
+
+  const staticScene = useMemo(() => (
+    <>
+      <Box p={[0, -0.12, 0]} s={[W + 8, 0.02, D + 8]} color="#e6eaf2" receive />
+      <Box p={[0, -0.1, D / 2 + 1.3]} s={[W + 8, 0.02, 2.4]} color="#d6d3cc" receive />
+      <Box p={[0, -0.05, 0]} s={[W, 0.1, D]} color={pal.floor} receive />
+      <Wall p={[0, WALL_H / 2, -D / 2 - 0.06]} s={[W + 0.24, WALL_H, 0.12]} color={pal.wall} outside={(c) => c.z < -D / 2}>
+        <Box p={[0, 0.5, -D / 2 + 0.005]} s={[W, 1.0, 0.02]} color={pal.trim} />
+        {kind !== "apparel" && <>
+          <Box p={[-W / 6, 1.95, -D / 2 + 0.03]} s={[Math.min(2.6, W * 0.45), 0.6, 0.03]} color="#2b2622" />
+          {[0.14, 0.02, -0.1].map((dy) => <Box key={dy} p={[-W / 6, 1.95 + dy, -D / 2 + 0.05]} s={[Math.min(2.2, W * 0.38), 0.03, 0.005]} color="#f6ead2" />)}
+        </>}
+      </Wall>
+      <Wall p={[-W / 2 - 0.06, WALL_H / 2, 0]} s={[0.12, WALL_H, D]} color={pal.wall} outside={(c) => c.x < -W / 2}>
+        <Box p={[-W / 2 + 0.005, 0.5, 0]} s={[0.02, 1.0, D]} color={pal.trim} />
+      </Wall>
+      <Wall p={[W / 2 + 0.06, WALL_H / 2, 0]} s={[0.12, WALL_H, D]} color={pal.wall} outside={(c) => c.x > W / 2} />
+      <FrontFade z={D / 2}>
+        <Storefront x0={-W / 2} x1={W / 2} z={D / 2} door={door} />
+        <Box p={[0, WALL_H + 0.25, D / 2 + 0.08]} s={[W, 0.5, 0.12]} color={pal.sign} />
+        <Box p={[-W / 2 + 1.2, WALL_H + 0.25, D / 2 + 0.15]} s={[1.6, 0.22, 0.02]} color={pal.signText} />
+      </FrontFade>
+
+      {kind === "chicken" && <>
+        <Counter x0={-W / 2 + 0.1} x1={W / 2 - 0.1} z={plan.kitchenZ} />
+        {Array.from({ length: Math.min(4, Math.max(2, Math.floor(W / 2))) }, (_, i) => <Fryer key={i} x={-W / 2 + 0.6 + i * 0.55} z={plan.kitchenZ} />)}
+        <B p={[W / 4, 1.0, plan.kitchenZ]} s={[0.9, 0.12, 0.5]} color="#e9c46a" />
+        <Counter x0={W / 2 - 2.0} x1={W / 2 - 0.6} z={D / 2 - 1.4} d={0.55} top={WOOD} />
+        <B p={[W / 2 - 1.0, 1.0, D / 2 - 1.4]} s={[0.3, 0.22, 0.2]} color={DARK} />
+        {[0, 1, 2].map((i) => <B key={i} p={[W / 2 - 0.35, 0.3 + i * 0.4, D / 2 - 1.9]} s={[0.4, 0.32, 0.4]} color={i % 2 ? pal.accent : pal.sign} />)}
+      </>}
+      {kind === "bunsik" && <>
+        <Counter x0={-W / 2 + 0.1} x1={W / 2 - 0.1} z={plan.kitchenZ} />
+        <Cy p={[-W / 4, 0.95, plan.kitchenZ]} r={0.42} h={0.06} color="#c63a26" metal={0.2} />
+        <Cy p={[-W / 4 + 1.0, 1.02, plan.kitchenZ]} r={0.22} h={0.24} color={STEEL} metal={0.6} />
+        <B p={[W / 6, 0.95, plan.kitchenZ]} s={[1.0, 0.06, 0.45]} color="#5a8a3a" />
+        <B p={[-W / 2 + 0.25, 1.0, 0]} s={[0.4, 0.04, D - 2.4]} color={WOOD} />
+        <Counter x0={W / 2 - 2.0} x1={W / 2 - 0.6} z={D / 2 - 1.4} d={0.55} top={WOOD} />
+      </>}
+      {kind === "apparel" && <>
+        <Shelf x0={-W / 2 + 0.3} x1={W / 2 - 1.6} z={-D / 2 + 0.25} seed={11} />
+        <group position={[-W / 2 + 0.25, 0, 0]} rotation={[0, Math.PI / 2, 0]}><Shelf x0={-D / 2 + 1.2} x1={D / 2 - 0.9} z={0} seed={47} /></group>
+        {plan.spots.filter((_, i) => i % 2 === 0 && i < plan.spots.length - 6).map(([x, z], i) => <Rack key={i} x={x + 0.15} z={z - 0.45} len={1.3} seed={i * 19 + 3} />)}
+        <B p={[W / 2 - 0.65, 1.05, -D / 2 + 0.7]} s={[1.0, 2.1, 1.0]} color="#e2dccf" />
+        <B p={[W / 2 - 0.65, 1.15, -D / 2 + 1.21]} s={[0.8, 1.9, 0.02]} color="#8a6e5a" />
+        <Counter x0={W / 2 - 1.9} x1={W / 2 - 0.5} z={D / 2 - 1.1} d={0.55} top={WOOD} body="#f2efe8" />
+        <B p={[W / 2 - 1.2, 1.0, D / 2 - 1.1]} s={[0.3, 0.2, 0.22]} color={DARK} />
+        {[-W / 2 + 0.7, -W / 2 + 1.4, -W / 2 + 2.1].filter((x) => x < door.x - 1).map((x, i) => <Mannequin key={x} x={x} z={D / 2 - 0.45} seed={i * 5 + 2} />)}
+      </>}
+      {plan.tables.map((t, i) => <Table2 key={i} x={t.x} z={t.z} />)}
+      {plan.stools.map((s, i) => <Stool key={i} x={s.x} z={s.z} />)}
+      {kind !== "apparel" && riders > 0 && <Scooter x={door.x - 2.2} z={D / 2 + 1.4} />}
+      {(kind === "apparel" ? [[-W / 4, 0], [W / 4, 0], [-W / 4, -D / 4], [W / 4, -D / 4]] : plan.tables.slice(0, 12).map((t) => [t.x, t.z])).map(([x, z], i) =>
+        <Pendant key={i} x={x} z={z} y={kind === "apparel" ? 2.3 : 1.85} color={kind === "apparel" ? "#e8e4dc" : "#2f3337"} />)}
+    </>
+  ), [kind, W, D, pal, plan, riders, door]);
+
+  const gfx = useGfx();
+  const label = kind === "apparel" ? "옷가게 3D 화면. 행거와 벽 선반의 옷, 피팅룸, 계산대, 창가 마네킹, 둘러보는 손님을 보여 줘요"
+    : kind === "chicken" ? "치킨집 3D 화면. 뒤쪽 튀김기와 주방, 앞쪽 포장 계산대와 배달 가방, 테이블과 손님, 문 앞 배달 기사를 보여 줘요"
+    : "분식집 3D 화면. 떡볶이 판과 어묵 통이 있는 주방, 벽쪽 바 자리와 테이블, 손님을 보여 줘요";
+  return (
+    <>
+      <div className="cs-3d" style={{ height: height === "fill" ? "100%" : height, borderRadius: height === "fill" ? 0 : undefined }} role="img" aria-label={label}>
+        <GLGuard>
+          <Canvas key={gfx} frameloop={gfxFrameloop(gfx)} shadows={gfxShadows(gfx)} camera={{ position: [W * 0.55, Math.max(W, D) * 0.95, D * 1.25], fov: 40 }} dpr={gfxDpr(gfx)}>
+            <StoreLights w={W} d={D} r={R} />
+            {staticScene}
+            <People list={list} />
+            <FitControls box={[-W / 2, -D / 2, W / 2, D / 2 + 1.6]} />
+          </Canvas>
+        </GLGuard>
+      </div>
+      <ViewBar />
+    </>
+  );
+}

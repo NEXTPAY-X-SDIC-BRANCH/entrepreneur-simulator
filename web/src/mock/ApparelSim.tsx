@@ -4,14 +4,16 @@
 // 계산은 apparel.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 옷가게의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
-  BUY_MODES, BUY_MODE_ASSUME, CATS, MARKET, ONLINE, ONLINE_ASSUME, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
+  BUY_MODES, CATS, MARKET, ONLINE, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apStrategies, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
   playMonth, startState, stateAfter, stockValue,
   type ApMonth, type ApPlan, type ApState, type ApStratId, type ApparelCfg, type Cat,
 } from "./apparel";
-import { FloorPlan } from "./ApparelBuild";
+import ShopRoom3D from "./ShopRoom3D";
 import Assume from "./Assume";
 import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import { LOAN_RATE, guStat, man, type Profile } from "./model";
+import ModeSwitch from "./ModeSwitch";
+import CashFlow, { type CfMonth } from "./CashFlow";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine";
 import "./simulate-engine.css";
@@ -101,7 +103,7 @@ function CatTable({ c }: { c: ApMonth }) {
           );
         })}</tbody>
       </table>
-      <p className="sx-note">재고가 한 달 팔 양만큼 있어도 사이즈·색이 다 맞지는 않아 찾는 옷이 있는 손님은 86%예요. 1.5달치면 95%, 반 달치면 63%.<Assume what="결품 곡선: 찾는 옷이 있는 손님 = 1 − e^(−2 × 재고 개월 수)" />
+      <p className="sx-note">재고가 한 달 팔 양만큼 있어도 사이즈·색이 다 맞지는 않아 찾는 옷이 있는 손님은 86%예요. 1.5달치면 95%, 반 달치면 63%.<Assume id="stockout" />
         {" "}이달 있던 옷의 {Math.round(c.sellThrough * 100)}%를 팔았어요.</p>
     </>
   );
@@ -138,6 +140,16 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
   const m = monthSeq[Math.min(idx, TURNS - 1)];
   const ev = eventOf(m, seed + idx);
   const dep = open.lines.filter((l) => ["interior", "seat", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) / 60; // 5년 감가상각
+  // 현금흐름표·영수증 (원). 엔진 현금 = 월초 + 매출 − 옷 산 돈 − 위탁 정산 − 비용 − 생활비 − 이자
+  const cfMonths: CfMonth[] = months.map((c, i) => {
+    const s0 = i ? months[i - 1].cash : start.cash, K = 1e4;
+    return { month: c.month, start: s0 * K, end: c.cash * K, lines: [
+      { label: "매출", amount: c.revenue * K }, { label: "옷을 사는 데 쓴 돈", amount: -c.purchase * K }, { label: "위탁 정산", amount: -c.settle * K },
+      { label: "알바 인건비", amount: -c.staffPay * K }, { label: "월세", amount: -c.rent * K }, { label: "공과금·카드 수수료 등", amount: -c.other * K },
+      { label: "온라인 판매 비용", amount: -c.onlineCost * K }, { label: "홍보·사건 대응", amount: -(c.marketing + c.eventCost) * K },
+      { label: "사장 생활비", amount: -c.draw * K }, { label: "대출 이자", amount: -c.interest * K },
+    ], tax: { revenue: c.revenue * K, taxableBuy: (c.purchase + c.settle + c.rent + c.other * 0.5 + c.onlineCost) * K, profit: (c.op - dep - c.interest) * K } };
+  });
   const strats = apStrategies(cur?.m, plan);
   const curDay = cur ? cur.days[Math.min(dayIdx, cur.days.length - 1)] : null;
 
@@ -201,7 +213,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
 
   return (
     <div className="sx-root" style={{ top }}>
-      <div className="sx-canvas ap-stage"><FloorPlan pyeong={cfg.pyeong} people={people} /></div>
+      <div className="sx-canvas"><ShopRoom3D kind="apparel" pyeong={cfg.pyeong} people={people} height="fill" /></div>
 
       <header className="sx-hud">
         <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금이에요. 옷 매입과 월세는 1일, 알바 급여는 10일, 생활비·이자는 25일에 한꺼번에 나가요.</>}>{man(w(cashNow))}</Metric>
@@ -209,11 +221,11 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
           {view === "intro" ? `${startMonth}월 시작` : `${view === null || view === "settle" || view === "report" ? cur?.m.month ?? m : m}월 · ${Math.min(view === null || view === "settle" || view === "report" ? idx : idx + 1, TURNS)}/${TURNS}`}
         </Metric>
         <Metric icon={<IconBox />} label={consign ? "위탁 재고" : "재고 (원가)"} tip={consign
-          ? <>선반의 옷은 도매상 것이라 내 현금이 묶이지 않아요. 팔린 만큼만 25일에 정산하고, 석 달 안 팔린 옷은 돌려보내요<Assume what={BUY_MODE_ASSUME} />.</>
-          : <>선반 위 옷을 산 값이에요. 많을수록 현금이 묶여요. 석 달 넘게 안 팔린 옷은 매달 값이 11%씩 떨어져요<Assume what="석 달 넘은 옷 매달 11% (시즌을 넘기면 30% 이상, 장은영 2001), 반년 넘은 옷 12% (가정)" />.</>}>
+          ? <>선반의 옷은 도매상 것이라 내 현금이 묶이지 않아요. 팔린 만큼만 25일에 정산하고, 석 달 안 팔린 옷은 돌려보내요<Assume id="buyMode" />.</>
+          : <>선반 위 옷을 산 값이에요. 많을수록 현금이 묶여요. 석 달 넘게 안 팔린 옷은 매달 값이 11%씩 떨어져요<Assume id="stockDecay" />.</>}>
           {man(w(consign ? invTotal(state.inv) * BUY_MODES.consign.cost : stockValue(state, cfg)))}
         </Metric>
-        <Metric icon={<IconStar />} label="인지도" tip={<>1.00이 동네에서 평소 알려진 수준이에요. 새 가게는 0.60에서 시작해 매달 1.00 쪽으로 15%씩 다가가요<Assume what="새 가게 인지도 0.6, 매달 15% 회복 (고깃집 엔진과 같은 가정)" />.</>}>
+        <Metric icon={<IconStar />} label="인지도" tip={<>1.00이 동네에서 평소 알려진 수준이에요. 새 가게는 0.60에서 시작해 매달 1.00 쪽으로 15%씩 다가가요<Assume id="awareness" />.</>}>
           {state.awareness.toFixed(2)}
         </Metric>
         <Metric icon={<IconTrophy />} label="지금까지 점수" tip={<>정산마다 다시 매기는 점수예요. 6개월이 끝나면 성적표가 나와요.</>}>
@@ -252,7 +264,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
           <div className="sx-paper">
             <p className="sx-r-title">현금 흐름 영수증</p>
             <p className="sx-r-sub">{profile.gu} 옷가게 · 시작 현금 {man(w(start.cash))}</p>
-            <p className="sx-r-acc">회색 줄은 현금이 아니라 이익 계산이에요. '판 옷의 원가'는 미리 사 둔 옷이 팔린 몫, '오늘 몫 고정비'는 월세·급여·생활비 등을 날짜로 나눈 몫이에요. 매일 연다고 봤어요<Assume what="옷가게는 매일 영업" />.</p>
+            <p className="sx-r-acc">회색 줄은 현금이 아니라 이익 계산이에요. '판 옷의 원가'는 미리 사 둔 옷이 팔린 몫, '오늘 몫 고정비'는 월세·급여·생활비 등을 날짜로 나눈 몫이에요. 매일 연다고 봤어요<Assume id="openDaily" />.</p>
             {receiptDays.length === 0 && <p className="sx-r-empty">아직 찍힌 내역이 없어요. 첫 달이 시작되면 하루씩 쌓여요.</p>}
             {receiptDays.map((x, i) => {
               const dayProfit = x.revenue - x.cogs - x.other - x.fixedShare;
@@ -308,7 +320,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                     </ol>
                     <p className="sx-note"><b>옷가게는 재고가 현금을 묶어요.</b> 많이 사 두면 사이즈가 덜 빠지지만 돈이 선반에 묶이고, 적게 사면 찾는 사이즈가 없어 손님이 그냥 나가요.
                       {" "}재고는 상의·하의·아우터·잡화로 나뉘고, 계절마다 잘 팔리는 품목이 바뀌어요. 오래 둔 옷은 값이 떨어져요.
-                      {" "}매입 방식은 <b>{BUY_MODES[cfg.buyMode].label}</b>이에요: {BUY_MODES[cfg.buyMode].desc}.<Assume what={BUY_MODE_ASSUME} />
+                      {" "}매입 방식은 <b>{BUY_MODES[cfg.buyMode].label}</b>이에요: {BUY_MODES[cfg.buyMode].desc}.<Assume id="buyMode" />
                       {" "}올해 패션 구매의 {Math.round(MARKET.online_share * 100)}%는 온라인이에요. 1~7월 의복 판매액은 1년 전보다 {(MARKET.indicators.apparel_retail_yoy_1_7 * 100).toFixed(1)}% 늘었고,
                       {monthSeq.some((x) => x >= 9 && x <= 11) ? ` 올가을 의복 소비 전망 지수는 ${MARKET.fall_outlook.index_apparel}(100이 보합)로 줄이겠다는 사람(${MARKET.fall_outlook.decrease}%)이 늘리겠다는 사람(${MARKET.fall_outlook.increase}%)보다 많아요.` : " 시뮬레이션의 매출은 2025년 카드 매출 기준이에요."}
                       {" "}(한국섬유산업연합회 패션 소비 실태조사·경기지표, 2026)
@@ -342,7 +354,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
             {view === "plan" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{m}월 운영 계획</h1>
+                  <h1>{m}월 운영 계획<ModeSwitch mode={mode} set={setMode} /></h1>
                   <div className="sx-split">
                     <section className="sx-left" aria-label="지난달 결과">
                       <h2>{cur ? `${cur.m.month}월 결과` : "처음 여는 달이에요"}</h2>
@@ -380,7 +392,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                         <div className="sx-steps">
                           <div className={`sx-step${cur && cur.m.plan.focus !== plan.focus ? " is-changed" : ""}`}>
                             <div className="sx-step-t">
-                              <span className="sx-step-l">{PLAN_TEXT.focus.label}<Assume what="달별 품목 비중 (아우터 겨울 30~35%, 여름 2%)" /></span>
+                              <span className="sx-step-l">{PLAN_TEXT.focus.label}<Assume id="outerMix" /></span>
                               <small>{PLAN_TEXT.focus.hint}. {m}월 비중: {CATS.map((c) => `${c.label} ${Math.round(mixOf(m)[c.id] * 100)}%`).join(" · ")}</small>
                               {cur && cur.m.plan.focus !== plan.focus && <small className="sx-step-prev">지난달 {PLAN_TEXT.focus.text(cur.m.plan)}</small>}
                             </div>
@@ -425,7 +437,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                   <section className="sx-evbox"><h2>이번 달 사건</h2><ul><li><b>{ev.title}</b><span>{ev.prompt}</span></li></ul></section>
                   <section className="sx-sec">
                     <h2>이달의 사건, 어떻게 대응할까요?</h2>
-                    <p className="sx-note">사장님의 선택이 이번 달 이익과 재고를 바꿔요. 장점(+)과 단점(−)을 보고 하나를 골라 주세요. {ev.note}.<Assume what={`${ev.title}의 효과 크기 (${ev.note})`} /></p>
+                    <p className="sx-note">사장님의 선택이 이번 달 이익과 재고를 바꿔요. 장점(+)과 단점(−)을 보고 하나를 골라 주세요. {ev.note}.<Assume id="eventEffect" what={`${ev.title}의 효과 크기 (${ev.note})`} /></p>
                   </section>
                   <div className="sx-dps is-single">
                     <div className="sx-dp" role="radiogroup" aria-label={ev.title}>
@@ -473,16 +485,16 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                       <section className="sx-sec">
                         <h2>정산표</h2>
                         <table className="sx-table"><tbody>
-                          <tr><th>매출</th><td>{man(w(c.revenue))}</td><td>결제 약 {Math.round(c.tx).toLocaleString("ko-KR")}건, 한 건 {c.ticket.toLocaleString("ko-KR")}원<Assume what="평수 효과(13평 기준 제곱근), 새 가게 인지도" /></td></tr>
-                          {c.mdRev + c.clearRev > 0 && <tr className="sub"><th>그중 세일 매출</th><td>{man(w(c.mdRev + c.clearRev))}</td><td>{c.plan.markdownAge}달 지난 옷 {Math.round(c.plan.markdown * 100)}% 세일{c.clearRev > 0 ? " + 정리 세일" : ""}<Assume what="세일 칸이 한 달에 팔리는 비율 0.1 + 1.5 × 세일 폭 (제철 품목 기준)" /></td></tr>}
+                          <tr><th>매출</th><td>{man(w(c.revenue))}</td><td>결제 약 {Math.round(c.tx).toLocaleString("ko-KR")}건, 한 건 {c.ticket.toLocaleString("ko-KR")}원<Assume id="sizeEffect" /></td></tr>
+                          {c.mdRev + c.clearRev > 0 && <tr className="sub"><th>그중 세일 매출</th><td>{man(w(c.mdRev + c.clearRev))}</td><td>{c.plan.markdownAge}달 지난 옷 {Math.round(c.plan.markdown * 100)}% 세일{c.clearRev > 0 ? " + 정리 세일" : ""}<Assume id="markdownSell" /></td></tr>}
                           <tr><th>매출원가</th><td>−{man(w(c.cogs))}</td><td>판 옷의 원가 (원가율 {Math.round(KOSIS.cogs * 100)}% × {consign ? `위탁 ${BUY_MODES.consign.cost}` : c.costAvg.toFixed(2)}{c.plan.discount ? `, ${Math.round(c.plan.discount * 100)}% 할인` : ""})</td></tr>
                           <tr className="sub"><th>매출총이익</th><td>{signed(gross)}</td><td /></tr>
                           <tr><th>인건비</th><td>{c.staffPay ? `−${man(w(c.staffPay))}` : "0원"}</td><td>알바 {c.plan.staff}명 (사장 인건비 제외)</td></tr>
                           <tr><th>월세</th><td>−{man(w(c.rent))}</td><td /></tr>
                           <tr><th>기타경비</th><td>−{man(w(c.other))}</td><td>카드 수수료·공과금·포장 등, 매출의 {Math.round(KOSIS.other * 100)}% (도소매업조사)</td></tr>
                           {c.marketing + c.eventCost > 0 && <tr><th>홍보·사건 대응</th><td>−{man(w(c.marketing + c.eventCost))}</td><td /></tr>}
-                          {c.onlineCost > 0 && <tr><th>온라인 판매 비용</th><td>−{man(w(c.onlineCost))}</td><td>{ONLINE[c.plan.online].label}: 온라인 매출 {man(w(c.onlineRev))} × 수수료 {Math.round(ONLINE[c.plan.online].fee * 1000) / 10}% + 택배 약 {Math.round(c.onlineOrders * 1.15).toLocaleString("ko-KR")}건 + 월 {ONLINE[c.plan.online].fixed}만원<Assume what={ONLINE_ASSUME} /></td></tr>}
-                          {c.writeOff > 0 && <tr><th>재고 평가손</th><td>−{man(w(c.writeOff))}</td><td>석 달 넘은 옷 값이 떨어졌어요<Assume what="석 달 넘은 옷 매달 11% (시즌을 넘기면 30% 이상, 장은영 2001), 반년 넘은 옷 12% (가정)" /></td></tr>}
+                          {c.onlineCost > 0 && <tr><th>온라인 판매 비용</th><td>−{man(w(c.onlineCost))}</td><td>{ONLINE[c.plan.online].label}: 온라인 매출 {man(w(c.onlineRev))} × 수수료 {Math.round(ONLINE[c.plan.online].fee * 1000) / 10}% + 택배 약 {Math.round(c.onlineOrders * 1.15).toLocaleString("ko-KR")}건 + 월 {ONLINE[c.plan.online].fixed}만원<Assume id="online" /></td></tr>}
+                          {c.writeOff > 0 && <tr><th>재고 평가손</th><td>−{man(w(c.writeOff))}</td><td>석 달 넘은 옷 값이 떨어졌어요<Assume id="stockDecay" /></td></tr>}
                           <tr className="sum"><th>영업이익</th><td>{signed(c.op)}</td><td>감가상각 전</td></tr>
                           <tr><th>감가상각비</th><td>−{man(w(dep))}</td><td>인테리어·집기·간판을 5년에 나눈 몫. 현금은 안 나가요</td></tr>
                           {c.interest > 0 && <tr><th>이자비용</th><td>−{man(w(c.interest))}</td><td>연 {+(LOAN_RATE * 100).toFixed(2)}%</td></tr>}
@@ -502,6 +514,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                         <ul className="sx-evs"><li><b>{c.event}</b><span>고른 대응: {c.choice}</span></li></ul>
                       </section>
                     </div>
+                    <CashFlow months={cfMonths} kind="retail" shop="옷가게" />
                   </div>
                   <footer className="sx-foot">
                     <button type="button" className="se-btn" onClick={next}>{c.closed || done.length >= TURNS ? "6개월 결과 보기" : `${monthSeq[done.length]}월 운영 계획`}</button>
@@ -523,6 +536,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                   <section className="sx-sec"><h2>남은 현금</h2>
                     <CashChart start={start.cash * 1e4} labels={monthSeq} months={done.map((x) => ({ days: x.days.map((d) => ({ cash: d.cash * 1e4 })) }))} />
                   </section>
+                  <CashFlow months={cfMonths} kind="retail" shop="옷가게" />
                   <section className="sx-sec">
                     {(() => {
                       // 팔린 옷(원가 기준) 중 정가로 판 몫과 세일로 판 몫, 논문의 의류업체 값과 비교

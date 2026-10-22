@@ -15,6 +15,8 @@ import { setEngineCtx } from "./chatContext";
 import Assume from "./Assume";
 import PriceTrend from "./PriceTrend";
 import { BBQ_REF, bbqBand } from "./priceCompare";
+import ModeSwitch from "./ModeSwitch";
+import CashFlow, { type CfMonth } from "./CashFlow";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, roomSize, storeStats, type Levers, type Profile, type Store } from "./model";
 
@@ -294,7 +296,7 @@ function Stepper({ lv, plan, prev, set }: { lv: LeverDef; plan: Plan; prev?: Pla
     <div className={`sx-step${changed ? " is-changed" : ""}`}>
       <div className="sx-step-t">
         <span id={id} className="sx-step-l">{lv.label}</span>
-        <small>{lv.key === "meat_grade" ? GRADE_HINT[plan.meat_grade] : lv.hint}{lv.key === "delivery" && <Assume what="배달 매출 중 30%는 원래 매장 손님, 배달 1건 2인분, 포장재 건당 800원" />}</small>
+        <small>{lv.key === "meat_grade" ? GRADE_HINT[plan.meat_grade] : lv.hint}{lv.key === "delivery" && <Assume id="bbqDelivery" />}</small>
         {changed && <small className="sx-step-prev">지난달 {lv.text(prev!)}</small>}
       </div>
       <div className="sx-step-c">
@@ -356,14 +358,14 @@ function SettleTable({ m, imputed, dep, interest, rent }: { m: MonthResult; impu
         )}
         <tr className="sub"><th>매출총이익</th><td>{signed(won(k.revenue - k.cogs))}</td><td>매출의 {Math.round(((k.revenue - k.cogs) / k.revenue) * 100)}%</td></tr>
         <tr><th>인건비</th><td>−{man(won(k.labor))}</td><td>알바(주휴수당 포함)·직원 급여 {man(won(k.labor - imputed))}, 사장 가상 급여 {man(won(imputed))}</td></tr>
-        <tr><th>월세</th><td>−{man(won(k.rent))}</td><td>{rent?.n ? <>카드 {rent.n}개월 할부로 냈어요. 이번 달 현금으로 나간 몫 {man(won(rent.paid - rent.fee))}, 남은 할부금 {man(won(rent.left))}<Assume what={`할부 수수료 ${+(RENT_PAY[rent.n].fee * 100).toFixed(1)}% (카드 임대료 결제 서비스 이용료와 할부 수수료를 합친 가정)`} /></> : null}</td></tr>
+        <tr><th>월세</th><td>−{man(won(k.rent))}</td><td>{rent?.n ? <>카드 {rent.n}개월 할부로 냈어요. 이번 달 현금으로 나간 몫 {man(won(rent.paid - rent.fee))}, 남은 할부금 {man(won(rent.left))}<Assume id="rentFee" /></> : null}</td></tr>
         <tr><th>관리비·공과금·기타</th><td>−{man(won(k.mgmt))}</td><td>전기·가스·수도, 소모품·수선, 마케팅</td></tr>
         {k.delivery_revenue > 0 && (
-          <tr><th>배달 매출</th><td>{man(won(k.delivery_revenue))}</td><td>매출에 포함, 주문 {fmt(Math.round(k.delivery_orders))}건. 일부는 원래 매장에 올 손님이라 그만큼 매장 매출이 줄었어요<Assume what="배달 매출 중 30%는 원래 매장에 왔을 손님, 배달 1건 = 2인분" /></td></tr>
+          <tr><th>배달 매출</th><td>{man(won(k.delivery_revenue))}</td><td>매출에 포함, 주문 {fmt(Math.round(k.delivery_orders))}건. 일부는 원래 매장에 올 손님이라 그만큼 매장 매출이 줄었어요<Assume id="bbqDelivery" /></td></tr>
         )}
         <tr><th>카드 수수료</th><td>−{man(won(k.fees - (k.delivery_fee ?? 0)))}</td><td /></tr>
         {k.delivery_fee > 0 && (
-          <tr><th>배달 수수료</th><td>−{man(won(k.delivery_fee))}</td><td>중개수수료, 결제 수수료, 건당 배달비·포장재<Assume what="포장재 건당 523원 (배민상회 2026-10-21, 2인분 한 건 용기·수저·봉투)" />. 배달 매출의 {Math.round((k.delivery_fee / k.delivery_revenue) * 100)}%.{" "}
+          <tr><th>배달 수수료</th><td>−{man(won(k.delivery_fee))}</td><td>중개수수료, 결제 수수료, 건당 배달비·포장재<Assume id="packaging" />. 배달 매출의 {Math.round((k.delivery_fee / k.delivery_revenue) * 100)}%.{" "}
             {k.delivery_orders >= 1 && (() => {
               const per = k.delivery_revenue / k.delivery_orders;
               const net = per - k.delivery_fee / k.delivery_orders - per * (k.cogs / k.revenue);
@@ -516,6 +518,15 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const interest = (store.loan * 1e4 * LOAN_RATE) / 12;
   // 감가상각: 보증금·권리금·첫 재료처럼 쓰고 사라지지 않거나 바로 쓰는 돈은 빼고, 시설·가구만 60개월로 나눈다 (SettleTable 주석)
   const dep = (cost.lines.filter((l) => ["interior", "equip", "seat", "deco", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) * 1e4) / 60;
+  // 현금흐름표·영수증 (원). 사장 가상 급여는 현금이 안 나가므로 인건비에서 뺀다
+  const cfOf = (ds: Done[]): CfMonth[] => ds.map((d) => {
+    const k = d.result.kpis, rp = d.rentPaid ? d.rentPaid - d.rentFee : k.rent;
+    return { month: d.result.month, start: d.cashStart, end: d.cashEnd, lines: [
+      { label: "매출", amount: k.revenue }, { label: "재료비 (고기·채소·주류)", amount: -k.cogs }, { label: "알바·직원 급여", amount: -Math.max(0, k.labor - imputed) },
+      { label: "월세", amount: -rp }, { label: "임대료 할부 수수료", amount: -(d.rentFee || 0) }, { label: "관리비·공과금·기타", amount: -k.mgmt },
+      { label: "카드·배달 수수료", amount: -k.fees }, { label: "사장 생활비", amount: -draw }, { label: "대출 이자", amount: -interest },
+    ], tax: { revenue: k.revenue, farmBuy: k.cogs * 0.8, taxableBuy: k.rent + k.mgmt * 0.6 + (k.delivery_fee ?? 0), profit: k.op + imputed - dep - interest } };
+  });
   const draw = OWNER_DRAW * 1e4;
   const now = new Date();
   const [startMonth, setStartMonth] = useState((now.getMonth() + 1) % 12 + 1); // 기본: 다음 달부터
@@ -901,7 +912,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                   </fieldset>
                   {mode === "hard" && (
                     <fieldset className="sx-mode">
-                      <legend>임대료는 어떻게 낼까요? <Assume what="할부 수수료율(3개월 3%, 6개월 4.5%)은 카드 임대료 결제 서비스 이용료와 할부 수수료를 합친 가정" /></legend>
+                      <legend>임대료는 어떻게 낼까요? <Assume id="rentFee" /></legend>
                       {([0, 3, 6] as RentN[]).map((n) => (
                         <label key={n} className={rentN === n ? "on" : ""}>
                           <input type="radio" name="rentpay" checked={rentN === n} onChange={() => setRentN(n)} />
@@ -932,7 +943,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
             {view === "plan" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{planMonth}월 운영 계획</h1>
+                  <h1>{planMonth}월 운영 계획<ModeSwitch mode={mode} set={(m) => { setMode(m); if (m === "hard" && !plan.menu) setPlan({ ...plan, menu: [{ name: "삼겹살", price: plan.meat_price, cost: 4500, share: 100 }] }); }} /></h1>
                   <div className="sx-split">
                     <section className="sx-left" aria-label="지난달과 추천">
                       <h2>{lastPlanMonth ? `${lastPlanMonth}월 결과와 추천` : "처음 여는 달이에요"}</h2>
@@ -961,7 +972,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       )}
                       {(() => {
                         const b = bbqBand(plan.menu?.length ? menuAvg(plan.menu).price : plan.meat_price);
-                        return <p className="sx-note sx-price">가격 비교 <span className={`sx-badge ${b.tone}`}>{b.band}</span> {b.text}<Assume what={`비교 기준: ${BBQ_REF.src}. 동네 단위 메뉴 가격 자료가 없어 서울 평균과 비교해요. ±5% 안을 '비슷'으로 봐요 (가정)`} /></p>;
+                        return <p className="sx-note sx-price">가격 비교 <span className={`sx-badge ${b.tone}`}>{b.band}</span> {b.text}<Assume id="priceRef" what={`비교 기준: ${BBQ_REF.src}. 동네 단위 메뉴 가격 자료가 없어 서울 평균과 비교해요. ±5% 안을 '비슷'으로 봐요 (가정)`} /></p>;
                       })()}
                       <PriceTrend month={planMonth} />
                     </section>
@@ -1086,6 +1097,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                         {r.reviews.length > 0 && <p className="sx-note">새 리뷰 {r.reviews.length}건, 평균 ★ {(r.reviews.reduce((a, x) => a + x.stars, 0) / r.reviews.length).toFixed(1)}</p>}
                       </section>
                     </div>
+                    <CashFlow months={cfOf(done)} kind="food" shop="고깃집" />
 
                     {r.decisions.length > 0 && (
                       <section className="sx-sec">
@@ -1151,6 +1163,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       <section className="sx-sec">
                         <h2>남은 현금</h2>
                         <CashChart start={cashAtStart.current[0] ?? startCash} months={done} labels={monthSeq} />
+                        <CashFlow months={cfOf(done)} kind="food" shop="고깃집" />
                       </section>
                       <section className="sx-sec">
                         <h2>월별 현금</h2>

@@ -9,8 +9,10 @@ import {
   DEFAULT_PLAN, PLAN_TEXT, QF_NAME, deliveryGuInfo, derived, eventOf, foodMult, playMonth, qfOpeningCost, qfStrategies, startState,
   type QfCfg, type QfMonth, type QfPlan, type QfState, type QfStratId,
 } from "./quickfood";
-import { QfFloorPlan } from "./QuickFoodBuild";
+import ShopRoom3D from "./ShopRoom3D";
 import QuickPicks, { type Pick as QPick } from "./QuickPicks";
+import ModeSwitch from "./ModeSwitch";
+import CashFlow, { type CfMonth } from "./CashFlow";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine";
 import "./simulate-engine.css";
@@ -120,6 +122,16 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const m = monthSeq[Math.min(idx, TURNS - 1)];
   const ev = eventOf(cfg.ind, m, seed + idx);
   const dep = open.lines.filter((l) => ["interior", "equip", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) / 60; // 5년 감가상각
+  // 현금흐름표·영수증 (원). 엔진 현금 = 월초 + 영업이익 − 생활비 − 이자
+  const cfMonths: CfMonth[] = months.map((c, i) => {
+    const s0 = i ? months[i - 1].cash : start.cash, K = 1e4;
+    return { month: c.month, start: s0 * K, end: c.cash * K, lines: [
+      { label: "매출 (홀·포장·배달)", amount: c.revenue * K }, { label: "식재료", amount: -c.food * K }, { label: "알바 인건비", amount: -c.staffPay * K },
+      { label: "월세", amount: -c.rent * K }, { label: "공과금·카드 수수료 등", amount: -c.other * K },
+      { label: "배달앱 중개수수료", amount: -c.appFees * K }, { label: "배달대행비", amount: -c.agencyFees * K }, { label: "배달앱 광고", amount: -c.adCost * K },
+      { label: "홍보·사건 대응", amount: -(c.marketing + c.eventCost) * K }, { label: "사장 생활비", amount: -c.draw * K }, { label: "대출 이자", amount: -c.interest * K },
+    ], tax: { revenue: c.revenue * K, farmBuy: c.food * K, taxableBuy: (c.rent + c.other * 0.5 + c.appFees + c.agencyFees + c.adCost) * K, profit: (c.op - dep - c.interest) * K } };
+  });
   const strats = qfStrategies(cur?.m, plan);
   const curDay = cur ? cur.days[Math.min(dayIdx, cur.days.length - 1)] : null;
 
@@ -176,7 +188,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
 
   return (
     <div className="sx-root" style={{ top }}>
-      <div className="sx-canvas ap-stage"><QfFloorPlan cfg={cfg} people={people} riders={riders} /></div>
+      <div className="sx-canvas"><ShopRoom3D kind={cfg.ind === "chicken" ? "chicken" : "bunsik"} pyeong={cfg.pyeong} people={people} riders={riders} height="fill" /></div>
 
       <header className="sx-hud">
         <Metric icon={<IconCash />} label="현금" tip={<>문을 열고 남은 운영자금이에요. 식재료·배달 수수료는 그날그날, 월세·광고는 1일, 알바 급여는 10일, 생활비·이자는 25일에 나가요.</>}>{man(w(cashNow))}</Metric>
@@ -186,7 +198,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
         <Metric icon={<IconBike />} label="배달 비중" tip={<>매출 중 배달 몫이에요. 배달은 한 건마다 배달앱 {n0(dv.appFee * 1e4)}원, 배달대행 {n0(dv.agencyFee * 1e4)}원이 빠져요 (경영실태조사 이용 가게 평균).</>}>
           {Math.round(delivShare * 100)}%
         </Metric>
-        <Metric icon={<IconStar />} label="인지도" tip={<>1.00이 동네에서 평소 알려진 수준이에요. 새 가게는 0.60에서 시작해 매달 1.00 쪽으로 15%씩 다가가요<Assume what="새 가게 인지도 0.6, 매달 15% 회복 (고깃집 엔진과 같은 가정)" />.</>}>
+        <Metric icon={<IconStar />} label="인지도" tip={<>1.00이 동네에서 평소 알려진 수준이에요. 새 가게는 0.60에서 시작해 매달 1.00 쪽으로 15%씩 다가가요<Assume id="awareness" />.</>}>
           {(view === "intro" ? start : state).awareness.toFixed(2)}
         </Metric>
         <Metric icon={<IconTrophy />} label="지금까지 점수" tip={<>정산마다 다시 매기는 점수예요. 6개월이 끝나면 성적표가 나와요.</>}>{sc ? `${sc.total}점` : "-"}</Metric>
@@ -223,7 +235,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
           <div className="sx-paper">
             <p className="sx-r-title">현금 흐름 영수증</p>
             <p className="sx-r-sub">{profile.gu} {name} · 시작 현금 {man(w(start.cash))}</p>
-            <p className="sx-r-acc">회색 줄은 현금이 아니라 이익 계산이에요. '오늘 몫 고정비'는 월세·급여·생활비 등을 날짜로 나눈 몫이에요. 한 달 {Math.round(dv.openDays)}일 연다는 조사값 대신 매일 연다고 봤어요<Assume what="매일 영업 (조사 평균 영업일수는 이보다 조금 적어요)" />.</p>
+            <p className="sx-r-acc">회색 줄은 현금이 아니라 이익 계산이에요. '오늘 몫 고정비'는 월세·급여·생활비 등을 날짜로 나눈 몫이에요. 한 달 {Math.round(dv.openDays)}일 연다는 조사값 대신 매일 연다고 봤어요<Assume id="openDaily" />.</p>
             {receiptDays.length === 0 && <p className="sx-r-empty">아직 찍힌 내역이 없어요. 첫 달이 시작되면 하루씩 쌓여요.</p>}
             {receiptDays.map((x, i) => {
               const dayProfit = x.ticks.filter((t) => !["월세", "알바 급여", "사장 생활비", "대출 이자", "광고·홍보·사건 대응"].includes(t.label)).reduce((a, t) => a + t.amount, 0) - x.fixedShare;
@@ -309,7 +321,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
             {view === "plan" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{m}월 운영 계획</h1>
+                  <h1>{m}월 운영 계획<ModeSwitch mode={mode} set={setMode} /></h1>
                   <div className="sx-split">
                     <section className="sx-left" aria-label="지난달 결과">
                       <h2>{cur ? `${cur.m.month}월 결과` : "처음 여는 달이에요"}</h2>
@@ -347,7 +359,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                             return (
                               <div key={k} className={`sx-step${changed ? " is-changed" : ""}`}>
                                 <div className="sx-step-t">
-                                  <span className="sx-step-l">{PLAN_TEXT[k].label}{PLAN_TEXT[k].hint.includes("가정") && <Assume what={PLAN_TEXT[k].hint} />}</span>
+                                  <span className="sx-step-l">{PLAN_TEXT[k].label}{PLAN_TEXT[k].hint.includes("가정") && <Assume id={k === "ad" ? "adBoost" : k === "pickup" ? "pickup" : k === "price" ? "elastic" : undefined} what={PLAN_TEXT[k].hint} />}</span>
                                   <small>{PLAN_TEXT[k].hint}</small>
                                   {changed && <small className="sx-step-prev">지난달 {PLAN_TEXT[k].text(before!)}</small>}
                                 </div>
@@ -376,7 +388,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                   <section className="sx-evbox"><h2>이번 달 사건</h2><ul><li><b>{ev.title}</b><span>{ev.prompt}</span></li></ul></section>
                   <section className="sx-sec">
                     <h2>이달의 사건, 어떻게 대응할까요?</h2>
-                    <p className="sx-note">사장님의 선택이 이번 달 주문과 이익을 바꿔요. 장점(+)과 단점(−)을 보고 하나를 골라 주세요. {ev.note}.<Assume what={`${ev.title}의 효과 크기 (${ev.note})`} /></p>
+                    <p className="sx-note">사장님의 선택이 이번 달 주문과 이익을 바꿔요. 장점(+)과 단점(−)을 보고 하나를 골라 주세요. {ev.note}.<Assume id="eventEffect" what={`${ev.title}의 효과 크기 (${ev.note})`} /></p>
                   </section>
                   <div className="sx-dps is-single">
                     <div className="sx-dp" role="radiogroup" aria-label={ev.title}>
@@ -425,13 +437,13 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                       <section className="sx-sec">
                         <h2>정산표</h2>
                         <table className="sx-table"><tbody>
-                          <tr><th>매출</th><td>{man(w(c.revenue))}</td><td>주문 약 {n0(c.tx)}건, 한 건 {n0(c.ticket)}원<Assume what="평수 효과(조사 평균 면적 기준 제곱근), 새 가게 인지도, 가격 탄력 1.2" /></td></tr>
+                          <tr><th>매출</th><td>{man(w(c.revenue))}</td><td>주문 약 {n0(c.tx)}건, 한 건 {n0(c.ticket)}원<Assume id="elastic" what="평수 효과(제곱근), 새 가게 인지도, 가격 탄력성 2" /></td></tr>
                           <tr><th>식재료비</th><td>−{man(w(c.food))}</td><td>처음 가격 기준 매출의 {Math.round(dv.foodRatio * 100)}% (2024년 경영실태조사) × 이달 식재료 시세 {c.foodMult.toFixed(3)}배: {foodMult(cfg.ind, c.month).parts.map((p) => `${p.items.join("·")} ${p.factor.toFixed(2)}배(식재료비의 ${Math.round(p.share * 100)}%)`).join(", ")} (생활물가지수, 2024년 대비)</td></tr>
                           <tr className="sub"><th>매출총이익</th><td>{signed(c.revenue - c.food)}</td><td /></tr>
                           <tr><th>배달 수수료</th><td>−{man(w(fees))}</td><td>배달 {n0(c.orders.delivery)}건 × (배달앱 {n0(dv.appFee * 1e4)}원 + 배달대행 {n0(dv.agencyFee * 1e4)}원)</td></tr>
                           <tr><th>인건비</th><td>{c.staffPay ? `−${man(w(c.staffPay))}` : "0원"}</td><td>알바 {c.plan.staff}명, 한 명 월 {man(Math.round(dv.wage))} (사장 인건비 제외)</td></tr>
                           <tr><th>월세</th><td>−{man(w(c.rent))}</td><td /></tr>
-                          <tr><th>기타경비</th><td>−{man(w(c.other))}</td><td>카드 수수료·가스·전기 등, 매출의 5%<Assume what="기타경비 5%" /></td></tr>
+                          <tr><th>기타경비</th><td>−{man(w(c.other))}</td><td>카드 수수료·가스·전기 등, 매출의 5%<Assume id="otherCost" /></td></tr>
                           {c.adCost + c.marketing + c.eventCost > 0 && <tr><th>광고·홍보·사건 대응</th><td>−{man(w(c.adCost + c.marketing + c.eventCost))}</td><td>배달앱 광고 {man(c.adCost)}, SNS {man(c.marketing)}, 사건 대응 {man(c.eventCost)}</td></tr>}
                           <tr className="sum"><th>영업이익</th><td>{signed(c.op)}</td><td>감가상각 전. 조사한 {name}의 영업이익률은 {Math.round(dv.opMargin * 1000) / 10}%</td></tr>
                           <tr><th>감가상각비</th><td>−{man(w(dep))}</td><td>인테리어·설비·간판을 5년에 나눈 몫. 현금은 안 나가요</td></tr>
@@ -448,6 +460,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                         <ul className="sx-evs"><li><b>{c.event}</b><span>고른 대응: {c.choice}</span></li></ul>
                       </section>
                     </div>
+                    <CashFlow months={cfMonths} kind="food" shop={name} />
                   </div>
                   <footer className="sx-foot">
                     <button type="button" className="se-btn" onClick={next}>{c.closed || done.length >= TURNS ? "6개월 결과 보기" : `${monthSeq[done.length]}월 운영 계획`}</button>
@@ -468,6 +481,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                   <section className="sx-sec"><h2>남은 현금</h2>
                     <CashChart start={start.cash * 1e4} labels={monthSeq} months={done.map((x) => ({ days: x.days.map((d) => ({ cash: d.cash * 1e4 })) }))} />
                   </section>
+                  <CashFlow months={cfMonths} kind="food" shop={name} />
                   <section className="sx-sec">
                     <h2>달마다</h2>
                     <table className="sx-table">

@@ -1,0 +1,31 @@
+.cf-scroll { overflow-x: auto; }
+.cf-table th, .cf-table td { white-space: nowrap; }
+.cf-table thead th { font-weight: 700; color: #545b66; text-align: right; }
+.cf-table thead th:first-child { text-align: left; }
+.cf-table td { text-align: right; }
+.cf-in td { color: #1f7a4d; }
+.cf-tax th, .cf-tax td { color: #8a5a12; background: #fffaf0; }
+.cf-net th, .cf-net td { background: #f1f5ff; }
+.cf-count { font-size: 12px; color: #7a818c; font-weight: 500; }
+
+.cf-stack { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; align-items: start; }
+.cf-rcpt { position: relative; padding: 14px 14px 18px; background: #fffef9; border: 1px solid #e6e1d4; border-radius: 4px 4px 0 0;
+  box-shadow: 0 2px 6px rgba(40, 30, 10, .08); font-family: ui-monospace, "D2Coding", Consolas, monospace; font-size: 12px; color: #33302a;
+  /* 아래 톱니 */
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 8px) no-repeat, radial-gradient(circle 6px at 8px 100%, #0000 98%, #000) bottom left / 16px 9px repeat-x;
+          mask: linear-gradient(#000 0 0) top / 100% calc(100% - 8px) no-repeat, radial-gradient(circle 6px at 8px 100%, #0000 98%, #000) bottom left / 16px 9px repeat-x; }
+.cf-rcpt header { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dashed #b9b3a4; }
+.cf-rcpt header b { font-size: 14px; letter-spacing: .04em; }
+.cf-rcpt header span { color: #7a7466; }
+.cf-rcpt dl { margin: 0; display: flex; flex-direction: column; gap: 3px; }
+.cf-rcpt dl div { display: flex; justify-content: space-between; gap: 8px; }
+.cf-rcpt dt { color: #5a554a; }
+.cf-rcpt dd { margin: 0; }
+.cf-rcpt .in dd { color: #1f7a4d; }
+.cf-r-start { padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px dotted #d8d2c3; }
+.cf-r-sum { padding-top: 6px; margin-top: 4px; border-top: 1px dashed #b9b3a4; font-weight: 700; font-size: 13px; }
+.cf-r-tax dd, .cf-r-tax dt { color: #8a5a12; }
+.cf-rcpt footer { margin-top: 10px; color: #8d8778; font-size: 11px; text-align: center; }
+.cf-rcpt.is-new { animation: cf-rise .7s cubic-bezier(.2, .8, .2, 1) both; border-color: #c9b98d; }
+@keyframes cf-rise { from { transform: translateY(40px) rotate(-1.5deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cf-rcpt.is-new { animation: none; } }

@@ -9,6 +9,9 @@ import CafeRoom3D from "./CafeRoom3D";
 import { ENGINE, type Preview } from "./useCafePreview";
 import { guStat, man, type Profile } from "./model";
 import Assume from "./Assume";
+import ModeSwitch, { type Mode } from "./ModeSwitch";
+import QuickPicks, { type Pick as QPick } from "./QuickPicks";
+import CashFlow, { type CfMonth } from "./CashFlow";
 import { CAFE_REF, cafeBand } from "./priceCompare";
 import { IconBattery, IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "./SimulateEngine";
 import "./simulate-engine.css";
@@ -98,6 +101,27 @@ function recommend(last: Month | undefined, plan: Dec): Rec[] {
   return LEVERS.map((l) => out.find((r) => r.lever.key === l.key)!);
 }
 
+// 쉬운 모드: 달마다 방향 세 가지. 지난달 결정에서 출발해 추천/늘리기/아끼기로 몇 가지를 바꾼다
+type StratId = "rec" | "grow" | "save";
+function cafeStrategies(last: Month | undefined, plan: Dec, recs: Rec[]): { id: StratId; title: string; desc: string; plan: Dec; changes: string[] }[] {
+  const lp: Dec = last ? { ...plan, ...last.decisions, price_change_pct: 0 } : { ...plan, price_change_pct: 0 };
+  const hi = HOURS_ORDER.indexOf(lp.hours), si = STAFF_ORDER.indexOf(lp.staff_policy);
+  const rec = recs.reduce((p, r) => (r.change ? { ...p, [planKey(r.lever)]: r.next[planKey(r.lever)] } : p), lp);
+  const grow: Dec = { ...lp, hours: HOURS_ORDER[Math.min(2, hi + 1)], staff_policy: STAFF_ORDER[Math.max(1, si)], marketing_krw: Math.min(2_000_000, lp.marketing_krw + 500_000), dessert: true };
+  const save: Dec = { ...lp, hours: HOURS_ORDER[Math.max(0, hi - 1)], staff_policy: STAFF_ORDER[Math.max(0, si - 1)], marketing_krw: 0 };
+  const diff = (d: Dec) => LEVERS.filter((l) => l.text(d) !== l.text(lp)).map((l) => l.label + " " + l.text(d));
+  return [
+    { id: "rec", title: "추천대로", desc: last ? "지난달 결과를 보고 고칠 것만 고쳐요." : "처음 달은 기본 운영으로 시작해요.", plan: rec, changes: diff(rec) },
+    { id: "grow", title: "손님 늘리기", desc: "더 오래 열고 마케팅을 늘려요. 인건비와 광고비가 늘어요.", plan: grow, changes: diff(grow) },
+    { id: "save", title: "비용 아끼기", desc: "영업시간과 직원을 한 단계 줄이고 마케팅을 멈춰요. 바쁜 시간에 손님이 돌아갈 수 있어요.", plan: save, changes: diff(save) },
+  ];
+}
+const PICKS: QPick<Dec>[] = [
+  { key: "price_change_pct", label: "가격", hint: "이번 달 한 번 바꾸는 폭", opts: [{ label: "−5%", value: -5 }, { label: "그대로", value: 0 }, { label: "+5%", value: 5 }] },
+  { key: "hours", label: "영업시간", hint: "길수록 손님·인건비가 같이 늘어요", opts: HOURS_ORDER.map((h) => ({ label: HOURS_KO[h].split(" ")[0], value: h })) },
+  { key: "delivery", label: "배달", hint: "주문은 늘지만 한 건마다 수수료", opts: [{ label: "안 해요", value: false }, { label: "배달앱 입점", value: true }] },
+];
+
 function Kpis({ items }: { items: { label: string; value: string; tone?: string; main?: boolean }[] }) {
   return <dl className="sx-kpis">{items.map((x) => <div key={x.label} className={x.main ? "main" : ""}><dt>{x.label}</dt><dd className={x.tone}>{x.value}</dd></div>)}</dl>;
 }
@@ -155,6 +179,21 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<Mode>("easy");
+  const [strat, setStrat] = useState<StratId>("rec");
+  const [tweak, setTweak] = useState<Partial<Dec>>({});
+  useEffect(() => { setStrat("rec"); setTweak({}); }, [months.length]);
+  // 현금흐름표·영수증 (원). 엔진 현금 = 월초 + 감가상각 전 영업이익 − 이자 − 원금 + 개업 부가세 환급
+  const cfMonths: CfMonth[] = months.map((m) => {
+    const L = (k: string) => m.pnl.lines.find((l) => l.key === k)?.krw ?? 0;
+    return { month: m.calendar_month, start: m.cash.start_krw, end: m.cash.end_krw, lines: [
+      { label: "매출", amount: m.pnl.revenue_krw },
+      ...m.pnl.lines.filter((l) => l.krw).map((l) => ({ label: l.item_ko, amount: -l.krw })),
+      { label: "대출 이자", amount: -m.cash.loan_interest_krw }, { label: "대출 원금", amount: -m.cash.loan_principal_krw },
+      { label: "개업 부가세 환급", amount: m.cash.vat_refund_krw },
+    ], tax: { revenue: m.pnl.revenue_krw, farmBuy: L("food") * 0.3, profit: m.pnl.op_krw - m.cash.loan_interest_krw,
+      taxableBuy: L("rent") + L("utilities") + L("packaging") + L("delivery") + L("shares") + L("food") * 0.7 } };
+  });
   const daily = useRef<number | null>(null);
 
   useLayoutEffect(() => {
@@ -207,7 +246,9 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
   const askScenario = async () => {
     setBusy(true); setErr("");
     try {
-      const d: Dps = await post("/cafe/season/scenario", { state_token: token, ...plan });
+      const p = mode === "easy" ? { ...cafeStrategies(cur, plan, recs).find((x) => x.id === strat)!.plan, ...tweak } : plan;
+      if (mode === "easy") setPlan(p);
+      const d: Dps = await post("/cafe/season/scenario", { state_token: token, ...p });
       setDps(d); setPts(d.points); setChoices(Object.fromEntries(d.points.map((p) => [p.id, p.default]))); setView("scenario");
     } catch (e: any) { setErr(netErr(e)); }
     setBusy(false);
@@ -344,6 +385,17 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                     </ol>
                     <p className="sx-note">새로 연 가게로 시작해요. 별점과 단골이 없어서 처음엔 자리가 잡힌 달보다 매출이 낮아요. 매출 기준은 동네 분석의 중앙값과 맞췄어요.</p>
                   </section>
+                  <fieldset className="sx-mode">
+                    <legend>어떻게 해 볼까요?</legend>
+                    <label className={mode === "easy" ? "on" : ""}>
+                      <input type="radio" name="cf-mode" checked={mode === "easy"} onChange={() => setMode("easy")} />
+                      <span><b>쉬운 모드</b><small>달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 가격·영업시간·배달은 버튼으로 바꿀 수 있어요.</small></span>
+                    </label>
+                    <label className={mode === "hard" ? "on" : ""}>
+                      <input type="radio" name="cf-mode" checked={mode === "hard"} onChange={() => setMode("hard")} />
+                      <span><b>자세히 모드</b><small>달마다 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정해요.</small></span>
+                    </label>
+                  </fieldset>
                   <label className="sx-field">시작할 달
                     <select value={startMonth} onChange={(e) => setStartMonth(+e.target.value)}>{Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}월</option>)}</select>
                   </label>
@@ -359,7 +411,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
             {view === "plan" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{nextMonth}월 운영 계획</h1>
+                  <h1>{nextMonth}월 운영 계획<ModeSwitch mode={mode} set={setMode} /></h1>
                   <div className="sx-split">
                     <section className="sx-left" aria-label="지난달 결과와 추천">
                       <h2>{cur ? `${cur.calendar_month}월 결과와 추천` : "처음 여는 달이에요"}</h2>
@@ -391,14 +443,33 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                         // 개업 때 커피 가격 = 조사 중앙값 4,000원. 가격 조정은 이 값에 누적 배수로 붙는다
                         const level = (cur?.decisions.price_level ?? 1) * (1 + plan.price_change_pct / 100);
                         const b = cafeBand(Math.round((CAFE_REF.mid * level) / 100) * 100);
-                        return <p className="sx-note sx-price">가격 비교 <span className={`sx-badge ${b.tone}`}>{b.band}</span> {b.text}{plan.price_change_pct ? " (이번 달 조정 포함)" : ""}<Assume what={`비교 기준: ${CAFE_REF.src}. 개업 가격을 중앙값 4,000원으로 봤어요. 동네 단위 메뉴 가격 자료는 없어요`} /></p>;
+                        return <p className="sx-note sx-price">가격 비교 <span className={`sx-badge ${b.tone}`}>{b.band}</span> {b.text}{plan.price_change_pct ? " (이번 달 조정 포함)" : ""}<Assume id="priceRef" what={`비교 기준: ${CAFE_REF.src}. 개업 가격을 중앙값 4,000원으로 봤어요. 동네 단위 메뉴 가격 자료는 없어요`} /></p>;
                       })()}
                     </section>
+                    {mode === "easy" ? (() => {
+                      const strats = cafeStrategies(cur, plan, recs);
+                      return (
+                        <section className="sx-right" aria-label="이번 달 방향">
+                          <h2>{nextMonth}월, 어느 쪽으로 갈까요?</h2>
+                          <div className="sx-strats" role="radiogroup">
+                            {strats.map((x) => (
+                              <label key={x.id} className={strat === x.id ? "on" : ""}>
+                                <input type="radio" name="cf-strat" checked={strat === x.id} onChange={() => setStrat(x.id)} />
+                                <span className="sx-strat"><b>{x.title}</b><small>{x.desc}</small><span className="sx-strat-chg">{x.changes.length ? x.changes.join(" · ") : "지난달과 같아요"}</span></span>
+                              </label>
+                            ))}
+                          </div>
+                          <QuickPicks picks={PICKS} base={strats.find((x) => x.id === strat)!.plan} tweak={tweak} setTweak={setTweak} />
+                          <p className="sx-note">자세히 모드에서는 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정할 수 있어요.</p>
+                        </section>
+                      );
+                    })() : (
                     <section className="sx-right" aria-label="이번 달 운영 계획">
                       <h2>{nextMonth}월에 이렇게 할게요</h2>
                       <div className="sx-steps">{LEVERS.map((lv) => <Stepper key={lv.key} lv={lv} plan={plan} prev={cur ? { ...plan, ...cur.decisions, price_change_pct: 0 } : undefined} set={setPlan} />)}</div>
                       <p className="sx-note">가격은 이번 달에 한 번 바꾸는 폭이고, 나머지는 바꾸기 전까지 이어져요.</p>
                     </section>
+                    )}
                   </div>
                   {err && <p className="se-err" role="alert">{err}</p>}
                 </div>
@@ -521,6 +592,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                     </section>
                   </div>
                   {cur.closure.closed && <p className="se-err">가게를 닫았어요. {cur.closure.reason_ko}</p>}
+                  <CashFlow months={cfMonths} kind="food" shop="카페" />
                 </div>
                 <footer className="sx-foot">
                   <button type="button" className="se-btn" onClick={nextAfterSettle}>{over ? "전체 결과 보기" : `${nextMonth}월 운영 계획 정하기`}</button>
@@ -542,6 +614,7 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                       ]} />
                       <p className="sx-note">{report.survived ? `${TOTAL}개월을 버텼어요. ` : <b>가게를 닫게 됐어요. </b>}{report.summary_ko}</p>
                       <section className="sx-sec"><h2>남은 현금</h2><Cash start={startCash} months={months} total={TOTAL} /></section>
+                      <CashFlow months={cfMonths} kind="food" shop="카페" />
                       <section className="sx-sec"><h2>월별</h2>
                         <table className="sx-table"><thead><tr><th>달</th><th>매출</th><th>영업이익</th><th>월말 현금</th></tr></thead>
                           <tbody>{report.months.map((x: any) => <tr key={x.month}><td>{x.calendar_month}월</td><td>{wman(x.revenue_krw)}</td><td className={tone(x.op_krw)}>{sgn(x.op_krw)}</td><td>{wman(x.cash_krw)}</td></tr>)}</tbody></table>
