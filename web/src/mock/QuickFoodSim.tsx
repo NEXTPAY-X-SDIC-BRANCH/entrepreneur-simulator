@@ -317,7 +317,8 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
             {view === "intro" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{profile.gu}에서 {name} 6개월</h1>
+                  <h1>{profile.gu}에서 {name} 6개월<ModeSwitch mode={mode} set={setMode} /></h1>
+                  <p className="sx-note sx-modenote">{mode === "easy" ? <><b>easy 모드</b> · 달마다 방향만 골라요: 추천대로 / 주문 늘리기 / 비용 아끼기. 이달의 사건 대응도 골라요.</> : <><b>hard 모드</b> · 달마다 가격·알바·배달앱 광고·홍보비를 하나씩 정해요.</>}</p>
                   <Kpis items={[
                     { label: "가게", value: `${cfg.pyeong}평 · 알바 ${cfg.staff}명` },
                     { label: "평당 월세", value: `${st.rent}만원` },
@@ -337,17 +338,6 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                       {deliveryGuInfo(profile.gu) && ` ${profile.gu} 주민은 배달·포장 음식을 서울 평균의 ${deliveryGuInfo(profile.gu)!.index.toFixed(2)}배 먹어요 (1인 가구원 ${Math.round((deliveryGuInfo(profile.gu)!.single_share ?? 0) * 100)}%, 서울서베이 2022 × 주민 연령·가구 구성).`}
                       {" "}{profile.gu} {cfg.ind === "chicken" ? "치킨전문점" : "분식전문점"}은 1년에 10곳 중 {(st.closure / 10).toFixed(1)}곳이 문을 닫아요 (2025년).</p>
                   </section>
-                  <fieldset className="sx-mode">
-                    <legend>어떻게 해 볼까요?</legend>
-                    <label className={mode === "easy" ? "on" : ""}>
-                      <input type="radio" name="qf-mode" checked={mode === "easy"} onChange={() => setMode("easy")} />
-                      <span><b>easy 모드</b><small>달마다 방향만 골라요: 추천대로 / 주문 늘리기 / 비용 아끼기. 이달의 사건 대응도 골라요.</small></span>
-                    </label>
-                    <label className={mode === "hard" ? "on" : ""}>
-                      <input type="radio" name="qf-mode" checked={mode === "hard"} onChange={() => setMode("hard")} />
-                      <span><b>hard 모드</b><small>달마다 가격·알바·배달앱 광고·홍보비를 하나씩 정해요.</small></span>
-                    </label>
-                  </fieldset>
                   <label className="sx-field">시작할 달
                     <select value={startMonth} onChange={(e) => setStartMonth(+e.target.value)}>
                       {Array.from({ length: 12 }, (_, i) => i + 1).map((x) => <option key={x} value={x}>{x}월</option>)}

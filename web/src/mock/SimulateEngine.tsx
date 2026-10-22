@@ -895,7 +895,8 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
             {view === "intro" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{profile.gu}{st.area ? ` ${st.area}` : ""}에서 6개월</h1>
+                  <h1>{profile.gu}{st.area ? ` ${st.area}` : ""}에서 6개월<ModeSwitch mode={mode} set={(m) => { setMode(m); if (m === "hard" && !plan.menu) setPlan({ ...plan, menu: [{ name: "삼겹살", price: plan.meat_price, cost: 4500, share: 100 }] }); }} /></h1>
+                  <p className="sx-note sx-modenote">{mode === "easy" ? <><b>easy 모드</b> · 달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 이달의 사건 대응도 골라요.</> : <><b>hard 모드</b> · 메뉴와 원가를 직접 등록하고, 달마다 가격·알바·마감·반찬·협찬·고기·배달을 하나씩 정해요.</>}</p>
                   <Kpis items={[
                     { label: "가게", value: `${store.pyeong}평 · ${stats.seats}석` },
                     { label: "평당 월세", value: `${st.rent}만원` },
@@ -912,17 +913,6 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                     </ol>
                     <p className="sx-note">새로 연 가게로 시작해요. 리뷰가 없고 손님이 적어, 단골이 쌓이는 데 몇 달이 걸려요.</p>
                   </section>
-                  <fieldset className="sx-mode">
-                    <legend>어떻게 해 볼까요?</legend>
-                    <label className={mode === "easy" ? "on" : ""}>
-                      <input type="radio" name="mode" checked={mode === "easy"} onChange={() => setMode("easy")} />
-                      <span><b>easy 모드</b><small>달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 이달의 사건 대응도 골라요.</small></span>
-                    </label>
-                    <label className={mode === "hard" ? "on" : ""}>
-                      <input type="radio" name="mode" checked={mode === "hard"} onChange={() => { setMode("hard"); if (!plan.menu) setPlan({ ...plan, menu: [{ name: "삼겹살", price: plan.meat_price, cost: 4500, share: 100 }] }); }} />
-                      <span><b>hard 모드</b><small>메뉴와 원가를 직접 등록하고, 달마다 가격·알바·마감·반찬·협찬·고기·배달을 하나씩 정해요.</small></span>
-                    </label>
-                  </fieldset>
                   {RENT_CARD_ON && mode === "hard" && (
                     <fieldset className="sx-mode">
                       <legend>임대료는 어떻게 낼까요? <Assume id="rentFee" /></legend>

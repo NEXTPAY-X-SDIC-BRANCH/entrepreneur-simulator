@@ -368,7 +368,8 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
             {view === "intro" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{place}에서 {TOTAL}개월</h1>
+                  <h1>{place}에서 {TOTAL}개월<ModeSwitch mode={mode} set={setMode} /></h1>
+                  <p className="sx-note sx-modenote">{mode === "easy" ? <><b>easy 모드</b> · 달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 가격·영업시간·배달은 버튼으로 바꿀 수 있어요.</> : <><b>hard 모드</b> · 달마다 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정해요.</>}</p>
                   <Kpis items={[
                     { label: "가게", value: `${cfg.pyeong}평 · ${pv?.seats.total ?? "-"}석` },
                     { label: "평당 월세", value: `${guStat(profile.gu).rent}만원` },
@@ -385,17 +386,6 @@ export default function CafeSim({ profile, cfg, onBack }: { profile: Profile; cf
                     </ol>
                     <p className="sx-note">새로 연 가게로 시작해요. 별점과 단골이 없어서 처음엔 자리가 잡힌 달보다 매출이 낮아요. 매출 기준은 동네 분석의 중앙값과 맞췄어요.</p>
                   </section>
-                  <fieldset className="sx-mode">
-                    <legend>어떻게 해 볼까요?</legend>
-                    <label className={mode === "easy" ? "on" : ""}>
-                      <input type="radio" name="cf-mode" checked={mode === "easy"} onChange={() => setMode("easy")} />
-                      <span><b>easy 모드</b><small>달마다 방향만 골라요: 추천대로 / 손님 늘리기 / 비용 아끼기. 가격·영업시간·배달은 버튼으로 바꿀 수 있어요.</small></span>
-                    </label>
-                    <label className={mode === "hard" ? "on" : ""}>
-                      <input type="radio" name="cf-mode" checked={mode === "hard"} onChange={() => setMode("hard")} />
-                      <span><b>hard 모드</b><small>달마다 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정해요.</small></span>
-                    </label>
-                  </fieldset>
                   <label className="sx-field">시작할 달
                     <select value={startMonth} onChange={(e) => setStartMonth(+e.target.value)}>{Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}월</option>)}</select>
                   </label>
