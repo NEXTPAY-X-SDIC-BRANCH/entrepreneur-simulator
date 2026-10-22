@@ -3,9 +3,10 @@
 // 한 달 = 운영 계획(가격·영업시간·직원·마케팅·배달) + 이달의 사건 대응 하나 -> 엔진이 그달 손익과 현금을 계산.
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import CafeRoom3D from "../../mock/CafeRoom3D";
+import ShopRoom3D, { shopPlan } from "../../mock/ShopRoom3D";
 import { man, type Profile } from "../../mock/model";
 import { IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "../../mock/SimulateEngine";
-import { engineBody, netErr, post, sgn, usePreview, wman, type IndustryCfg, type Month, type Start } from "./api";
+import { engineBody, netErr, post, sgn, shopKind, shopLayout, usePreview, wman, type IndustryCfg, type Month, type Start } from "./api";
 import { paybackOf, setEngineCtx } from "../../mock/chatContext";
 import { LAB_TXT, type LabIndustry } from "./industries";
 import ScoreCard from "../score/ScoreCard"; // lab:score 6개월 성적표 (카페·고깃집 결과 화면과 같은 카드)
@@ -90,6 +91,11 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
     if (!cur) return 0;
     return Math.min(1, cur.kpi.hall_covers / Math.max(1, cur.drivers.days_open) / Math.max(1, cur.drivers.seat_units_day) * 1.6);
   }, [cur]);
+  // 치킨·분식은 ShopRoom3D: 가게 안 손님 = 좌석 × 붐비는 정도, 문 밖 배달 기사 = 하루 배달 주문 4건에 한 명 (3명까지 그린다)
+  const kind = shopKind(ind);
+  const shopLay = kind && p ? shopLayout(kind, p, cfg.layout) : undefined;
+  const shopPeople = kind && p && cur ? Math.round(occupancy * shopPlan(kind, p.input.pyeong, shopLay).seats.length) : 0;
+  const riders = cur && cur.kpi.delivery_revenue_krw > 0 ? Math.min(3, Math.max(1, Math.round(cur.kpi.delivery_revenue_krw / Math.max(1, cur.kpi.ticket_krw) / Math.max(1, cur.drivers.days_open) / 4))) : 0;
 
   // 챗봇이 "몇 달째부터 남아요?", "하루 몇 명 받아야 본전이에요?", "여는 데 돈이 제일 많이 드는 곳은?"에 이 판의 결과로 답하게 넘긴다 (원).
   // 손익 줄을 고깃집과 같은 칸으로: 매출 비례 재료·배달 원가는 cogs, 카드·세금·기타 비율 비용은 fees, 나머지(홍보·사건·수리·감가상각)는 mgmt.
@@ -155,7 +161,8 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
   return (
     <div className="sx-root" style={{ top }}>
       <div className="sx-canvas">
-        {p?.room ? <CafeRoom3D room={p.room} layout={p.layout} roster={view === "settle" || view === "report" ? p.roster : []} occupancy={occupancy} height="fill" /> : <p className="m-loading">{pv.err || "엔진을 부르는 중이에요"}</p>}
+        {kind && p ? <ShopRoom3D kind={kind} pyeong={p.input.pyeong} layout={shopLay} people={shopPeople} riders={riders} height="fill" />
+          : p?.room ? <CafeRoom3D room={p.room} layout={p.layout} roster={view === "settle" || view === "report" ? p.roster : []} occupancy={occupancy} height="fill" /> : <p className="m-loading">{pv.err || "엔진을 부르는 중이에요"}</p>}
       </div>
 
       <header className="sx-hud">

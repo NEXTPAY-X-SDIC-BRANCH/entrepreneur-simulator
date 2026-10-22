@@ -1,10 +1,12 @@
 // lab:industry 3단계 가게 꾸미기 (새 업종). 카페 화면(CafeBuild.tsx)과 같은 틀: 전체 폭 3D 무대(왼쪽 위 가게 구성, 오른쪽 위 현금),
 // 아래 쟁반(드는 돈과 카운터 조각 이름), 그 아래 열기 전 점검. 3D는 카페 3D(CafeRoom3D)를 그대로 쓰고 카운터 조각을 업종 이름으로 읽는다.
+// 치킨·분식은 이수빈 ShopRoom3D(튀김기·주방·포장대)로 그리고, 가게 모양과 출입문을 고른다 (화면용).
 // 숫자는 모두 엔진(/lab/industry/preview)이 계산한다.
 import { Mark } from "../../mock/Checks";
 import CafeRoom3D from "../../mock/CafeRoom3D";
+import ShopRoom3D, { DOOR_LABEL, SHAPE_LABEL, type DoorSpot, type RoomShape } from "../../mock/ShopRoom3D";
 import { STATUS_LABEL, man, type Grade, type Profile, type Status } from "../../mock/model";
-import { pct, sgn, usePreview, wman, type IndustryCfg, type Preview } from "./api";
+import { pct, sgn, shopKind, shopLayout, usePreview, wman, type IndustryCfg, type Preview } from "./api";
 import { LAB_TXT, type LabIndustry } from "./industries";
 import "../../mock/cafe-sim.css";
 import "./industry.css";
@@ -64,12 +66,13 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
   const pv = usePreview(profile, cfg);
   const p = pv.data;
   const t = LAB_TXT[ind];
+  const kind = shopKind(ind);
   const set = (patch: Partial<IndustryCfg>) => setCfg({ ...cfg, ...(p ? { pyeong: p.input.pyeong, tables: p.input.tables, staff: p.input.staff } : {}), ...patch });
   const left = p ? profile.capital * 10000 - p.capex.total_krw : 0;
   const list = p ? checks(p, t.shop) : [];
   const counter = p ? Object.entries(p.furniture_ko).filter(([k]) => p.layout.some((x) => x.type === k)) : [];
   const msg = pv.err ? pv.err : !p ? "엔진에서 배치를 받아 오는 중이에요."
-    : p.layout.some((x) => !x.fits) ? "공간이 모자라 못 놓은 테이블이 있어요 (빨간 반투명). 테이블을 줄이거나 평수를 늘려 보세요."
+    : p.layout.some((x) => !x.fits) ? `공간이 모자라 못 놓은 테이블이 있어요${kind ? "" : " (빨간 반투명)"}. 테이블을 줄이거나 평수를 늘려 보세요.`
     : p.capacity.bottleneck ? `먼저 막히는 곳은 ${p.capacity.bottleneck === "seats" ? "좌석" : "일손"}이에요. 주문의 ${pct(p.capacity.walk_share)}를 못 받아요.`
     : `좌석 ${p.seats.total}석, 일손 ${p.input.staff + 1}명(사장님 포함)으로 이 동네 주문을 다 받을 수 있어요.`;
 
@@ -77,7 +80,8 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
     <main className="m-build">
       <div className="m-stage">
         <div className="m-canvas">
-          {p?.room ? <CafeRoom3D room={p.room} layout={p.layout} roster={p.roster} height="fill" /> : <p className="m-loading">{pv.err || "엔진을 부르는 중이에요"}</p>}
+          {kind && p ? <ShopRoom3D kind={kind} pyeong={p.input.pyeong} layout={shopLayout(kind, p, cfg.layout)} height="fill" flow />
+            : p?.room ? <CafeRoom3D room={p.room} layout={p.layout} roster={p.roster} height="fill" /> : <p className="m-loading">{pv.err || "엔진을 부르는 중이에요"}</p>}
         </div>
         <div className="m-room">
           <div className="m-stepper">
@@ -104,8 +108,26 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
           {p?.demand.delivery_available && (
             <label className="ib-toggle"><input type="checkbox" checked={cfg.delivery} onChange={(e) => set({ delivery: e.target.checked })} />배달도 받기 (매출의 {pct(p.demand.channels.delivery)})</label>
           )}
+          {kind && (
+            <div className="m-layout" role="group" aria-label="가게 배치">
+              <b className="m-layout-h">가게 배치 <small>파란 화살표가 손님 동선이에요</small></b>
+              <div className="m-layout-row">
+                <span id="ib-shape">가게 모양</span>
+                <div className="m-seg" role="group" aria-labelledby="ib-shape">
+                  {(["wide", "square", "deep"] as RoomShape[]).map((x) => <button type="button" key={x} aria-pressed={(cfg.layout?.shape ?? "wide") === x} onClick={() => set({ layout: { ...cfg.layout, shape: x } })}>{SHAPE_LABEL[x]}</button>)}
+                </div>
+              </div>
+              <div className="m-layout-row">
+                <span id="ib-door">출입문</span>
+                <div className="m-seg" role="group" aria-labelledby="ib-door">
+                  {(["left", "center", "right"] as DoorSpot[]).map((x) => <button type="button" key={x} aria-pressed={(cfg.layout?.door ?? "right") === x} onClick={() => set({ layout: { ...cfg.layout, door: x } })}>{DOOR_LABEL[x]}</button>)}
+                </div>
+              </div>
+              <small>모양과 문 자리는 3D 그림만 바꿔요. 매출과 비용 계산은 그대로예요.</small>
+            </div>
+          )}
           <p>{p ? `${p.seats.total}석, 사장님 포함 ${p.input.staff + 1}명` : ""}</p>
-          <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={() => setCfg({ industry: ind, grade: "basic", delivery: true })}>추천 배치</button>
+          <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={() => setCfg({ industry: ind, grade: "basic", delivery: true, layout: cfg.layout })}>추천 배치</button>
         </div>
         <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>
           <p><span>{left < 0 ? "모자란 현금" : "현금"}</span><strong>{p ? wman(Math.abs(left)) : "-"}</strong></p>
@@ -119,7 +141,7 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
         <dl className="m-spent">
           {p?.capex.lines.filter((l) => l.krw > 0).map((l) => <div key={l.key}><dt>{l.item_ko}</dt><dd>{wman(l.krw)}</dd></div>)}
         </dl>
-        {counter.length > 0 && (
+        {!kind && counter.length > 0 && (
           <ul className="ib-legend" aria-label="카운터 조각 이름">
             {counter.map(([k, v]) => <li key={k}><b>{v}</b> 자리</li>)}
             <li>3D는 카페 가구 모양을 빌려 그렸어요</li>
@@ -153,7 +175,7 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
           </ul>
           <p className="m-aside">
             비용 비율, 객단가, 좌석과 일손 한도는 외식업체 경영실태조사 2025 {p.benchmark.krei_label} 전국 가게의 값이에요 (프랜차이즈 포함).
-            매출은 업종 중앙값 가게를 {profile.gu}의 카드 매출 지수로 옮긴 엔진 추정이에요. 3D 가구는 카페 가구 모양을 빌려 그렸어요.
+            매출은 업종 중앙값 가게를 {profile.gu}의 카드 매출 지수로 옮긴 엔진 추정이에요.{kind ? "" : " 3D 가구는 카페 가구 모양을 빌려 그렸어요."}
           </p>
         </section>
       )}

@@ -4,8 +4,10 @@ import type { Grade, Profile } from "../../mock/model";
 import { ENGINE } from "../../mock/useCafePreview";
 import type { LabIndustry } from "./industries";
 import { setShopCtx } from "../../mock/chatContext";
+import { shopPlan, type ShopKind, type ShopLayout } from "../../mock/ShopRoom3D";
 
-export type IndustryCfg = { industry: LabIndustry; pyeong?: number; tables?: number; staff?: number; grade: Grade; delivery: boolean };
+// layout: 치킨·분식 3D의 가게 모양과 출입문 (화면용, 엔진에는 보내지 않는다)
+export type IndustryCfg = { industry: LabIndustry; pyeong?: number; tables?: number; staff?: number; grade: Grade; delivery: boolean; layout?: ShopLayout };
 export type Line = { key: string; item_ko: string; krw: number; grade: string; note_ko?: string };
 export type Preview = {
   industry: LabIndustry; name_ko: string;
@@ -87,6 +89,15 @@ export function usePreview(profile: Profile, cfg: IndustryCfg): { data: Preview 
     return () => { alive = false; clearTimeout(t); };
   }, [key]);
   return { data, err };
+}
+
+// 치킨·분식은 이수빈 ShopRoom3D(치킨·분식 전용 3D)로 그린다. 나머지 새 업종은 카페 3D를 빌린다
+export const shopKind = (ind: LabIndustry): ShopKind | null => (ind === "chicken" || ind === "bunsik" ? ind : null);
+// 엔진 좌석 수를 ShopRoom3D의 2인 테이블 수로 옮긴다 (분식집 벽 쪽 바 자리를 먼저 빼고, 그 평수에 놓을 수 있는 만큼까지)
+export function shopLayout(kind: ShopKind, p: Preview, layout?: ShopLayout): ShopLayout {
+  const base = shopPlan(kind, p.input.pyeong, { ...layout, tables: 0 });
+  const tables = Math.max(0, Math.min(base.maxTables, Math.round((p.seats.total - base.stools.length) / 2)));
+  return { ...layout, tables };
 }
 
 export const wman = (krw: number) => {
