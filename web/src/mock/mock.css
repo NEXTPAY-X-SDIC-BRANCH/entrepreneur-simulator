@@ -697,3 +697,6 @@ html:has(.m-app) { background: #fff; }
 .m-spent { max-block-size: 220px; }
 .it-needbtn { margin-inline-start: 6px; padding: 3px 10px; border: 0; border-radius: 8px; background: #b4372c; color: #fff; font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .it-where { display: flex; gap: 4px; margin-block-start: 6px; } .it-where button { padding: 4px 8px; border: 1px solid #d5deeb; border-radius: 999px; background: #fff; font-size: 12px; color: #3a404c; cursor: pointer; } .it-where button[aria-pressed="true"] { border-color: #3d63ea; background: #3d63ea; color: #fff; }
+
+.m-msg.it-place { inset-block-end: 16px; }
+.it-place2 { display: block; margin-block-start: 6px; font-size: 12.5px; color: var(--ink2); }

@@ -5,8 +5,8 @@ import Assume from "./Assume";
 import LayoutPicker from "./LayoutPicker";
 import ItemTray from "./ItemTray";
 import { missingItems, withNeeded } from "./shopItems";
-import { useEffect } from "react";
-import ShopRoom3D, { shopPlan } from "./ShopRoom3D";
+import { useEffect, useState } from "react";
+import ShopRoom3D, { shopPlan, type ShopEdit } from "./ShopRoom3D";
 import { ASSUME } from "./assumptions";
 import { OWNER_DRAW, STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
 import { AD_COST, DEFAULT_PLAN, GRADE_LABEL, QF_NAME, derived, expectedSales, qfOpeningCost, type QfCfg } from "./quickfood";
@@ -50,6 +50,9 @@ export default function QuickFoodBuild({ profile, cfg, setCfg, onNext }: { profi
   useEffect(() => { if (!cfg.layout) set({ layout: { blank: true } }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const lay = cfg.layout ?? { blank: true };
   const missing = missingItems(kind, cfg.pyeong, lay);
+  // 3D에서 물건을 누르고 바닥을 누르면 그 자리로 옮긴다 (고깃집 가게 꾸미기처럼)
+  const [sel, setSel] = useState<string | null>(null);
+  const edit: ShopEdit = { sel, pick: setSel, move: (id, x, z) => { set({ layout: { ...lay, moves: { ...(lay.moves ?? {}), [id]: [Math.round(x * 10) / 10, Math.round(z * 10) / 10] } } }); setSel(null); } };
   const st = guStat(profile.gu), dv = derived(cfg.ind), name = QF_NAME[cfg.ind];
   const open = qfOpeningCost(cfg, profile.gu, profile.keyMoney ?? 0);
   const left = profile.capital + cfg.loan - open.total;
@@ -82,7 +85,8 @@ export default function QuickFoodBuild({ profile, cfg, setCfg, onNext }: { profi
   return (
     <main className="m-build">
       <div className="m-stage">
-        <div className="m-canvas"><ShopRoom3D kind={kind} pyeong={cfg.pyeong} layout={lay} height="fill" flow /></div>
+        <div className="m-canvas"><ShopRoom3D kind={kind} pyeong={cfg.pyeong} layout={lay} height="fill" flow edit={edit} />
+          <p className="m-msg it-place" role="status">{sel ? "놓을 바닥을 누르세요. 같은 물건을 다시 누르면 그만둬요." : "3D에서 테이블·계산대·행거 같은 물건을 누르고, 놓을 바닥을 누르면 옮겨져요."}</p></div>
         <div className="m-room">
           <div className="m-stepper">
             <span id="qf-py">가게 크기</span>

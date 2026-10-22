@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Mark } from "./Checks";
 import { CAFE_GRADES, CAFE_ITEM_GRADE, CAFE_ITEM_PRICE, CAFE_PYEONG, cafeEstimate, cafeOpeningCost } from "./cafe";
 import { cafeChecks, cafeLayoutOf, type CafeCfg } from "./cafeChecks";
-import CafeRoom3D from "./CafeRoom3D";
+import CafeRoom3D, { type CafeEdit } from "./CafeRoom3D";
 import { useCafePreview } from "./useCafePreview";
 import { ItemIcon } from "./ItemTray";
 import { STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
@@ -38,6 +38,9 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
   // 고깃집처럼 빈 가게에서 시작해 물건을 골라 채운다 (머신과 계산대는 꼭 있어야 열 수 있다)
   const EMPTY = { tables: 0, chairs: 0, bar: 0, groups: 0, showcase: 0, oven: 0, kiosks: 0, pos: 0 };
   useEffect(() => { if (!cfgIn || cfgIn.tables === undefined) setCfgOut({ ...cfg, ...EMPTY }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // 3D에서 테이블(의자째)·키오스크를 누르고 바닥을 누르면 옮긴다. 엔진의 좌석 수 계산은 그대로
+  const [sel, setSel] = useState<string | null>(null);
+  const edit: CafeEdit = { sel, pick: setSel, move: (id, x, z) => { set({ moves: { ...(cfg.moves ?? {}), [id]: [Math.round(x * 10) / 10, Math.round(z * 10) / 10] } }); setSel(null); } };
   const missing = CATS.flatMap((c) => c.items).filter((it) => it.need && (lay[it.key] as number) < 1).map((it) => it.name);
   const open = cafeOpeningCost(cfg.pyeong, cfg.grade, profile.gu, profile.keyMoney ?? 0, lay, cfg.doors);
   const st = guStat(profile.gu);
@@ -58,7 +61,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
     <main className="m-build">
       <div className="m-stage">
         <div className="m-canvas">
-          {d ? <CafeRoom3D room={d.room} layout={d.layout} roster={d.staff.roster} height="fill" doors={cfg.doors} /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
+          {d ? <CafeRoom3D room={d.room} layout={d.layout} roster={d.staff.roster} height="fill" doors={cfg.doors} moves={cfg.moves} edit={edit} /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
         </div>
 
         <div className="m-room">
@@ -103,7 +106,8 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
           </div>
           <p>테이블 {lay.tables}개, {seats}석</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn"
-            onClick={() => setCfgOut({ pyeong: est.pyeong, grade: est.grade, staff: 1 })}>추천 배치</button>
+            onClick={() => setCfgOut({ pyeong: est.pyeong, grade: est.grade, staff: 1, doors: cfg.doors })}>추천 배치</button>
+          <small className="it-place2">{sel ? "놓을 바닥을 누르세요." : "3D에서 테이블·키오스크를 누르고 바닥을 누르면 옮겨져요."}</small>
         </div>
 
         <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>

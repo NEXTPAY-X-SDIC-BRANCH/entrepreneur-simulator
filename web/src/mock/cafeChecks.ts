@@ -22,7 +22,7 @@ export const areaFx = (p: number) => (p < 10 ? 0.89 : p < 30 ? 1 : 1.37);
 
 // 가게 꾸미기 입력. 3D 목업의 배치 입력(tables~pos)은 비워 두면 평수에서 어림한 값(독립 카페 평당 테이블 0.36개, 좌석 1.27석)을 쓴다.
 // shape·door: 가게 모양과 출입문 (엔진 sim/cafe/layout.py가 배치를 다시 푼다). 비어 있으면 가로로 긴 가게, 오른쪽 문
-export type CafeCfg = { pyeong: number; grade: Grade; staff: number; tables?: number; chairs?: number; bar?: number; groups?: number; showcase?: number; oven?: number; kiosks?: number; pos?: number; shape?: "wide" | "square" | "deep"; door?: "left" | "right"; doors?: number };
+export type CafeCfg = { pyeong: number; grade: Grade; staff: number; tables?: number; chairs?: number; bar?: number; groups?: number; showcase?: number; oven?: number; kiosks?: number; pos?: number; shape?: "wide" | "square" | "deep"; door?: "left" | "right"; doors?: number; moves?: Record<string, [number, number]> };
 export const cafeLayoutOf = (c: CafeCfg) => {
   const d = cafeDefaultCounts(c.pyeong);
   return { tables: c.tables ?? d.tables, chairs: c.chairs ?? d.chairs, bar: c.bar ?? d.bar, groups: c.groups ?? d.groups, showcase: c.showcase ?? d.showcase, oven: c.oven ?? d.oven, kiosks: c.kiosks ?? d.kiosks, pos: c.pos ?? d.pos };
