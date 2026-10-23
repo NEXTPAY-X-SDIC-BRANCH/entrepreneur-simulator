@@ -277,6 +277,22 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
 
       <section className="lm-sec">
         <h2>6개월 흐름</h2>
+        {(() => {
+          const hi = Math.max(1, ...s.months.map((m) => Math.abs(m.op)));
+          return (
+            <div className="lm-opbars" role="img" aria-label={s.months.map((m) => `${m.month}월 ${signedMan(m.op)}`).join(", ")}>
+              {s.months.map((m, i) => (
+                <div key={i} className="lm-opbar">
+                  <em className={m.op < 0 ? "is-neg" : ""}>{signedMan(m.op)}</em>
+                  <div className="lm-opbar-track"><i className={m.op < 0 ? "is-neg" : ""} style={{ blockSize: `${Math.max(4, (Math.abs(m.op) / hi) * 100)}%` }} /></div>
+                  <small>{m.month}월</small>
+                  <span className={m.cash_after < 0 ? "is-neg" : ""}>현금 {manWon(m.cash_after)}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+        <details className="lm-more"><summary>달마다 표로 보기</summary>
         <table className="lm-tbl lm-months">
           <thead><tr><th scope="col">달</th><th scope="col">매출</th><th scope="col">영업이익</th><th scope="col">남은 현금</th></tr></thead>
           <tbody>
@@ -298,6 +314,7 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
             })}
           </tbody>
         </table>
+        </details>
         {s.closed && <p className="lm-closed">{s.months.length}개월째 문을 닫았어요. {s.closed_reason ?? ""}</p>}
         <small className="lm-cashnote">{cashNote(res)}</small>
       </section>
@@ -306,18 +323,15 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
 
       <section className="lm-sec">
         <h2>이번 판에 채운 값과 근거</h2>
-        <table className="lm-tbl lm-shown">
-          <tbody>
-            {inp.shown.map((x) => (
-              <tr key={x.key}>
-                <th scope="row">{x.label}</th>
-                <td>{typeof x.value === "number" ? (x.value === 0 && x.unit === "만원" ? "0원" : `${x.value.toLocaleString("ko-KR")}${x.unit}`) : `${x.value}${x.unit}`}</td>
-                <td><span className={`lm-src lm-src-${x.src === "가정" ? "a" : x.src === "입력" ? "i" : "d"}`}>{x.src}</span></td>
-                <td><small>{basisOf(x)}</small></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul className="lm-shown-cards">
+          {inp.shown.map((x) => (
+            <li key={x.key}>
+              <div className="lm-shown-h"><span>{x.label}</span><span className={`lm-src lm-src-${x.src === "가정" ? "a" : x.src === "입력" ? "i" : "d"}`}>{x.src}</span></div>
+              <b>{typeof x.value === "number" ? (x.value === 0 && x.unit === "만원" ? "0원" : `${x.value.toLocaleString("ko-KR")}${x.unit}`) : `${x.value}${x.unit}`}</b>
+              <small>{basisOf(x)}</small>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="lm-sec lm-next" aria-labelledby="lm-next-h">

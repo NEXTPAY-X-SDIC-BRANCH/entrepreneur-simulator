@@ -8,8 +8,9 @@ export const signedMan = (won: number) => { const v = Math.round(won / 1e4); ret
 
 export function ScoreRow({ prev, cur }: { prev?: Attempt; cur: Attempt }) {
   const d = prev ? cur.scored.score.total - prev.scored.score.total : 0;
+  const t = cur.scored.score.total, tone = cur.summary.closed || t < 60 ? "is-bad" : t < 90 ? "is-mid" : "is-good";
   return (
-    <div className="lm-scores">
+    <div className={`lm-scores lm-scorecard ${tone}`}>
       {prev && (
         <>
           <div className="lm-score is-prev"><small>{prev.n}판</small><b>{prev.scored.score.total}</b><small>{prev.scored.score.band_label}</small></div>
@@ -19,10 +20,10 @@ export function ScoreRow({ prev, cur }: { prev?: Attempt; cur: Attempt }) {
       <div className="lm-score"><small>{cur.n}판{prev ? "" : "째 점수"}</small><b>{cur.scored.score.total}</b><small>{cur.scored.score.band_label}</small></div>
       <div className="lm-delta">
         {prev && <b className={d > 0 ? "is-up" : d < 0 ? "is-down" : ""}>{d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : "같음"}{d !== 0 && "점"}</b>}
-        <small>
-          6개월 영업이익{cur.summary.industry === "bbq" || cur.summary.industry === "cafe" ? "" : "(사장님 몫 빼기 전)"} {prev ? `${signedMan(cumOp(prev.summary))} → ` : ""}{signedMan(cumOp(cur.summary))}
-          {cur.summary.closed ? `, ${cur.summary.months.length}개월째 폐업` : ", 6개월 버팀"}
-        </small>
+        <ul className="lm-chips">
+          <li><small>6개월 영업이익{cur.summary.industry === "bbq" || cur.summary.industry === "cafe" ? "" : " (사장님 몫 빼기 전)"}</small><b className={cumOp(cur.summary) < 0 ? "is-neg" : "is-pos"}>{prev ? `${signedMan(cumOp(prev.summary))} → ` : ""}{signedMan(cumOp(cur.summary))}</b></li>
+          <li><small>버틴 기간</small><b className={cur.summary.closed ? "is-neg" : ""}>{cur.summary.closed ? `${cur.summary.months.length}개월째 폐업` : "6개월 버팀"}</b></li>
+        </ul>
         {cur.scored.stub && <small className="lm-stub">임시 점수: 성적표 기능이 붙기 전까지 쓰는 규칙이에요 (가정)</small>}
       </div>
     </div>
@@ -60,7 +61,7 @@ export function Fixes({ fixes, onFix }: { fixes: ScoreFix[]; onFix?: (control: s
       <h2>다음 판에 바꿔 볼 것</h2>
       <small>성적표가 이번 판에서 고른 것이에요. 바꿀지는 직접 정해요</small>
       {fixes.length === 0 && <p className="lm-quiet">고칠 점을 찾지 못했어요. 다른 동네나 평수로 견줘 보세요.</p>}
-      <ul className="lm-fixes">
+      <ul className="lm-fixes lm-fixcards">
         {fixes.map((f) => (
           <li key={f.key}>
             <div><b>{f.text}</b><small>{f.expected}</small></div>
@@ -108,13 +109,18 @@ export function Parts({ cur }: { cur: Attempt }) {
   return (
     <section className="lm-sec">
       <h2>점수 내역</h2>
-      <table className="lm-tbl">
-        <tbody>
-          {cur.scored.score.parts.map((p) => (
-            <tr key={p.key}><th scope="row">{p.label}</th><td className="lm-num">{p.score} / {p.max}</td><td><small>{p.why}</small></td></tr>
-          ))}
-        </tbody>
-      </table>
+      <ul className="lm-parts">
+        {cur.scored.score.parts.map((p) => {
+          const r = p.max ? p.score / p.max : 0;
+          return (
+            <li key={p.key} className={r >= 0.9 ? "is-good" : r >= 0.6 ? "is-mid" : "is-bad"}>
+              <div className="lm-part-h"><b>{p.label}</b><span className="lm-num"><b>{p.score}</b> / {p.max}</span></div>
+              <span className="lm-part-bar" aria-hidden><i style={{ inlineSize: `${r * 100}%` }} /></span>
+              <details><summary>왜 이 점수예요?</summary><p>{p.why}</p></details>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

@@ -152,3 +152,52 @@
 .lm-heatkey .k-neg { background: rgba(200, 60, 60, .5); } .lm-heatkey .k-pos { background: rgba(37, 106, 191, .5); }
 .lm-heatkey .k-closed { background: var(--weak); } .lm-heatkey .k-base { outline: 2px solid #14233a; outline-offset: -2px; }
 .lm-sensbtn { margin-top: 10px; }
+
+/* ---- 이지 결과 다듬기: 점수 카드, 점수 막대, 달마다 막대, 채운 값 카드 ---- */
+.lm-scorecard { align-items: center; padding: 22px 26px; border-radius: 20px; background: #eef2fe; border: 1px solid #d5def5; }
+.lm-scorecard.is-bad { background: #fbeceb; border-color: #f0cfcb; }
+.lm-scorecard.is-good { background: #e9f6ee; border-color: #cbe8d5; }
+.lm-scorecard .lm-score b { color: #22388f; }
+.lm-scorecard.is-bad .lm-score b { color: #b4372c; }
+.lm-scorecard.is-good .lm-score b { color: #1b6e43; }
+.lm-scorecard .lm-score small:last-child { display: inline-block; margin-block-start: 6px; padding: 2px 10px; border-radius: 999px; background: #fff; font-weight: 700; color: var(--ink2); }
+.lm-scorecard .lm-delta { padding: 0; max-inline-size: none; }
+.lm-chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 0; padding: 0; list-style: none; }
+.lm-chips li { display: grid; gap: 2px; padding: 10px 16px; border-radius: 14px; background: #fff; }
+.lm-chips small { font-size: 12.5px; color: var(--pencil); }
+.lm-chips b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.lm-chips .is-pos { color: #1b6e43; } .lm-chips .is-neg { color: #b4372c; }
+
+.lm-parts { display: grid; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
+.lm-parts li { padding: 12px 16px; border: 1px solid var(--rule); border-radius: 14px; background: var(--bg); }
+.lm-part-h { display: flex; justify-content: space-between; align-items: baseline; }
+.lm-part-h b { font-size: 16px; } .lm-part-h .lm-num b { font-size: 18px; }
+.lm-part-bar { display: block; block-size: 8px; margin: 8px 0 4px; border-radius: 999px; background: #edf0f6; overflow: hidden; }
+.lm-part-bar i { display: block; block-size: 100%; border-radius: 999px; background: #3d63ea; }
+.lm-parts li.is-mid .lm-part-bar i { background: #e2a33a; }
+.lm-parts li.is-bad .lm-part-bar i { background: #d0574b; }
+.lm-parts details summary { font-size: 13px; color: var(--blue-deep); cursor: pointer; }
+.lm-parts details p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--ink2); }
+
+.lm-fixcards li { padding: 14px 16px; margin-block-start: 10px; border: 1px solid #d5def5; border-inline-start: 4px solid #3d63ea; border-radius: 12px; background: #f7f9ff; }
+.lm-fixcards li b { font-size: 16px; }
+
+.lm-opbars { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 12px 0 8px; padding: 16px; border: 1px solid var(--rule); border-radius: 16px; }
+.lm-opbar { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.lm-opbar em { font-style: normal; font-size: 13px; font-weight: 700; color: #22388f; font-variant-numeric: tabular-nums; }
+.lm-opbar em.is-neg { color: #b4372c; }
+.lm-opbar-track { display: flex; align-items: flex-end; justify-content: center; inline-size: 100%; block-size: 110px; border-block-end: 1px solid #c9d1e0; }
+.lm-opbar-track i { display: block; inline-size: 46%; border-radius: 6px 6px 0 0; background: #4d6bd6; }
+.lm-opbar-track i.is-neg { background: #d98b82; }
+.lm-opbar small { font-weight: 600; }
+.lm-opbar span { font-size: 12px; color: var(--pencil); font-variant-numeric: tabular-nums; }
+.lm-opbar span.is-neg { color: #b4372c; }
+.lm-more { margin-block-start: 6px; }
+.lm-more summary { font-size: 14px; color: var(--blue-deep); cursor: pointer; }
+
+.lm-shown-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin: 10px 0 0; padding: 0; list-style: none; }
+.lm-shown-cards li { display: grid; gap: 4px; align-content: start; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 14px; background: var(--bg); }
+.lm-shown-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink2); }
+.lm-shown-cards b { font-size: 19px; font-variant-numeric: tabular-nums; }
+.lm-shown-cards small { font-size: 12.5px; line-height: 1.5; color: var(--pencil); }
+@media (max-width: 640px) { .lm-opbars { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
