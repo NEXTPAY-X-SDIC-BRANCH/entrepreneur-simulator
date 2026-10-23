@@ -1,7 +1,8 @@
 // lab:industry 4단계 시뮬레이션 (새 업종). 카페·고깃집 시뮬레이션과 같은 틀: 전체 화면 3D 위에 지표 줄, 왼쪽 현금 그래프와 운영 계획,
 // 시작·운영 계획·정산·결과는 팝업. 엔진은 새 업종 월 모델(/lab/industry/season, sim/generic)이다.
 // 한 달 = 운영 계획(가격·영업시간·직원·마케팅·배달) + 이달의 사건 대응 하나 -> 엔진이 그달 손익과 현금을 계산.
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ModeTag } from "../../mock/ModeSwitch";
 import { PEEK_BACK, useSimChrome } from "../ui/peek"; // lab:peek
 import CafeRoom3D from "../../mock/CafeRoom3D";
 import ShopRoom3D, { shopPlan } from "../../mock/ShopRoom3D";
@@ -57,7 +58,7 @@ function Row({ label, hint, value, minus, plus, canMinus, canPlus }: { label: st
   );
 }
 
-export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: Profile; cfg: IndustryCfg | null; onBack: () => void }) {
+export default function IndustrySim({ profile, cfg: cfgIn, onBack, mode = "hard" }: { profile: Profile; cfg: IndustryCfg | null; onBack: () => void; mode?: "easy" | "hard" }) {
   const ind = profile.industry as LabIndustry;
   const t = LAB_TXT[ind];
   const cfg: IndustryCfg = cfgIn && cfgIn.industry === ind ? cfgIn : { industry: ind, grade: "basic", delivery: true };
@@ -83,6 +84,10 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
   useEffect(() => { if (pv.data && !start) setPlan((p) => ({ ...p, staff: pv.data!.input.staff, delivery: pv.data!.input.delivery })); }, [pv.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cur = months[months.length - 1];
+  // 오른쪽 현금 흐름 기록 (다른 업종과 같은 자리). 엔진이 한 달을 한꺼번에 계산해서 달마다 영수증 한 장
+  const [receipt, setReceipt] = useState(true);
+  const receiptEnd = useRef<HTMLDivElement>(null);
+  useEffect(() => { receiptEnd.current?.scrollIntoView({ block: "end" }); }, [months.length, receipt]);
   const TOTAL = start?.months_total ?? 6;
   const ev = cur ? cur.next_event : start?.next_event;
   const nextMonth = cur ? cur.next_calendar_month ?? (cur.calendar_month % 12) + 1 : start?.start_month ?? startMonth;
@@ -175,6 +180,30 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
         <Metric icon={<IconHeart />} label="못 받은 손님" tip={<>좌석이나 일손이 모자라 받지 못한 주문(인분)이에요.</>}>{cur ? `${cur.kpi.walkaways.toLocaleString("ko-KR")}인분` : "-"}</Metric>
       </header>
 
+      <button type="button" className="sx-rtoggle" aria-expanded={receipt} onClick={() => setReceipt((v) => !v)}>{receipt ? "현금 흐름 기록 접기" : "현금 흐름 기록 펴기"}</button>
+      {receipt && start && (
+        <aside className="sx-receipt" aria-label="현금 흐름 기록">
+          <div className="sx-paper">
+            <p className="sx-r-title">현금 흐름 영수증</p>
+            <p className="sx-r-sub">{profile.gu} · 시작 현금 {wman(start.start_cash_krw)}</p>
+            <p className="sx-r-acc">엔진이 한 달을 한꺼번에 계산해서, 달이 끝날 때마다 한 장씩 쌓여요.</p>
+            {months.length === 0 && <p className="sx-r-empty">아직 찍힌 내역이 없어요. 첫 달이 끝나면 한 장씩 쌓여요.</p>}
+            {months.map((m) => (
+              <section key={m.month} className="sx-r-day">
+                <p className="sx-r-month">{m.calendar_month}월</p>
+                <p className="sx-r-head"><b>{m.calendar_month}월 한 달</b><span>손님 {m.kpi.covers.toLocaleString("ko-KR")}명</span></p>
+                <ul>
+                  <li className="in"><span>매출</span><b>+{wman(m.pnl.revenue_krw)}</b></li>
+                  {m.pnl.lines.filter((l) => Math.abs(l.krw) >= 10000).map((l) => <li key={l.key} className="out"><span>{l.item_ko}</span><b>−{wman(Math.abs(l.krw))}</b></li>)}
+                  {m.cash.loan_interest_krw + m.cash.loan_principal_krw > 0 && <li className="out"><span>대출 이자·원금</span><b>−{wman(m.cash.loan_interest_krw + m.cash.loan_principal_krw)}</b></li>}
+                </ul>
+                <p className="sx-r-sum"><span>남은 현금</span><b>{wman(m.cash.end_krw)}</b></p>
+              </section>
+            ))}
+            <div ref={receiptEnd} />
+          </div>
+        </aside>
+      )}
       <button type="button" className="sx-ctoggle" aria-expanded={chartOpen} onClick={() => setChartOpen((v) => !v)}>{chartOpen ? "현금 그래프 접기" : "현금 그래프 펴기"}</button>
       <div className="sx-leftcol">
         {chartOpen && start && (
@@ -236,7 +265,7 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
           {view === "plan" && start && ev && (
             <>
               <div className="sx-scroll">
-                <h1>{nextMonth}월 운영 계획</h1>
+                <h1>{nextMonth}월 운영 계획<ModeTag mode={mode} /></h1>
                 {start && !cur && <p className="sx-note">{start.loan.principal_krw > 0 ? `${wman(start.loan.principal_krw)}을 빌려 문을 열었어요. ${start.loan.note_ko} 매달 ${wman(start.loan.monthly_payment_krw)}씩 갚아요.` : "대출 없이 문을 열었어요."} 통장에 {wman(startCash)}이 남았어요.</p>}
                 {cur && (
                   <Kpis items={[
@@ -301,7 +330,7 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
           {view === "settle" && cur && (
             <>
               <div className="sx-scroll">
-                <h1>{cur.calendar_month}월 정산</h1>
+                <h1>{cur.calendar_month}월 정산<ModeTag mode={mode} /></h1>
                 {/* 다른 업종 정산과 같은 순서: 흑자/적자 상자 → 매출·나간 돈·영업이익·월말 현금 → 매출 100원 막대 → 자세히 보기 */}
                 <div className={`sc-hero ${Math.round(cur.kpi.op_krw / 1e4) >= 0 ? "" : "is-bad"}`}>
                   <h2>{Math.round(cur.kpi.op_krw / 1e4) === 0 ? "본전" : cur.kpi.op_krw > 0 ? "흑자" : "적자"} {sgn(cur.kpi.op_krw)}</h2>
@@ -361,7 +390,7 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
           {view === "report" && report && (
             <>
               <div className="sx-scroll">
-                <h1>{report.months_played}개월 결과</h1>
+                <h1>{report.months_played}개월 결과<ModeTag mode={mode} /></h1>
                 <Kpis items={[
                   { label: "마지막 현금", value: wman(report.end_cash_krw), main: true },
                   { label: "누적 영업이익", value: sgn(report.cumulative_op_krw), tone: tone(report.cumulative_op_krw) },

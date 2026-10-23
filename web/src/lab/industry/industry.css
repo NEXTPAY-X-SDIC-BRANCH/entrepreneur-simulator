@@ -59,3 +59,9 @@
 .is-row .m-stepper output { min-inline-size: 72px; text-align: center; font-variant-numeric: tabular-nums; }
 .is-own { font-size: 13px; color: #5b6b82; }
 .sx-pop-report .cs-chart { max-block-size: 220px; }
+
+/* 동네 분석에서 평수·마감 고르기, 모자란 돈 판 */
+.ia-setup { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 10px 0 14px; padding: 12px 14px; border: 1px solid #e3e8f1; border-radius: 14px; background: #fafbfd; }
+.ia-setup .m-stepper { min-inline-size: 220px; }
+.ia-fund { margin-block-start: 28px; padding-block-start: 22px; border-block-start: 1px solid #e3e8f1; }
+.ia-fund .m-finding h1 { font-size: 22px; }

@@ -94,8 +94,6 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
 }) {
   const [tab, setTab] = useState<Tab>("place");
   useFinance(); // lab:finance 은행을 고르면 아래 '이 시뮬레이터의 대출 이자' 줄도 다시 그린다
-  const [ftab, setFtab] = useState<FundTab>("pre");
-  const rates = useBankRates();
   const [ktab, setKtab] = useState<KTab>("sales");
   const [recOpen, setRecOpen] = useState(false);
   const [metric, setMetric] = useState<Metric>("demand");
@@ -112,7 +110,6 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
   const cost = profile.industry === "cafe" ? cafeEstimate(profile, RUNWAY_MONTHS * MONTHLY_BURN).cost : profile.industry === "apparel" ? apparelEstimate(profile).cost : profile.industry === "chicken" || profile.industry === "bunsik" ? qfEstimate(profile, profile.industry).cost : openingCost(est as ReturnType<typeof recommend>["store"], profile.gu, profile.keyMoney ?? 0);
   const need = cost.total + RUNWAY_MONTHS * MONTHLY_BURN;
   const gap = need - profile.capital;
-  const young = profile.age === "20대" || profile.age === "30대";
   const demandRank = rankOf(profile.gu, "demand", names);
   const rentRank = names.filter((n) => guStat(n).rent > st.rent).length + 1;
   const m = span(metric);
@@ -477,7 +474,19 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
           </div>
         )}
 
-        {tab === "fund" && (
+        {tab === "fund" && <FundPanel gap={gap} rentMan={st.rent * est.pyeong} profile={profile} onNext={onNext} />}
+      </section>
+    </main>
+  );
+}
+
+// '모자란 돈' 판: 정책자금(열기 전·등록 후), 은행 대출, 지원 사업. 고깃집·카페·옷가게 동네 분석과 새 업종 동네 분석(IndustryArea)이 같이 쓴다
+// gap: 모자란 돈(만원, 음수면 남는 돈), rentMan: 한 달 월세(만원)
+export function FundPanel({ gap, rentMan, profile, onNext }: { gap: number; rentMan: number; profile: Profile; onNext: () => void }) {
+  const [ftab, setFtab] = useState<FundTab>("pre");
+  const rates = useBankRates();
+  const young = profile.age === "20대" || profile.age === "30대";
+  return (
           <div className="m-finding" key="fund">
             {gap > 0 ? (
               <>
@@ -490,7 +499,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                 <p>남는 돈은 장사가 자리 잡기 전까지 버티는 데 쓰여요. 한 달에 {man(MONTHLY_BURN)}쯤 줄어든다고 보면 {Math.floor(-gap / MONTHLY_BURN) + RUNWAY_MONTHS}개월을 버틸 수 있어요.</p>
               </>
             )}
-            <RentCard rentMan={st.rent * est.pyeong} />{/* lab:finance 월세 카드 할부 */}
+            <RentCard rentMan={rentMan} />{/* lab:finance 월세 카드 할부 */}
             <div className="fd-tabs" role="tablist" aria-label="돈을 구하는 방법">
               {FUND_TABS.map((t, i) => {
                 const n = t.key === "pre" ? FUNDS.filter((f) => (f.pre === "가능" || f.pre === "조건부") && !f.program && (!f.youth || young)).length
@@ -567,8 +576,5 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
             </div>
             <button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button>
           </div>
-        )}
-      </section>
-    </main>
   );
 }

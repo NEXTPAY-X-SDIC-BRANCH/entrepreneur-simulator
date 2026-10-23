@@ -3,17 +3,20 @@
 // 자리 잡힌 달 매출과 여는 비용은 엔진(/lab/industry/preview)이 계산한다. 이 업종에 없는 지표(성장률, 동네 유형 이름 짓기, 상권 추천)는 보이지 않는다.
 import { useMemo, useState } from "react";
 import SeoulMap from "../../mock/SeoulMap";
-import { LOAN_RATE, METRICS, RAMP, T, dongsOf, guData, guStat, man, type Gu, type Metric, type Profile } from "../../mock/model";
+import { METRICS, RAMP, T, dongsOf, guData, guStat, man, type Grade, type Gu, type Metric, type Profile } from "../../mock/model";
+import { FundPanel } from "../../mock/Analysis";
 import { pct, usePreview, wman, type IndustryCfg } from "./api";
 import { LAB_TXT, isLab, josa, type LabIndustry } from "./industries";
 import "./industry.css";
 
 const RUNWAY = 3; // 가정: 자리 잡기 전 석 달 치 고정비
 
-export default function IndustryArea({ profile, setProfile, gus, onNext }: { profile: Profile; setProfile: (p: Profile) => void; gus: Gu[]; onNext: () => void }) {
+// cfg·setCfg: 여기서 고른 평수·마감이 가게 꾸미기(IndustryBuild)로 그대로 넘어간다
+export default function IndustryArea({ profile, setProfile, gus, onNext, cfg: cfgIn, setCfg }: { profile: Profile; setProfile: (p: Profile) => void; gus: Gu[]; onNext: () => void; cfg?: IndustryCfg | null; setCfg?: (c: IndustryCfg) => void }) {
   const ind = profile.industry as LabIndustry;
   const [metric, setMetric] = useState<Metric>("demand");
-  const cfg: IndustryCfg = useMemo(() => ({ industry: ind, grade: "basic", delivery: true }), [ind]);
+  const cfg: IndustryCfg = useMemo(() => (cfgIn && cfgIn.industry === ind ? cfgIn : { industry: ind, grade: "basic", delivery: true }), [cfgIn, ind]);
+  const setC = (x: Partial<IndustryCfg>) => setCfg?.({ ...cfg, ...x, tables: undefined });
   const pv = usePreview(profile, cfg);
   const t = LAB_TXT[ind];
   const names = gus.map((g) => g.name);
@@ -86,9 +89,24 @@ export default function IndustryArea({ profile, setProfile, gus, onNext }: { pro
 
         <section className="ia-sec" aria-labelledby="ia-cost">
           <h2 id="ia-cost">{p ? `${p.input.pyeong}평 ${josa(t.shop, "을를")} 열려면 ${wman(need)}쯤 필요해요` : "여는 데 드는 돈"}</h2>
+          {/* 평수와 마감을 여기서 바로 바꿔 드는 돈을 견줘 본다 (고깃집·카페 동네 분석의 '드는 돈'과 같은 칸) */}
+          <div className="ia-setup">
+            <div className="m-stepper">
+              <span id="ia-py">평수</span>
+              <button type="button" aria-label="1평 줄이기" disabled={!p || p.input.pyeong <= 5} onClick={() => p && setC({ pyeong: p.input.pyeong - 1 })}>−</button>
+              <output aria-labelledby="ia-py">{p ? `${p.input.pyeong}평` : "-"}</output>
+              <button type="button" aria-label="1평 늘리기" disabled={!p || p.input.pyeong >= 80} onClick={() => p && setC({ pyeong: p.input.pyeong + 1 })}>+</button>
+            </div>
+            <div className="m-seg" role="group" aria-label="마감 수준">
+              {([["basic", "기본"], ["mid", "중급"], ["high", "고급"]] as [Grade, string][]).map(([g, l]) => (
+                <button type="button" key={g} aria-pressed={cfg.grade === g} onClick={() => setC({ grade: g })}>{l} 마감</button>
+              ))}
+            </div>
+            {cfg.pyeong != null && <button type="button" className="m-link" onClick={() => setC({ pyeong: undefined })}>업종 보통 크기로</button>}
+          </div>
           {p && (
             <table className="m-quote">
-              <caption>평당 설비비는 경영실태조사 2025 개업 투자 비용의 25% 분위(기본 마감)예요. 다음 단계에서 평수와 마감을 바꿀 수 있어요.</caption>
+              <caption>평당 설비비는 경영실태조사 2025 개업 투자 비용의 25·50·75% 분위(기본·중급·고급 마감)예요. 여기서 고른 평수와 마감이 가게 꾸미기로 이어져요.</caption>
               <tbody>
                 {p.capex.lines.filter((l) => l.krw > 0).map((l) => <tr key={l.key}><th scope="row">{l.item_ko}<small>{l.note_ko}</small></th><td>{wman(l.krw)}</td></tr>)}
                 <tr><th scope="row">석 달 치 월세와 인건비<small>자리 잡기 전 버틸 돈, 가정</small></th><td>{wman(fixed3)}</td></tr>
@@ -99,8 +117,10 @@ export default function IndustryArea({ profile, setProfile, gus, onNext }: { pro
               </tfoot>
             </table>
           )}
-          {p && <p className={gap > 0 ? "ia-note ia-warn" : "ia-note"}>{gap > 0 ? `가진 돈보다 ${wman(gap)}이 모자라요. 시뮬레이션에서는 모자란 만큼을 대출(연 ${(LOAN_RATE * 100).toFixed(2)}%, 한국은행 은행 중소기업 대출금리)로 계산해요.` : `가진 돈으로 열 수 있고 ${wman(-gap)}이 남아요.`}</p>}
         </section>
+
+        {/* 모자란 돈 구할 방법: 정책자금·은행 대출·지원 사업 (고깃집·카페 동네 분석과 같은 판) */}
+        {p && <section className="ia-sec ia-fund" aria-label="모자란 돈 구할 방법"><FundPanel gap={Math.round(gap / 1e4)} rentMan={st.rent * p.input.pyeong} profile={profile} onNext={onNext} /></section>}
 
         <details className="m-srcnote"><summary>숫자의 출처와 한계</summary>
           <p className="m-src">
@@ -109,9 +129,7 @@ export default function IndustryArea({ profile, setProfile, gus, onNext }: { pro
             월세는 한국부동산원 소규모 상가 1층 임대료에서 보증금 환산분을 뺀 현금 월세예요.{ind === "hansik" ? " 한식 백반집은 상권분석서비스에 따로 코드가 없어 한식음식점 전체(고깃집 포함) 값을 써요." : ""}
           </p>
         </details>
-        <div className="ia-go">
-          <button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button>
-        </div>
+        {!p && <div className="ia-go"><button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button></div>}
         <p className="ia-note">{T().shop}의 성장률(2024년 대비 매출)과 동네 유형 이름은 자료가 없어 보여 드리지 않아요.</p>
       </section>
     </main>

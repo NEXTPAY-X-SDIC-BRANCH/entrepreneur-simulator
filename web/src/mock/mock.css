@@ -708,3 +708,11 @@ html:has(.m-app) { background: #fff; }
 .m-checks > .m-src { margin-block-start: 14px; }
 /* 가게 꾸미기: 아래 안내 말풍선이 왼쪽 판(가게 크기·배치·추천 배치)을 가리지 않게 판 오른쪽에서 시작 */
 @media (min-width: 900px) { .m-stage > .m-msg { inset-inline-start: 372px; max-inline-size: max(240px, calc(100% - 388px - 320px)); } }
+/* 머리글: 버튼이 늘어도 한 줄에 (로그인이 아래 줄로 밀리지 않게) */
+@media (min-width: 1100px) {
+  .m-top { flex-wrap: nowrap; gap: 8px 12px; padding-inline: max(16px, calc((100% - 1340px) / 2)); }
+  .m-top > * { flex-shrink: 0; }
+  .m-top nav { flex-shrink: 1; min-inline-size: 0; }
+  .m-top nav ol { flex-wrap: nowrap; }
+  .m-top nav button { padding: 6px 9px; font-size: 15px; white-space: nowrap; }
+}

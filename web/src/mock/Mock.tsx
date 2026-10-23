@@ -168,9 +168,9 @@ export default function Mock() {
       {!loginOpen && ready && ind === "apparel" && step === "build" && <ApparelBuild profile={profile} cfg={apparelCfg} setCfg={setApparelCfg} onNext={() => go("sim")} />}
       {!loginOpen && ready && ind === "apparel" && step === "sim" && <ApparelSim profile={profile} cfg={apparelCfg} onBack={() => go("build")} />}
       {/* lab:merge 치킨·분식은 lab 엔진(sim/generic) 화면으로 간다. upstream QuickFoodBuild·QuickFoodSim은 남겨 두지만 연결하지 않는다 (업종 고르기에 같은 업종이 두 번 나오지 않게) */}
-      {!loginOpen && ready && isLab(ind) && step === "area" && <IndustryArea profile={profile} setProfile={setProfile} gus={gus} onNext={() => go("build")} />} {/* lab:industry */}
+      {!loginOpen && ready && isLab(ind) && step === "area" && <IndustryArea profile={profile} setProfile={setProfile} gus={gus} onNext={() => go("build")} cfg={indCfg} setCfg={setIndCfg} />} {/* lab:industry */}
       {!loginOpen && ready && isLab(ind) && step === "build" && <IndustryBuild profile={profile} cfg={indCfg} setCfg={setIndCfg} onNext={() => go("sim")} />} {/* lab:industry */}
-      {!loginOpen && ready && isLab(ind) && step === "sim" && <IndustrySim profile={profile} cfg={indCfg} onBack={() => go("build")} />} {/* lab:industry */}
+      {!loginOpen && ready && isLab(ind) && step === "sim" && <IndustrySim profile={profile} cfg={indCfg} onBack={() => go("build")} mode={mode ?? "hard"} />} {/* lab:industry */}
       {!loginOpen && ready && ind === "bbq" && step === "build" && (
         <Suspense fallback={<p className="m-loading">가게 도면을 펴는 중이에요</p>}>
           <Builder profile={profile} store={store} setStore={setStore} levers={levers} setLevers={setLevers} onNext={() => go("sim")} />
