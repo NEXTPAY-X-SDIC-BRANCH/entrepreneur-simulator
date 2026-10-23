@@ -250,3 +250,6 @@
 .lm-shown-cards b { font-size: 15px; line-height: 1.4; }
 .lm-shown-cards small { font-size: 11.5px; line-height: 1.45; }
 .lm-opchart { max-inline-size: none; }
+/* 그래프를 범례에서 조금 아래로 */
+.lm-opchart-key { margin-block-end: 36px; }
+.lm-opcol > b { margin-block-start: 26px; }
