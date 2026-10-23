@@ -7,6 +7,7 @@ import { easyRun, netErr, type EasyInputs, type EasyRes, type Overrides } from "
 import { addAttempt, nextAttemptNo, useAttempts, type Attempt } from "./attempts";
 import Compare, { AttemptLine, Parts, controlOf, manWon, signedMan } from "./Compare";
 import { scoreOf } from "./scoreStub";
+import { StandingPanel } from "../score/ScoreCard"; // lab:standing
 import { bbqSummary, cafeSummary, easyInputsOf, genericSummary } from "./summary";
 import "./modes.css";
 
@@ -266,6 +267,7 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
         </aside>
       )}
       <Compare prev={prev} cur={cur} onFix={focusCtl} derived={loanAuto ? ["loan_man"] : []} />
+      <StandingPanel summary={cur.summary} total={cur.scored.score.total} />{/* lab:standing 상위 몇 %, 놓친 것 */}
       <AttemptLine list={list} />
 
       <section className="lm-sec">

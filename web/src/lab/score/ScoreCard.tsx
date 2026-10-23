@@ -3,7 +3,7 @@
 // 순서: 총점과 눈금자(0·60·90) → 영역별 점수와 이유 → AI 진단(근본 원인, 다음 판) → 반 랭킹(닉네임 + 반 코드).
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Score, SeasonSummary } from "../types";
-import { getAdmin, getCoach, getRank, getScore, loadLogin, saveLogin, submit, type Admin, type Coach, type Login, type RankRow, type Submit } from "./api";
+import { getAdmin, getCoach, getRank, getScore, getStanding, loadLogin, saveLogin, submit, type Admin, type Coach, type Login, type RankRow, type Standing, type Submit } from "./api";
 import "./score.css";
 
 const PART_KO: Record<string, string> = { profit: "수익성", survival: "생존", cash: "현금 여유", customer: "손님", cost: "비용 구조", risk: "위험 대응" };
@@ -184,11 +184,73 @@ function RankBox({ summary, score, onRank }: { summary: SeasonSummary; score: Sc
   );
 }
 
+// lab:standing 내 자리: 같은 업종·가진 돈 구간에서 엔진으로 돌린 판들의 점수 분포와 내 위치, 그리고 놓친 것 3가지
+const won = (krw: number) => `${krw < 0 ? "−" : "+"}${Math.abs(Math.round(krw / 1e4)).toLocaleString("ko-KR")}만원`;
+function StandingBox({ st, busy, err, total }: { st: Standing | null; busy: boolean; err: string; total: number }) {
+  if (err) return <section className="ls-stand"><p className="ls-muted">비교할 판을 불러오지 못했어요: {err}</p></section>;
+  if (!st) return <section className="ls-stand"><p className="ls-muted">같은 조건의 판들과 비교하는 중이에요. 내 가게를 엔진으로 몇 번 더 돌려요.</p></section>;
+  const peak = Math.max(1, ...st.hist), mine = Math.min(9, Math.floor(total / 10));
+  return (
+    <section className="ls-stand" aria-labelledby="ls-stand-h">
+      <div className="ls-stand-l">
+        <h3 id="ls-stand-h" className="ls-cap">내 자리</h3>
+        <p className="ls-pct">상위 <b>{st.top_pct}%</b></p>
+        <small>{st.cohort}, 엔진으로 돌린 {st.n.toLocaleString("ko-KR")}판과 비교했어요. 수강생 기록이 쌓이면 그 기록과 비교해요.</small>
+      </div>
+      <div className="ls-hist" role="img" aria-label={`점수 분포에서 ${total}점은 상위 ${st.top_pct}%`}>
+        {st.hist.map((c, i) => (
+          <div key={i} className={i === mine ? "is-me" : ""}>
+            <i style={{ blockSize: `${(c / peak) * 100}%` }} />
+            {i === mine && <em>나</em>}
+            <span>{i * 10}</span>
+          </div>
+        ))}
+      </div>
+      <div className="ls-missed">
+        <h3 className="ls-cap">놓친 것{st.missed.length ? ` ${st.missed.length}가지` : ""}</h3>
+        {busy && <p className="ls-muted">계산 중이에요</p>}
+        {!st.missed.length ? <p className="ls-muted">상위 10% 판과 다르게 고른 것 가운데 바꿔서 나아지는 것이 없었어요.</p> : (
+          <ol>
+            {st.missed.map((m, i) => (
+              <li key={m.key}>
+                <span className="ls-no">{i + 1}</span>
+                <div>
+                  <b>{m.label}</b>
+                  <p>내 선택 <strong>{m.mine}</strong>, 상위 10%는 <strong>{m.top}</strong></p>
+                  <p className="ls-eff">이것만 바꿔 다시 돌리면 6개월 영업이익 <strong>{won(m.d_op_krw)}</strong>{m.d_score ? `, 점수 ${m.d_score > 0 ? "+" : ""}${m.d_score}점` : ""}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+        <small>놓친 것은 내 가게를 엔진으로 다시 돌려(이달의 사건은 기본 대응) 그 항목 하나만 바꾼 판과 비교한 값이에요. 사건 뽑기에 따라 흔들려서 5번 돌려 평균을 냈고, 5번 중 4번 이상 나아진 것만 보여 줘요. 상위 10%가 많이 고른 값이 늘 정답은 아니에요.</small>
+      </div>
+    </section>
+  );
+}
+
+// 성적표 없이 쓰는 화면(이지 모드 결과)용: 스스로 불러온다
+export function StandingPanel({ summary, total }: { summary: SeasonSummary; total: number }) {
+  const [st, setSt] = useState<Standing | null>(null);
+  const [err, setErr] = useState("");
+  const key = useMemo(() => JSON.stringify(summary), [summary]);
+  useEffect(() => {
+    let alive = true;
+    setSt(null); setErr("");
+    getStanding(summary).then((s) => alive && setSt(s)).catch((e) => alive && setErr(String(e.message ?? e)));
+    return () => { alive = false; };
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (summary.industry !== "bbq" && summary.industry !== "cafe") return null;
+  return <div className="ls-card ls-solo"><StandingBox st={st} busy={false} err={err} total={total} /></div>;
+}
+
 export default function ScoreCard({ summary }: { summary: SeasonSummary }) {
   const [score, setScore] = useState<Score | null>(null);
   const [coach, setCoach] = useState<Coach | null>(null);
   const [coachBusy, setCoachBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [stand, setStand] = useState<Standing | null>(null); // lab:standing
+  const [standErr, setStandErr] = useState("");
   const [best, setBest] = useState<{ me?: number | null; top?: number | null; topDemo?: boolean }>({});
   const alive = useRef(true);
   const key = useMemo(() => JSON.stringify(summary), [summary]);
@@ -200,7 +262,9 @@ export default function ScoreCard({ summary }: { summary: SeasonSummary }) {
 
   useEffect(() => {
     alive.current = true;
-    setScore(null); setCoach(null); setErr("");
+    setScore(null); setCoach(null); setErr(""); setStand(null); setStandErr("");
+    if (summary.industry === "bbq" || summary.industry === "cafe") // lab:standing 새 업종은 아직 비교 판이 없다
+      getStanding(summary).then((s) => alive.current && setStand(s)).catch((e) => alive.current && setStandErr(String(e.message ?? e)));
     getScore(summary).then((s) => alive.current && setScore(s)).catch((e) => alive.current && setErr(String(e.message ?? e)));
     // 규칙 진단을 먼저 보여 주고, 로컬 언어 모델의 진단이 오면 바꾼다 (실패하면 서버가 규칙 문장을 돌려준다)
     // 규칙 진단은 AI 진단을 덮어쓰지 않는다 (캐시 덕에 둘이 거의 같이 도착할 수 있다)
@@ -222,6 +286,7 @@ export default function ScoreCard({ summary }: { summary: SeasonSummary }) {
           <h2 id="ls-h" className="ls-cap">6개월 성적표</h2>
           <p className="ls-num"><b>{score.total}</b><span>/100</span></p>
           <p className="ls-band">{score.band_label}</p>
+          {stand && <p className="ls-pctchip">상위 {stand.top_pct}%</p>}{/* lab:standing */}
         </div>
         <div className="ls-head-r">
           <Ruler total={score.total} best={best.me} top={best.top} topDemo={best.topDemo} />
@@ -231,6 +296,7 @@ export default function ScoreCard({ summary }: { summary: SeasonSummary }) {
           </p>
         </div>
       </header>
+      {(summary.industry === "bbq" || summary.industry === "cafe") && <StandingBox st={stand} busy={false} err={standErr} total={score.total} />}
       <div className="ls-body">
         <section aria-label="영역별 점수"><Parts score={score} /></section>
         <RankBox summary={summary} score={score} onRank={(rows, nick) => onRank(rows, nick, false)} />
