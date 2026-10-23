@@ -25,6 +25,10 @@ export const getCoach = (s: SeasonSummary, llm: boolean) => call<Coach>("/coach"
 export const submit = (l: Login, s: SeasonSummary) => call<Submit>("/score/submit", { ...l, summary: s });
 export const getRank = (cls: string, industry: string) =>
   call<{ rank: RankRow[]; class_size: number }>(`/score/rank?class_code=${encodeURIComponent(cls)}&industry=${encodeURIComponent(industry)}`);
+// lab:standing 같은 업종·돈 구간의 엔진 판 중 내 자리와 놓친 것 (api/lab_modes.py /lab/standing)
+export type Missed = { key: string; label: string; mine: string; top: string; d_score: number; d_op_krw: number };
+export type Standing = { score: number; top_pct: number; n: number; cohort: string; source: "engine" | "learners"; hist: number[]; top_cut: number; missed: Missed[] };
+export const getStanding = (s: SeasonSummary) => call<Standing>("/lab/standing", { summary: s });
 export const getAdmin = (cls: string) => call<Admin>(`/score/admin?class_code=${encodeURIComponent(cls)}`);
 
 const KEY = "cu.lab.login";

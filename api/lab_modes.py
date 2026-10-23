@@ -2,6 +2,7 @@
 
     POST /lab/easy/defaults   업종, 구(동), 자본금(평수) -> 채운 입력과 근거 (엔진을 돌리지 않음, 빠름)
     POST /lab/easy/run        같은 입력 -> 채운 입력 + 6개월 결과 (고깃집 = /season/run 응답, 카페 = start/months/report)
+    POST /lab/standing        6개월 결과(SeasonSummary) -> 같은 업종·돈 구간 엔진 판 중 상위 몇 %, 놓친 것 3가지 (lab:standing)
     POST /lab/sensitivity     같은 계획을 손님·고깃값(재료비)·월세·인건비 ±로 여러 번 -> 토네이도 + 3x3 격자
 
 업종: bbq, cafe, 새 업종 5개(hansik, pub, bunsik, bakery, chicken; sim/generic, 결과는 report.season_summary).
@@ -98,5 +99,25 @@ def sensitivity(b: SensIn) -> dict:
     with C._LOCK:   # 엔진의 점포 설정과 한 달 설정 함수를 잠깐 바꾸므로 다른 요청과 겹치면 안 된다
         try:
             return E.sensitivity_bbq(b.body, b.ranges)
+        except (KeyError, TypeError, ValueError) as e:
+            raise HTTPException(422, f"입력 오류: {e}") from e
+
+
+# lab:standing 6개월 결과의 '상위 몇 %'와 '놓친 것' (sim/standing.py). MVP는 엔진으로 돌려 둔 판들과 비교한다
+class StandingIn(BaseModel):
+    summary: dict[str, Any]
+
+
+@router.post("/standing")
+def standing(b: StandingIn) -> dict:
+    from api import changeup as C
+    from api.lab_score import clean_summary
+    from sim import standing as SD
+    s = clean_summary(b.summary)
+    with C._LOCK:   # 내 가게를 다시 돌리며 엔진의 점포 설정을 바꾼다
+        try:
+            return SD.standing(s)
+        except FileNotFoundError as e:
+            raise HTTPException(503, "비교할 판이 아직 없어요 (python -m sim.standing build)") from e
         except (KeyError, TypeError, ValueError) as e:
             raise HTTPException(422, f"입력 오류: {e}") from e

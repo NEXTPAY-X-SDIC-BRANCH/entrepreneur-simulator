@@ -456,7 +456,11 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
   const prevPlan = months.length > 1 ? months[months.length - 2].decisions : undefined;
   const occupancy = view === null && sched[hourIdx] ? (sched[hourIdx].orders / maxOrders) * 0.9 : 0;
   const recs = view === "plan" ? recommend(cur, plan) : [];
-  const scoreSummary = view === "report" && start && months.length ? cafeSummary(months, start.start, { gu: profile.gu, dong: profile.dong?.name ?? null, pyeong: cfg.pyeong, grade: cfg.grade, staff: cfg.staff }) : null; // lab:score
+  const scoreSummary = view === "report" && start && months.length ? cafeSummary(months, start.start, { gu: profile.gu, dong: profile.dong?.name ?? null, pyeong: cfg.pyeong, grade: cfg.grade, staff: cfg.staff,
+    // lab:standing 상위 % 와 놓친 것 계산에 쓰는 값: 가진 돈, 마지막 달 운영, 처음보다 바뀐 가격
+    capital_man: profile.capital, hours: months.at(-1)!.decisions.hours, marketing_krw: months.at(-1)!.decisions.marketing_krw,
+    dessert: months.at(-1)!.decisions.dessert, delivery: months.at(-1)!.decisions.delivery,
+    price_change_pct: Math.round(((months.at(-1)!.decisions.price_level ?? 1) - 1) * 100) }) : null; // lab:score
   const nextMonth: number = cur ? (cur.calendar_month % 12) + 1 : start?.start_month ?? startMonth;
   const place = dongPick?.scope === "dong" ? `${profile.gu} ${dongPick.name}` : `${profile.gu} (대표 동네 ${dongPick?.name ?? ""})`;
 
