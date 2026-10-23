@@ -48,6 +48,7 @@ class SeasonIn(StoreIn):
     seed: int = Field(0, ge=0, le=2_147_483_647)
     start_month: int | None = Field(None, ge=1, le=12)
     extra_loan_krw: int | None = Field(None, ge=0, le=500_000_000)
+    loan_rate: float | None = Field(None, gt=0, lt=0.3)   # lab:merge 가게 꾸미기에서 고른 은행·정책자금 연 금리 (소수, 0.045 = 4.5%). 없으면 한국은행 평균
 
 
 class MonthIn(BaseModel):

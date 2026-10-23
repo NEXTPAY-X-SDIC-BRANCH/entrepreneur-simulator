@@ -3,6 +3,7 @@
 // 자리 잡힌 달 매출과 여는 비용은 엔진(/lab/industry/preview)이 계산한다. 이 업종에 없는 지표(성장률, 동네 유형 이름 짓기, 상권 추천)는 보이지 않는다.
 import { useMemo, useState } from "react";
 import SeoulMap from "../../mock/SeoulMap";
+import { FundsPanel } from "../../mock/Analysis"; // lab:merge 돈 구하는 길
 import { LOAN_RATE, METRICS, RAMP, T, dongsOf, guData, guStat, man, type Gu, type Metric, type Profile } from "../../mock/model";
 import { pct, usePreview, wman, type IndustryCfg } from "./api";
 import { LAB_TXT, isLab, josa, type LabIndustry } from "./industries";
@@ -101,6 +102,13 @@ export default function IndustryArea({ profile, setProfile, gus, onNext }: { pro
           )}
           {p && <p className={gap > 0 ? "ia-note ia-warn" : "ia-note"}>{gap > 0 ? `가진 돈보다 ${wman(gap)}이 모자라요. 시뮬레이션에서는 모자란 만큼을 대출(연 ${(LOAN_RATE * 100).toFixed(2)}%, 한국은행 은행 중소기업 대출금리)로 계산해요.` : `가진 돈으로 열 수 있고 ${wman(-gap)}이 남아요.`}</p>}
         </section>
+
+        {p && ( // lab:merge 수빈 10/23: 고깃집·카페처럼 '모자란 돈' (정책자금, 은행 대출 상품, 지원사업, 월세 카드 할부)
+          <section className="ia-sec ia-funds" aria-labelledby="ia-fund">
+            <h2 id="ia-fund">{gap > 0 ? `모자란 ${wman(gap)}을 구하는 길` : "돈을 구하는 길"}</h2>
+            <FundsPanel gap={Math.round(gap / 1e4)} young={profile.age === "20대" || profile.age === "30대"} gu={profile.gu} rentMan={st.rent * p.input.pyeong} />
+          </section>
+        )}
 
         <details className="m-srcnote"><summary>숫자의 출처와 한계</summary>
           <p className="m-src">

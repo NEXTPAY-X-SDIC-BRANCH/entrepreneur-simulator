@@ -89,13 +89,97 @@ function DetailRow({ title, sub, scope, value }: Detail) {
 }
 type Kpi = { key: KTab; name: string; tag: string; tone: Tone; value: string; unit: string; sub: string; subTone?: "up" | "down"; basis: string; rows: Detail[] };
 
+// '모자란 돈' 안의 돈 구하는 길: 월세 카드 할부, 정책자금(등록 전·후), 은행 대출 상품, 접수 중인 지원사업.
+// 동네 분석(고깃집·카페·옷가게)과 새 업종 동네 분석(lab/industry/IndustryArea)이 같이 쓴다 (lab:merge 수빈 10/23: 한식·호프에도 대출 칸)
+export function FundsPanel({ gap, young, gu, rentMan }: { gap: number; young: boolean; gu: string; rentMan: number }) {
+  useFinance(); // lab:finance 은행을 고르면 아래 '이 시뮬레이터의 대출 이자' 줄도 다시 그린다
+  const [ftab, setFtab] = useState<FundTab>("pre");
+  const rates = useBankRates();
+  return (
+    <>
+      <RentCard rentMan={rentMan} />{/* lab:finance 월세 카드 할부 */}
+      <div className="fd-tabs" role="tablist" aria-label="돈을 구하는 방법">
+        {FUND_TABS.map((t, i) => {
+          const n = t.key === "pre" ? FUNDS.filter((f) => (f.pre === "가능" || f.pre === "조건부") && !f.program && (!f.youth || young)).length
+            : t.key === "post" ? FUNDS.filter((f) => f.pre === "등록 후" && !f.program && (!f.youth || young)).length
+            : t.key === "bank" ? BANKS.length : null;
+          return (
+            <button key={t.key} type="button" role="tab" id={`ftab-${t.key}`} aria-selected={ftab === t.key} aria-controls="fpanel"
+              className="fd-tab" onClick={() => setFtab(t.key)}>
+              <span className="fd-tab-top"><span className="fd-num" aria-hidden="true">{i + 1}</span>{n != null && <span className="fd-cnt">{n}건</span>}</span>
+              <b>{t.label}</b>
+              <small>{t.key === "pre" ? "가게를 열기 전에" : t.key === "post" ? "사업자등록을 한 뒤에" : t.key === "bank" ? "은행별 상품과 금리" : "교육·공모·지원금"}</small>
+            </button>
+          );
+        })}
+      </div>
+      <div className="m-fpanel" id="fpanel" role="tabpanel" aria-labelledby={`ftab-${ftab}`} key={ftab}>
+        {(ftab === "pre" || ftab === "post") && (() => {
+          const t = FUND_TABS.find((x) => x.key === ftab)!;
+          const list = FUNDS.filter((f) => (ftab === "pre" ? f.pre === "가능" || f.pre === "조건부" : f.pre === "등록 후") && !f.program && (!f.youth || young));
+          return (
+            <div className="m-funds">
+              <p className="fd-lead"><b>{t.title}</b>{t.lead}</p>
+              {list.length ? (
+                <ul className="fd-cards">
+                  {list.map((f) => <FundCard key={f.name} f={f} />)}
+                </ul>
+              ) : <p className="m-aside">지금 조건에 맞는 자금이 목록에 없어요.</p>}
+              {!young && <p className="m-aside">나이 조건(만 39세 이하)이 있는 청년 자금은 목록에서 뺐어요.</p>}
+              <small className="m-src">{FUNDS_SRC}. 업계 글을 모은 표라 한도와 금리는 기관 공고 원문으로 확인해야 해요.</small>
+            </div>
+          );
+        })()}
+        {ftab === "bank" && (
+          <div className="m-funds">
+            <p className="fd-lead"><b>은행에서 사업자 대출 알아보기</b>
+              지역신용보증재단 보증서를 담보로 한 대출은 은행에서 방문 없이 신청할 수 있어요 (<a href={BANK_GUARANTEE_URL} target="_blank" rel="noreferrer">신용보증재단중앙회 안내</a>).
+              지금 은행 중소기업대출 평균 금리는 <mark>연 {ecosRates()?.loan_sme?.rate ?? +(LOAN_RATE * 100).toFixed(2)}%</mark>예요.</p>{/* lab:merge 고른 은행 금리가 아니라 한국은행 평균 */}
+            <div className="fd-hubs">
+              <a className="fd-hub" href={BANK_COMPARE_URL} target="_blank" rel="noreferrer">
+                <small>모든 은행 한눈에</small><b>개인사업자 대출 금리 비교</b><span>은행연합회 소비자포털 · 보증서·신용·마이너스 대출을 은행별로</span><i aria-hidden="true">→</i>
+              </a>
+              <a className="fd-hub" href={BANK_SEARCH_URL} target="_blank" rel="noreferrer">
+                <small>상품 찾기</small><b>은행 대출 상품 검색</b><span>은행연합회 소비자포털 · 조건을 넣어 상품을 찾아요</span><i aria-hidden="true">→</i>
+              </a>
+              <a className="fd-hub" href={SEMAS_FUND_URL} target="_blank" rel="noreferrer">
+                <small>정책자금</small><b>소상공인정책자금 누리집</b><span>소상공인시장진흥공단 · 직접대출과 대리대출 신청</span><i aria-hidden="true">→</i>
+              </a>
+            </div>
+            <LabBankRates loanMan={gap} young={young} />{/* lab:finance 고른 금리가 대출 이자 계산에 들어간다 (자료: 은행연합회 비교공시) */}
+            <details className="m-srcnote"><summary>보증비율·신용등급별 공시 금리 표</summary><BankRates /></details>{/* upstream 은행연합회 비교공시 표 */}
+            <ul className="fd-banks">
+              {BANKS.map((b) => (
+                <li key={b.name}>
+                  <a href={b.url} target="_blank" rel="noreferrer">
+                    <img src={`${import.meta.env.BASE_URL}mock/banks/${b.icon}`} alt="" width={44} height={44} />
+                    <span><b>{b.name}</b><small>{rates?.banks[b.name]?.보증서담보대출 ? `보증서담보 연 ${bankRateOf(rates, b.name)!.보증서담보대출!.avg.toFixed(2)}% · ` : ""}{b.app}</small></span>
+                    <em className={b.kind === "상품" ? "" : "is-cmp"}>{b.kind === "상품" ? "상품 페이지" : "금리 비교"}</em>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <small className="m-src">모든 링크는 앱 설치나 보안 프로그램 없이 웹에서 열려요 (2026년 10월 확인). IBK·NH·신한은 로그인 없이 볼 수 있는 상품 페이지가 없어 은행연합회 비교표로 연결해요.
+              이 화면은 은행을 추천하거나 신청을 받지 않아요. 이 시뮬레이터의 대출 이자는 연 {+(LOAN_RATE * 100).toFixed(2)}%로 계산해요 ({loanRateInfo().who}, {loanRateInfo().label}). {/* lab:finance */}</small>
+          </div>
+        )}
+        {ftab === "support" && (
+          <KStartup young={young} gu={gu} before={(() => {
+            const progs = FUNDS.filter((f) => f.program && (!f.youth || young));
+            return progs.length ? (
+              <ul className="fd-cards">{progs.map((f) => <FundCard key={f.name} f={f} />)}</ul>
+            ) : null;
+          })()} />
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function Analysis({ profile, setProfile, gus, onNext }: {
   profile: Profile; setProfile: (p: Profile) => void; gus: Gu[]; onNext: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("place");
-  useFinance(); // lab:finance 은행을 고르면 아래 '이 시뮬레이터의 대출 이자' 줄도 다시 그린다
-  const [ftab, setFtab] = useState<FundTab>("pre");
-  const rates = useBankRates();
   const [ktab, setKtab] = useState<KTab>("sales");
   const [recOpen, setRecOpen] = useState(false);
   const [metric, setMetric] = useState<Metric>("demand");
@@ -490,81 +574,7 @@ export default function Analysis({ profile, setProfile, gus, onNext }: {
                 <p>남는 돈은 장사가 자리 잡기 전까지 버티는 데 쓰여요. 한 달에 {man(MONTHLY_BURN)}쯤 줄어든다고 보면 {Math.floor(-gap / MONTHLY_BURN) + RUNWAY_MONTHS}개월을 버틸 수 있어요.</p>
               </>
             )}
-            <RentCard rentMan={st.rent * est.pyeong} />{/* lab:finance 월세 카드 할부 */}
-            <div className="fd-tabs" role="tablist" aria-label="돈을 구하는 방법">
-              {FUND_TABS.map((t, i) => {
-                const n = t.key === "pre" ? FUNDS.filter((f) => (f.pre === "가능" || f.pre === "조건부") && !f.program && (!f.youth || young)).length
-                  : t.key === "post" ? FUNDS.filter((f) => f.pre === "등록 후" && !f.program && (!f.youth || young)).length
-                  : t.key === "bank" ? BANKS.length : null;
-                return (
-                  <button key={t.key} type="button" role="tab" id={`ftab-${t.key}`} aria-selected={ftab === t.key} aria-controls="fpanel"
-                    className="fd-tab" onClick={() => setFtab(t.key)}>
-                    <span className="fd-tab-top"><span className="fd-num" aria-hidden="true">{i + 1}</span>{n != null && <span className="fd-cnt">{n}건</span>}</span>
-                    <b>{t.label}</b>
-                    <small>{t.key === "pre" ? "가게를 열기 전에" : t.key === "post" ? "사업자등록을 한 뒤에" : t.key === "bank" ? "은행별 상품과 금리" : "교육·공모·지원금"}</small>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="m-fpanel" id="fpanel" role="tabpanel" aria-labelledby={`ftab-${ftab}`} key={ftab}>
-              {(ftab === "pre" || ftab === "post") && (() => {
-                const t = FUND_TABS.find((x) => x.key === ftab)!;
-                const list = FUNDS.filter((f) => (ftab === "pre" ? f.pre === "가능" || f.pre === "조건부" : f.pre === "등록 후") && !f.program && (!f.youth || young));
-                return (
-                  <div className="m-funds">
-                    <p className="fd-lead"><b>{t.title}</b>{t.lead}</p>
-                    {list.length ? (
-                      <ul className="fd-cards">
-                        {list.map((f) => <FundCard key={f.name} f={f} />)}
-                      </ul>
-                    ) : <p className="m-aside">지금 조건에 맞는 자금이 목록에 없어요.</p>}
-                    {!young && <p className="m-aside">나이 조건(만 39세 이하)이 있는 청년 자금은 목록에서 뺐어요.</p>}
-                    <small className="m-src">{FUNDS_SRC}. 업계 글을 모은 표라 한도와 금리는 기관 공고 원문으로 확인해야 해요.</small>
-                  </div>
-                );
-              })()}
-              {ftab === "bank" && (
-                <div className="m-funds">
-                  <p className="fd-lead"><b>은행에서 사업자 대출 알아보기</b>
-                    지역신용보증재단 보증서를 담보로 한 대출은 은행에서 방문 없이 신청할 수 있어요 (<a href={BANK_GUARANTEE_URL} target="_blank" rel="noreferrer">신용보증재단중앙회 안내</a>).
-                    지금 은행 중소기업대출 평균 금리는 <mark>연 {ecosRates()?.loan_sme?.rate ?? +(LOAN_RATE * 100).toFixed(2)}%</mark>예요.</p>{/* lab:merge 고른 은행 금리가 아니라 한국은행 평균 */}
-                  <div className="fd-hubs">
-                    <a className="fd-hub" href={BANK_COMPARE_URL} target="_blank" rel="noreferrer">
-                      <small>모든 은행 한눈에</small><b>개인사업자 대출 금리 비교</b><span>은행연합회 소비자포털 · 보증서·신용·마이너스 대출을 은행별로</span><i aria-hidden="true">→</i>
-                    </a>
-                    <a className="fd-hub" href={BANK_SEARCH_URL} target="_blank" rel="noreferrer">
-                      <small>상품 찾기</small><b>은행 대출 상품 검색</b><span>은행연합회 소비자포털 · 조건을 넣어 상품을 찾아요</span><i aria-hidden="true">→</i>
-                    </a>
-                    <a className="fd-hub" href={SEMAS_FUND_URL} target="_blank" rel="noreferrer">
-                      <small>정책자금</small><b>소상공인정책자금 누리집</b><span>소상공인시장진흥공단 · 직접대출과 대리대출 신청</span><i aria-hidden="true">→</i>
-                    </a>
-                  </div>
-                  <LabBankRates loanMan={gap} young={young} />{/* lab:finance 고른 금리가 대출 이자 계산에 들어간다 (자료: 은행연합회 비교공시) */}
-                  <details className="m-srcnote"><summary>보증비율·신용등급별 공시 금리 표</summary><BankRates /></details>{/* upstream 은행연합회 비교공시 표 */}
-                  <ul className="fd-banks">
-                    {BANKS.map((b) => (
-                      <li key={b.name}>
-                        <a href={b.url} target="_blank" rel="noreferrer">
-                          <img src={`${import.meta.env.BASE_URL}mock/banks/${b.icon}`} alt="" width={44} height={44} />
-                          <span><b>{b.name}</b><small>{rates?.banks[b.name]?.보증서담보대출 ? `보증서담보 연 ${bankRateOf(rates, b.name)!.보증서담보대출!.avg.toFixed(2)}% · ` : ""}{b.app}</small></span>
-                          <em className={b.kind === "상품" ? "" : "is-cmp"}>{b.kind === "상품" ? "상품 페이지" : "금리 비교"}</em>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                  <small className="m-src">모든 링크는 앱 설치나 보안 프로그램 없이 웹에서 열려요 (2026년 10월 확인). IBK·NH·신한은 로그인 없이 볼 수 있는 상품 페이지가 없어 은행연합회 비교표로 연결해요.
-                    이 화면은 은행을 추천하거나 신청을 받지 않아요. 이 시뮬레이터의 대출 이자는 연 {+(LOAN_RATE * 100).toFixed(2)}%로 계산해요 ({loanRateInfo().who}, {loanRateInfo().label}). {/* lab:finance */}</small>
-                </div>
-              )}
-              {ftab === "support" && (
-                <KStartup young={young} gu={profile.gu} before={(() => {
-                  const progs = FUNDS.filter((f) => f.program && (!f.youth || young));
-                  return progs.length ? (
-                    <ul className="fd-cards">{progs.map((f) => <FundCard key={f.name} f={f} />)}</ul>
-                  ) : null;
-                })()} />
-              )}
-            </div>
+            <FundsPanel gap={gap} young={young} gu={profile.gu} rentMan={st.rent * est.pyeong} />{/* 돈 구하는 길 (새 업종 화면과 같이 씀) */}
             <button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button>
           </div>
         )}

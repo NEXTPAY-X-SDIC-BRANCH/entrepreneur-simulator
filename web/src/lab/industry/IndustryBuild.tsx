@@ -10,6 +10,7 @@ import { pct, sgn, shopKind, shopLayout, usePreview, wman, type IndustryCfg, typ
 import { LAB_TXT, type LabIndustry } from "./industries";
 import "../../mock/cafe-sim.css";
 import "./industry.css";
+import FinanceBox from "../finance/FinanceBox"; // lab:merge 수빈 10/23: 고깃집·카페처럼 대출 금리 고르기
 
 const GRADE_KO: Record<Grade, string> = { basic: "기본", mid: "중급", high: "고급" };
 type Item = { key: string; title: string; status: Status; line: string; todo?: string; rule: string };
@@ -133,6 +134,21 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
           <p><span>{left < 0 ? "모자란 현금" : "현금"}</span><strong>{p ? wman(Math.abs(left)) : "-"}</strong></p>
           <small>가진 돈 {man(profile.capital)} 중 {p ? wman(p.capex.total_krw) : "-"}을 썼어요.</small>
           {left < 0 && <p className="m-warn">가진 돈보다 여는 비용이 커요. 시뮬레이션에서는 모자란 만큼을 대출로 계산해요. 평수나 마감을 낮추면 줄어요.</p>}
+          {p && ( // lab:merge 운전자금 대출: 모자란 돈 말고 더 빌리는 돈. 비워 두면 엔진이 석 달 치 월세·인건비만큼 빌린다
+            <>
+              <div className="m-stepper ib-loan">
+                <span id="ib-loan">운전자금 대출</span>
+                <button type="button" aria-label="운전자금 대출 500만원 줄이기" disabled={cfg.extra_loan_man === 0}
+                  onClick={() => set({ extra_loan_man: Math.max(0, (cfg.extra_loan_man ?? 500) - 500) })}>−</button>
+                <output aria-labelledby="ib-loan">{cfg.extra_loan_man == null ? "자동" : man(cfg.extra_loan_man)}</output>
+                <button type="button" aria-label="운전자금 대출 500만원 늘리기" disabled={(cfg.extra_loan_man ?? 0) >= 20000}
+                  onClick={() => set({ extra_loan_man: (cfg.extra_loan_man ?? 0) + 500 })}>+</button>
+              </div>
+              <small>{p.capex.loan_needed_krw > 0 ? `대출은 모자란 ${wman(p.capex.loan_needed_krw)}에 운전자금` : "대출은 운전자금"}({cfg.extra_loan_man == null ? "석 달 치 월세·인건비, 엔진이 정함" : man(cfg.extra_loan_man)}){p.capex.loan_needed_krw > 0 ? "을 더한 돈이고" : "이고"}, 5년 동안 원리금을 나눠 갚아요.</small>
+              <FinanceBox loanMan={Math.round(p.capex.loan_needed_krw / 1e4) + (cfg.extra_loan_man ?? 0)} rentMan={Math.round(p.rent.man_per_pyeong * p.input.pyeong)}
+                young={profile.age === "20대" || profile.age === "30대"} noCard />
+            </>
+          )}
         </div>
         <p className="m-msg" role="status">{msg}</p>
       </div>
