@@ -38,3 +38,13 @@
   .ly-panel { grid-template-columns: minmax(0, 1fr); }
   .ly-flowcard { position: static; margin: 8px 16px; }
 }
+/* lab:merge 왼쪽 판 '가게 배치' 카드 (ShapePanel variant bar): 옷가게·치킨·분식의 m-layout 카드와 같은 틀 */
+.ly-bar .m-stepper { gap: 6px; }
+.ly-bar .m-stepper > span { flex: none; min-inline-size: 64px; font-size: 14px; font-weight: 600; }
+.ly-bar .m-stepper button { inline-size: 32px; block-size: 32px; font-size: 18px; flex: none; }
+.ly-bar .m-stepper output { flex: 1; min-inline-size: 0; font-size: 13.5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ly-bar .m-seg button { padding: 4px 9px; font-size: 13.5px; }
+.ly-bar .ly-chips button { padding: 3px 9px; font-size: 13px; }
+.ly-bar .ly-flowbtn { justify-self: start; }
+.ly-bar .m-stepper output { display: grid; white-space: normal; overflow: visible; line-height: 1.2; }
+.ly-bar .m-stepper output small { font-size: 11.5px; font-weight: 400; color: var(--pencil); }

@@ -87,7 +87,8 @@ function Stamp({ it }: { it: CatalogItem }) {
 }
 
 type Cat = CatalogItem["cat"] | "room"; // lab:layout: 문·창문 tab
-const CATS: { key: Cat; label: string }[] = [{ key: "seat", label: "좌석" }, { key: "equip", label: "설비" }, { key: "deco", label: "꾸밈" }, { key: "room", label: "문·창문" }];
+// lab:merge 문·창문은 왼쪽 판 '가게 배치' 카드로 옮김 (모든 업종이 같은 자리)
+const CATS: { key: Cat; label: string }[] = [{ key: "seat", label: "좌석" }, { key: "equip", label: "설비" }, { key: "deco", label: "꾸밈" }];
 const LOAN_STEP = 500;
 
 export default function Builder({ profile, store, setStore, levers, setLevers, onNext }: {
@@ -242,6 +243,8 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
             <output aria-labelledby="st">{levers.staff}명</output>
             <button type="button" aria-label="직원 1명 늘리기" disabled={levers.staff >= 8} onClick={() => setLevers({ ...levers, staff: levers.staff + 1 })}>+</button>
           </div>
+          <ShapePanel variant="bar" shape={shape} pyeong={store.pyeong} w={w} d={d} margin={BBQ_DOOR_MARGIN} defRatio={BBQ_SHAPE.ratio} flowOn={flowOn} setFlowOn={setFlowOn}
+            ratioAllowed={(r) => ratioOk(store.pyeong, r)} onShape={onShape} />{/* lab:merge 가게 배치: 모든 업종 왼쪽 판 같은 자리 */}
           <p>테이블 {stats.tables}개, {stats.seats}석</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={() => {
             const plan = recommend(profile);
@@ -284,10 +287,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
         <div className="m-cats" role="tablist" aria-label="물건 종류">
           {CATS.map((c) => <button type="button" role="tab" key={c.key} aria-selected={cat === c.key} onClick={() => setCat(c.key)}>{c.label}</button>)}
         </div>
-        {cat === "room" ? ( // lab:layout
-          <ShapePanel shape={shape} pyeong={store.pyeong} w={w} d={d} margin={BBQ_DOOR_MARGIN} defRatio={BBQ_SHAPE.ratio} flowOn={flowOn} setFlowOn={setFlowOn}
-            ratioAllowed={(r) => ratioOk(store.pyeong, r)} onShape={onShape} />
-        ) : (
+        {(
         <ul className="m-catalog">
           {CATALOG.filter((c) => c.cat === cat && !c.fixed).map((it) => {
             const full = Boolean(it.max && count(it.id) >= it.max);

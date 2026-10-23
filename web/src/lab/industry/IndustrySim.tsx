@@ -173,7 +173,7 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack, mode = "hard"
     <div className="sx-root" style={{ top }}>
       <div className="sx-canvas">
         {kind && p ? <ShopRoom3D kind={kind} pyeong={p.input.pyeong} layout={shopLay} people={shopPeople} riders={riders} height="fill" />
-          : p?.room ? <CafeRoom3D room={p.room} layout={p.layout} roster={view === "settle" || view === "report" ? p.roster : []} occupancy={occupancy} height="fill" /> : <p className="m-loading">{pv.err || "엔진을 부르는 중이에요"}</p>}
+          : p?.room ? <CafeRoom3D room={p.room} layout={p.layout} roster={view === "settle" || view === "report" ? p.roster : []} occupancy={occupancy} height="fill" shape={cfg.room} /> : <p className="m-loading">{pv.err || "엔진을 부르는 중이에요"}</p>}
       </div>
 
       <header className="sx-hud">

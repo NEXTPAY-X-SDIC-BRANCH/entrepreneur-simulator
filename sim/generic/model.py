@@ -75,6 +75,9 @@ def normalize(body: dict) -> dict:
         "own_capital_krw": int(body.get("own_capital_krw", 80_000_000)), "key_money_krw": int(body.get("key_money_krw") or 0),
         "rent_man_per_pyeong": float(rent) if rent is not None else None,
         "delivery": bool(body.get("delivery", True)),
+        # lab:merge 가게 배치 (카페 배치기에 그대로 넘긴다). 없으면 예전 그대로
+        **{k: body[k] for k in ("aspect", "door_wall", "door_pos", "windows") if body.get(k) is not None},
+        "doors": max(1, min(3, int(body.get("doors") or 1))),
     }
 
 
@@ -154,6 +157,9 @@ def capex(ctx: dict) -> dict:
         {"key": "sign", "item_ko": "간판", "krw": round(P.cv("cost", "sign_man") * 1e4), "grade": "가정", "note_ko": "전면 간판 1개, 가정", "depreciate": False},
         {"key": "stock", "item_ko": "첫 재료와 소모품", "krw": round(P.cv("cost", "first_stock_man") * 1e4), "grade": "가정", "note_ko": "가정", "depreciate": False},
     ]
+    if cfg.get("doors", 1) > 1:   # lab:merge 고깃집·카페와 같은 문 값 (가정)
+        lines.append({"key": "door", "item_ko": "출입문 추가", "krw": round((cfg["doors"] - 1) * 150 * 1e4), "grade": "가정",
+                      "note_ko": f"{cfg['doors'] - 1}개 × 150만원 (유리문·문틀·도어클로저, 가정)", "depreciate": True})
     if cfg["key_money_krw"] > 0:
         lines.insert(0, {"key": "keymoney", "item_ko": "권리금", "krw": cfg["key_money_krw"], "grade": "가정",
                          "note_ko": "직접 넣은 값 (나갈 때 돌려받지 못할 수 있어요)", "depreciate": False})
@@ -281,7 +287,8 @@ def _layout(ctx: dict) -> dict:
     fu = FURNITURE[ind]
     spt = P.iv(ind, "demand", "seats_per_table")
     lay_cfg = {"size_pyeong": cfg["pyeong"], "tables": cfg["tables"], "chairs": int(round(cfg["tables"] * spt)), "bar_seats": 0,
-               "espresso_groups": 1, "showcase": fu["showcase"], "oven": fu["oven"], "kiosks": 0, "pos": 1}
+               "espresso_groups": 1, "showcase": fu["showcase"], "oven": fu["oven"], "kiosks": 0, "pos": 1,
+               **{k: cfg[k] for k in ("aspect", "door_wall", "door_pos", "windows") if k in cfg}}   # lab:merge 가게 모양·출입문·창문
     try:
         solved = cafe_layout.solve(lay_cfg)
     except Exception:   # 배치기가 바뀌어도 숫자 계산은 계속한다 (3D만 빈다)

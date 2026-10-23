@@ -1,5 +1,7 @@
 // lab:industry 새 업종 엔진(/lab/industry, api/lab_industry.py) 요청과 응답 모양.
 import { useEffect, useState } from "react";
+import { cafeShapeBody } from "../layout/cafeFlow"; // lab:merge
+import type { RoomShape as LabRoomShape } from "../layout/shape";
 import type { Grade, Profile } from "../../mock/model";
 import { ENGINE } from "../../mock/useCafePreview";
 import type { LabIndustry } from "./industries";
@@ -8,7 +10,8 @@ import { shopPlan, type ShopKind, type ShopLayout } from "../../mock/ShopRoom3D"
 
 // layout: 치킨·분식 3D의 가게 모양과 출입문 (화면용, 엔진에는 보내지 않는다)
 // extra_loan_man: 모자란 돈 말고 더 빌리는 운전자금 (만원). 없으면 엔진이 석 달 치 고정비만큼 정한다 (lab:merge)
-export type IndustryCfg = { industry: LabIndustry; pyeong?: number; tables?: number; staff?: number; grade: Grade; delivery: boolean; layout?: ShopLayout; extra_loan_man?: number };
+// room: 한식 백반·호프·베이커리의 가게 모양·출입문·창문 (lab:layout RoomShape, 카페 배치기와 같은 값). 치킨·분식은 layout(ShopRoom3D)
+export type IndustryCfg = { industry: LabIndustry; pyeong?: number; tables?: number; staff?: number; grade: Grade; delivery: boolean; layout?: ShopLayout; extra_loan_man?: number; room?: LabRoomShape };
 export type Line = { key: string; item_ko: string; krw: number; grade: string; note_ko?: string };
 export type Preview = {
   industry: LabIndustry; name_ko: string;
@@ -59,6 +62,7 @@ export const engineBody = (profile: Profile, cfg: IndustryCfg) => ({
   pyeong: cfg.pyeong, tables: cfg.tables, staff: cfg.staff, grade: cfg.grade, delivery: cfg.delivery,
   own_capital_krw: Math.round(profile.capital * 10000), key_money_krw: Math.round((profile.keyMoney ?? 0) * 10000),
   rent_man_per_pyeong: profile.rent && profile.rent.gu === profile.gu ? profile.rent.v : null,
+  ...cafeShapeBody(cfg.room), ...((cfg.room?.doors ?? cfg.layout?.doors ?? 1) > 1 ? { doors: cfg.room?.doors ?? cfg.layout?.doors } : {}), // lab:merge 가게 배치·출입문 수
 });
 
 export async function post<T>(path: string, body: unknown): Promise<T> {

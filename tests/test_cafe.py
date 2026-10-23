@@ -364,3 +364,13 @@ def test_cost_lines_and_benchmark_graded():
                 if x["item_ko"] == "전기")
     assert more["krw"] > elec["krw"]
     assert "가정" in r["throughput"]["note_ko"]
+
+
+def test_grade_scales_interior_and_furniture_only():
+    # lab:merge 카페 마감: 인테리어·가구만 1 / 1.4 / 2배 (가정), 머신은 그대로. 고르지 않으면 예전과 같은 결과
+    from sim.cafe import model as M
+    lines = lambda g: {l["item_ko"].split(" (")[0]: l["subtotal_krw"] for l in M.preview({**SAMPLE, **({"grade": g} if g else {})})["capex"]["lines"]}  # noqa: E731
+    b, mid, high = lines(None), lines("mid"), lines("high")
+    assert mid["인테리어"] == round(b["인테리어"] * 1.4) and high["인테리어"] == round(b["인테리어"] * 2.0)
+    assert mid["테이블"] > b["테이블"] and mid["에스프레소 머신 2그룹"] == b["에스프레소 머신 2그룹"]
+    assert lines("basic") == b

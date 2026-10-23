@@ -4,6 +4,7 @@ import { BUY_MODES, DEFAULT_PLAN, KOSIS, STAFF_PAY, apparelOpeningCost, expected
 import { Mark } from "./Checks";
 import Assume from "./Assume";
 import LayoutPicker from "./LayoutPicker";
+import FinanceBox from "../lab/finance/FinanceBox"; // lab:merge 다른 업종처럼 은행별 금리 (고른 금리가 LOAN_RATE로 이자에 들어감)
 import ItemTray from "./ItemTray";
 import { missingItems, withNeeded } from "./shopItems";
 import { useEffect, useState } from "react";
@@ -113,6 +114,7 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
             <output aria-labelledby="ap-loan">{man(cfg.loan)}</output>
             <button type="button" aria-label={`대출 ${LOAN_STEP}만원 늘리기`} disabled={cfg.loan >= 20000} onClick={() => set({ loan: cfg.loan + LOAN_STEP })}>+</button>
           </div>
+          <FinanceBox loanMan={cfg.loan} rentMan={guStat(profile.gu).rent * cfg.pyeong} young={profile.age === "20대" || profile.age === "30대"} noCard />
           <div className="m-seg" role="group" aria-label="매입 방식">
             {(Object.keys(BUY_MODES) as BuyMode[]).map((b) => (
               <button type="button" key={b} aria-pressed={cfg.buyMode === b} onClick={() => set({ buyMode: b })}>{BUY_MODES[b].label}</button>

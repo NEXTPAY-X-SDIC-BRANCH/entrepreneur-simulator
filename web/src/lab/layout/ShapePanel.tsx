@@ -9,9 +9,11 @@ import "./layout.css";
 export type FlowHint = { level: "ok" | "warn" | "weak"; text: string };
 export type FlowSummary = { inLen: number; outLen: number; inLabel: string; outLabel: string; hints: FlowHint[]; note?: string };
 
-export function ShapePanel({ shape, onShape, pyeong, w, d, margin, defRatio, ratioAllowed, flowOn, setFlowOn }: {
+// variant "bar": 가게 꾸미기 왼쪽 판의 '가게 배치' 카드 (lab:merge 수빈 10/23, 모든 업종이 같은 자리에서 모양·출입문을 고른다).
+// 칸은 옷가게·치킨·분식의 가게 배치(LayoutPicker)와 같은 틀(m-layout)이고, 고르는 값은 위 '탭' 모양과 같다
+export function ShapePanel({ shape, onShape, pyeong, w, d, margin, defRatio, ratioAllowed, flowOn, setFlowOn, variant = "tray", note }: {
   shape: RoomShape; onShape: (s: RoomShape, what: string) => void; pyeong: number; w: number; d: number; margin: number; defRatio: number;
-  ratioAllowed: (r: number) => boolean; flowOn: boolean; setFlowOn: (v: boolean) => void;
+  ratioAllowed: (r: number) => boolean; flowOn: boolean; setFlowOn: (v: boolean) => void; variant?: "tray" | "bar"; note?: string;
 }) {
   const steps = ratioSteps(defRatio);
   const i = steps.findIndex((r) => Math.abs(r - shape.ratio) < 0.02);
@@ -23,6 +25,48 @@ export function ShapePanel({ shape, onShape, pyeong, w, d, margin, defRatio, rat
     onShape({ ...shape, windows: on ? shape.windows.filter((x) => x !== wall) : [...shape.windows, wall] }, on ? `${WALL_SIDE[wall]} 창문을 막았어요.` : `${WALL_SIDE[wall]} 벽에 창문을 냈어요.`);
   };
   const moveDoor = (m: number) => onShape(nudgeDoor(shape, m, w, d, margin), "출입문 위치를 옮겼어요.");
+  const flowBtn = (
+    <button type="button" className="ly-flowbtn" aria-pressed={flowOn} onClick={() => { const v = !flowOn; setFlowOn(v); if (v) setView("top"); }}>
+      {flowOn ? "손님 동선 숨기기" : "손님 동선 보기"}
+    </button>
+  );
+  if (variant === "bar") return (
+    <div className="m-layout ly-bar" role="group" aria-label="가게 배치">
+      <b className="m-layout-h">가게 배치 <small>{pyeong}평 · 가로 {w.toFixed(1)}m × 세로 {d.toFixed(1)}m</small></b>
+      <div className="m-stepper">
+        <span id="lyb-ratio">가게 모양</span>
+        <button type="button" aria-label="세로로 더 길게" disabled={prev === undefined} onClick={() => prev !== undefined && onShape({ ...shape, ratio: prev }, `가게를 ${ratioLabel(prev)}로 바꿨어요.`)}>‹</button>
+        <output aria-labelledby="lyb-ratio">{ratioLabel(shape.ratio)}<small>{ratioWord(shape.ratio)}</small></output>
+        <button type="button" aria-label="가로로 더 길게" disabled={next === undefined} onClick={() => next !== undefined && onShape({ ...shape, ratio: next }, `가게를 ${ratioLabel(next)}로 바꿨어요.`)}>›</button>
+      </div>
+      <div className="m-layout-row">
+        <span id="lyb-wall">출입문</span>
+        <div className="m-seg" role="group" aria-labelledby="lyb-wall">
+          {WALLS.map((wl) => <button type="button" key={wl} aria-pressed={shape.door.wall === wl} onClick={() => setWall(wl)}>{WALL_KO[wl]}</button>)}
+        </div>
+      </div>
+      <div className="m-stepper">
+        <span id="lyb-pos">문 위치</span>
+        <button type="button" aria-label="출입문을 0.5m 앞쪽 또는 왼쪽으로" disabled={shape.door.pos <= 0} onClick={() => moveDoor(-0.5)}>‹</button>
+        <output aria-labelledby="lyb-pos">{((s) => <>{s[1] ?? s[0]}<small>{s[1] ? `${s[0]}에서` : ""}</small></>)(doorWhere(shape, w, d, margin).split("에서 "))}</output>
+        <button type="button" aria-label="출입문을 0.5m 뒤쪽 또는 오른쪽으로" disabled={shape.door.pos >= 1} onClick={() => moveDoor(0.5)}>›</button>
+      </div>
+      <div className="m-stepper">
+        <span id="lyb-doors">출입문 수</span>
+        <button type="button" aria-label="출입문 1개 빼기" disabled={doorCount(shape) <= 1} onClick={() => onShape({ ...shape, doors: doorCount(shape) - 1 }, `출입문을 ${doorCount(shape) - 1}개로 줄였어요.`)}>−</button>
+        <output aria-labelledby="lyb-doors">{doorCount(shape)}개</output>
+        <button type="button" aria-label="출입문 1개 더 달기" disabled={doorCount(shape) >= 3} onClick={() => onShape({ ...shape, doors: doorCount(shape) + 1 }, `같은 벽에 출입문을 하나 더 달았어요 (${DOOR_PRICE_MAN}만원).`)}>+</button>
+      </div>
+      <div className="m-layout-row">
+        <span id="lyb-win">창문</span>
+        <div className="ly-chips" role="group" aria-labelledby="lyb-win">
+          {WALLS.map((wl) => <button type="button" key={wl} aria-pressed={shape.windows.includes(wl)} onClick={() => toggleWin(wl)}>{wl === "front" ? "앞 유리" : WALL_KO[wl]}</button>)}
+        </div>
+      </div>
+      {flowBtn}
+      <small>{note ?? `더 다는 문은 같은 벽에, 하나에 ${DOOR_PRICE_MAN}만원 (가정)`}</small>
+    </div>
+  );
   return (
     <div className="ly-panel" role="tabpanel" aria-label="문·창문과 가게 모양">
       <section className="ly-card" aria-labelledby="ly-ratio">
@@ -59,9 +103,7 @@ export function ShapePanel({ shape, onShape, pyeong, w, d, margin, defRatio, rat
         <div className="ly-chips" role="group" aria-label="창문이 있는 벽">
           {WALLS.map((wl) => <button type="button" key={wl} aria-pressed={shape.windows.includes(wl)} onClick={() => toggleWin(wl)}>{wl === "front" ? "앞 유리" : WALL_KO[wl]}</button>)}
         </div>
-        <button type="button" className="ly-flowbtn" aria-pressed={flowOn} onClick={() => { const v = !flowOn; setFlowOn(v); if (v) setView("top"); }}>
-          {flowOn ? "손님 동선 숨기기" : "손님 동선 보기"}
-        </button>
+        {flowBtn}
       </section>
     </div>
   );

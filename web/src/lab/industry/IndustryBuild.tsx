@@ -11,6 +11,10 @@ import { LAB_TXT, type LabIndustry } from "./industries";
 import "../../mock/cafe-sim.css";
 import "./industry.css";
 import FinanceBox from "../finance/FinanceBox"; // lab:merge 수빈 10/23: 고깃집·카페처럼 대출 금리 고르기
+import { ShapePanel } from "../layout/ShapePanel"; // lab:merge 가게 배치 (고깃집·카페와 같은 카드)
+import { cafeDoorsFit, cafeFlow, cafeRatioOk, realDims, type CafeItem, type CafeRoom } from "../layout/cafeFlow";
+import { CAFE_DOOR_MARGIN, CAFE_SHAPE, doorCount, type RoomShape as LabShape } from "../layout/shape";
+import { useEffect, useState } from "react";
 
 const GRADE_KO: Record<Grade, string> = { basic: "기본", mid: "중급", high: "고급" };
 type Item = { key: string; title: string; status: Status; line: string; todo?: string; rule: string };
@@ -70,9 +74,23 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
   const kind = shopKind(ind);
   const set = (patch: Partial<IndustryCfg>) => setCfg({ ...cfg, ...(p ? { pyeong: p.input.pyeong, tables: p.input.tables, staff: p.input.staff } : {}), ...patch });
   const left = p ? profile.capital * 10000 - p.capex.total_krw : 0;
+  // lab:merge 한식 백반·호프·베이커리: 카페처럼 가게 모양·출입문·창문을 고르면 엔진(카페 배치기)이 테이블을 다시 놓는다
+  const [flowOn, setFlowOn] = useState(false);
+  const room: LabShape = cfg.room ?? CAFE_SHAPE;
+  const real = p?.room ? realDims(p.room as unknown as CafeRoom) : null;
+  const flow = !kind && flowOn && p?.room ? cafeFlow(p.room as unknown as CafeRoom, p.layout as unknown as CafeItem[]) : null;
+  // 엔진 배치가 문 앞을 막아 다 못 달면 달 수 있는 만큼으로 줄인다 (그림·여는 비용·엔진이 같은 수, 카페와 같은 규칙)
+  const [doorNote, setDoorNote] = useState("");
+  useEffect(() => {
+    if (kind || !p?.room || doorCount(room) < 2) return;
+    const n = cafeDoorsFit(p.room as unknown as CafeRoom, p.layout as unknown as CafeItem[], room);
+    if (n >= doorCount(room)) return;
+    setDoorNote(`문 앞 1.2m를 비울 자리가 모자라 출입문은 ${n}개까지 달 수 있어요. 테이블을 줄이면 더 달 수 있어요.`);
+    set({ room: { ...room, doors: n } });
+  }, [p]); // eslint-disable-line react-hooks/exhaustive-deps
   const list = p ? checks(p, t.shop) : [];
   const counter = p ? Object.entries(p.furniture_ko).filter(([k]) => p.layout.some((x) => x.type === k)) : [];
-  const msg = pv.err ? pv.err : !p ? "엔진에서 배치를 받아 오는 중이에요."
+  const msg = pv.err ? pv.err : doorNote ? doorNote : !p ? "엔진에서 배치를 받아 오는 중이에요."
     : p.layout.some((x) => !x.fits) ? `공간이 모자라 못 놓은 테이블이 있어요${kind ? "" : " (빨간 반투명)"}. 테이블을 줄이거나 평수를 늘려 보세요.`
     : p.capacity.bottleneck ? `먼저 막히는 곳은 ${p.capacity.bottleneck === "seats" ? "좌석" : "일손"}이에요. 주문의 ${pct(p.capacity.walk_share)}를 못 받아요.`
     : `좌석 ${p.seats.total}석, 일손 ${p.input.staff + 1}명(사장님 포함)으로 이 동네 주문을 다 받을 수 있어요.`;
@@ -82,7 +100,7 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
       <div className="m-stage">
         <div className="m-canvas">
           {kind && p ? <ShopRoom3D kind={kind} pyeong={p.input.pyeong} layout={shopLayout(kind, p, cfg.layout)} height="fill" flow />
-            : p?.room ? <CafeRoom3D room={p.room} layout={p.layout} roster={p.roster} height="fill" /> : <p className="m-loading">{pv.err || "엔진을 부르는 중이에요"}</p>}
+            : p?.room ? <CafeRoom3D room={p.room} layout={p.layout} roster={p.roster} height="fill" shape={cfg.room} flow={flow} /> : <p className="m-loading">{pv.err || "엔진을 부르는 중이에요"}</p>}
         </div>
         <div className="m-room">
           <div className="m-stepper">
@@ -124,8 +142,19 @@ export default function IndustryBuild({ profile, cfg: cfgIn, setCfg, onNext }: {
                   {(["left", "center", "right"] as DoorSpot[]).map((x) => <button type="button" key={x} aria-pressed={(cfg.layout?.door ?? "right") === x} onClick={() => set({ layout: { ...cfg.layout, door: x } })}>{DOOR_LABEL[x]}</button>)}
                 </div>
               </div>
-              <small>모양과 문 자리는 3D 그림만 바꿔요. 매출과 비용 계산은 그대로예요.</small>
+              <div className="m-stepper">{/* lab:merge 다른 업종처럼 출입문 수 (하나 더에 150만원) */}
+                <span id="ib-doors">출입문 수</span>
+                <button type="button" aria-label="출입문 1개 빼기" disabled={(cfg.layout?.doors ?? 1) <= 1} onClick={() => set({ layout: { ...cfg.layout, doors: (cfg.layout?.doors ?? 1) - 1 } })}>−</button>
+                <output aria-labelledby="ib-doors">{cfg.layout?.doors ?? 1}개</output>
+                <button type="button" aria-label="출입문 1개 더 달기" disabled={(cfg.layout?.doors ?? 1) >= 3} onClick={() => set({ layout: { ...cfg.layout, doors: (cfg.layout?.doors ?? 1) + 1 } })}>+</button>
+              </div>
+              <small>모양과 문 자리는 3D 그림만 바꾸고, 문을 더 달면 하나에 150만원이 여는 비용에 들어가요.</small>
             </div>
+          )}
+          {!kind && p?.room && real && (
+            <ShapePanel variant="bar" shape={{ ...room, ratio: real.w / real.d }} pyeong={p.input.pyeong} w={real.w} d={real.d} margin={CAFE_DOOR_MARGIN} defRatio={CAFE_SHAPE.ratio}
+              flowOn={flowOn} setFlowOn={setFlowOn} ratioAllowed={(r) => cafeRatioOk(p.input.pyeong, r)} onShape={(next) => { setDoorNote(""); set({ room: next }); }}
+              note="모양·문·창문에 따라 엔진이 테이블을 다시 놓아요. 문을 더 달면 하나에 150만원이 여는 비용에 들어가요 (가정)." />
           )}
           <p>{p ? `${p.seats.total}석, 사장님 포함 ${p.input.staff + 1}명` : ""}</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={() => setCfg({ industry: ind, grade: "basic", delivery: true, layout: cfg.layout })}>추천 배치</button>

@@ -219,3 +219,15 @@ def test_season_uses_chosen_loan_rate_and_extra_loan():
     assert b["loan"]["extra_krw"] == 0 and b["loan"]["principal_krw"] == a["capex"]["loan_needed_krw"]
     assert b["loan"]["monthly_payment_krw"] < a["loan"]["monthly_payment_krw"]   # 운전자금을 안 빌리고 금리도 낮으니 덜 갚는다
     assert client.post("/lab/industry/season", json={**base, "loan_rate": 0.5}).status_code == 422
+
+
+def test_room_shape_and_doors_reach_layout_and_capex():
+    # lab:merge 한식 백반 등: 가게 모양·출입문·창문이 카페 배치기로 가고, 문을 더 달면 '출입문 추가' 150만원/개
+    base = {"industry": "hansik", "gu": "마포구"}
+    a = client.post("/lab/industry/preview", json=base).json()
+    b = client.post("/lab/industry/preview", json={**base, "aspect": 1.0, "door_wall": "left", "door_pos": 0.5, "windows": ["front", "left"], "doors": 3}).json()
+    assert a["room"]["frame"]["wall"] == "front" and b["room"]["frame"]["wall"] == "left"
+    assert abs(b["room"]["width_m"] - b["room"]["depth_m"]) < 0.01 and abs(a["room"]["width_m"] - a["room"]["depth_m"]) > 1
+    door = [l for l in b["capex"]["lines"] if l["key"] == "door"]
+    assert door and door[0]["krw"] == 3_000_000 and b["capex"]["total_krw"] - a["capex"]["total_krw"] == 3_000_000
+    assert not [l for l in a["capex"]["lines"] if l["key"] == "door"]

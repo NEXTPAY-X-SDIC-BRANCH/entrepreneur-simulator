@@ -51,6 +51,7 @@ class CafeIn(BaseModel):
     door_wall: Literal["front", "back", "left", "right"] | None = None
     door_pos: float | None = Field(None, ge=0.0, le=1.0)
     windows: list[Literal["front", "back", "left", "right"]] | None = Field(None, max_length=4)   # echoed for the 3D walls
+    grade: Literal["basic", "mid", "high"] | None = None   # lab:merge 마감 (None = 기본). 인테리어·가구 값만 바꿈 (sim/cafe/model.py GRADE_MULT)
     doors: int | None = Field(None, ge=1, le=3)   # lab:merge 출입문 수 (수빈 10/23). 2개부터 '출입문 추가' 값이 여는 비용에 들어감, 배치는 그대로
 
 
@@ -110,7 +111,7 @@ class TokenMonthIn(MonthIn):
     state_token: str = Field(..., min_length=10, max_length=8000)
 
 
-LAB_LAYOUT_KEYS = ("aspect", "door_wall", "door_pos", "windows", "doors")   # lab:layout
+LAB_LAYOUT_KEYS = ("aspect", "door_wall", "door_pos", "windows", "doors", "grade")   # lab:layout
 
 
 def _dump(body: BaseModel) -> dict:

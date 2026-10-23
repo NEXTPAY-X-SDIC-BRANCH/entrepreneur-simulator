@@ -322,12 +322,21 @@ def _monthly_fixed(cfg: dict, labor: dict, area_m2: float) -> dict:
             "note_ko": f"사장님 인건비 제외 (영업이익에서 따로 {won(labor['owner_ref_krw'])}), 인건비는 시간대별 필요 인원 기준"}   # lab:cost
 
 
+# lab:merge 마감 (기본·중급·고급): 인테리어와 가구(테이블·의자·바)에 곱한다. 머신·설비는 그대로. 가정 (화면 cafe.ts CAFE_ITEM_GRADE와 같음)
+GRADE_MULT = {"basic": 1.0, "mid": 1.4, "high": 2.0}
+GRADE_KO = {"basic": "", "mid": " (중급 마감)", "high": " (고급 마감)"}
+
+
 def _capex(cfg: dict, solved: dict) -> dict:
     P = load_params()["capex"]
     meta = load_params()["district_meta"][cfg["district"]]
     lines = []
 
+    gm = GRADE_MULT.get(cfg.get("grade") or "basic", 1.0)
+
     def line(item_ko, qty, unit, grade, source, vat_base=True, dep=None):
+        if dep in ("interior", "furniture") and gm != 1.0 and item_ko not in ("전기 증설", "출입문 추가"):
+            unit, item_ko, grade = unit * gm, item_ko + GRADE_KO[cfg["grade"]], "가정"
         lines.append({"item_ko": item_ko, "qty": qty, "unit_krw": round(unit), "subtotal_krw": round(qty * unit),
                       "grade": grade, "source": source, "_vat": vat_base, "_dep": dep})
 

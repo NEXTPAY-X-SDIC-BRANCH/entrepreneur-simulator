@@ -27,7 +27,7 @@ export const areaFx = (p: number) => (p <= 10 ? 0.89 : p <= 20 ? 0.89 + (p - 10)
 // 가게 꾸미기 입력. 3D 목업의 배치 입력(tables~pos)은 비워 두면 평수에서 어림한 값(독립 카페 평당 테이블 0.36개, 좌석 1.27석)을 쓴다.
 // lab:merge 카페 가게 모양·출입문은 lab:layout(RoomShape: 자유 비율, 네 벽 어디든 문, 창문)이 정한다. upstream 의 shape·door 선택지는 엔진이
 // 같은 값으로 받아 주지만(api/cafe.py) 화면은 보내지 않는다. moves(3D에서 옮긴 자리)는 수빈 것을 그대로 쓴다 (그림만, 엔진 계산에는 안 들어감)
-export type CafeCfg = { pyeong: number; grade: Grade; staff: number; tables?: number; chairs?: number; bar?: number; groups?: number; showcase?: number; oven?: number; kiosks?: number; pos?: number; shape?: RoomShape; moves?: Record<string, [number, number]> }; // lab:layout shape
+export type CafeCfg = { pyeong: number; grade: Grade; staff: number; tables?: number; chairs?: number; bar?: number; groups?: number; showcase?: number; oven?: number; kiosks?: number; pos?: number; shape?: RoomShape; moves?: Record<string, [number, number]>; extra_loan_man?: number }; // lab:layout shape. extra_loan_man: 운전자금 (만원, 없으면 엔진이 석 달 고정비)
 export const cafeLayoutOf = (c: CafeCfg) => {
   const d = cafeDefaultCounts(c.pyeong);
   return { tables: c.tables ?? d.tables, chairs: c.chairs ?? d.chairs, bar: c.bar ?? d.bar, groups: c.groups ?? d.groups, showcase: c.showcase ?? d.showcase, oven: c.oven ?? d.oven, kiosks: c.kiosks ?? d.kiosks, pos: c.pos ?? d.pos };
@@ -36,7 +36,8 @@ export const cafeLayoutOf = (c: CafeCfg) => {
 export const engineBody = (profile: Profile, c: CafeCfg, district: string) => {
   const l = cafeLayoutOf(c);
   return { district, size_pyeong: c.pyeong, tables: l.tables, chairs: l.chairs, bar_seats: l.bar, espresso_groups: Math.max(1, l.groups), showcase: l.showcase, oven: l.oven,
-    kiosks: l.kiosks, pos: Math.max(1, l.pos), own_capital_krw: Math.round(profile.capital * 10000), staff_peak: c.staff + 1, seed: 7, ...cafeShapeBody(c.shape) }; // lab:layout
+    kiosks: l.kiosks, pos: Math.max(1, l.pos), own_capital_krw: Math.round(profile.capital * 10000), staff_peak: c.staff + 1, seed: 7, ...cafeShapeBody(c.shape), // lab:layout
+    ...(c.grade !== "basic" ? { grade: c.grade } : {}), ...(c.extra_loan_man != null ? { extra_loan_krw: c.extra_loan_man * 10000 } : {}) }; // lab:merge 마감·운전자금 (기본·자동이면 보내지 않음)
 };
 
 // ---- 여는 비용의 한 출처: 엔진(/cafe/preview)의 capex와 funding (lab 2026-10-22) ----

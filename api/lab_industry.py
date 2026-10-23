@@ -42,6 +42,12 @@ class StoreIn(BaseModel):
     key_money_krw: int = Field(0, ge=0, le=1_000_000_000)
     rent_man_per_pyeong: float | None = Field(None, gt=0, lt=100)   # 현금 월세, 없으면 R-ONE 구·동 값
     delivery: bool = True
+    # lab:merge 가게 배치 (카페와 같은 값, sim/cafe/layout.py 가 배치를 다시 푼다). 없으면 예전 그대로
+    aspect: float | None = Field(None, ge=0.35, le=3.0)
+    door_wall: Literal["front", "back", "left", "right"] | None = None
+    door_pos: float | None = Field(None, ge=0.0, le=1.0)
+    windows: list[Literal["front", "back", "left", "right"]] | None = Field(None, max_length=4)
+    doors: int | None = Field(None, ge=1, le=3)   # 출입문 수: 2개부터 하나에 150만원 '출입문 추가'
 
 
 class SeasonIn(StoreIn):

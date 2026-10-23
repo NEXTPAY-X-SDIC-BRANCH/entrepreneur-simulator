@@ -3,14 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Mark } from "./Checks";
 import SettledStack, { cafeSettled } from "../lab/cost/SettledStack"; // lab:cost
-import { CAFE_PYEONG, cafeDistrictCode, cafeDong, cafeEstimate } from "./cafe";
+import { CAFE_GRADES, CAFE_PYEONG, cafeDistrictCode, cafeDong, cafeEstimate } from "./cafe";
 import { cafeChecks, cafeDaily, cafeLayoutOf, cafeOpenFromEngine, engineBody, type CafeCfg, type CafeOpen } from "./cafeChecks";
 import CafeRoom3D, { type CafeEdit } from "./CafeRoom3D";
 import { ItemIcon } from "./ItemTray"; // lab:merge 수빈 물건 그림
 import FinanceBox from "../lab/finance/FinanceBox"; // lab:finance
 import { CAFE_DEFAULT_RATE } from "../lab/finance/finance"; // lab:finance
 import { ENGINE, useCafePreview } from "./useCafePreview";
-import { STATUS_LABEL, guStat, man, type Profile } from "./model";
+import { STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
 // lab:layout: 문·창문 tab (가로:세로, 출입문, 창문), 손님 동선 from the engine's plan
 import { setView } from "./Scene3D";
 import { FlowCard, ShapePanel } from "../lab/layout/ShapePanel";
@@ -34,7 +34,6 @@ const CATS: { key: string; label: string; items: Item[] }[] = [
     { key: "showcase", name: "디저트 진열장", note: "디저트를 팔려면 필요해요", min: 0, max: 1 },
     { key: "oven", name: "오븐", note: "구움 디저트용", min: 0, max: 1 },
   ] },
-  { key: "room", label: "문·창문", items: [] }, // lab:layout
 ];
 
 export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNext }: { profile: Profile; cfg: CafeCfg | null; setCfg: (c: CafeCfg) => void; onNext: () => void }) {
@@ -134,12 +133,19 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
             <output aria-labelledby="py">{cfg.pyeong}평</output>
             <button type="button" aria-label="1평 늘리기" disabled={cfg.pyeong >= 80} onClick={() => set({ pyeong: cfg.pyeong + 1, moves: undefined })}>+</button>
           </div>
+          <div className="m-seg" role="group" aria-label="마감 수준">{/* lab:merge 다른 업종처럼 마감 고르기 (엔진이 인테리어·가구 값을 바꿈) */}
+            {(Object.keys(CAFE_GRADES) as Grade[]).map((g) => (
+              <button type="button" key={g} aria-pressed={cfg.grade === g} onClick={() => set({ grade: g })}>{CAFE_GRADES[g].label}</button>
+            ))}
+          </div>
           <div className="m-stepper">
             <span id="st">직원 수</span>
             <button type="button" aria-label="직원 1명 줄이기" disabled={cfg.staff <= 0} onClick={() => set({ staff: cfg.staff - 1 })}>−</button>
             <output aria-labelledby="st">{cfg.staff}명</output>
             <button type="button" aria-label="직원 1명 늘리기" disabled={cfg.staff >= 3} onClick={() => set({ staff: cfg.staff + 1 })}>+</button>
           </div>
+          <ShapePanel variant="bar" shape={shape} pyeong={cfg.pyeong} w={rw} d={rd} margin={CAFE_DOOR_MARGIN} defRatio={CAFE_SHAPE.ratio} flowOn={flowOn} setFlowOn={setFlowOn}
+            ratioAllowed={(r) => cafeRatioOk(cfg.pyeong, r)} onShape={onShape} />{/* lab:merge 가게 배치: 모든 업종 왼쪽 판 같은 자리 */}
           <p>테이블 {lay.tables}개, {seats}석</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn"
             onClick={() => { setNote(""); setCfgOut({ pyeong: est.pyeong, grade: est.grade, staff: 1, shape: cfg.shape }); }}>추천 배치</button>
@@ -156,6 +162,14 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
               {open.gap === 0 && open.extra > 0 && <p className="m-warn">여는 비용은 가진 돈으로 내지만, 문 열 때 통장에 월 고정비 3개월치({man(open.reserve)})를 두려고 운전자금 {man(open.extra)}을 빌려요(다달이 원리금 {man(open.pay)}).</p>}
             </>
           ) : <p><span>문 열 때 현금</span><strong>계산 중</strong></p>}
+          <div className="m-stepper">{/* lab:merge 다른 업종처럼 대출 ±: 모자란 돈 말고 더 빌리는 운전자금. 비우면 엔진이 석 달 고정비 */}
+            <span id="cf-loan">운전자금 대출</span>
+            <button type="button" aria-label="운전자금 대출 500만원 줄이기" disabled={cfg.extra_loan_man === 0}
+              onClick={() => set({ extra_loan_man: Math.max(0, (cfg.extra_loan_man ?? Math.round((open?.extra ?? 500) / 500) * 500) - 500) })}>−</button>
+            <output aria-labelledby="cf-loan">{cfg.extra_loan_man == null ? `자동${open ? ` ${man(open.extra)}` : ""}` : man(cfg.extra_loan_man)}</output>
+            <button type="button" aria-label="운전자금 대출 500만원 늘리기" disabled={(cfg.extra_loan_man ?? 0) >= 20000}
+              onClick={() => set({ extra_loan_man: (cfg.extra_loan_man ?? Math.round((open?.extra ?? 0) / 500) * 500) + 500 })}>+</button>
+          </div>
           <FinanceBox loanMan={open?.loan ?? 0} rentMan={st.rent * cfg.pyeong} fallback={CAFE_DEFAULT_RATE} young={profile.age === "20대" || profile.age === "30대"} />{/* lab:finance 은행별 가상 금리, 월세 카드 할부 */}
         </div>
 
@@ -174,10 +188,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
         <div className="m-cats" role="tablist" aria-label="물건 종류">
           {CATS.map((c) => <button type="button" role="tab" key={c.key} aria-selected={cat === c.key} onClick={() => setCat(c.key)}>{c.label}</button>)}
         </div>
-        {cat === "room" ? ( // lab:layout
-          <ShapePanel shape={shape} pyeong={cfg.pyeong} w={rw} d={rd} margin={CAFE_DOOR_MARGIN} defRatio={CAFE_SHAPE.ratio} flowOn={flowOn} setFlowOn={setFlowOn}
-            ratioAllowed={(r) => cafeRatioOk(cfg.pyeong, r)} onShape={onShape} />
-        ) : (
+        {(
         <ul className="m-catalog">
           {CATS.find((c) => c.key === cat)!.items.map((it) => {
             const v = lay[it.key] as number;
