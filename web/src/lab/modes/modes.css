@@ -261,3 +261,9 @@
 .lm-fold > summary h2 { margin: 0; font-size: 18px; }
 .lm-fold > summary span { font-size: 13px; color: var(--pencil); }
 .lm-fold[open] > summary { margin-block-end: 4px; }
+/* 근거 접기: '6개월 흐름' 같은 검은 제목 + 앞에 삼각형 (상자 없이) */
+.lm-fold > summary { padding: 0; border: 0; border-radius: 0; align-items: center; gap: 10px; }
+.lm-fold > summary::before { content: "▶"; font-size: 13px; color: var(--ink); transition: transform 150ms ease-out; }
+.lm-fold[open] > summary::before { content: "▶"; transform: rotate(90deg); }
+.lm-fold > summary h2 { font: 700 21px/1.4 var(--display); color: var(--ink); }
+.lm-fold[open] > summary { margin-block-end: 8px; }
