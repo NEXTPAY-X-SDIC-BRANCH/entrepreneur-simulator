@@ -186,7 +186,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
 
   // lab:layout: a new 가로:세로 or door re-lays the store (kitchen, counter, tables); windows only change the walls
   const onShape = (next: RoomShape, what: string) => {
-    if (next.ratio === shape.ratio && next.door.wall === shape.door.wall && next.door.pos === shape.door.pos) {
+    if (next.ratio === shape.ratio && next.door.wall === shape.door.wall && next.door.pos === shape.door.pos && (next.doors ?? 1) === (shape.doors ?? 1)) {
       setStore(withShape(store, next));
       return setMsg(what);
     }

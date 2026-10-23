@@ -3,7 +3,7 @@
 // Also the 동선 card laid over the 3D stage (length, the congestion lines) and the stop numbering legend.
 import { setView } from "../../mock/Scene3D";
 import { IN_COLOR, OUT_COLOR } from "./Arrows3D";
-import { WALLS, WALL_KO, WALL_SIDE, doorWhere, nudgeDoor, ratioLabel, ratioSteps, ratioWord, type RoomShape, type Wall } from "./shape";
+import { DOOR_PRICE_MAN, WALLS, WALL_KO, WALL_SIDE, doorCount, doorWhere, nudgeDoor, ratioLabel, ratioSteps, ratioWord, type RoomShape, type Wall } from "./shape";
 import "./layout.css";
 
 export type FlowHint = { level: "ok" | "warn" | "weak"; text: string };
@@ -45,6 +45,14 @@ export function ShapePanel({ shape, onShape, pyeong, w, d, margin, defRatio, rat
           <output>{doorWhere(shape, w, d, margin)}</output>
           <button type="button" aria-label="출입문을 0.5m 뒤쪽 또는 오른쪽으로" disabled={shape.door.pos >= 1} onClick={() => moveDoor(0.5)}>›</button>
         </div>
+        {/* lab:merge 수빈 10/23 출입문 개수: 더 단 문은 같은 벽, 먼 쪽 끝부터 */}
+        <div className="m-stepper ly-doors">
+          <span id="ly-doors">문 개수</span>
+          <button type="button" aria-label="출입문 1개 빼기" disabled={doorCount(shape) <= 1} onClick={() => onShape({ ...shape, doors: doorCount(shape) - 1 }, `출입문을 ${doorCount(shape) - 1}개로 줄였어요.`)}>−</button>
+          <output aria-labelledby="ly-doors">{doorCount(shape)}개</output>
+          <button type="button" aria-label="출입문 1개 더 달기" disabled={doorCount(shape) >= 3} onClick={() => onShape({ ...shape, doors: doorCount(shape) + 1 }, `같은 벽에 출입문을 하나 더 달았어요 (${DOOR_PRICE_MAN}만원).`)}>+</button>
+        </div>
+        <small>더 다는 문은 같은 벽에, 하나에 {DOOR_PRICE_MAN}만원 (가정)</small>
       </section>
       <section className="ly-card" aria-labelledby="ly-win">
         <h3 id="ly-win">창문</h3>

@@ -51,6 +51,7 @@ class CafeIn(BaseModel):
     door_wall: Literal["front", "back", "left", "right"] | None = None
     door_pos: float | None = Field(None, ge=0.0, le=1.0)
     windows: list[Literal["front", "back", "left", "right"]] | None = Field(None, max_length=4)   # echoed for the 3D walls
+    doors: int | None = Field(None, ge=1, le=3)   # lab:merge 출입문 수 (수빈 10/23). 2개부터 '출입문 추가' 값이 여는 비용에 들어감, 배치는 그대로
 
 
 class MenuItemIn(BaseModel):   # lab:menu  메뉴판 한 줄 (sim/menu.py). 화면용 값(recipe 등)은 버린다
@@ -109,7 +110,7 @@ class TokenMonthIn(MonthIn):
     state_token: str = Field(..., min_length=10, max_length=8000)
 
 
-LAB_LAYOUT_KEYS = ("aspect", "door_wall", "door_pos", "windows")   # lab:layout
+LAB_LAYOUT_KEYS = ("aspect", "door_wall", "door_pos", "windows", "doors")   # lab:layout
 
 
 def _dump(body: BaseModel) -> dict:

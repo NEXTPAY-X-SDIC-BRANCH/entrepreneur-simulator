@@ -96,6 +96,7 @@ export function cafeFlow(room: CafeRoom, layout: CafeItem[]): CafeFlow {
 }
 
 // the engine request fields for a shape (absent = the old default room)
-export const cafeShapeBody = (shape?: RoomShape) => (shape ? { aspect: Math.round(shape.ratio * 1000) / 1000, door_wall: shape.door.wall, door_pos: shape.door.pos, windows: shape.windows } : {});
+export const cafeShapeBody = (shape?: RoomShape) => (shape ? { aspect: Math.round(shape.ratio * 1000) / 1000, door_wall: shape.door.wall, door_pos: shape.door.pos, windows: shape.windows,
+  ...((shape.doors ?? 1) > 1 ? { doors: shape.doors } : {}) } : {}); // lab:merge 출입문 수는 2개부터만 보낸다 (예전 입력과 같은 결과)
 export const CAFE_MIN_SIDE = 4.0;
 export const cafeRatioOk = (pyeong: number, ratio: number) => { const a = pyeong * 3.3058, w = Math.sqrt(a * ratio); return w >= CAFE_MIN_SIDE && a / w >= CAFE_MIN_SIDE; };

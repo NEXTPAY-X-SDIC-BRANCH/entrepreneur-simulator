@@ -9,7 +9,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Box, C } from "../../store3d/Building";
 import { FrontFade, Storefront, WALL_H } from "../../mock/Scene3D";
-import { DOOR_W, WIN, doorAlong, wallLen, windowSpans, type RoomShape, type Wall } from "./shape";
+import { DOOR_W, WIN, doorAlongs, wallLen, windowSpans, type RoomShape, type Wall } from "./shape";
 import "./layout.css";
 
 const T = 0.12; // wall thickness
@@ -110,13 +110,14 @@ function GlassRun({ x0, x1, z }: { x0: number; x1: number; z: number }) {
   );
 }
 
-export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, storefrontMat = false, doorW = DOOR_W }: {
+// doorOk: 더 다는 문 자리를 비울 수 있나 (벽 시작 모서리에서 m). 카페는 엔진 배치의 물건이 문 앞을 막는 자리를 뺀다
+export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, storefrontMat = false, doorW = DOOR_W, doorOk }: {
   w: number; d: number; shape: RoomShape; margin: number; color: string; wainscot?: string;
-  decor?: Partial<Record<Wall, ReactNode>>; storefrontMat?: boolean; doorW?: number;
+  decor?: Partial<Record<Wall, ReactNode>>; storefrontMat?: boolean; doorW?: number; doorOk?: (along: number) => boolean;
 }) {
   const DOOR_W = doorW;
-  const dw = shape.door.wall, at = doorAlong(shape, w, d, margin);
-  const doorSpan: [number, number] = [at - DOOR_W / 2, at + DOOR_W / 2];
+  const dw = shape.door.wall, alongs = doorAlongs(shape, w, d, margin, DOOR_W, doorOk), at = alongs[0];
+  const spans = alongs.map((a) => [a - DOOR_W / 2, a + DOOR_W / 2] as [number, number]);
   const label = "출입문";
   const strips: { wall: Wall; pos: [number, number, number]; rot: number; inward: 1 | -1; ext: number; outside: (c: THREE.Vector3) => boolean }[] = [
     { wall: "back", pos: [0, 0, -d / 2 - T / 2], rot: 0, inward: 1, ext: T, outside: (c) => c.z < -d / 2 },
@@ -128,10 +129,14 @@ export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, storef
     <group>
       {strips.map((s) => {
         const len = wallLen(s.wall, w, d) + 2 * s.ext;
-        const door = dw === s.wall ? ([doorSpan[0] + s.ext, doorSpan[1] + s.ext] as [number, number]) : null;
-        const opens: Open[] = [];
-        if (door) opens.push({ a: door[0], b: door[1], y0: 0, y1: 2.1, kind: "door" });
-        if (shape.windows.includes(s.wall)) for (const [a, b] of windowSpans(len, door)) opens.push({ a, b, y0: WIN.sill, y1: WIN.head, kind: "window" });
+        const doors = dw === s.wall ? spans.map(([a, b]) => [a + s.ext, b + s.ext] as [number, number]) : [];
+        const opens: Open[] = doors.map(([a, b]) => ({ a, b, y0: 0, y1: 2.1, kind: "door" as const }));
+        if (shape.windows.includes(s.wall)) for (const [a, b] of windowSpans(len, doors)) opens.push({ a, b, y0: WIN.sill, y1: WIN.head, kind: "window" });
+        const cuts = [...doors].sort((p, q) => p[0] - q[0]);
+        const skirt: [number, number][] = [];
+        let cur = 0;
+        for (const [a, b] of cuts) { skirt.push([cur, a]); cur = b; }
+        skirt.push([cur, len]);
         // left wall strip runs front→back = scene -z, so the strip's local +x must point to -z: rotation +π/2 does that
         return (
           <group key={s.wall}>
@@ -140,10 +145,10 @@ export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, storef
                 <Strip len={len} opens={opens} color={color} wainscot={wainscot} inward={s.inward} />
               </Hide>
               {/* skirting stays when the wall hides, with the door gap kept */}
-              {(door ? [[0, door[0]], [door[1], len]] : [[0, len]]).filter(([a, b]) => b - a > 0.02).map(([a, b]) => (
+              {skirt.filter(([a, b]) => b - a > 0.02).map(([a, b]) => (
                 <Box key={a} p={[(a + b) / 2 - len / 2, 0.06, 0]} s={[b - a, 0.12, T]} color={color} />
               ))}
-              {door && <DoorPiece at={(door[0] + door[1]) / 2} len={len} inward={s.inward} label={label} dw={DOOR_W} />}
+              {doors.map(([a, b]) => <DoorPiece key={a} at={(a + b) / 2} len={len} inward={s.inward} label={label} dw={DOOR_W} />)}
             </group>
             {decor[s.wall] && <Hide outside={s.outside}>{decor[s.wall]}</Hide>}
           </group>
@@ -151,24 +156,24 @@ export function Shell({ w, d, shape, margin, color, wainscot, decor = {}, storef
       })}
       {/* front (street side): glass storefront with or without the door, or a plain wall when it has no window */}
       <FrontFade z={d / 2 + 0.04}>
-        {frontGlass && dw === "front" && <Storefront x0={-w / 2} x1={w / 2} z={d / 2 + 0.04} door={{ x: -w / 2 + at, w: DOOR_W }} mat={storefrontMat} />}
+        {frontGlass && dw === "front" && <Storefront x0={-w / 2} x1={w / 2} z={d / 2 + 0.04} door={{ x: -w / 2 + at, w: DOOR_W }} more={alongs.slice(1).map((a) => ({ x: -w / 2 + a, w: DOOR_W }))} mat={storefrontMat} />}
         {frontGlass && dw !== "front" && <GlassRun x0={-w / 2} x1={w / 2} z={d / 2 + 0.04} />}
         {!frontGlass && (
           <group position={[0, 0, d / 2 + T / 2]}>
-            <Strip len={w} opens={dw === "front" ? [{ a: doorSpan[0], b: doorSpan[1], y0: 0, y1: 2.1, kind: "door" }] : []} color={color} wainscot={wainscot} inward={-1} />
+            <Strip len={w} opens={dw === "front" ? spans.map(([a, b]) => ({ a, b, y0: 0, y1: 2.1, kind: "door" as const })) : []} color={color} wainscot={wainscot} inward={-1} />
           </group>
         )}
         {decor.front}
       </FrontFade>
       {dw === "front" && (
         <group position={[0, 0, d / 2 + T / 2]}>
-          {!frontGlass && <DoorPiece at={at} len={w} inward={-1} label={label} dw={DOOR_W} />}
-          {frontGlass && (
-            <group>
-              <Box p={[-w / 2 + at, 0.008, -0.5]} s={[DOOR_W, 0.014, 0.8]} color="#3d4a63" />
-              <DoorTag p={[-w / 2 + at, 2.55, 0.3]} text={label} />
+          {!frontGlass && alongs.map((a) => <DoorPiece key={a} at={a} len={w} inward={-1} label={label} dw={DOOR_W} />)}
+          {frontGlass && alongs.map((a) => (
+            <group key={a}>
+              <Box p={[-w / 2 + a, 0.008, -0.5]} s={[DOOR_W, 0.014, 0.8]} color="#3d4a63" />
+              <DoorTag p={[-w / 2 + a, 2.55, 0.3]} text={label} />
             </group>
-          )}
+          ))}
         </group>
       )}
     </group>
