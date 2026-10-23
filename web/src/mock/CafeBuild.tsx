@@ -44,7 +44,7 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
   // 가진 돈이 적을 때 가게 꾸미기(예: 10평)와 시뮬레이션(20평)의 여는 비용이 달랐다
   // lab:merge 수빈: 고깃집처럼 빈 가게에서 시작해 물건을 골라 채운다 (머신과 계산대는 꼭 있어야 열 수 있다). 여는 비용은 그대로 엔진 값
   const EMPTY = { tables: 0, chairs: 0, bar: 0, groups: 0, showcase: 0, oven: 0, kiosks: 0, pos: 0 };
-  useEffect(() => { if (!cfgIn || cfgIn.tables === undefined) setCfgOut({ ...cfg, ...EMPTY }); }, [cfgIn]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!cfgIn || cfgIn.tables === undefined) setCfgOut({ ...cfg, ...EMPTY }); }, []); // eslint-disable-line react-hooks/exhaustive-deps  (처음 열 때만: 추천 배치는 개수를 비워 추천값을 쓴다)
   const [cat, setCat] = useState(CATS[0].key);
   const pv = useCafePreview(profile, cfg);
   const lay = cafeLayoutOf(cfg);
