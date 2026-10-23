@@ -7,6 +7,8 @@ import { easyRun, netErr, type EasyInputs, type EasyRes, type Overrides } from "
 import { addAttempt, nextAttemptNo, useAttempts, type Attempt } from "./attempts";
 import Compare, { AttemptLine, Parts, controlOf, manWon, signedMan } from "./Compare";
 import { scoreOf } from "./scoreStub";
+import Sensitivity from "./Sensitivity"; // lab:heat
+import { StandingPanel } from "../score/ScoreCard"; // lab:standing
 import { bbqSummary, cafeSummary, easyInputsOf, genericSummary } from "./summary";
 import "./modes.css";
 
@@ -123,6 +125,7 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
   const [phase, setPhase] = useState<"form" | "run" | "result">("form");
   const [err, setErr] = useState("");
   const [res, setRes] = useState<EasyRes | null>(null);
+  const [sens, setSens] = useState(false); // lab:heat 이지 모드에서도 민감도(히트맵)
   const [cur, setCur] = useState<Attempt | null>(null);
   const [next, setNext] = useState<Record<string, number | undefined>>({});
   const [flash, setFlash] = useState("");
@@ -256,7 +259,10 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
       <header className="lm-head">
         <h1 className="lm-h1">{cur.n}판째 결과예요</h1>
         <p className="lm-sub">{IND_KO(ind)}, {inp.gu}{inp.dong ? ` ${inp.dong}` : ""}, 가진 돈 {man(inp.capital_man)}, {s.months[0]?.month}월에 열어 6개월</p>
+        {res && <button type="button" className="m-btn m-btn-quiet lm-toolbtn lm-sensbtn" onClick={() => setSens(true)}>민감도 히트맵 보기</button>}{/* lab:heat */}
       </header>
+      {sens && res && <Sensitivity industry={ind} onClose={() => setSens(false)} getBody={async () => res.inputs.run}
+        note="이 판과 같은 가게·같은 시작 달로, 손님·재료비·월세·인건비만 바꿔 다시 돌린 값이에요." />}
       {short > 0 && (
         <aside className="lm-short" role="note" aria-label="가진 돈으로는 열 수 없는 계획">
           <b>가진 돈으로는 이 가게를 열 수 없어요</b>
@@ -266,6 +272,7 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
         </aside>
       )}
       <Compare prev={prev} cur={cur} onFix={focusCtl} derived={loanAuto ? ["loan_man"] : []} />
+      <StandingPanel summary={cur.summary} total={cur.scored.score.total} />{/* lab:standing 상위 몇 %, 놓친 것 */}
       <AttemptLine list={list} />
 
       <section className="lm-sec">

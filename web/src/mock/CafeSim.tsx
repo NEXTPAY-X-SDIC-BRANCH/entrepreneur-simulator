@@ -2,6 +2,7 @@
 // 아래 재생 바, 시작·운영 계획·정산·결과는 팝업. 엔진은 카페 월별 모델(sim/cafe, 포트 8010 /cafe/season)이다.
 // 엔진은 손님 한 명씩이 아니라 시간대별 주문·처리 능력을 계산하므로, 영업 장면은 하루 시간대를 따라 의자가 차고 비는 모습으로 보여 준다.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { PEEK_BACK, useSimChrome } from "../lab/ui/peek"; // lab:peek
 import { cafeDong } from "./cafe";
 import { flowRatioNote } from "./DongFlow";
 import { cafeDaily, cafeOpenFromEngine, engineBody, type CafeCfg, type EngineCapex, type EngineFunding } from "./cafeChecks";
@@ -242,6 +243,7 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
   const [startMonth, setStartMonth] = useState(3);
   const [plan, setPlan] = useState<Dec>({ price_change_pct: 0, hours: "standard", staff_policy: "standard", marketing_krw: 0, dessert: true, delivery: false });
   const [view, setView] = useState<View>("intro");
+  const { peek, setPeek, planOpen, setPlanOpen } = useSimChrome(view); // lab:peek 팝업 내려 두고 가게 보기, 운영 계획 판 접기
   const [hourIdx, setHourIdx] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [fast, setFast] = useState(false);
@@ -456,7 +458,11 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
   const prevPlan = months.length > 1 ? months[months.length - 2].decisions : undefined;
   const occupancy = view === null && sched[hourIdx] ? (sched[hourIdx].orders / maxOrders) * 0.9 : 0;
   const recs = view === "plan" ? recommend(cur, plan) : [];
-  const scoreSummary = view === "report" && start && months.length ? cafeSummary(months, start.start, { gu: profile.gu, dong: profile.dong?.name ?? null, pyeong: cfg.pyeong, grade: cfg.grade, staff: cfg.staff }) : null; // lab:score
+  const scoreSummary = view === "report" && start && months.length ? cafeSummary(months, start.start, { gu: profile.gu, dong: profile.dong?.name ?? null, pyeong: cfg.pyeong, grade: cfg.grade, staff: cfg.staff,
+    // lab:standing 상위 % 와 놓친 것 계산에 쓰는 값: 가진 돈, 마지막 달 운영, 처음보다 바뀐 가격
+    capital_man: profile.capital, hours: months.at(-1)!.decisions.hours, marketing_krw: months.at(-1)!.decisions.marketing_krw,
+    dessert: months.at(-1)!.decisions.dessert, delivery: months.at(-1)!.decisions.delivery,
+    price_change_pct: Math.round(((months.at(-1)!.decisions.price_level ?? 1) - 1) * 100) }) : null; // lab:score
   const nextMonth: number = cur ? (cur.calendar_month % 12) + 1 : start?.start_month ?? startMonth;
   const place = dongPick?.scope === "dong" ? `${profile.gu} ${dongPick.name}` : `${profile.gu} (대표 동네 ${dongPick?.name ?? ""})`;
 
@@ -524,8 +530,8 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
           </aside>
         )}
         {cur && (view === null || view === "settle") && (
-          <aside className="sx-planpanel" aria-label={`${cur.calendar_month}월 운영 계획`}>
-            <p className="sx-panel-h"><span>{cur.calendar_month}월 운영 계획</span></p>
+          <aside className={`sx-planpanel${planOpen ? "" : " is-folded"}`} aria-label={`${cur.calendar_month}월 운영 계획`}>
+            <p className="sx-panel-h"><span>{cur.calendar_month}월 운영 계획</span><button type="button" className="sx-fold" aria-expanded={planOpen} onClick={() => setPlanOpen((v) => !v)}>{planOpen ? "접기" : "펴기"}</button></p>
             <dl>
               {LEVERS.map((lv) => {
                 const k = planKey(lv); const d = cur.decisions;
@@ -559,9 +565,11 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
         </div>
       )}
 
+      {peek && view && <button type="button" className="sx-peekback" onClick={() => setPeek(false)}>{PEEK_BACK[view] ?? "창 다시 보기"}</button>}{/* lab:peek */}
       {view !== null && (
-        <div className="sx-modal" role="dialog" aria-modal="true">
+        <div className="sx-modal" role="dialog" aria-modal="true" hidden={peek}>
           <div className={`sx-pop sx-pop-${view}`}>
+            <button type="button" className="sx-peekbtn" onClick={() => setPeek(true)}>가게 화면 보기</button>{/* lab:peek */}
             {view === "intro" && (
               <>
                 <div className="sx-scroll">

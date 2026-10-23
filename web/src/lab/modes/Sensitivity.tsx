@@ -1,6 +1,6 @@
 // lab:modes — 하드 모드 민감도: 학습자가 정한 ± 범위로 같은 계획을 여러 번 돌려 6개월 뒤 현금이 얼마나 흔들리는지 본다.
 // 계산은 /lab/sensitivity (sim/easy.py). 범위는 학습자가 정한 가정이고, 각 칸은 같은 시드(같은 사건 순서)로 돌린 엔진 결과다.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { netErr, sensitivity, type Cell, type Sens } from "./api";
 import { manWon, signedMan } from "./Compare";
 import "./modes.css";
@@ -18,6 +18,14 @@ const HINT: Record<string, string> = {
 const DEFAULT: Record<string, number> = { customers: 15, meat: 20, food: 20, rent: 10, labor: 10 };
 
 const cellText = (c: Cell) => (c.closed ? `${c.closed_month}개월째 폐업` : manWon(c.end_cash));
+// lab:heat 격자를 히트맵으로: 6개월 뒤 현금이 많을수록 진한 파랑, 모자랄수록 진한 빨강. 진하기는 이 격자 안에서 가장 적은 값과
+// 가장 많은 값 사이의 자리라서 칸끼리 차이가 보인다. 폐업은 짙은 칸
+function heat(c: Cell, cells: Cell[]): CSSProperties | undefined {
+  if (c.closed) return undefined;
+  const v = c.end_cash, pos = cells.filter((x) => !x.closed && x.end_cash >= 0).map((x) => x.end_cash), neg = cells.filter((x) => !x.closed && x.end_cash < 0).map((x) => -x.end_cash);
+  const at = (x: number, xs: number[]) => (xs.length < 2 || Math.max(...xs) === Math.min(...xs) ? 0.5 : (x - Math.min(...xs)) / (Math.max(...xs) - Math.min(...xs)));
+  return v < 0 ? { background: `rgba(200, 60, 60, ${(0.15 + 0.45 * at(-v, neg)).toFixed(2)})` } : { background: `rgba(37, 106, 191, ${(0.08 + 0.5 * at(v, pos)).toFixed(2)})` };
+}
 
 export default function Sensitivity({ industry, getBody, onClose, note }: {
   industry: string; note?: string; getBody: () => Promise<Record<string, unknown>>; onClose: () => void;
@@ -118,11 +126,13 @@ export default function Sensitivity({ industry, getBody, onClose, note }: {
                 <tbody>
                   {out.grid.cells.map((row, r) => (
                     <tr key={r}><th scope="row">{pct(ySteps[r])}</th>
-                      {row.map((c, i) => <td key={i} className={c.closed ? "is-closed" : c.end_cash < 0 || c.lowest_cash < 0 ? "is-neg" : r === 1 && i === 1 ? "is-base" : ""}>{cellText(c)}</td>)}
+                      {row.map((c, i) => <td key={i} style={heat(c, out.grid.cells.flat())}
+                        className={`${c.closed ? "is-closed" : c.end_cash < 0 || c.lowest_cash < 0 ? "is-neg" : ""}${r === 1 && i === 1 ? " is-base" : ""}`}>{cellText(c)}</td>)}
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <p className="lm-heatkey" aria-hidden="true"><i className="k-neg" />현금이 모자람<i className="k-pos" />현금이 남음 (진할수록 큼)<i className="k-closed" />폐업<i className="k-base" />지금 계획</p>
               <p className="lm-quiet">
                 전부 나쁜 쪽이면 {cellText(out.worst)}{out.worst.lowest_cash < 0 && !out.worst.closed ? ", 중간에 현금이 마이너스로 내려가요" : ""}.
                 전부 좋은 쪽이면 {cellText(out.best)}. 엔진을 {out.runs}번 돌렸어요 ({(ms / 1000).toFixed(1)}초).

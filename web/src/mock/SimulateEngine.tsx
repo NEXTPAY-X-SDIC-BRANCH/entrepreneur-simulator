@@ -4,6 +4,7 @@
 // 날마다의 값은 엔진이 만든 밤별 매출·손님을 그달 합계에 맞춰 나눈 것이고, 월세·이자는 첫날에, 인건비·사장 생활비·매장 운영비는 문 연 날마다 하루치씩 빠진다 (lab:cost).
 // 엔진 서버(api/changeup.py, 포트 8010)가 필요하다. 목업 계산(sim.ts)은 쓰지 않는다.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { PEEK_BACK, useSimChrome } from "../lab/ui/peek"; // lab:peek
 import { Canvas } from "@react-three/fiber";
 import { GLGuard } from "../shared/GLGuard";
 import { Items, Room, TableLife, seatPoses } from "./Parts3D";
@@ -483,6 +484,7 @@ export default function SimulateEngine({ profile, store, levers, onBack, mode = 
   const applyMenu = (d: MenuDoc) => { setMenuDoc(d); setPlan((p) => ({ ...p, menu: toEngine(d.items), table_cost: d.table_setting?.cost })); };
   const gfx = useGfx();
   const [view, setView] = useState<View>("intro");
+  const { peek, setPeek, planOpen, setPlanOpen } = useSimChrome(view); // lab:peek 팝업 내려 두고 가게 보기, 운영 계획 판 접기
   const [fade, setFade] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -794,8 +796,8 @@ export default function SimulateEngine({ profile, store, levers, onBack, mode = 
           </aside>
         )}
         {cur && (view === null || view === "settle") && (
-          <aside className="sx-planpanel" aria-label={`${cur.result.month}월 운영 계획`}>
-            <p className="sx-panel-h"><span>{cur.result.month}월 운영 계획</span></p>
+          <aside className={`sx-planpanel${planOpen ? "" : " is-folded"}`} aria-label={`${cur.result.month}월 운영 계획`}>
+            <p className="sx-panel-h"><span>{cur.result.month}월 운영 계획</span><button type="button" className="sx-fold" aria-expanded={planOpen} onClick={() => setPlanOpen((v) => !v)}>{planOpen ? "접기" : "펴기"}</button></p>
             <dl>
               {LEVERS.map((lv) => {
                 const before = done.length > 1 ? done[done.length - 2].plan : null;
@@ -856,9 +858,11 @@ export default function SimulateEngine({ profile, store, levers, onBack, mode = 
         </div>
       )}
 
+      {peek && view && <button type="button" className="sx-peekback" onClick={() => setPeek(false)}>{PEEK_BACK[view] ?? "창 다시 보기"}</button>}{/* lab:peek */}
       {view !== null && (
-        <div className="sx-modal" role="dialog" aria-modal="true">
+        <div className="sx-modal" role="dialog" aria-modal="true" hidden={peek}>
           <div className={`sx-pop sx-pop-${view}${fade ? " is-fade" : ""}`}>
+            <button type="button" className="sx-peekbtn" onClick={() => setPeek(true)}>가게 화면 보기</button>{/* lab:peek */}
 
             {view === "intro" && (
               <>

@@ -562,3 +562,12 @@ h1:has(> .sx-modesw), h1:has(> .sx-modelock) { display: flex; align-items: cente
 /* '현금 그래프 접기'·'현금 흐름 기록 접기' 버튼과 그 아래 칸 사이를 띄운다 */
 aside.sx-receipt, div.sx-leftcol, div.cst-live.cst-float { top: 128px; }
 .sx-modetag { margin-inline-start: 10px; font-size: 14px; font-weight: 600; color: #4d6bd6; letter-spacing: 0; vertical-align: 2px; }
+/* lab:peek 팝업을 내려 두고 가게 화면 보기, 운영 계획 판 접기 */
+.sx-modal[hidden] { display: none; }
+.sx-pop { position: relative; }
+.sx-peekbtn { position: absolute; top: 14px; right: 16px; z-index: 2; padding: 6px 12px; border: 1px solid #c3d0e2; border-radius: 999px; background: #fff; color: #33465f; font-size: 13px; cursor: pointer; }
+.sx-peekbtn:hover { background: #f1f5fb; }
+.sx-peekback { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 9; padding: 12px 22px; border: 0; border-radius: 999px; background: #256abf; color: #fff; font-size: 16px; font-weight: 700; box-shadow: 0 6px 20px rgba(20,35,58,.25); cursor: pointer; }
+.sx-panel-h .sx-fold { margin-left: auto; padding: 2px 8px; border: 1px solid #c3d0e2; border-radius: 8px; background: #fff; color: #5b6b82; font-size: 12px; cursor: pointer; }
+.sx-planpanel.is-folded > :not(.sx-panel-h) { display: none; }
+.sx-planpanel.is-folded { padding-bottom: 12px; }

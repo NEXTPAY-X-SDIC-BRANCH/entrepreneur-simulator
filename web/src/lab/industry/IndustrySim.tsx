@@ -2,6 +2,7 @@
 // 시작·운영 계획·정산·결과는 팝업. 엔진은 새 업종 월 모델(/lab/industry/season, sim/generic)이다.
 // 한 달 = 운영 계획(가격·영업시간·직원·마케팅·배달) + 이달의 사건 대응 하나 -> 엔진이 그달 손익과 현금을 계산.
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { PEEK_BACK, useSimChrome } from "../ui/peek"; // lab:peek
 import CafeRoom3D from "../../mock/CafeRoom3D";
 import ShopRoom3D, { shopPlan } from "../../mock/ShopRoom3D";
 import { man, type Profile } from "../../mock/model";
@@ -63,6 +64,7 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
   const pv = usePreview(profile, cfg);
   const [top, setTop] = useState(108);
   const [view, setView] = useState<View>("intro");
+  const { peek, setPeek, planOpen, setPlanOpen } = useSimChrome(view); // lab:peek 팝업 내려 두고 가게 보기, 운영 계획 판 접기
   const [startMonth, setStartMonth] = useState(3);
   const [start, setStart] = useState<Start | null>(null);
   const [months, setMonths] = useState<Month[]>([]);
@@ -183,8 +185,8 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
           </aside>
         )}
         {cur && (
-          <aside className="sx-planpanel" aria-label={`${cur.calendar_month}월 운영 계획`}>
-            <p className="sx-panel-h"><span>{cur.calendar_month}월 운영</span></p>
+          <aside className={`sx-planpanel${planOpen ? "" : " is-folded"}`} aria-label={`${cur.calendar_month}월 운영 계획`}>
+            <p className="sx-panel-h"><span>{cur.calendar_month}월 운영</span><button type="button" className="sx-fold" aria-expanded={planOpen} onClick={() => setPlanOpen((v) => !v)}>{planOpen ? "접기" : "펴기"}</button></p>
             <dl>
               <div><dt>가격</dt><dd>개업가의 {Math.round(cur.decisions.price_level * 100)}%</dd></div>
               <div><dt>영업시간</dt><dd>{HOURS_KO[cur.decisions.hours]}</dd></div>
@@ -196,8 +198,10 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
         )}
       </div>
 
-      <div className="sx-modal" role="dialog" aria-modal="true" aria-label={`${t.shop} 시뮬레이션`}>
+      {peek && view && <button type="button" className="sx-peekback" onClick={() => setPeek(false)}>{PEEK_BACK[view] ?? "창 다시 보기"}</button>}{/* lab:peek */}
+      <div className="sx-modal" role="dialog" aria-modal="true" hidden={peek} aria-label={`${t.shop} 시뮬레이션`}>
         <div className={`sx-pop sx-pop-${view}`}>
+          <button type="button" className="sx-peekbtn" onClick={() => setPeek(true)}>가게 화면 보기</button>{/* lab:peek */}
           {view === "intro" && (
             <>
               <div className="sx-scroll">
