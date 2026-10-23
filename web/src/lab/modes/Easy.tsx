@@ -280,15 +280,21 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
         {(() => {
           const hi = Math.max(1, ...s.months.map((m) => Math.abs(m.op)));
           return (
-            <div className="lm-opbars" role="img" aria-label={s.months.map((m) => `${m.month}월 ${signedMan(m.op)}`).join(", ")}>
-              {s.months.map((m, i) => (
-                <div key={i} className="lm-opbar">
-                  <em className={m.op < 0 ? "is-neg" : ""}>{signedMan(m.op)}</em>
-                  <div className="lm-opbar-track"><i className={m.op < 0 ? "is-neg" : ""} style={{ blockSize: `${Math.max(4, (Math.abs(m.op) / hi) * 100)}%` }} /></div>
-                  <small>{m.month}월</small>
-                  <span className={m.cash_after < 0 ? "is-neg" : ""}>현금 {manWon(m.cash_after)}</span>
-                </div>
-              ))}
+            <div className="lm-opchart" role="img" aria-label={s.months.map((m) => `${m.month}월 영업이익 ${signedMan(m.op)}`).join(", ")}>
+              <div className="lm-opchart-key"><span><i className="k-pos" />흑자</span><span><i className="k-neg" />적자</span><span className="lm-opchart-zero">가운데 선이 0원</span></div>
+              <div className="lm-opcols">
+                {s.months.map((m, i) => {
+                  const h = `${Math.max(3, (Math.abs(m.op) / hi) * 100)}%`, neg = m.op < 0;
+                  return (
+                    <div key={i} className={`lm-opcol${neg ? " is-neg" : ""}`}>
+                      <div className="lm-half up">{!neg && <i style={{ blockSize: h }}><em>{signedMan(m.op)}</em></i>}</div>
+                      <div className="lm-half down">{neg && <i style={{ blockSize: h }}><em>{signedMan(m.op)}</em></i>}</div>
+                      <b>{m.month}월</b>
+                      <span className={m.cash_after < 0 ? "is-neg" : ""}>남은 현금<br />{manWon(m.cash_after)}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           );
         })()}

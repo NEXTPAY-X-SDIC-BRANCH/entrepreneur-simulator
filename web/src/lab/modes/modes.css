@@ -201,3 +201,52 @@
 .lm-shown-cards b { font-size: 19px; font-variant-numeric: tabular-nums; }
 .lm-shown-cards small { font-size: 12.5px; line-height: 1.5; color: var(--pencil); }
 @media (max-width: 640px) { .lm-opbars { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* 6개월 흐름: 0원 선 가운데, 흑자 위·적자 아래 */
+.lm-opchart { margin: 12px 0 8px; padding: 16px 18px 14px; border: 1px solid var(--rule); border-radius: 16px; }
+.lm-opchart-key { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--pencil); }
+.lm-opchart-key i { display: inline-block; inline-size: 10px; block-size: 10px; margin-inline-end: 5px; border-radius: 3px; vertical-align: -1px; }
+.lm-opchart-key .k-pos { background: #4d6bd6; } .lm-opchart-key .k-neg { background: #e08e84; }
+.lm-opchart-zero { margin-inline-start: auto; }
+.lm-opcols { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-block-start: 8px; }
+.lm-opcol { display: grid; grid-template-rows: 90px 90px auto auto; justify-items: center; text-align: center; }
+.lm-half { position: relative; display: flex; justify-content: center; inline-size: 100%; }
+.lm-half.up { align-items: flex-end; border-block-end: 1.5px solid #9aa6bd; }
+.lm-half.down { align-items: flex-start; }
+.lm-half i { position: relative; display: block; inline-size: 42%; background: #4d6bd6; border-radius: 7px 7px 0 0; }
+.lm-half.down i { background: #e08e84; border-radius: 0 0 7px 7px; }
+.lm-half em { position: absolute; inset-inline-start: 50%; transform: translateX(-50%); font-style: normal; font-size: 12.5px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lm-half.up em { inset-block-end: calc(100% + 4px); color: #22388f; }
+.lm-half.down em { inset-block-start: calc(100% + 4px); color: #b4372c; }
+.lm-opcol > b { margin-block-start: 10px; font-size: 14px; }
+.lm-opcol > span { margin-block-start: 2px; font-size: 11.5px; line-height: 1.4; color: var(--pencil); font-variant-numeric: tabular-nums; }
+.lm-opcol > span.is-neg { color: #b4372c; }
+@media (max-width: 640px) { .lm-opcols { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 18px; } }
+/* 6개월 흐름 겹침 고침: 범례를 막대 값 글씨 위 따로 한 줄에, 달 이름은 검정 */
+.lm-opchart-key { margin-block-end: 30px; }
+.lm-opcols { margin-block-start: 0; }
+.lm-opcol { grid-template-rows: 90px 90px auto auto; padding-block-end: 4px; }
+.lm-opcol > b { margin-block-start: 30px; color: var(--ink); }
+
+/* 결과 화면 크기 다듬기 (2026-10-23): 점수 내역을 가로로 펼치고, 흐름 그래프·근거 카드는 작게 */
+.lm-compare > .lm-two { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.lm-parts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.lm-parts li { padding: 12px 14px; }
+@media (max-width: 860px) { .lm-parts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .lm-parts { grid-template-columns: minmax(0, 1fr); } }
+
+.lm-opchart { max-inline-size: 760px; padding: 12px 14px 10px; }
+.lm-opchart-key { margin-block-end: 22px; font-size: 12px; }
+.lm-opcol { grid-template-rows: 56px 56px auto auto; }
+.lm-half i { inline-size: 36%; }
+.lm-half em { font-size: 11.5px; }
+.lm-opcol > b { margin-block-start: 22px; font-size: 13px; }
+.lm-opcol > span { font-size: 11px; }
+
+.lm-shown-cards { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.lm-shown-cards li { gap: 2px; padding: 10px 12px; border-radius: 12px; }
+.lm-shown-h { font-size: 12.5px; }
+.lm-shown-h .lm-src { padding: 0 6px; font-size: 11.5px; }
+.lm-shown-cards b { font-size: 15px; line-height: 1.4; }
+.lm-shown-cards small { font-size: 11.5px; line-height: 1.45; }
+.lm-opchart { max-inline-size: none; }

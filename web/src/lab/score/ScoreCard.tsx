@@ -192,19 +192,21 @@ function StandingBox({ st, busy, err, total }: { st: Standing | null; busy: bool
   const peak = Math.max(1, ...st.hist), mine = Math.min(9, Math.floor(total / 10));
   return (
     <section className="ls-stand" aria-labelledby="ls-stand-h">
-      <div className="ls-stand-l">
-        <h3 id="ls-stand-h" className="ls-cap">내 자리</h3>
-        <p className="ls-pct">상위 <b>{st.top_pct}%</b></p>
-        <small>{st.cohort}, 엔진으로 돌린 {st.n.toLocaleString("ko-KR")}판과 비교했어요. 수강생 기록이 쌓이면 그 기록과 비교해요.</small>
-      </div>
-      <div className="ls-hist" role="img" aria-label={`점수 분포에서 ${total}점은 상위 ${st.top_pct}%`}>
-        {st.hist.map((c, i) => (
-          <div key={i} className={i === mine ? "is-me" : ""}>
-            <i style={{ blockSize: `${(c / peak) * 100}%` }} />
-            {i === mine && <em>나</em>}
-            <span>{i * 10}</span>
-          </div>
-        ))}
+      <div className="ls-stand-me">
+        <div className="ls-stand-l">
+          <h3 id="ls-stand-h" className="ls-cap">내 자리</h3>
+          <p className="ls-pct">상위 <b>{st.top_pct}%</b></p>
+          <small>{st.cohort}, 엔진으로 돌린 {st.n.toLocaleString("ko-KR")}판과 비교했어요. 수강생 기록이 쌓이면 그 기록과 비교해요.</small>
+        </div>
+        <div className="ls-hist" role="img" aria-label={`점수 분포에서 ${total}점은 상위 ${st.top_pct}%`}>
+          {st.hist.map((c, i) => (
+            <div key={i} className={i === mine ? "is-me" : ""}>
+              <i style={{ blockSize: `${Math.max(2, (c / peak) * 100)}%` }}>{i === mine && <em>나 {total}점</em>}</i>
+              <span>{i * 10}</span>
+            </div>
+          ))}
+        </div>
+        <p className="ls-hist-cap">점수 구간별 판 수 (10점 단위)</p>
       </div>
       <div className="ls-missed">
         <h3 className="ls-cap">놓친 것{st.missed.length ? ` ${st.missed.length}가지` : ""}</h3>
@@ -216,9 +218,9 @@ function StandingBox({ st, busy, err, total }: { st: Standing | null; busy: bool
                 <span className="ls-no">{i + 1}</span>
                 <div>
                   <b>{m.label}</b>
-                  <p>내 선택 <strong>{m.mine}</strong>, 상위 10%는 <strong>{m.top}</strong></p>
-                  <p className="ls-eff">이것만 바꿔 다시 돌리면 6개월 영업이익 <strong>{won(m.d_op_krw)}</strong>{m.d_score ? `, 점수 ${m.d_score > 0 ? "+" : ""}${m.d_score}점` : ""}</p>
+                  <p className="ls-swap"><span className="ls-mine">{m.mine}</span><span aria-hidden>→</span><span className="ls-topv">{m.top}</span><small>상위 10%</small></p>
                 </div>
+                <p className="ls-gain" aria-label={`이것만 바꾸면 6개월 영업이익 ${won(m.d_op_krw)}`}><strong>{won(m.d_op_krw)}</strong>{m.d_score ? <small>점수 {m.d_score > 0 ? "+" : ""}{m.d_score}</small> : null}</p>
               </li>
             ))}
           </ol>

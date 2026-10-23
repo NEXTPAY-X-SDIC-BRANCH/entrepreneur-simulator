@@ -139,3 +139,38 @@
 .ls-eff strong { color: var(--ls-blue); }
 @media (max-width: 1000px) { .ls-stand { grid-template-columns: 1fr; } }
 .ls-card.ls-solo { padding-block-end: 0; border-block-end: 0; }
+
+/* 내 자리 다듬기: 상위 %와 분포를 한 카드에, '나'는 내 막대 바로 위, 놓친 것은 바꿀 값과 효과 배지 */
+.ls-stand { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 20px; padding: 20px; border-radius: 18px; }
+.ls-stand-me { display: grid; gap: 14px; align-content: start; padding: 18px 20px; border-radius: 14px; background: #fff; border: 1px solid var(--ls-rule); }
+.ls-stand-me .ls-stand-l { grid-template-columns: auto 1fr; align-items: baseline; column-gap: 14px; }
+.ls-stand-me .ls-stand-l h3 { grid-column: 1 / -1; }
+.ls-stand-me .ls-stand-l small { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.5; color: var(--ls-pencil); }
+.ls-hist { gap: 6px; block-size: 170px; padding-block: 34px 22px; border-block-end: 1px solid var(--ls-rule); }
+.ls-hist i { position: relative; border-radius: 6px 6px 2px 2px; background: #d6deee; }
+.ls-hist .is-me i { background: var(--ls-blue); box-shadow: 0 4px 12px rgba(61, 99, 234, .3); }
+.ls-hist i em { position: absolute; inset-block-end: calc(100% + 6px); inset-inline-start: 50%; transform: translateX(-50%); padding: 2px 8px; border-radius: 999px; background: var(--ls-blue); color: #fff; font-size: 11.5px; font-style: normal; font-weight: 700; white-space: nowrap; }
+.ls-hist i em::after { content: ""; position: absolute; inset-block-start: 100%; inset-inline-start: 50%; transform: translateX(-50%); border: 4px solid transparent; border-block-start-color: var(--ls-blue); }
+.ls-hist span { inset-block-end: -20px; font-size: 11.5px; }
+.ls-hist-cap { margin: 4px 0 0; font-size: 12px; color: var(--ls-pencil); text-align: center; }
+.ls-missed li { grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; padding: 12px 14px; border-radius: 12px; }
+.ls-swap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-block-start: 4px; }
+.ls-swap span { padding: 2px 8px; border-radius: 8px; font-size: 13px; }
+.ls-swap .ls-mine { background: #f2f3f6; color: var(--ls-ink2); text-decoration: line-through; text-decoration-color: #b8bfcc; }
+.ls-swap .ls-topv { background: var(--ls-blue-wash); color: var(--ls-blue); font-weight: 700; }
+.ls-swap small { font-size: 12px; color: var(--ls-pencil); }
+.ls-gain { display: grid; justify-items: end; gap: 2px; margin: 0; padding: 6px 12px; border-radius: 12px; background: #e9f6ee; }
+.ls-gain strong { font-size: 16px; color: #1b6e43; white-space: nowrap; }
+.ls-gain small { font-size: 12px; color: #2f7a52; }
+@media (max-width: 900px) { .ls-stand { grid-template-columns: 1fr; } }
+/* 겹침 고침: '나 80점' 말풍선은 막대 위로 (원래 em 규칙의 위쪽·양옆 고정을 풀기), 효과 배지는 잘리지 않게 */
+.ls-hist i em { inset-block-start: auto; inset-inline-end: auto; }
+.ls-hist .is-me { z-index: 1; }
+.ls-missed li { overflow: visible; }
+.ls-gain { min-inline-size: 104px; margin: 0 !important; }
+/* 이지 결과에서 '내 자리' 상자를 위 점수 내역과 띄운다 */
+.lm-result .ls-card.ls-solo { margin-block-start: 32px; }
+/* 효과 배지: 글씨가 배지 밖으로 나가지 않게 내용 폭만큼, 가운데 정렬 */
+.ls-missed li { grid-template-columns: 26px minmax(0, 1fr) max-content; }
+.ls-missed li .ls-gain { display: grid; justify-items: center; inline-size: max-content; min-inline-size: 0; box-sizing: border-box; padding: 8px 14px; border-radius: 12px; text-align: center; line-height: 1.3; }
+.ls-missed li .ls-gain strong { font-size: 16px; }
