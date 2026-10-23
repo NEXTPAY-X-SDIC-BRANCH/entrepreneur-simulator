@@ -115,9 +115,9 @@ export default function IndustryArea({ profile, setProfile, gus, onNext, cfg: cf
           <div className="ia-setup">
             <div className="m-stepper">
               <span id="ia-py">평수</span>
-              <button type="button" aria-label="1평 줄이기" disabled={!p || p.input.pyeong <= 5} onClick={() => p && setC({ pyeong: p.input.pyeong - 1 })}>−</button>
+              <button type="button" aria-label="1평 줄이기" disabled={!p || p.input.pyeong <= 10} onClick={() => p && setC({ pyeong: p.input.pyeong - 1 })}>−</button>
               <output aria-labelledby="ia-py">{p ? `${p.input.pyeong}평` : "-"}</output>
-              <button type="button" aria-label="1평 늘리기" disabled={!p || p.input.pyeong >= 80} onClick={() => p && setC({ pyeong: p.input.pyeong + 1 })}>+</button>
+              <button type="button" aria-label="1평 늘리기" disabled={!p || p.input.pyeong >= 40} onClick={() => p && setC({ pyeong: p.input.pyeong + 1 })}>+</button>
             </div>
             <div className="m-seg" role="group" aria-label="마감 수준">
               {([["basic", "기본"], ["mid", "중급"], ["high", "고급"]] as [Grade, string][]).map(([g, l]) => (
