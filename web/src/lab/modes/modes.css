@@ -253,3 +253,11 @@
 /* 그래프를 범례에서 조금 아래로 */
 .lm-opchart-key { margin-block-end: 36px; }
 .lm-opcol > b { margin-block-start: 26px; }
+/* 채운 값과 근거: 접어 두고 필요할 때 펼치기 */
+.lm-fold > summary { display: flex; align-items: baseline; gap: 12px; padding: 14px 18px; border: 1px solid var(--rule); border-radius: 14px; cursor: pointer; list-style: none; }
+.lm-fold > summary::-webkit-details-marker { display: none; }
+.lm-fold > summary::before { content: "▸"; color: var(--blue-deep); }
+.lm-fold[open] > summary::before { content: "▾"; }
+.lm-fold > summary h2 { margin: 0; font-size: 18px; }
+.lm-fold > summary span { font-size: 13px; color: var(--pencil); }
+.lm-fold[open] > summary { margin-block-end: 4px; }

@@ -327,8 +327,8 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
 
       {prev && <div className="lm-two"><Parts cur={cur} /><div /></div>}
 
-      <section className="lm-sec">
-        <h2>이번 판에 채운 값과 근거</h2>
+      <details className="lm-sec lm-fold">
+        <summary><h2>이번 판에 채운 값과 근거</h2><span>평수·테이블·월세 등 {inp.shown.length}가지, 눌러서 보기</span></summary>
         <ul className="lm-shown-cards">
           {inp.shown.map((x) => (
             <li key={x.key}>
@@ -338,7 +338,7 @@ export default function Easy({ profile, setProfile, gus, onHard, onModes }: {
             </li>
           ))}
         </ul>
-      </section>
+      </details>
 
       <section className="lm-sec lm-next" aria-labelledby="lm-next-h">
         <h2 id="lm-next-h">{cur.n + 1}판 입력</h2>
