@@ -3,6 +3,7 @@
 // 운영 계획 → 이달의 사건 → (하루씩 재생) → 정산 → 6개월 성적표는 팝업으로 뜬다.
 // 계산은 apparel.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 옷가게의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
 import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
+import { PEEK_BACK, useSimChrome } from "../lab/ui/peek"; // lab:peek
 import {
   BUY_MODES, CATS, MARKET, ONLINE, mixAvg, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
   playMonth, startState, stateAfter, stockValue,
@@ -169,6 +170,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
   const [startMonth, setStartMonth] = useState((now.getMonth() + 1) % 12 + 1);
   const [mode, setMode] = useState<"easy" | "hard">("easy");
   const [view, setView] = useState<View>("intro");
+  const { peek, setPeek, planOpen, setPlanOpen } = useSimChrome(view); // lab:peek 팝업 내려 두고 가게 보기, 운영 계획 판 접기
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1000));
   const [state, setState] = useState<ApState>(() => startState(profile, cfg, startMonth));
   const [done, setDone] = useState<Done[]>([]);
@@ -321,8 +323,8 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
           </aside>
         )}
         {cur && (view === null || view === "settle") && (
-          <aside className="sx-planpanel" aria-label={`${cur.m.month}월 운영 계획`}>
-            <p className="sx-panel-h"><span>{cur.m.month}월 운영 계획</span></p>
+          <aside className={`sx-planpanel${planOpen ? "" : " is-folded"}`} aria-label={`${cur.m.month}월 운영 계획`}>
+            <p className="sx-panel-h"><span>{cur.m.month}월 운영 계획</span><button type="button" className="sx-fold" aria-expanded={planOpen} onClick={() => setPlanOpen((v) => !v)}>{planOpen ? "접기" : "펴기"}</button></p>
             <dl>
               {(Object.keys(PLAN_TEXT) as (keyof ApPlan)[]).map((k) => {
                 const before = done.length > 1 ? done[done.length - 2].m.plan : null;
@@ -374,9 +376,11 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
         </div>
       )}
 
+      {peek && view && <button type="button" className="sx-peekback" onClick={() => setPeek(false)}>{PEEK_BACK[view] ?? "창 다시 보기"}</button>}{/* lab:peek */}
       {view !== null && (
-        <div className="sx-modal" role="dialog" aria-modal="true">
+        <div className="sx-modal" role="dialog" aria-modal="true" hidden={peek}>
           <div className={`sx-pop sx-pop-${view}`}>
+            <button type="button" className="sx-peekbtn" onClick={() => setPeek(true)}>가게 화면 보기</button>{/* lab:peek */}
 
             {view === "intro" && (
               <>
