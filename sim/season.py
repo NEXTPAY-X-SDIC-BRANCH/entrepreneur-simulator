@@ -254,6 +254,7 @@ def _validate(plan: dict) -> dict:
     p["marketing_budget"] = int(min(max(p["marketing_budget"], 0), 3_000_000))
     p["hygiene"] = p["hygiene"] if p["hygiene"] in ("basic", "normal", "high") else "normal"
     p["delivery"] = p.get("delivery") if p.get("delivery") in data()["P"]["delivery"]["tier"] else "none"
+    p["min_order"] = int(round(min(max(float(p.get("min_order") or 20000), 0), 40000) / 1000) * 1000)
     for k in ("staff_grilling", "lunch", "terrace", "review_event", "group_reservations"):
         p[k] = bool(p[k])
     return p
@@ -395,7 +396,7 @@ def _setup(state: dict, plan: dict, events: list[str], *, closure_days: int = 0,
     off = {"meat_writeoff": writeoff, "tables_per_server": p["sto_tables"] / servers, "fatigue": state["fatigue"], "lunch": plan["lunch"], "groups": plan["group_reservations"], "staff_grilling": plan["staff_grilling"],
            "group_bookings": cal["group_bookings"], "waste": sum(x["waste"] for x in extras),
            "hygiene_hours": P["hygiene"][plan["hygiene"]]["labor_hours"], "marketing": plan["marketing_budget"],
-           "review_event": plan["review_event"], "open_days": p["sto_open_days"], "delivery": plan["delivery"],
+           "review_event": plan["review_event"], "open_days": p["sto_open_days"], "delivery": plan["delivery"], "min_order": plan.get("min_order", 20000),
            "lunch_demand": cal["demand_index"] * demand["rating"] * demand["awareness"]}
     return {"params": p, "a": a, "profile": prof, "plan": plan, "flags": flags, "demand": demand, "off": off, "events": list(events),
             "month": m, "cal": cal, "tolerance": g["tolerance"], "price_ceiling": g.get("price_ceiling"),
@@ -443,8 +444,12 @@ def _pnl(month: dict, su: dict, rng: np.random.Generator | None, n_reviews: floa
         # 결제대행 수수료는 영세·중소 우대수수료율로 환급되므로 매장 카드 수수료율과 같게 둔다 (쿠팡이츠 상생 요금제 공지).
         # 구별 배수: 이 구 고깃집의 점포당 배달 주문 ÷ 서울 가운데값 (소상공인365 배달분석, 점포 입력 delivery_gu_index). 없으면 1
         d_rev = revenue * v("delivery.share") * _delivery_month_index().get(su["month"], 1.0) * _store().get("delivery_gu_index", 1.0)
+        # 최소주문금액: 기준보다 높으면 주문은 줄고 한 건 금액은 커진다 (가정, delivery.min_order_*)
+        mo = max(5000, off.get("min_order", 20000)) / v("delivery.min_order_base")
+        basket = mo ** v("delivery.min_order_basket_exp")
+        d_rev *= mo ** -v("delivery.min_order_orders_exp") * basket
         lost = d_rev * v("delivery.cannibal")
-        orders = d_rev / (ticket * v("delivery.people_per_order")) if ticket else 0.0
+        orders = d_rev / (ticket * v("delivery.people_per_order") * basket) if ticket else 0.0
         tier = data()["P"]["delivery"]["tier"][off["delivery"]]
         fee = (d_rev * (tier["commission"] + p["cst_card_fee_rate"])
                + orders * (tier["rider_fee"] + v("delivery.packaging_per_order")))

@@ -46,6 +46,7 @@ DEMAND_FX = 0.92
 LOW = 0.8
 BASE_PRICE = 19000        # DEFAULT_LEVERS.price
 SIGN, FIRST_STOCK = 250, 300
+DOOR_PRICE = 150   # model.ts DOOR_PRICE (upstream 10-23: 출입문 한 개, 가정)
 GRADE_BASIC = 45          # 만원/평, GRADES.basic.perPyeong
 ITEMS = {"kitchen": (1500, 4.0, 2.5), "fridge": (180, 1.0, 1.0), "table4": (113, 1.5, 2.0)}  # 만원, w, d
 CELL = 0.5
@@ -225,6 +226,7 @@ def opening_cost(store: dict, rent: float, key_money: float = 0) -> list[dict]:
         {"key": "seat", "label": "테이블과 의자", "amount": ITEMS["table4"][0] * store["tables"], "src": "공공 통계",
          "basis": f"4인 테이블 {store['tables']}개 × 113만원 (경영실태조사 홀 비용 ÷ 테이블 수)"},
         {"key": "deco", "label": "꾸밈", "amount": 0, "src": "가정", "basis": "없음"},
+        {"key": "door", "label": "출입문", "amount": DOOR_PRICE, "src": "가정", "basis": f"1개 × {DOOR_PRICE}만원 (유리문·문틀·도어클로저)"},
         {"key": "sign", "label": "간판", "amount": SIGN, "src": "가정", "basis": "전면 간판 1개"},
         {"key": "stock", "label": "첫 재료와 소모품", "amount": FIRST_STOCK, "src": "가정", "basis": "고기, 주류, 반찬 재료"},
     ]

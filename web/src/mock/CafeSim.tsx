@@ -2,7 +2,7 @@
 // 아래 재생 바, 시작·운영 계획·정산·결과는 팝업. 엔진은 카페 월별 모델(sim/cafe, 포트 8010 /cafe/season)이다.
 // 엔진은 손님 한 명씩이 아니라 시간대별 주문·처리 능력을 계산하므로, 영업 장면은 하루 시간대를 따라 의자가 차고 비는 모습으로 보여 준다.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { profileOf } from "./area";
+import { cafeDong } from "./cafe";
 import { flowRatioNote } from "./DongFlow";
 import { cafeDaily, cafeOpenFromEngine, engineBody, type CafeCfg, type EngineCapex, type EngineFunding } from "./cafeChecks";
 import CafeRoom3D from "./CafeRoom3D";
@@ -13,6 +13,8 @@ import { type Mode } from "./ModeSwitch";
 import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import Insight, { type Try } from "./Insight";
 import CashFlow, { type CfMonth } from "./CashFlow";
+import CostBar from "./CostBar";
+import ChannelCards from "./ChannelCards";
 import { CAFE_REF, cafeBand } from "./priceCompare";
 import { IconBattery, IconCal, IconCash, IconHeart, IconStar, Metric, Q } from "./SimulateEngine";
 import CardMonthLine, { CardSeasonLine, type CardMonth } from "../lab/finance/CardMonthLine"; // lab:finance
@@ -35,34 +37,42 @@ const tone = (v: number) => (v < 0 ? "neg" : "pos");
 type Hours = "short" | "standard" | "long";
 type Staff = "lean" | "standard" | "generous";
 // hard 모드 메뉴·판촉 (엔진 sim/cafe/season.py MENU_DEFAULT와 같은 키)
-type CafeMenu = { bean: "standard" | "specialty"; seasonal: boolean; dessert_price_pct: number; takeout_disc: number; loyalty: boolean; delivery_share: number | null; free_dlvy_krw: number };
-const MENU0: CafeMenu = { bean: "standard", seasonal: false, dessert_price_pct: 0, takeout_disc: 0, loyalty: false, delivery_share: null, free_dlvy_krw: 0 };
-type Dec = { price_change_pct: number; hours: Hours; staff_policy: Staff; marketing_krw: number; dessert: boolean; delivery: boolean; open_hour?: number; close_hour?: number; menu?: CafeMenu };
+type CafeMenu = { bean: "standard" | "specialty"; seasonal: boolean; dessert_price_pct: number; takeout_disc: number; loyalty: boolean; delivery_share: number | null; free_dlvy_krw: number; min_order_krw?: number };
+const MENU0: CafeMenu = { bean: "standard", seasonal: false, dessert_price_pct: 0, takeout_disc: 0, loyalty: false, delivery_share: null, free_dlvy_krw: 0, min_order_krw: 12000 };
+// 음료 가격을 원으로 보여 주기: 개업 때 아메리카노 = 조사 중앙값 4,000원, 지난달까지 바꾼 가격 배수(CUP_LEVEL)에 이번 달 조정을 곱한다
+let CUP_LEVEL = 1;
+const cupWon = (pct: number) => Math.round((4000 * CUP_LEVEL * (1 + pct / 100)) / 50) * 50;
+const cupKo = (pct: number) => `${cupWon(pct).toLocaleString("ko-KR")}원`;
+type Dec = { price_change_pct: number; hours: Hours; staff_policy: Staff; marketing_krw: number; dessert: boolean; delivery: boolean; open_hour?: number; close_hour?: number; menu?: CafeMenu; staff_max?: number };
 const HOUR_PRESET: Record<Hours, [number, number]> = { short: [11, 20], standard: [10, 22], long: [8, 23] };
 // 엔진에 보낼 계획: easy 모드나 프리셋과 같은 시각이면 직접 정한 시각을 빼고 보낸다 (프리셋 영업시간이 그대로 먹게)
 const toEngine = (d: Dec, mode: "easy" | "hard"): Dec => {
   const pre = HOUR_PRESET[d.hours];
-  if (mode === "easy" || d.open_hour == null || d.close_hour == null || (d.open_hour === pre[0] && d.close_hour === pre[1])) {
+  void mode;
+  if (d.open_hour == null || d.close_hour == null || (d.open_hour === pre[0] && d.close_hour === pre[1])) {
     const { open_hour: _o, close_hour: _c, ...rest } = d; void _o; void _c; return rest;
   }
   return d;
 };
 const clockKo = (h: number) => (h < 12 ? `오전 ${h}시` : h === 12 ? "낮 12시" : h === 24 ? "밤 12시" : `${h < 18 ? "오후" : "밤"} ${h - 12}시`);
 const HOURS_KO: Record<Hours, string> = { short: "짧게 (11~20시)", standard: "기본 (10~22시)", long: "길게 (8~23시)" };
-const STAFF_KO: Record<Staff, string> = { lean: "빠듯하게", standard: "기본", generous: "넉넉하게" };
-const HOURS_ORDER: Hours[] = ["short", "standard", "long"], STAFF_ORDER: Staff[] = ["lean", "standard", "generous"];
+const HOURS_ORDER: Hours[] = ["short", "standard", "long"];
+// 바쁜 시간에 함께 일하는 사람 수 (사장님 포함). 엔진 staff_max, 한가한 시간은 일의 양만큼만 쓴다
+const STAFF_MIN = 1, STAFF_MAX = 8, STAFF0 = 3;
+const staffN = (d: Dec) => d.staff_max ?? STAFF0;
+const staffKo = (n: number) => (n <= 1 ? "사장님 혼자" : `사장님 + 직원 ${n - 1}명`);
 
 type Lever = { key: string; label: string; hint: string; text: (d: Dec) => string; can: (d: Dec, s: -1 | 1) => boolean; move: (d: Dec, s: -1 | 1) => Dec };
 const LEVERS: Lever[] = [
-  { key: "price", label: "가격 조정", hint: "이번 달에 메뉴 가격을 한 번 바꿔요. 올리면 손님이 줄고 객단가가 늘어요.",
-    text: (d) => (d.price_change_pct === 0 ? "그대로" : `${d.price_change_pct > 0 ? "+" : ""}${d.price_change_pct}%`),
+  { key: "price", label: "음료 가격 (아메리카노)", hint: "한 잔 값을 정해요. 다른 메뉴도 같은 비율로 바뀌어요. 올리면 손님이 줄고 한 잔에 남는 돈이 늘어요.",
+    text: (d) => (d.price_change_pct === 0 ? `${cupKo(0)} 그대로` : `${cupKo(d.price_change_pct)} (${d.price_change_pct > 0 ? "+" : ""}${d.price_change_pct}%)`),
     can: (d, s) => d.price_change_pct + s * 5 >= -20 && d.price_change_pct + s * 5 <= 30, move: (d, s) => ({ ...d, price_change_pct: d.price_change_pct + s * 5 }) },
   { key: "hours", label: "영업시간", hint: "길게 열면 손님을 더 받지만 일하는 시간(인건비)이 늘어요.",
     text: (d) => (d.open_hour != null && d.close_hour != null ? `${clockKo(d.open_hour)}~${clockKo(d.close_hour)}` : HOURS_KO[d.hours]), can: (d, s) => HOURS_ORDER.indexOf(d.hours) + s >= 0 && HOURS_ORDER.indexOf(d.hours) + s < 3,
     move: (d, s) => ({ ...d, hours: HOURS_ORDER[HOURS_ORDER.indexOf(d.hours) + s] }) },
-  { key: "staff", label: "직원 운영", hint: "빠듯하면 인건비가 줄지만 바쁜 시간에 손님이 돌아가요.",
-    text: (d) => STAFF_KO[d.staff_policy], can: (d, s) => STAFF_ORDER.indexOf(d.staff_policy) + s >= 0 && STAFF_ORDER.indexOf(d.staff_policy) + s < 3,
-    move: (d, s) => ({ ...d, staff_policy: STAFF_ORDER[STAFF_ORDER.indexOf(d.staff_policy) + s] }) },
+  { key: "staff", label: "바쁜 시간 인원", hint: "가장 바쁜 시간에 함께 일하는 사람 수예요 (사장님 포함). 한가한 시간엔 필요한 만큼만 써요. 적으면 인건비가 줄지만 줄이 길어져 손님이 돌아가요.",
+    text: (d) => staffKo(staffN(d)), can: (d, s) => staffN(d) + s >= STAFF_MIN && staffN(d) + s <= STAFF_MAX,
+    move: (d, s) => ({ ...d, staff_max: staffN(d) + s }) },
   { key: "marketing", label: "마케팅", hint: "한 달 광고·SNS 비용이에요. 늘리면 알려지는 데 도움이 돼요.",
     text: (d) => (d.marketing_krw ? `월 ${wman(d.marketing_krw)}` : "없음"), can: (d, s) => d.marketing_krw + s * 500_000 >= 0 && d.marketing_krw + s * 500_000 <= 5_000_000,
     move: (d, s) => ({ ...d, marketing_krw: d.marketing_krw + s * 500_000 }) },
@@ -71,13 +81,14 @@ const LEVERS: Lever[] = [
   { key: "delivery", label: "배달", hint: "배달앱에 들어가면 주문이 늘지만(배달하는 카페는 주문의 25%가 배달) 한 건마다 배달앱 258원·대행 1,147원·포장재가 빠져요 (외식업체 경영실태조사).",
     text: (d) => (d.delivery ? "배달앱 입점" : "안 해요"), can: (d, s) => (s > 0 ? !d.delivery : d.delivery), move: (d, s) => ({ ...d, delivery: s > 0 }) },
 ];
-const planKey = (l: Lever): keyof Dec => (l.key === "price" ? "price_change_pct" : l.key === "hours" ? "hours" : l.key === "staff" ? "staff_policy" : l.key === "marketing" ? "marketing_krw" : l.key === "delivery" ? "delivery" : "dessert");
+const planKey = (l: Lever): keyof Dec => (l.key === "price" ? "price_change_pct" : l.key === "hours" ? "hours" : l.key === "staff" ? "staff_max" : l.key === "marketing" ? "marketing_krw" : l.key === "delivery" ? "delivery" : "dessert");
 
 type Month = {
   month: number; calendar_month: number; status: "open" | "closed" | "finished"; owner_note_ko: string;
   decisions: Dec & { price_level: number; scenario?: Record<string, string> }; scenario_ko?: { title: string; choice: string }[];
   drivers?: { maturity: number; peak_util: number; bottleneck_label_ko: string };
-  kpi: { revenue_krw: number; op_krw: number; cash_krw: number; customers: number; walkaways: number; walkaway_share: number; rating: number; regulars: number };
+  kpi: { revenue_krw: number; op_krw: number; cash_krw: number; customers: number; walkaways: number; walkaway_share: number; rating: number; regulars: number; loan_payment_krw?: number };
+  channels?: { dine: number; takeout: number; delivery: number };
   pnl: { revenue_krw: number; lines: { key: string; item_ko: string; krw: number }[]; op_krw: number };
   month_line?: CafeLine; // lab:cost
   cash: { start_krw: number; op_krw: number; depreciation_addback_krw: number; owner_pay_addback_krw?: number; loan_interest_krw: number; loan_principal_krw: number; vat_refund_krw: number; end_krw: number; rent_card?: CardMonth }; // lab:cost lab:finance
@@ -106,9 +117,9 @@ function recommend(last: Month | undefined, plan: Dec): Rec[] {
   };
   if (!last) { for (const lv of LEVERS) rec(lv.key, plan, ""); return out; }
   const k = last.kpi, walk = k.walkaway_share, op = k.op_krw, pct = Math.round(walk * 100);
-  const si = STAFF_ORDER.indexOf(lp.staff_policy), hi = HOURS_ORDER.indexOf(lp.hours);
-  if (walk >= 0.1 && si < 2) rec("staff", { ...lp, staff_policy: STAFF_ORDER[si + 1] }, `바쁜 시간에 돌아간 손님이 ${pct}%예요. 직원을 한 단계 늘리면 더 받을 수 있어요.`);
-  else if (walk < 0.03 && op < 0 && si > 0 && last.month >= 4) rec("staff", { ...lp, staff_policy: STAFF_ORDER[si - 1] }, `돌아간 손님이 ${pct}%뿐인데 적자예요. 인건비를 한 단계 줄여 보세요.`);
+  const sn = staffN(lp), hi = HOURS_ORDER.indexOf(lp.hours);
+  if (walk >= 0.1 && sn < STAFF_MAX) rec("staff", { ...lp, staff_max: sn + 1 }, `바쁜 시간에 돌아간 손님이 ${pct}%예요. 한 명 더 두면 더 받을 수 있어요.`);
+  else if (walk < 0.03 && op < 0 && sn > STAFF_MIN && last.month >= 4) rec("staff", { ...lp, staff_max: sn - 1 }, `돌아간 손님이 ${pct}%뿐인데 적자예요. 한 명 줄여 인건비를 아껴 보세요.`);
   else rec("staff", lp, `돌아간 손님 ${pct}%. 지금 직원 운영이 맞아요.`);
   if (walk >= 0.12) rec("price", { ...lp, price_change_pct: 5 }, `손님이 몰려 ${pct}%가 돌아갔어요. 가격을 5% 올려도 손님이 남을 만해요.`);
   else rec("price", lp, "바꿀 신호가 없어요. 올리면 손님이 줄고 내리면 객단가가 줄어요.");
@@ -130,10 +141,10 @@ function recommend(last: Month | undefined, plan: Dec): Rec[] {
 type StratId = "rec" | "grow" | "save";
 export function cafeStrategies(last: Month | undefined, plan: Dec, recs: Rec[]): { id: StratId; title: string; desc: string; plan: Dec; changes: string[] }[] {
   const lp: Dec = last ? { ...plan, ...last.decisions, price_change_pct: 0 } : { ...plan, price_change_pct: 0 };
-  const hi = HOURS_ORDER.indexOf(lp.hours), si = STAFF_ORDER.indexOf(lp.staff_policy);
+  const hi = HOURS_ORDER.indexOf(lp.hours), sn = staffN(lp);
   const rec = recs.reduce((p, r) => (r.change ? { ...p, [planKey(r.lever)]: r.next[planKey(r.lever)] } : p), lp);
-  const grow: Dec = { ...lp, hours: HOURS_ORDER[Math.min(2, hi + 1)], staff_policy: STAFF_ORDER[Math.max(1, si)], marketing_krw: Math.min(2_000_000, lp.marketing_krw + 500_000), dessert: true };
-  const save: Dec = { ...lp, hours: HOURS_ORDER[Math.max(0, hi - 1)], staff_policy: STAFF_ORDER[Math.max(0, si - 1)], marketing_krw: 0 };
+  const grow: Dec = { ...lp, hours: HOURS_ORDER[Math.min(2, hi + 1)], staff_max: Math.max(sn, STAFF0), marketing_krw: Math.min(2_000_000, lp.marketing_krw + 500_000), dessert: true };
+  const save: Dec = { ...lp, hours: HOURS_ORDER[Math.max(0, hi - 1)], staff_max: Math.max(STAFF_MIN, sn - 1), marketing_krw: 0 };
   const diff = (d: Dec) => LEVERS.filter((l) => l.text(d) !== l.text(lp)).map((l) => l.label + " " + l.text(d));
   return [
     { id: "rec", title: "추천대로", desc: last ? "지난달 결과를 보고 고칠 것만 고쳐요." : "처음 달은 기본 운영으로 시작해요.", plan: rec, changes: diff(rec) },
@@ -142,9 +153,10 @@ export function cafeStrategies(last: Month | undefined, plan: Dec, recs: Rec[]):
   ];
 }
 const PICKS: QPick<Dec>[] = [
-  { key: "price_change_pct", label: "가격", hint: "이번 달 한 번 바꾸는 폭", opts: [{ label: "−5%", value: -5 }, { label: "그대로", value: 0 }, { label: "+5%", value: 5 }] },
-  { key: "hours", label: "영업시간", hint: "길수록 손님·인건비가 같이 늘어요", opts: HOURS_ORDER.map((h) => ({ label: HOURS_KO[h].split(" ")[0], value: h })) },
-  { key: "staff_policy", label: "직원", hint: "빠듯하면 인건비가 줄고, 바쁜 시간에 손님이 돌아가요", opts: STAFF_ORDER.map((x) => ({ label: STAFF_KO[x], value: x })) },
+  { key: "price_change_pct", label: "아메리카노 한 잔", hint: "다른 메뉴도 같은 비율로 바뀌어요", opts: [-10, -5, 0, 5, 10].map((v) => ({ label: v === 0 ? "그대로" : `${v > 0 ? "+" : ""}${v}%`, value: v })) },
+  { key: "open_hour", label: "몇 시에 열까요?", hint: "일찍 열면 출근길 손님을 받지만 인건비·전기료가 늘어요", opts: Array.from({ length: 9 }, (_, i) => 6 + i).map((h) => ({ label: clockKo(h), value: h })) },
+  { key: "close_hour", label: "몇 시에 닫을까요?", hint: "늦게 닫으면 저녁 손님을 더 받지만 손님이 적은 시간에도 인건비가 나가요", opts: Array.from({ length: 7 }, (_, i) => 18 + i).map((h) => ({ label: clockKo(h), value: h })) },
+  { key: "staff_max", label: "바쁜 시간 몇 명이 일할까요?", hint: "사장님 포함. 적으면 인건비가 줄고, 바쁜 시간에 손님이 돌아가요", opts: Array.from({ length: STAFF_MAX }, (_, i) => i + 1).map((n) => ({ label: `${n}명`, value: n })) },
   { key: "dessert", label: "디저트", hint: "객단가가 오르지만 폐기와 준비 시간이 생겨요", opts: [{ label: "팔아요", value: true }, { label: "안 팔아요", value: false }] },
   { key: "delivery", label: "배달", hint: "주문은 늘지만 한 건마다 수수료", opts: [{ label: "안 해요", value: false }, { label: "배달앱 입점", value: true }] },
 ];
@@ -184,6 +196,7 @@ function CafeHard({ plan, set }: { plan: Dec; set: (d: Dec) => void }) {
         {row("포장 할인", "테이크아웃 손님에게 깎아 주면 포장 손님이 늘어요 (자리가 모자랄 때 좋아요)", mn.takeout_disc ? `${Math.round(mn.takeout_disc * 100)}%` : "없음", mn.takeout_disc > 0 ? () => um({ takeout_disc: +(mn.takeout_disc - 0.05).toFixed(2) }) : null, mn.takeout_disc < 0.3 ? () => um({ takeout_disc: +(mn.takeout_disc + 0.05).toFixed(2) }) : null)}
         {row("스탬프 적립", "10잔에 1잔 무료. 단골이 늘지만 공짜로 나가는 잔이 생겨요", mn.loyalty ? "해요" : "안 해요", mn.loyalty ? () => um({ loyalty: false }) : null, !mn.loyalty ? () => um({ loyalty: true }) : null)}
         {plan.delivery && row("배달 비중", "전체 주문 중 배달 몫. 키울수록 배달은 덜 늘고 한 건마다 수수료가 빠져요", `${Math.round(dsh * 100)}%`, dsh > 0.05 ? () => um({ delivery_share: +(dsh - 0.05).toFixed(2) }) : null, dsh < 0.6 ? () => um({ delivery_share: +(dsh + 0.05).toFixed(2) }) : null)}
+        {plan.delivery && row("배달 최소주문금액", "올리면 주문은 줄지만 한 건이 커져 건당 수수료 부담이 줄어요 (기준 12,000원, 가정)", `${(mn.min_order_krw ?? 12000).toLocaleString("ko-KR")}원`, (mn.min_order_krw ?? 12000) > 6000 ? () => um({ min_order_krw: (mn.min_order_krw ?? 12000) - 1000 }) : null, (mn.min_order_krw ?? 12000) < 25000 ? () => um({ min_order_krw: (mn.min_order_krw ?? 12000) + 1000 }) : null)}
         {plan.delivery && row("무료배달 부담", "가게가 배달비를 대신 내면 배달 주문이 늘어요 (1,000원당 +8%)", mn.free_dlvy_krw ? `건당 ${mn.free_dlvy_krw.toLocaleString("ko-KR")}원` : "안 해요", mn.free_dlvy_krw > 0 ? () => um({ free_dlvy_krw: mn.free_dlvy_krw - 1000 }) : null, mn.free_dlvy_krw < 3000 ? () => um({ free_dlvy_krw: mn.free_dlvy_krw + 1000 }) : null)}
       </div>
     </>
@@ -219,7 +232,7 @@ function Cash({ start, months, total }: { start: number; months: Month[]; total:
 }
 
 export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Profile; cfg: CafeCfg; onBack: () => void; onArea?: () => void }) {
-  const code = profile.dong && profile.dong.gu === profile.gu ? profileOf(profile.gu, profile.dong.name)?.code : undefined;
+  const dongPick = cafeDong(profile), code = dongPick?.code; // lab:merge 수빈: 동네를 안 골랐으면 그 구의 대표 동네로 돌린다
   const body = useMemo(() => code ? engineBody(profile, cfg, String(code)) : null, [code, cfg, profile.capital]); // eslint-disable-line react-hooks/exhaustive-deps
   const [top, setTop] = useState(108);
   const [start, setStart] = useState<any>(null);
@@ -248,6 +261,9 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
   const mode = "hard" as Mode;
   const [, setStrat] = useState<StratId>("rec");
   const [tweak, setTweak] = useState<Partial<Dec>>({});
+  const [receipt, setReceipt] = useState(true);
+  const receiptEnd = useRef<HTMLDivElement>(null);
+  useEffect(() => { receiptEnd.current?.scrollIntoView({ block: "end" }); }, [months.length, receipt]);
   const [ins, setIns] = useState<{ idx: number; tries: Try<Partial<Dec>>[] } | null>(null);
   useEffect(() => { setStrat("rec"); setTweak({}); }, [months.length]);
   // 현금흐름표·영수증 (원). 엔진 현금 = 월초 + 감가상각 전 영업이익 − 이자 − 원금 + 개업 부가세 환급
@@ -313,7 +329,7 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
     if (!body || daily.current == null) return;
     setBusy(true); setErr("");
     post("/cafe/season", { ...body, daily_customers: daily.current, start_month: startMonth, menu: menuDoc ? menuToEngine(menuDoc.items) : undefined, ...cafeFinance() }) // lab:menu lab:finance
-      .then((s) => { hist.current = []; setAlts({}); setAltPick({}); setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setPlan({ price_change_pct: 0, hours: s.decisions.hours, staff_policy: s.decisions.staff_policy, marketing_krw: 0, dessert: true, delivery: false }); setView("plan"); })
+      .then((s) => { hist.current = []; setAlts({}); setAltPick({}); setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setPlan({ price_change_pct: 0, hours: s.decisions.hours, staff_policy: "standard", staff_max: Math.min(STAFF_MAX, Math.max(STAFF_MIN, s.crew_peak ?? STAFF0)), marketing_krw: 0, dessert: true, delivery: false, open_hour: HOUR_PRESET[s.decisions.hours as Hours][0], close_hour: HOUR_PRESET[s.decisions.hours as Hours][1] }); setView("plan"); })
       .catch((e) => setErr(netErr(e))).finally(() => setBusy(false));
   };
   // 운영 계획을 확정하면 먼저 이번 달 사건과 대응 상황을 받는다
@@ -343,12 +359,12 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
     if (view !== "settle" || !h || !now || ins?.idx === idx) return;
     const d = { ...h.plan };
     const mn = { ...MENU0, ...(d.menu ?? {}) };
-    const si = STAFF_ORDER.indexOf(d.staff_policy), hi = HOURS_ORDER.indexOf(d.hours);
+    const sn = staffN(d), hi = HOURS_ORDER.indexOf(d.hours);
     const cands: Omit<Try<Partial<Dec>>, "d">[] = [
       { title: "가격 5% 올리기", why: "한 잔 값이 늘어요. 손님은 조금 줄어요.", patch: { price_change_pct: 5 } },
       { title: "가격 5% 내리기", why: "손님이 늘어요. 한 잔에 남는 돈은 줄어요.", patch: { price_change_pct: -5 } },
-      ...(si < 2 ? [{ title: `직원 ${STAFF_KO[STAFF_ORDER[si + 1]]}`, why: now.kpi.walkaway_share > 0.05 ? `바빠서 손님 ${Math.round(now.kpi.walkaway_share * 100)}%가 돌아갔어요.` : "바쁜 시간에 손님을 덜 놓쳐요.", patch: { staff_policy: STAFF_ORDER[si + 1] } }] : []),
-      ...(si > 0 ? [{ title: `직원 ${STAFF_KO[STAFF_ORDER[si - 1]]}`, why: "인건비를 아껴요.", patch: { staff_policy: STAFF_ORDER[si - 1] } }] : []),
+      ...(sn < STAFF_MAX ? [{ title: `바쁜 시간 ${sn + 1}명`, why: now.kpi.walkaway_share > 0.05 ? `바빠서 손님 ${Math.round(now.kpi.walkaway_share * 100)}%가 돌아갔어요.` : "바쁜 시간에 손님을 덜 놓쳐요.", patch: { staff_max: sn + 1 } }] : []),
+      ...(sn > STAFF_MIN ? [{ title: `바쁜 시간 ${sn - 1}명`, why: "인건비를 아껴요.", patch: { staff_max: sn - 1 } }] : []),
       ...(hi < 2 ? [{ title: `영업시간 ${HOURS_KO[HOURS_ORDER[hi + 1]]}`, why: "더 오래 열어 손님을 더 받아요.", patch: { hours: HOURS_ORDER[hi + 1], open_hour: undefined, close_hour: undefined } }] : []),
       ...(hi > 0 ? [{ title: `영업시간 ${HOURS_KO[HOURS_ORDER[hi - 1]]}`, why: "손님이 적은 시간의 인건비·전기료를 아껴요.", patch: { hours: HOURS_ORDER[hi - 1], open_hour: undefined, close_hour: undefined } }] : []),
       { title: d.delivery ? "배달 그만하기" : "배달앱 입점", why: d.delivery ? "한 건마다 빠지는 수수료를 아껴요." : "매장 밖 주문을 받아요. 수수료가 빠져요.", patch: { delivery: !d.delivery } },
@@ -422,11 +438,11 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
 
   if (!body) return (
     <main className="m-area"><section className="m-panel a-card">
-      <h1>동네를 먼저 골라 주세요</h1>
-      <p>카페 시뮬레이션은 행정동 단위로 돌아가요. 동네 분석에서 지도의 동네를 누르거나 목록에서 고르면 돼요.</p>
+      <h1>동네 자료를 불러오는 중이에요</h1>
+      <p>{profile.gu}의 동네 자료가 아직 없어요. 동네 분석 화면을 한 번 열었다가 다시 와 주세요.</p>
       <div className="sx-dongbtns">
-        <button type="button" className="se-btn" onClick={onArea ?? onBack}>{onArea ? "동네 분석에서 동네 고르기" : "가게 꾸미기로 돌아가기"}</button>
-        {onArea && <button type="button" className="a-back" onClick={onBack}>가게 꾸미기로 돌아가기</button>}
+        {onArea && <button type="button" className="se-btn" onClick={onArea}>동네 분석 열기</button>}
+        <button type="button" className="a-back" onClick={onBack}>가게 꾸미기로 돌아가기</button>
       </div>
     </section></main>
   );
@@ -436,17 +452,18 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
   const fund = pv?.funding ? cafeOpenFromEngine(pv.capex, pv.funding) : null;
   const startCash: number = start ? start.start.cash_krw : fund ? fund.cash * 10000 : 0;
   const cur = last;
+  CUP_LEVEL = cur?.decisions.price_level ?? 1; // 음료 가격 원 표시용
   const prevPlan = months.length > 1 ? months[months.length - 2].decisions : undefined;
   const occupancy = view === null && sched[hourIdx] ? (sched[hourIdx].orders / maxOrders) * 0.9 : 0;
   const recs = view === "plan" ? recommend(cur, plan) : [];
   const scoreSummary = view === "report" && start && months.length ? cafeSummary(months, start.start, { gu: profile.gu, dong: profile.dong?.name ?? null, pyeong: cfg.pyeong, grade: cfg.grade, staff: cfg.staff }) : null; // lab:score
   const nextMonth: number = cur ? (cur.calendar_month % 12) + 1 : start?.start_month ?? startMonth;
-  const place = `${profile.gu} ${profile.dong?.name ?? ""}`;
+  const place = dongPick?.scope === "dong" ? `${profile.gu} ${dongPick.name}` : `${profile.gu} (대표 동네 ${dongPick?.name ?? ""})`;
 
   return (
     <div className="sx-root" style={{ top }}>
       <div className="sx-canvas">
-        {pv ? <CafeRoom3D room={pv.room} layout={pv.layout} roster={view === null ? pv.staff.roster : []} occupancy={occupancy} height="fill" /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
+        {pv ? <CafeRoom3D moves={cfg.moves} room={pv.room} layout={pv.layout} roster={view === null ? pv.staff.roster : []} occupancy={occupancy} height="fill" /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
       </div>
 
       <header className="sx-hud">
@@ -471,6 +488,31 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
           {cur?.drivers ? `${Math.round(cur.drivers.peak_util * 100)}%` : "-"}
         </Metric>
       </header>
+
+      <button type="button" className="sx-rtoggle" aria-expanded={receipt} onClick={() => setReceipt((v) => !v)}>{receipt ? "현금 흐름 기록 접기" : "현금 흐름 기록 펴기"}</button>
+      {receipt && (
+        <aside className="sx-receipt" aria-label="현금 흐름 기록">
+          <div className="sx-paper">
+            <p className="sx-r-title">현금 흐름 영수증</p>
+            <p className="sx-r-sub">{place} · 시작 현금 {wman(startCash)}</p>
+            <p className="sx-r-acc">카페 엔진은 한 달을 한꺼번에 계산해서, 달이 끝날 때마다 한 장씩 쌓여요. 회색 줄은 현금이 아니라 이익 계산이에요.</p>
+            {months.length === 0 && <p className="sx-r-empty">아직 찍힌 내역이 없어요. 첫 달이 끝나면 한 장씩 쌓여요.</p>}
+            {months.map((m) => (
+              <section key={m.month} className="sx-r-day">
+                <p className="sx-r-month">{m.calendar_month}월</p>
+                <p className="sx-r-head"><b>{m.calendar_month}월 한 달</b><span>손님 {m.kpi.customers.toLocaleString("ko-KR")}명</span></p>
+                <ul>
+                  <li className="in"><span>매출</span><b>+{wman(m.pnl.revenue_krw)}</b></li>
+                  {m.pnl.lines.filter((l) => Math.abs(l.krw) >= 10000).map((l) => <li key={l.key} className="out"><span>{l.item_ko}</span><b>−{wman(Math.abs(l.krw))}</b></li>)}
+                  <li className={`acc-sum ${m.kpi.op_krw >= 0 ? "in" : "out"}`}><span>이달 영업이익</span><b>{m.kpi.op_krw >= 0 ? "+" : "−"}{wman(Math.abs(m.kpi.op_krw))}</b></li>
+                </ul>
+                <p className="sx-r-sum"><span>남은 현금</span><b>{wman(m.kpi.cash_krw)}</b></p>
+              </section>
+            ))}
+            <div ref={receiptEnd} />
+          </div>
+        </aside>
+      )}
 
       <button type="button" className="sx-ctoggle" aria-expanded={chartOpen} onClick={() => setChartOpen((v) => !v)}>{chartOpen ? "현금 그래프 접기" : "현금 그래프 펴기"}</button>
       <div className="sx-leftcol">
@@ -599,7 +641,7 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
                       return (
                         <section className="sx-right" aria-label="이번 달 운영 계획">
                           <h2>{nextMonth}월에 이렇게 할게요</h2>
-                          <QuickPicks picks={PICKS} base={plan} prev={cur ? { ...plan, ...cur.decisions, price_change_pct: 0 } : undefined} tweak={tweak} setTweak={setTweak} />
+                          <QuickPicks picks={PICKS.map((pk) => pk.key === "price_change_pct" ? { ...pk, opts: pk.opts.map((o) => ({ ...o, label: cupKo(o.value as number) })) } : pk)} base={plan} prev={cur ? { ...plan, ...cur.decisions, price_change_pct: 0 } : undefined} tweak={tweak} setTweak={setTweak} />
                           <p className="sx-note">hard 모드에서는 가격·영업시간·직원·마케팅·디저트·배달을 하나씩 정할 수 있어요.</p>
                         </section>
                       );
@@ -648,7 +690,7 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
                     <h2>어떻게 대응할까요?</h2>
                     <p className="sx-note">고른 대응대로 그달 계산에 반영돼요. 처음에는 기본 대응이 골라져 있어요. 대응의 효과 크기는 가정값이에요.</p>
                   </section>
-                  <div className="sx-dps">
+                  <div className={`sx-dps${dps.points.length === 1 ? " is-single" : ""}`}>
                     {dps.points.map((dp) => (
                       <div key={dp.id} className="sx-dp" role="radiogroup" aria-labelledby={`${dp.id}-h`}
                         style={{ gridRow: `span ${2 + Math.max(...dps.points.map((x) => x.options.length))}` }}>
@@ -685,12 +727,26 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
               <>
                 <div className="sx-scroll">
                   <h1>{cur.calendar_month}월 정산</h1>
-                  <Kpis items={[
-                    { label: "영업이익", value: sgn(cur.kpi.op_krw), tone: tone(cur.kpi.op_krw), main: true },
-                    { label: "매출", value: wman(cur.kpi.revenue_krw) },
-                    { label: "월말 현금", value: wman(cur.kpi.cash_krw) },
-                    { label: "돌아간 손님", value: `${cur.kpi.walkaways.toLocaleString("ko-KR")}명 (${Math.round(cur.kpi.walkaway_share * 100)}%)` },
-                  ]} />
+                  {(() => {
+                    const op = cur.kpi.op_krw, opM = Math.round(op / 1e4), walk = cur.kpi.walkaway_share;
+                    const why = opM >= 0 ? (walk >= 0.08 ? "더 받을 수 있었는데 바쁜 시간에 손님이 돌아갔어요" : "손님과 비용이 잘 맞았어요")
+                      : walk >= 0.1 ? "바쁜 시간에 손님을 놓쳤어요" : "매출이 고정비를 덮지 못했어요";
+                    return (
+                      <>
+                        <div className={`sc-hero ${opM >= 0 ? "" : "is-bad"}`}>
+                          <h2>{opM === 0 ? "본전" : op > 0 ? "흑자" : "적자"} {sgn(op)}</h2>
+                          <p>{why}. 손님 {cur.kpi.customers.toLocaleString("ko-KR")}명 · 돌아간 손님 {Math.round(walk * 100)}% · ★ {cur.kpi.rating.toFixed(1)}</p>
+                        </div>
+                        <Kpis items={[
+                          { label: "매출", value: wman(cur.kpi.revenue_krw) },
+                          { label: "나간 돈", value: wman(cur.kpi.revenue_krw - op) },
+                          { label: "영업이익", value: sgn(op), tone: tone(op) },
+                          { label: "월말 현금", value: wman(cur.kpi.cash_krw), main: true },
+                        ]} />
+                      </>
+                    );
+                  })()}
+                  {cur.closure.closed && <p className="se-err">가게를 닫았어요. {cur.closure.reason_ko}</p>}
                   <p className="sx-note">{cur.owner_note_ko}</p>
                   {ins?.idx === months.length - 1 ? (
                     <Insight tries={ins.tries} last={over} onApply={(patch) => {
@@ -700,6 +756,13 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
                       nextAfterSettle();
                     }} />
                   ) : <section className="ins"><h2>다음 달에 이렇게 바꿔 보세요</h2><p className="ins-sub">같은 달을 계획 한 가지씩 바꿔 엔진으로 다시 계산하고 있어요…</p></section>}
+                  {(() => {
+                    const xs = cur.pnl.lines.filter((l) => l.krw > 0).sort((a, b) => b.krw - a.krw);
+                    const top: [string, number][] = xs.slice(0, 5).map((l) => [l.item_ko.replace(/\s*\(.*\)$/, ""), l.krw]);
+                    const rest = xs.slice(5).reduce((a, l) => a + l.krw, 0);
+                    return <CostBar items={rest > 0 ? [...top, ["기타", rest]] : top} revenue={cur.pnl.revenue_krw} op={cur.pnl.op_krw} fmt={(x) => wman(x)} />;
+                  })()}
+                  <CashFlow months={cfMonths} kind="food" shop="카페" compact />
                   {flowRatioNote(code ? String(code) : undefined, profile.gu, cur.kpi.customers) && <p className="sx-note">{flowRatioNote(code ? String(code) : undefined, profile.gu, cur.kpi.customers)}</p>}
                   {pts.length > 0 && hist.current[months.length - 1] && (
                     <section className="sx-sec">
@@ -740,29 +803,46 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
                       </div>
                     </section>
                   )}
-                  {cur.events.length > 0 && <p className="sx-note"><b>이달의 사건:</b> {cur.events.map((e) => `${e.label_ko} (${e.effect_ko})`).join(", ")}</p>}
-                  <div className="sx-split">
-                    <section className="sx-sec"><h2>손익</h2>
+                  <details className="sx-more">
+                    <summary>손익표와 매장·포장·배달별 자세히 보기</summary>
+                    <section className="st-card">
+                      <header className="st-h"><span className="st-ico" aria-hidden>₩</span><div><h2>손익표</h2><small>이번 달 매출에서 비용을 하나씩 뺀 계산이에요</small></div></header>
                       {cur.month_line ? ( // lab:cost — 비용 쌓기: 인건비는 알바와 사장 가상 급여, 매장 운영비는 내역까지
                         <CostStack className="cst-settle" stack={cafeStack(cur.month_line)}
                           head={<>매출 (손님 {Math.round(cur.kpi.customers).toLocaleString("ko-KR")}명, 객단가 {Math.round(cur.kpi.revenue_krw / Math.max(1, cur.kpi.customers)).toLocaleString("ko-KR")}원)</>}
                           foot={VAT_NOTE} />
                       ) : (
-                      <table className="sx-table"><tbody>
+                      <table className="sx-table st-table"><tbody>
                         <tr><th>매출</th><td>{wman(cur.pnl.revenue_krw)}</td></tr>
                         {cur.pnl.lines.filter((l) => l.krw !== 0).map((l) => <tr key={l.key}><th>{l.item_ko}</th><td>{l.krw < 0 ? "+" : "−"}{wman(Math.abs(l.krw))}</td></tr>)}
                         <tr><th>영업이익</th><td className={tone(cur.pnl.op_krw)}>{sgn(cur.pnl.op_krw)}</td></tr>
                       </tbody></table>
                       )}
-                    </section>
-                    <section className="sx-sec"><h2>지난달과 달라진 이유</h2>
-                      <ul className="sx-wf">{cur.waterfall.steps.filter((s) => Math.abs(s.krw) >= 10000).map((s) => <li key={s.key}><span>{s.label_ko}</span><b className={tone(s.krw)}>{sgn(s.krw)}</b></li>)}</ul>
                       <p className="sx-note">현금 변화: 영업이익 {sgn(cur.cash.op_krw)}, 감가상각 되돌림 +{wman(cur.cash.depreciation_addback_krw)},{cur.cash.owner_pay_addback_krw ? ` 사장 가상 급여 되돌림 +${wman(cur.cash.owner_pay_addback_krw)},` : ""} 대출 이자 −{wman(cur.cash.loan_interest_krw)}, 원금 −{wman(cur.cash.loan_principal_krw)}{cur.cash.vat_refund_krw ? `, 부가세 환급 +${wman(cur.cash.vat_refund_krw)}` : ""}{cur.cash.rent_card ? `, 월세 카드 할부 ${cur.cash.rent_card.cash_delta >= 0 ? "+" : "−"}${wman(Math.abs(cur.cash.rent_card.cash_delta))}` : ""}.</p>
                       <CardMonthLine rc={cur.cash.rent_card} />{/* lab:finance */}
                     </section>
-                  </div>
-                  {cur.closure.closed && <p className="se-err">가게를 닫았어요. {cur.closure.reason_ko}</p>}
-                  <CashFlow months={cfMonths} kind="food" shop="카페" />
+                    {cur.channels && (() => {
+                      const ch = cur.channels, n = Math.max(1, ch.dine + ch.takeout + ch.delivery), t = cur.pnl.revenue_krw / n;
+                      const ln = (k: string) => cur.pnl.lines.find((l) => l.key === k)?.krw ?? 0;
+                      const fr = ln("food") / Math.max(1, cur.pnl.revenue_krw);
+                      return (
+                        <section className="st-card">
+                          <header className="st-h"><span className="st-ico is-ch" aria-hidden>⇄</span><div><h2>매장·포장·배달, 어디서 남았나</h2><small>같은 커피라도 포장은 컵·뚜껑값이, 배달은 한 건마다 수수료가 빠져요. 월세·인건비는 갈래와 상관없이 나가요</small></div></header>
+                          <ChannelCards fmt={wman} perOne={1} rows={[
+                            { key: "visit", label: "매장", orders: ch.dine, rev: ch.dine * t, costs: [["식재료", ch.dine * t * fr]] },
+                            { key: "takeout", label: "포장", orders: ch.takeout, rev: ch.takeout * t, costs: [["식재료", ch.takeout * t * fr], ["컵·포장재", ln("packaging")]] },
+                            { key: "delivery", label: "배달", orders: ch.delivery, rev: ch.delivery * t, costs: [["식재료", ch.delivery * t * fr], ["배달 수수료·포장", ln("delivery")]] },
+                          ]} />
+                          {ch.delivery === 0 && <p className="sx-note">배달을 안 했어요. 배달앱에 들어가면 이 동네 카페 점포당 배달 주문(소상공인365 배달분석)에 맞춰 주문이 늘어요.</p>}
+                        </section>
+                      );
+                    })()}
+                    <section className="st-card">
+                      <header className="st-h"><span className="st-ico is-ch" aria-hidden>⇄</span><div><h2>지난달과 달라진 이유</h2><small>영업이익이 무엇 때문에 늘고 줄었나</small></div></header>
+                      <ul className="sx-wf">{cur.waterfall.steps.filter((s) => Math.abs(s.krw) >= 10000).map((s) => <li key={s.key}><span>{s.label_ko}</span><b className={tone(s.krw)}>{sgn(s.krw)}</b></li>)}</ul>
+                      {cur.events.length > 0 && <div className="st-ev"><b>이번 달 사건</b><ul className="sx-evs">{cur.events.map((e) => <li key={e.key}><b>{e.label_ko}</b><span>{e.effect_ko}</span></li>)}</ul></div>}
+                    </section>
+                  </details>
                 </div>
                 <footer className="sx-foot">
                   <button type="button" className="se-btn" onClick={nextAfterSettle}>{over ? "전체 결과 보기" : `${nextMonth}월 운영 계획 정하기`}</button>
@@ -778,20 +858,16 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
                   <h1>{months.length}개월 결과</h1>
                   {!report ? <p>계산 중이에요.</p> : (
                     <>
-                      <Kpis items={[
-                        { label: "마지막 현금", value: wman(report.end_cash_krw), main: true },
-                        { label: "누적 영업이익", value: sgn(report.cumulative_op_krw), tone: tone(report.cumulative_op_krw) },
-                        { label: "가장 좋았던 달", value: `${report.best_month.calendar_month}월 ${sgn(report.best_month.op_krw)}` },
-                        { label: "가장 나빴던 달", value: `${report.worst_month.calendar_month}월 ${sgn(report.worst_month.op_krw)}` },
-                      ]} />
                       <p className="sx-note">{report.survived ? `${TOTAL}개월을 버텼어요. ` : <b>가게를 닫게 됐어요. </b>}{report.summary_ko}</p>
                       <CardSeasonLine items={months.map((m) => m.cash.rent_card)} />{/* lab:finance */}
                       <section className="sx-sec"><h2>남은 현금</h2><Cash start={startCash} months={months} total={TOTAL} /></section>
+                      <details className="sx-more sc-more rp-more"><summary>돈의 흐름 · 현금흐름표 · 달마다 기록 자세히 보기</summary>
                       <CashFlow months={cfMonths} kind="food" shop="카페" />
                       <section className="sx-sec"><h2>월별</h2>
                         <table className="sx-table"><thead><tr><th>달</th><th>매출</th><th>영업이익</th><th>월말 현금</th></tr></thead>
                           <tbody>{report.months.map((x: any) => <tr key={x.month}><td>{x.calendar_month}월</td><td>{wman(x.revenue_krw)}</td><td className={tone(x.op_krw)}>{sgn(x.op_krw)}</td><td>{wman(x.cash_krw)}</td></tr>)}</tbody></table>
                       </section>
+                      </details>
                     </>
                   )}
                   {err && <p className="se-err" role="alert">{err}</p>}

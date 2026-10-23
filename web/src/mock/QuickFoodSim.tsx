@@ -2,7 +2,7 @@
 // 가게(평면)가 화면 전체, 위에 지표 줄, 왼쪽에 현금 그래프와 이달 계획, 오른쪽에 날짜별 영수증, 아래에 재생 막대,
 // 운영 계획 → 이달의 사건 → (하루씩 재생) → 정산 → 6개월 성적표는 팝업으로 뜬다.
 // 계산은 quickfood.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 업종의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import Assume from "./Assume";
 import { guStat, man, type Profile } from "./model";
 import {
@@ -18,6 +18,8 @@ import { qfTries } from "./QfInsight";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine";
 import "./simulate-engine.css";
+import CostBar from "./CostBar";
+import { isDepLine } from "./shopItems";
 
 const TURNS = 6;
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
@@ -44,6 +46,8 @@ const picksOf = (ind: "chicken" | "bunsik"): QPick<QfPlan>[] => [
     opts: [{ label: "조사 평균대로", value: mixStr(mixOf(ind, { ...DEFAULT_PLAN })) }, { label: "배달 위주", value: "15-15-70" }, { label: "홀·포장 위주", value: "55-35-10" }, { label: "배달 안 함", value: "65-35-0" }] },
   { key: "staff", label: "알바", hint: "바쁜 날 주문을 놓치지 않게", opts: [0, 1, 2, 3].map((n) => ({ label: n ? `${n}명` : "없이", value: n })) },
   { key: "ad", label: "배달앱 광고", hint: "배달 주문을 늘리지만 광고비가 들어요", opts: [{ label: "안 함", value: 0 }, { label: "기본", value: 1 }, { label: "적극", value: 2 }] },
+  { key: "open", label: "몇 시에 열까요?", hint: ind === "chicken" ? "치킨은 저녁 장사라 일찍 열어도 주문이 조금만 늘어요" : "분식은 점심(11~13시) 주문이 많아요",
+    opts: Array.from({ length: 13 }, (_, i) => 6 + i).map((h) => ({ label: clock(h), value: h })) },
   { key: "close", label: "몇 시에 닫을까요?", hint: ind === "chicken" ? "야식 주문은 밤 10시~새벽 1시에 몰려요" : "분식은 저녁 8시 뒤로 주문이 적어요",
     opts: Array.from({ length: HOURS_RANGE[ind].close[1] - HOURS_RANGE[ind].close[0] + 1 }, (_, i) => HOURS_RANGE[ind].close[0] + i).map((h) => ({ label: clock(h), value: h })) },
 ];
@@ -81,20 +85,6 @@ function MixPicker({ ind, plan, prev, set, seats, gu }: { ind: "chicken" | "buns
 }
 
 // 매출 100원이 어디로 갔나: 비용 항목과 남은 이익을 한 줄 막대로
-function CostBar({ items, revenue, op }: { items: [string, number][]; revenue: number; op: number }) {
-  const r = Math.max(1, revenue), xs = items.filter(([, v]) => v > 0.5);
-  const COL = ["#2f4fc4", "#4d6bd6", "#7089e0", "#94a8ea", "#b6c4f1", "#d3dcf7"]; // 파란 계열 한 가지로 진하기만 다르게 (앞 비용이 큰 순)
-  return (
-    <section className="sx-sec cb">
-      <h2>매출 100원이 어디로 갔나</h2>
-      <div className="cb-bar" role="img" aria-label={xs.map(([k, v]) => `${k} ${Math.round((v / r) * 100)}원`).join(", ") + `, 남은 이익 ${Math.round((op / r) * 100)}원`}>
-        {xs.map(([k, v], i) => <span key={k} className={i >= 3 ? "lt" : undefined} style={{ flexGrow: v, background: COL[i % COL.length] }} title={`${k} ${man(Math.round(v))}`}>{v / r >= 0.07 ? `${k} ${Math.round((v / r) * 100)}` : ""}</span>)}
-        {op > 0 && <span className="cb-op" style={{ flexGrow: op }}>{op / r >= 0.05 ? `이익 ${Math.round((op / r) * 100)}` : ""}</span>}
-      </div>
-      {op <= 0 && <p className="cb-loss">비용이 매출보다 {man(Math.round(-op))} 많았어요 (매출 100원당 {Math.round((-op / r) * 100)}원 적자).</p>}
-    </section>
-  );
-}
 
 const ico = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 const IconBike = () => <svg {...ico}><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M6 17h4l3-6h3l2 6M13 11l-2-4H8" /></svg>;
@@ -203,7 +193,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const cur = done.at(-1);
   const m = monthSeq[Math.min(idx, TURNS - 1)];
   const ev = eventOf(cfg.ind, m, seed + idx);
-  const dep = open.lines.filter((l) => ["interior", "equip", "kitchen", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) / 60; // 5년 감가상각
+  const dep = open.lines.filter((l) => isDepLine(l.key)).reduce((a, l) => a + l.amount, 0) / 60; // 5년 감가상각
   // 현금흐름표·영수증 (원). 엔진 현금 = 월초 + 영업이익 − 생활비 − 이자
   const cfMonths: CfMonth[] = months.map((c, i) => {
     const s0 = i ? months[i - 1].cash : start.cash, K = 1e4;
@@ -264,6 +254,8 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
   const people = curDay && view === null ? Math.round((curDay.tx - curDay.delivery) / 3) : 0;
   const riders = curDay && view === null ? Math.round(curDay.delivery / 4) : 0;
   const receiptDays = done.flatMap((x, mi) => (mi === done.length - 1 ? x.days.slice(0, dayIdx + 1) : x.days).map((d) => ({ ...d, mi })));
+  const receiptEnd = useRef<HTMLDivElement>(null);
+  useEffect(() => { receiptEnd.current?.scrollIntoView({ block: "end" }); }, [receiptDays.length, receipt]); // 새 날짜가 찍히면 영수증 끝으로
   const sc = months.length ? score(months) : null;
   const delivShare = cur ? cur.m.ch.delivery / Math.max(1, cur.m.revenue) : dv.share.delivery;
 
@@ -336,6 +328,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                 </section>
               );
             })}
+            <div ref={receiptEnd} />
           </div>
         </aside>
       )}
@@ -525,7 +518,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                       onApply={(patch) => { if (mode === "easy") setTweak(patch); else setPlan({ ...c.plan, ...patch }); next(); }} />
                     <CostBar items={[
                       ["식재료", c.food], ["배달 수수료", fees], ["포장 용기", c.packaging ?? 0], ["인건비", c.staffPay], ["월세", c.rent], ["기타", c.other], ["광고·홍보", c.adCost + c.marketing + c.eventCost],
-                    ]} revenue={c.revenue} op={c.op} />
+                    ]} revenue={c.revenue} op={c.op} fmt={(x) => man(Math.round(x))} />
                     <CashFlow months={cfMonths} kind="food" shop={name} compact />
                     <details className="sx-more">
                       <summary>정산표와 홀·포장·배달별 자세히 보기</summary>
@@ -572,6 +565,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                   <section className="sx-sec"><h2>남은 현금</h2>
                     <CashChart start={start.cash * 1e4} labels={monthSeq} months={done.map((x) => ({ days: x.days.map((d) => ({ cash: d.cash * 1e4 })) }))} />
                   </section>
+                  <details className="sx-more sc-more rp-more"><summary>돈의 흐름 · 현금흐름표 · 달마다 기록 자세히 보기</summary>
                   <CashFlow months={cfMonths} kind="food" shop={name} />
                   <section className="sx-sec">
                     <h2>달마다</h2>
@@ -582,6 +576,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
                       ))}</tbody>
                     </table>
                   </section>
+                  </details>
                 </div>
                 <footer className="sx-foot">
                   <button type="button" className="se-btn" onClick={restart}>처음부터 다시</button>

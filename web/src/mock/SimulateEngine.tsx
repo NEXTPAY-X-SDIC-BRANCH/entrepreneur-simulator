@@ -16,7 +16,6 @@ import { VAT_NOTE, bbqStack, prorate, type BbqKpis } from "../lab/cost/stackMode
 import { setEngineCtx } from "./chatContext";
 import CardMonthLine, { type CardMonth } from "../lab/finance/CardMonthLine"; // lab:finance
 import { rentCardPlan } from "../lab/finance/finance"; // lab:finance
-import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, storeStats, type Levers, type Profile, type Store } from "./model";
 import MenuEditor, { MenuSummary } from "../lab/menu/MenuEditor"; // lab:menu
 import { fetchTemplate, recompute, toEngine, type EngineMenuItem, type MenuDoc } from "../lab/menu/api"; // lab:menu
 import { roomDims, shapeOf } from "../lab/layout/plan"; // lab:layout
@@ -28,6 +27,10 @@ import PriceTrend from "./PriceTrend";
 import { sbizDelivery } from "./quickfood";
 import { BBQ_REF, bbqBand } from "./priceCompare";
 import CashFlow, { type CfMonth } from "./CashFlow";
+import CostBar from "./CostBar";
+import { isDepLine } from "./shopItems";
+import { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
+import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, storeStats, type Levers, type Profile, type Store } from "./model";
 
 const API = (import.meta.env.VITE_ENGINE_API as string | undefined) ?? "http://127.0.0.1:8010";
 const SHIRTS = ["#e0735a", "#43648a", "#d4a032", "#5679a3", "#ec8a4f", "#35614a"];
@@ -37,7 +40,7 @@ const TURNS = 6;
 // lab:menu  메뉴판이 있으면 엔진이 삼겹살 가격 대신 메뉴로 객단가·원가를 계산. 나머지는 upstream hard 모드 선택지 (research/season_params.yaml base_plan)
 type Plan = { meat_price: number; staff_per_shift: number; close_hour: number; marketing_budget: number; meat_grade: string; banchan: number; delivery: string;
   menu?: EngineMenuItem[]; table_cost?: number;
-  soju_price?: number; lunch?: boolean; review_event?: boolean; group_reservations?: boolean; hygiene?: string; staff_grilling?: boolean; menu_extras?: string[] };
+  soju_price?: number; lunch?: boolean; review_event?: boolean; group_reservations?: boolean; hygiene?: string; staff_grilling?: boolean; menu_extras?: string[]; min_order?: number };
 type Night = { dow: string; rain: boolean; revenue: number; covers: number; walkaways: number; cogs: number; fees: number };
 type Ev = { id: string; label: string; group: string; mechanism: string | null; outcome?: string | null };
 type Option = { id: string; label: string; hint: string; downside: string; tag: string };
@@ -84,7 +87,6 @@ const DELIVERY_KO: Record<string, string> = {
   mid35_50: "상위 35~50% · 6.8% + 3,100원", top35: "상위 35% · 7.8% + 3,400원",
 };
 const DELIVERY_HINT = "배달앱 안에서 내 매출 순위 구간이에요. 중개수수료와 건당 배달비(서울)가 달라지고, 결제 수수료·포장재도 나가요. 배달 손님 일부는 원래 매장에 올 손님이에요";
-const closeText = (h: number) => (h === 23 ? "밤 11시" : h === 24 ? "밤 12시" : "새벽 1시");
 const mktText = (v: number) => (v ? `${v / 1e4}만원` : "없음");
 
 type LeverDef = { key: keyof Plan; label: string; hint: string; text: (p: Plan) => string; can: (p: Plan, d: -1 | 1) => boolean; move: (p: Plan, d: -1 | 1) => Plan };
@@ -92,6 +94,7 @@ const num = (key: "meat_price" | "staff_per_shift" | "close_hour" | "banchan" | 
   can: (p: Plan, d: -1 | 1) => p[key] + d * step >= min && p[key] + d * step <= max,
   move: (p: Plan, d: -1 | 1) => ({ ...p, [key]: p[key] + d * step }),
 });
+const closeText = (h: number) => (h === 23 ? "밤 11시" : h === 24 ? "밤 12시" : "새벽 1시"); // lab:merge 수빈: 마감을 시각으로
 const LEVERS: LeverDef[] = [
   { key: "meat_price", label: "삼겹살 1인분 가격", hint: "올리면 한 팀의 매출이 늘고 손님이 조금 줄어요", text: (p) => `${fmt(p.meat_price)}원`, ...num("meat_price", 15000, 25000, 1000) },
   { key: "staff_per_shift", label: "교대당 알바", hint: "많으면 서비스가 빠르고 인건비와 피로가 줄어요", text: (p) => `${p.staff_per_shift}명`, ...num("staff_per_shift", 0, 4, 1) },
@@ -124,6 +127,9 @@ const LEVERS: LeverDef[] = [
     can: (p, d) => { const i = DELIVERY.indexOf(p.delivery as (typeof DELIVERY)[number]); return i + d >= 0 && i + d < DELIVERY.length; },
     move: (p, d) => ({ ...p, delivery: DELIVERY[DELIVERY.indexOf(p.delivery as (typeof DELIVERY)[number]) + d] }),
   },
+  { key: "min_order", label: "배달 최소주문금액", hint: "배달할 때만. 올리면 주문은 줄지만 한 건이 커져 건당 배달비 부담이 줄어요 (기준 2만원, 가정)",
+    text: (p) => (p.delivery === "none" ? "배달 안 함" : `${fmt(p.min_order ?? 20000)}원`),
+    can: (p, d) => { const v = (p.min_order ?? 20000) + d * 1000; return p.delivery !== "none" && v >= 10000 && v <= 35000; }, move: (p, d) => ({ ...p, min_order: (p.min_order ?? 20000) + d * 1000 }) },
 ];
 
 type Rec = { lever: LeverDef; last: string; next: Plan; nextText: string; change: boolean; why: string };
@@ -450,7 +456,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   const startCash = (profile.capital + store.loan - cost.total) * 1e4; // 원
   const interest = (store.loan * 1e4 * LOAN_RATE) / 12;
   // 감가상각: 보증금·권리금·첫 재료처럼 쓰고 사라지지 않거나 바로 쓰는 돈은 빼고, 시설·가구만 60개월로 나눈다 (SettleTable 주석)
-  const dep = (cost.lines.filter((l) => ["interior", "equip", "seat", "deco", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) * 1e4) / 60;
+  const dep = (cost.lines.filter((l) => isDepLine(l.key) || l.key === "door").reduce((a, l) => a + l.amount, 0) * 1e4) / 60;
   // 현금흐름표·영수증 (원). 사장 가상 급여는 현금이 안 나가므로 인건비에서 뺀다
   const cfOf = (ds: Done[]): CfMonth[] => ds.map((d) => {
     const k = d.result.kpis, rc = d.result.rent_card; // lab:finance 월세 카드 할부는 엔진 결과(rent_card)를 따른다
@@ -623,6 +629,16 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
   };
 
   const cur = done.at(-1);
+  // lab:merge 수빈 정산 화면(흑자/적자 상자의 '지금까지 N점')이 쓰는 점수 계산 모양
+  const scoreMonths = (ds: Done[]): ScoreMonth[] => ds.map((m) => ({
+    month: m.result.month, revenue: m.result.kpis.revenue, op: m.result.kpis.op, cogs: m.result.kpis.cogs,
+    labor: m.result.kpis.labor, rent: m.result.kpis.rent, mgmt: m.result.kpis.mgmt, fees: m.result.kpis.fees,
+    covers: m.result.kpis.covers, walkaways: m.result.kpis.walkaways, util: m.result.kpis.table_utilization ?? 0,
+    fatigue: m.result.state_after.fatigue, closed: m.result.closed,
+    decisions: m.result.decisions.map((x) => ({ title: x.title, chosen_label: x.chosen_label, vs_default_op: x.vs_default_op })),
+  }));
+  // 한 달에 현금으로 나가는 고정 지출 평균 (월세·관리비·실제 급여·사장 생활비·이자)
+  const monthlyOut = (ds: Done[]) => ds.reduce((a, m) => a + m.result.kpis.rent + m.result.kpis.mgmt + Math.max(0, m.result.kpis.labor - imputed) + draw + interest, 0) / Math.max(1, ds.length);
   // 재생: 하루씩. 끝나면 정산 팝업.
   useEffect(() => {
     if (view !== null || !playing || !cur) return;
@@ -995,31 +1011,36 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                 <>
                   <div className="sx-scroll">
                     <h1>{r.month}월 정산</h1>
-                    <Kpis items={[
-                      { label: "영업이익", value: signedMan(r.kpis.op), tone: tone(r.kpis.op), main: true },
-                      { label: "매출", value: man(won(r.kpis.revenue)) },
-                      { label: "손님", value: `${fmt(Math.round(r.kpis.covers))}명` },
-                      { label: "월말 현금", value: man(won(cur.cashEnd)) },
-                    ]} />
+                    {(() => {
+                      const k = r.kpis, op0 = won(k.op);
+                      const sc = scoreOf(scoreMonths(done), cashAtStart.current[0] ?? startCash, Math.min(cashAtStart.current[0] ?? startCash, ...done.flatMap((m) => m.days.map((d) => d.cash))),
+                        cur.cashEnd, monthlyOut(done));
+                      const why = op0 >= 0
+                        ? "손님과 비용이 잘 맞았어요"
+                        : k.cogs > k.revenue * 0.45 ? "재료비가 매출에 비해 많이 나갔어요" : k.revenue < (k.rent + k.labor) * 1.6 ? "매출이 월세와 인건비를 덮지 못했어요" : "비용이 이익을 깎았어요";
+                      return (
+                        <>
+                          <div className={`sc-hero ${op0 >= 0 ? "" : "is-bad"}`}>
+                            <h2>{op0 === 0 ? "본전" : op0 > 0 ? "흑자" : "적자"} {signedMan(k.op)}</h2>
+                            <p>{why}. 손님 {fmt(Math.round(k.covers))}명 · 지금까지 {sc.total}점 · {SCORE_GRADES.find((g) => sc.total >= g.min)!.label}</p>
+                          </div>
+                          <Kpis items={[
+                            { label: "매출", value: man(won(k.revenue)) },
+                            { label: "나간 돈", value: man(won(k.revenue - k.op)) },
+                            { label: "영업이익", value: signedMan(k.op), tone: tone(k.op) },
+                            { label: "월말 현금", value: man(won(cur.cashEnd)), main: true },
+                          ]} />
+                        </>
+                      );
+                    })()}
                     {flowRatioNote(dongCode, profile.gu, r.kpis.covers) && <p className="sx-note">{flowRatioNote(dongCode, profile.gu, r.kpis.covers)}</p>}
                     {r.closed && <p className="se-err">현금이 두 달 연속 바닥이라 가게를 닫게 됐어요.</p>}
 
-                    <div className="sx-settle">
-                      <section className="sx-sec">
-                        <h2>정산표</h2>
-                        <SettleTable m={r} imputed={imputed} dep={dep} interest={interest} />
-                        <small>월말 현금은 영업이익에서 사장 생활비 {man(won(draw))}와 이자를 빼고, 사장 가상 급여는 되돌린 값이에요.</small>
-                        <CardMonthLine rc={r.rent_card} />{/* lab:finance */}
-                      </section>
-                      <section className="sx-sec">
-                        <h2>이번 달 사건</h2>
-                        {r.events.length === 0 ? <p className="sx-note">특별한 사건은 없었어요.</p> : (
-                          <ul className="sx-evs">{r.events.map((e) => <li key={e.id}><b>{e.label}</b>{e.mechanism ? <span>{e.mechanism}</span> : null}</li>)}</ul>
-                        )}
-                        {r.reviews.length > 0 && <p className="sx-note">새 리뷰 {r.reviews.length}건, 평균 ★ {(r.reviews.reduce((a, x) => a + x.stars, 0) / r.reviews.length).toFixed(1)}</p>}
-                      </section>
-                    </div>
-                    <CashFlow months={cfOf(done)} kind="food" shop="고깃집" />
+                    <CostBar items={[
+                      ["재료비", r.kpis.cogs], ["인건비", r.kpis.labor], ["월세", r.kpis.rent], ["관리비·기타", r.kpis.mgmt], ["수수료", r.kpis.fees],
+                    ]} revenue={r.kpis.revenue} op={r.kpis.op} fmt={(x) => man(won(x))} />
+                    <CardMonthLine rc={r.rent_card} />{/* lab:finance */}
+                    <CashFlow months={cfOf(done)} kind="food" shop="고깃집" compact />
 
                     {r.decisions.length > 0 && (
                       <section className="sx-sec">
@@ -1029,8 +1050,22 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       </section>
                     )}
 
-                    <section className="sx-sec sx-compare">
-                      <h2>기준 운영과 비교</h2>
+                    <details className="sx-more">
+                      <summary>정산표와 사건·기준 운영 비교 자세히 보기</summary>
+                      <section className="st-card">
+                        <header className="st-h"><span className="st-ico" aria-hidden>₩</span><div><h2>정산표</h2><small>이번 달 매출에서 비용을 하나씩 뺀 계산이에요</small></div></header>
+                        <SettleTable m={r} imputed={imputed} dep={dep} interest={interest} />
+                        <small>월말 현금은 영업이익에서 사장 생활비 {man(won(draw))}와 이자를 빼고, 사장 가상 급여는 되돌린 값이에요.</small>
+                      </section>
+                      <section className="st-card">
+                        <header className="st-h"><span className="st-ico is-ch" aria-hidden>!</span><div><h2>이번 달 사건</h2><small>이달에 있었던 일과 새 리뷰예요</small></div></header>
+                        {r.events.length === 0 ? <p className="sx-note">특별한 사건은 없었어요.</p> : (
+                          <ul className="sx-evs">{r.events.map((e) => <li key={e.id}><b>{e.label}</b>{e.mechanism ? <span>{e.mechanism}</span> : null}</li>)}</ul>
+                        )}
+                        {r.reviews.length > 0 && <p className="sx-note">새 리뷰 {r.reviews.length}건, 평균 ★ {(r.reviews.reduce((a, x) => a + x.stars, 0) / r.reviews.length).toFixed(1)}</p>}
+                      </section>
+                      <section className="st-card sx-compare">
+                        <header className="st-h"><span className="st-ico is-ch" aria-hidden>⇄</span><div><h2>기준 운영과 비교</h2><small>같은 달·같은 사건에 운영 방식만 바꿔 한 번 더 계산했어요</small></div></header>
                       <p className="sx-note">
                         <b>기준 운영</b>은 엔진의 기준 점포(혜화동 고깃집)가 평소 쓰는 방식이에요: {planText(r.base_plan)}.
                         같은 달, 같은 사건, 같은 손님 흐름에 이 방식만 바꿔 한 번 더 계산했어요.
@@ -1046,6 +1081,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                         </ul>
                       )}
                     </section>
+                    </details>
                   </div>
                   <footer className="sx-foot">
                     <button type="button" className="se-btn" onClick={toNext}>
@@ -1081,8 +1117,9 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                       <section className="sx-sec">
                         <h2>남은 현금</h2>
                         <CashChart start={cashAtStart.current[0] ?? startCash} months={done} labels={monthSeq} />
-                        <CashFlow months={cfOf(done)} kind="food" shop="고깃집" />
                       </section>
+                      <details className="sx-more sc-more rp-more"><summary>돈의 흐름 · 현금흐름표 · 달마다 기록 자세히 보기</summary>
+                        <CashFlow months={cfOf(done)} kind="food" shop="고깃집" />
                       <section className="sx-sec">
                         <h2>월별 현금</h2>
                         <table className="sx-table">
@@ -1108,6 +1145,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                           </details>
                         ))}
                       </section>
+                      </details>
                     </>
                   )}
                   {err && <p className="se-err" role="alert">{err}</p>}

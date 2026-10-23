@@ -31,7 +31,7 @@ class CafeIn(BaseModel):
         if v not in load_districts():
             raise ValueError(f"unknown district {v}")
         return v
-    size_pyeong: int = Field(..., ge=10, le=40)
+    size_pyeong: int = Field(..., ge=10, le=80)
     tables: int = Field(..., ge=0, le=40)
     chairs: int = Field(..., ge=0, le=160)
     bar_seats: int = Field(0, ge=0, le=30)
@@ -89,6 +89,7 @@ class MonthIn(BaseModel):
     price_change_pct: float | None = Field(None, ge=-20, le=30)        # one-time change this month; None = 0
     hours: Literal["short", "standard", "long"] | None = None          # None = keep last month's
     staff_policy: Literal["lean", "standard", "generous"] | None = None
+    staff_max: int | None = Field(None, ge=1, le=8)    # 바쁜 시간 최대 인원 (사장님 포함, None = 가게 설정 인원)
     marketing_krw: int | None = Field(None, ge=0, le=5_000_000)
     dessert: bool | None = None
     delivery: bool | None = None                  # 배달앱 입점 (None = 지난달 그대로)

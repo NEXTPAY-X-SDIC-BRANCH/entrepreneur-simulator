@@ -1,7 +1,7 @@
 // 카페 열기 전 점검: 고깃집 checks()와 같은 다섯 질문, 숫자는 카페 자료로 계산한다.
 // 매출은 동네 점포당 월매출의 중앙값(model.ts CAFE_MEDIAN)과 4분의 1·4분의 3 분위로 세 가지 경우를 본다.
 // 비용 구조는 외식업체 경영실태조사 2025 커피전문점(전국, 프랜차이즈 포함, 2-2 정량 데이터 표 95~104·127)이고, 값마다 아래에 출처를 적었다.
-import { CAFE_GRADES, CAFE_SIGN, cafeOpeningCost } from "./cafe";
+import { CAFE_GRADES, CAFE_SIGN, cafeDefaultCounts, cafeOpeningCost } from "./cafe";
 import { cafeShapeBody } from "../lab/layout/cafeFlow"; // lab:layout
 import type { RoomShape } from "../lab/layout/shape"; // lab:layout
 import { guStat, man, type Check, type Grade, type Profile } from "./model";
@@ -26,17 +26,17 @@ export const areaFx = (p: number) => (p <= 10 ? 0.89 : p <= 20 ? 0.89 + (p - 10)
 
 // 가게 꾸미기 입력. 3D 목업의 배치 입력(tables~pos)은 비워 두면 평수에서 어림한 값(독립 카페 평당 테이블 0.36개, 좌석 1.27석)을 쓴다.
 // lab:merge 카페 가게 모양·출입문은 lab:layout(RoomShape: 자유 비율, 네 벽 어디든 문, 창문)이 정한다. upstream 의 shape·door 선택지는 엔진이
-// 같은 값으로 받아 주지만(api/cafe.py) 화면은 보내지 않는다.
-export type CafeCfg = { pyeong: number; grade: Grade; staff: number; tables?: number; chairs?: number; bar?: number; groups?: number; showcase?: number; oven?: number; kiosks?: number; pos?: number; shape?: RoomShape }; // lab:layout shape
-export const cafeLayoutOf = (c: CafeCfg) => ({
-  tables: c.tables ?? Math.max(1, Math.round(c.pyeong * 0.36)), chairs: c.chairs ?? Math.max(2, Math.round(c.pyeong * 1.27)), bar: c.bar ?? 0,
-  groups: c.groups ?? 2, showcase: c.showcase ?? 1, oven: c.oven ?? 0, kiosks: c.kiosks ?? 0, pos: c.pos ?? 1,
-});
+// 같은 값으로 받아 주지만(api/cafe.py) 화면은 보내지 않는다. moves(3D에서 옮긴 자리)는 수빈 것을 그대로 쓴다 (그림만, 엔진 계산에는 안 들어감)
+export type CafeCfg = { pyeong: number; grade: Grade; staff: number; tables?: number; chairs?: number; bar?: number; groups?: number; showcase?: number; oven?: number; kiosks?: number; pos?: number; shape?: RoomShape; moves?: Record<string, [number, number]> }; // lab:layout shape
+export const cafeLayoutOf = (c: CafeCfg) => {
+  const d = cafeDefaultCounts(c.pyeong);
+  return { tables: c.tables ?? d.tables, chairs: c.chairs ?? d.chairs, bar: c.bar ?? d.bar, groups: c.groups ?? d.groups, showcase: c.showcase ?? d.showcase, oven: c.oven ?? d.oven, kiosks: c.kiosks ?? d.kiosks, pos: c.pos ?? d.pos };
+};
 // 엔진(/cafe/preview, /cafe/season) 요청. 동네(행정동 코드)를 안 골랐으면 배치 미리보기용으로 대학로 코드를 쓰고, 시뮬은 동네를 요구한다.
 export const engineBody = (profile: Profile, c: CafeCfg, district: string) => {
   const l = cafeLayoutOf(c);
-  return { district, size_pyeong: c.pyeong, tables: l.tables, chairs: l.chairs, bar_seats: l.bar, espresso_groups: l.groups, showcase: l.showcase, oven: l.oven,
-    kiosks: l.kiosks, pos: l.pos, own_capital_krw: Math.round(profile.capital * 10000), staff_peak: c.staff + 1, seed: 7, ...cafeShapeBody(c.shape) }; // lab:layout
+  return { district, size_pyeong: c.pyeong, tables: l.tables, chairs: l.chairs, bar_seats: l.bar, espresso_groups: Math.max(1, l.groups), showcase: l.showcase, oven: l.oven,
+    kiosks: l.kiosks, pos: Math.max(1, l.pos), own_capital_krw: Math.round(profile.capital * 10000), staff_peak: c.staff + 1, seed: 7, ...cafeShapeBody(c.shape) }; // lab:layout
 };
 
 // ---- 여는 비용의 한 출처: 엔진(/cafe/preview)의 capex와 funding (lab 2026-10-22) ----
@@ -83,7 +83,7 @@ export function cafeDaily(p0: { demand: { default_daily_customers: number; reven
 // eng = 엔진의 여는 비용과 대출. 없으면(엔진 응답 전, 비용 쌓기 그림) 화면 어림값으로 계산한다.
 export function cafeRun(profile: Profile, cfg: CafeCfg, sales: number, shock: { food?: number; rent?: number; labor?: number; demand?: number } = {}, eng?: CafeOpen | null) {
   const st = guStat(profile.gu);
-  const local = cafeOpeningCost(cfg.pyeong, cfg.grade, profile.gu, profile.keyMoney ?? 0);
+  const local = cafeOpeningCost(cfg.pyeong, cfg.grade, profile.gu, profile.keyMoney ?? 0, cafeLayoutOf(cfg));
   const open = eng ? { lines: eng.lines, total: eng.total } : local;
   const start = eng ? eng.cash : profile.capital - open.total;
   const pay = eng?.pay ?? 0;

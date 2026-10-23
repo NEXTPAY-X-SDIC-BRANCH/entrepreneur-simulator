@@ -207,7 +207,7 @@ def test_api_round_trip():
     r = c.post("/cafe/preview", json=SAMPLE)
     assert r.status_code == 200
     assert r.json() == json.loads(json.dumps(preview(SAMPLE)))
-    assert c.post("/cafe/preview", json={**SAMPLE, "size_pyeong": 41}).status_code == 422
+    assert c.post("/cafe/preview", json={**SAMPLE, "size_pyeong": 81}).status_code == 422
     assert c.post("/cafe/preview", json={**SAMPLE, "district": "9999999"}).status_code == 422
 
 

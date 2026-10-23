@@ -13,6 +13,7 @@
 //   새 가게 인지도 0.6에서 매달 15%씩 1로, 협찬 100만원당 인지도 +0.15: 고깃집 시즌 엔진의 가정 (season_params.yaml)
 //   그 밖(면적 효과, 할인 탄력, 달별 품목 비중, 결품 곡선, 재고 값 하락, 세일 판매 속도, 매입 방식별 원가, 사건 효과 크기)은
 //   가정이고 아래에 '가정'으로 적었다. 인터뷰·POS 자료가 생기면 이 값부터 바꾼다.
+import { interiorLines, itemLines } from "./shopItems";
 import { snsMonth } from "./sns";
 import type { ShopLayout } from "./ShopRoom3D";
 import { DEPOSIT_MONTHS, FTC_INTERIOR, GRADES, LOAN_RATE, OWNER_DRAW, guStat, type CostLine, type Grade, type Profile } from "./model";
@@ -40,7 +41,7 @@ export function setApparelKosis(d: { bands: Band[]; survival_seoul_retail_2023: 
 
 const WAGE = (10320 * 8 * 26 * 1.33) / 1e4; // 만원/월, 하루 8시간 26일 근무 알바 한 명 (최저시급 × 주휴 배수)
 export const STAFF_PAY = Math.round(WAGE);
-export const FIXTURES = 300, SIGN = 250; // 만원. 행거·진열대·거울·피팅룸 (가정), 간판 (고깃집과 같은 가정)
+export const FIXTURES = 100, SIGN = 250; // 만원. 벽 선반·진열 조명 (가정, 행거·피팅룸 등은 shopItems.ts에서 고른 만큼), 간판 (고깃집과 같은 가정)
 const BASE_PYEONG = 13; // 가정: 면적 효과의 기준. 매출은 (평수 ÷ 13)^0.5 배
 const ELASTIC = 1.5;    // 가정: 할인율 10%면 팔리는 양 +15%
 // 분기 안의 달 비율 (분기 평균 1): 통계청 소매판매액지수 의복 불변지수 월 합계, 2023~2025 평균 (KOSIS DT_1K41012 G21, kosis_monthly.json)
@@ -106,8 +107,8 @@ export function apparelOpeningCost(cfg: ApparelCfg, gu: string, keyMoney = 0): {
   const lines: CostLine[] = [
     ...(keyMoney > 0 ? [{ key: "keymoney", label: "권리금", amount: keyMoney, basis: "직접 넣은 값 (나갈 때 돌려받지 못해요)" }] : []),
     { key: "deposit", label: "보증금", amount: Math.round(st.rent * cfg.pyeong * DEPOSIT_MONTHS), basis: `월세 ${DEPOSIT_MONTHS}개월분 (서울시 상가임대차 실태조사)` },
-    { key: "interior", label: "인테리어 공사", amount: g.perPyeong * cfg.pyeong, basis: `${cfg.pyeong}평, 평당 ${g.perPyeong}만원 (${g.label}). 공정위 정보공개서 의류 가맹 ${FTC_INTERIOR.apparel.n}개 브랜드의 25·50·75% 값이라 표본이 적어요` },
-    { key: "seat", label: "진열대·행거·피팅룸", amount: FIXTURES, basis: "가정" },
+    ...interiorLines(g.perPyeong * cfg.pyeong, `${cfg.pyeong}평, 평당 ${g.perPyeong}만원 (${g.label}). 공정위 정보공개서 의류 가맹 ${FTC_INTERIOR.apparel.n}개 브랜드의 25·50·75% 값이라 표본이 적어요`),
+    ...itemLines("apparel", cfg.pyeong, cfg.layout),
     { key: "sign", label: "간판", amount: SIGN, basis: "전면 간판 1개, 가정" },
     { key: "stock", label: "첫 재고", amount: stock, basis: cfg.buyMode === "consign"
       ? `위탁이라 미리 내는 돈이 없어요 (${cfg.stockMonths}개월치를 들여놓고 팔린 만큼 정산, 가정)`

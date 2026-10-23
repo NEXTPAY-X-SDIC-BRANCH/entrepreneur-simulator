@@ -261,7 +261,10 @@ function BackWallDecor({ runs, z }: { runs: [number, number][]; z: number }) {
 const seedOf = (id: string) => Array.from(id).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 // occupancy: 0~1, 의자(와 바 좌석) 가운데 손님이 앉은 비율. 앉는 자리 순서는 id 해시로 고정해 손님이 늘 때 앉아 있던 사람은 그대로 있다.
-export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, height = 420, shape, flow }: { room: Room3D; layout: LayoutItem[]; roster?: RosterItem[]; occupancy?: number; height?: number | "fill"; shape?: RoomShape; flow?: CafeFlow | null }) {
+// moves: 사장님이 옮긴 자리 (엔진 조각 id → 장면 x, z). 테이블을 옮기면 둘레 의자도 같이 옮긴다. 엔진 계산(좌석 수)에는 영향이 없다
+export type CafeEdit = { sel: string | null; pick: (id: string | null) => void; move: (id: string, x: number, z: number) => void };
+const MOVABLE = new Set(["table", "kiosk"]);
+export default function CafeRoom3D({ room, layout: layout0, roster = [], occupancy = 0, height = 420, shape, flow, moves, edit }: { room: Room3D; layout: LayoutItem[]; roster?: RosterItem[]; occupancy?: number; height?: number | "fill"; shape?: RoomShape; flow?: CafeFlow | null; moves?: Record<string, [number, number]>; edit?: CafeEdit }) {
   const { width_m: W, depth_m: D } = room; // door frame (= the real room when the door is on the front wall)
   // lab:layout: the real room and how the door frame turns into it
   const wall: Wall = room.frame?.wall ?? "front";
@@ -273,6 +276,28 @@ export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, h
   // 엔진 좌표 -> 장면 좌표
   const sx = (x: number) => x - W / 2;
   const sz = (z: number) => D / 2 - z;
+  // 옮긴 자리 반영: 엔진 좌표로 되돌려 같은 그림 코드를 쓴다. 의자는 가장 가까운 테이블(0.9m 안)을 따라간다
+  const mk = JSON.stringify(moves ?? {});
+  const layout = useMemo(() => {
+    const mv = moves ?? {};
+    const shift: Record<string, [number, number]> = {};
+    for (const it of layout0) if (mv[it.id]) shift[it.id] = [mv[it.id][0] + W / 2 - it.x, D / 2 - mv[it.id][1] - it.z];
+    const tables = layout0.filter((t) => t.type === "table" && shift[t.id]);
+    return layout0.map((it) => {
+      if (shift[it.id]) return { ...it, x: it.x + shift[it.id][0], z: it.z + shift[it.id][1] };
+      if (it.type === "chair") {
+        const t = tables.find((t) => Math.hypot(t.x - it.x, t.z - it.z) < 0.9);
+        if (t) return { ...it, x: it.x + shift[t.id][0], z: it.z + shift[t.id][1] };
+      }
+      return it;
+    });
+  }, [layout0, mk, W, D]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 의자를 눌러도 그 의자가 붙은 테이블을 고른다
+  const owner = useMemo(() => {
+    const ts = layout.filter((t) => t.type === "table"), out: Record<string, string> = {};
+    for (const c of layout) if (c.type === "chair") { const t = ts.find((t) => Math.hypot(t.x - c.x, t.z - c.z) < 0.9); if (t) out[c.id] = t.id; }
+    return out;
+  }, [layout]);
   const yaw = (rot: number) => Math.PI - (rot * Math.PI) / 180;
 
   const seats = useMemo(() => layout.filter((i) => (i.type === "chair" || i.type === "bar_seat") && i.fits && !i.unassigned)
@@ -375,12 +400,21 @@ export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, h
           ))}
 
           <group rotation={[0, turn, 0]}>
+          {/* lab:merge 수빈 3D 옮기기: 바닥을 누르면 고른 테이블·키오스크가 간다. 문 벽에 맞춰 돌린 틀 안의 좌표로 바꿔 넘긴다 */}
+          {edit && (
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]} visible={false}
+              onClick={(e) => { if (e.delta > 5 || !edit.sel) return; const p = e.object.parent!.worldToLocal(e.point.clone()); edit.move(edit.sel, Math.max(-W / 2 + 0.5, Math.min(W / 2 - 0.5, p.x)), Math.max(-D / 2 + 0.5, Math.min(D / 2 - 0.5, p.z))); }}>
+              <planeGeometry args={[W, D]} />
+            </mesh>
+          )}
           {backRuns.length > 0 && <Hide outside={opposite[wall]}><BackWallDecor runs={backRuns} z={-D / 2} /></Hide>}
           {/* 카운터 몸통과 조각 */}
           {counters.map((r) => <Cabinet key={`${r.x0}-${r.z}`} x0={sx(r.x0)} x1={sx(r.x1)} z={sz(r.z)} d={r.d} customer={r.customer} />)}
           {layout.map((it) => (
             <Ghost.Provider key={it.id} value={!it.fits}>
-              <group position={[sx(it.x), 0, sz(it.z)]} rotation={[0, yaw(it.rot_deg), 0]}>
+              <group position={[sx(it.x), 0, sz(it.z)]} rotation={[0, yaw(it.rot_deg), 0]}
+                onClick={edit && (MOVABLE.has(it.type) || owner[it.id]) ? (e) => { if (e.delta > 5) return; e.stopPropagation(); const id = owner[it.id] ?? it.id; edit.pick(edit.sel === id ? null : id); } : undefined}>
+                {edit?.sel === it.id && <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.9, 28]} /><meshBasicMaterial color="#3d63ea" transparent opacity={0.4} /></mesh>}
                 {!it.fits && ON_COUNTER.has(it.type) && <Cabinet x0={-it.w / 2} x1={it.w / 2} z={0} d={it.d} />}
                 <Piece it={it} />
               </group>
@@ -391,7 +425,7 @@ export default function CafeRoom3D({ room, layout, roster = [], occupancy = 0, h
     </>
     // sx, sz, yaw, door and backRuns follow from W, D, room, counters
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), [W, D, Wr, Dr, gx1, room, layout, counters, lamps, shp]);
+  ), [W, D, Wr, Dr, gx1, room, layout, counters, lamps, shp, edit, owner]);
   const gfx = useGfx();
   return (
     <>

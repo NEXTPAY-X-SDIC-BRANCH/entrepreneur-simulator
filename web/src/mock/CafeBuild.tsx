@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Mark } from "./Checks";
 import SettledStack, { cafeSettled } from "../lab/cost/SettledStack"; // lab:cost
-import { CAFE_PYEONG, cafeDistrictCode, cafeEstimate } from "./cafe";
+import { CAFE_PYEONG, cafeDistrictCode, cafeDong, cafeEstimate } from "./cafe";
 import { cafeChecks, cafeDaily, cafeLayoutOf, cafeOpenFromEngine, engineBody, type CafeCfg, type CafeOpen } from "./cafeChecks";
-import CafeRoom3D from "./CafeRoom3D";
+import CafeRoom3D, { type CafeEdit } from "./CafeRoom3D";
+import { ItemIcon } from "./ItemTray"; // lab:merge 수빈 물건 그림
 import FinanceBox from "../lab/finance/FinanceBox"; // lab:finance
 import { CAFE_DEFAULT_RATE } from "../lab/finance/finance"; // lab:finance
 import { ENGINE, useCafePreview } from "./useCafePreview";
@@ -17,7 +18,7 @@ import { cafeFlow, cafeRatioOk, shapeFromRoom, type CafeRoom } from "../lab/layo
 import { CAFE_DOOR_MARGIN, CAFE_SHAPE, type RoomShape } from "../lab/layout/shape";
 
 type Layout = ReturnType<typeof cafeLayoutOf>;
-type Item = { key: keyof Layout; name: string; note: string; min: number; max: number };
+type Item = { key: keyof Layout; name: string; note: string; min: number; max: number; need?: boolean };
 const CATS: { key: string; label: string; items: Item[] }[] = [
   { key: "seat", label: "좌석", items: [
     { key: "tables", name: "테이블", note: "2~4인용", min: 0, max: 40 },
@@ -25,9 +26,9 @@ const CATS: { key: string; label: string; items: Item[] }[] = [
     { key: "bar", name: "바 좌석", note: "카운터 앞 자리", min: 0, max: 30 },
   ] },
   { key: "machine", label: "카운터와 머신", items: [
-    { key: "groups", name: "에스프레소 머신 그룹", note: "그룹이 많을수록 동시에 뽑아요", min: 1, max: 4 },
+    { key: "groups", name: "에스프레소 머신 그룹", note: "그룹이 많을수록 동시에 뽑아요", min: 0, max: 4, need: true },
     { key: "kiosks", name: "키오스크", note: "주문 줄을 나눠 줘요", min: 0, max: 3 },
-    { key: "pos", name: "계산대(POS)", note: "", min: 1, max: 3 },
+    { key: "pos", name: "계산대(POS)", note: "주문·결제 받는 곳", min: 0, max: 3, need: true },
   ] },
   { key: "kitchen", label: "진열과 조리", items: [
     { key: "showcase", name: "디저트 진열장", note: "디저트를 팔려면 필요해요", min: 0, max: 1 },
@@ -41,7 +42,9 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
   const cfg: CafeCfg = cfgIn ?? { pyeong: est.pyeong, grade: est.grade, staff: 1 };
   // 아무것도 안 바꾸고 시뮬레이션으로 가도 이 화면의 구성(추천 평수)이 넘어가게 한다. 전에는 Mock의 기본값 20평이 넘어가
   // 가진 돈이 적을 때 가게 꾸미기(예: 10평)와 시뮬레이션(20평)의 여는 비용이 달랐다
-  useEffect(() => { if (!cfgIn) setCfgOut(cfg); }, [cfgIn]); // eslint-disable-line react-hooks/exhaustive-deps
+  // lab:merge 수빈: 고깃집처럼 빈 가게에서 시작해 물건을 골라 채운다 (머신과 계산대는 꼭 있어야 열 수 있다). 여는 비용은 그대로 엔진 값
+  const EMPTY = { tables: 0, chairs: 0, bar: 0, groups: 0, showcase: 0, oven: 0, kiosks: 0, pos: 0 };
+  useEffect(() => { if (!cfgIn || cfgIn.tables === undefined) setCfgOut({ ...cfg, ...EMPTY }); }, [cfgIn]); // eslint-disable-line react-hooks/exhaustive-deps
   const [cat, setCat] = useState(CATS[0].key);
   const pv = useCafePreview(profile, cfg);
   const lay = cafeLayoutOf(cfg);
@@ -64,8 +67,13 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
   const { list, settled } = useMemo(() => cafeChecks(profile, cfg, open), [profile, cfg, open]);
   const st = guStat(profile.gu);
   const noDong = !(profile.dong && profile.dong.gu === profile.gu);
+  const dongPick = cafeDong(profile); // lab:merge 수빈: 구만 골라도 대표 동네로 시뮬
   const set = (p: Partial<CafeCfg>) => { setNote(""); setCfgOut({ ...cfg, ...p }); }; // lab:layout clears the shape note
   const seats = pv.data?.seats.total ?? 0;
+  // lab:merge 수빈: 3D에서 테이블(의자째)·키오스크를 누르고 바닥을 누르면 옮긴다. 엔진의 좌석 수 계산은 그대로
+  const [sel, setSel] = useState<string | null>(null);
+  const edit: CafeEdit = { sel, pick: setSel, move: (id, x, z) => { set({ moves: { ...(cfg.moves ?? {}), [id]: [Math.round(x * 10) / 10, Math.round(z * 10) / 10] } }); setSel(null); } };
+  const missing = CATS.flatMap((c) => c.items).filter((it) => it.need && (lay[it.key] as number) < 1).map((it) => it.name);
   // lab:layout: room shape, route, and a line saying what a shape change did once the engine answers
   const shape = cfg.shape ?? CAFE_SHAPE;
   const area = cfg.pyeong * 3.3058, rw = Math.sqrt(area * shape.ratio), rd = area / rw;
@@ -107,15 +115,15 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
     <main className="m-build">
       <div className="m-stage">
         <div className="m-canvas">
-          {d ? <CafeRoom3D room={d.room} layout={d.layout} roster={d.staff.roster} height="fill" shape={shape} flow={flowOn ? flow : null} /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
+          {d ? <CafeRoom3D room={d.room} layout={d.layout} roster={d.staff.roster} height="fill" shape={shape} flow={flowOn ? flow : null} moves={cfg.moves} edit={edit} /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
         </div>
 
         <div className="m-room">
           <div className="m-stepper">
             <span id="py">가게 크기</span>
-            <button type="button" aria-label="1평 줄이기" disabled={cfg.pyeong <= 10} onClick={() => set({ pyeong: cfg.pyeong - 1, tables: undefined, chairs: undefined })}>−</button>
+            <button type="button" aria-label="1평 줄이기" disabled={cfg.pyeong <= 10} onClick={() => set({ pyeong: cfg.pyeong - 1, moves: undefined })}>−</button>
             <output aria-labelledby="py">{cfg.pyeong}평</output>
-            <button type="button" aria-label="1평 늘리기" disabled={cfg.pyeong >= 30} onClick={() => set({ pyeong: cfg.pyeong + 1, tables: undefined, chairs: undefined })}>+</button>
+            <button type="button" aria-label="1평 늘리기" disabled={cfg.pyeong >= 80} onClick={() => set({ pyeong: cfg.pyeong + 1, moves: undefined })}>+</button>
           </div>
           <div className="m-stepper">
             <span id="st">직원 수</span>
@@ -126,7 +134,8 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
           <p>테이블 {lay.tables}개, {seats}석</p>
           <button type="button" className="m-btn m-btn-quiet m-recbtn"
             onClick={() => { setNote(""); setCfgOut({ pyeong: est.pyeong, grade: est.grade, staff: 1, shape: cfg.shape }); }}>추천 배치</button>
-          {noDong && <p className="m-warn m-dongwarn" role="note">동네를 아직 고르지 않았어요. 카페 시뮬레이션은 동네(행정동)를 골라야 돌아가요. 지금 숫자는 대학로 상권 기준이에요. 동네 분석에서 먼저 골라 주세요.</p>}
+          <small className="it-place2">{sel ? "놓을 바닥을 누르세요." : "3D에서 테이블·키오스크를 누르고 바닥을 누르면 옮겨져요."}</small>
+          {noDong && dongPick && <p className="m-aside m-dongwarn" role="note">동네를 아직 고르지 않아서 {profile.gu}의 대표 동네({dongPick.name}) 기준으로 계산해요. 동네 분석에서 고르면 그 동네로 바뀌어요.</p>}
         </div>
 
         <div className={`m-cash ${open && open.gap > 0 ? "is-short" : ""}${fresh ? "" : " is-stale"}`} aria-busy={!fresh}>
@@ -165,9 +174,10 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
             const v = lay[it.key] as number;
             return (
               <li key={it.key}>
-                <div className="cs-card">
+                <div className="cs-card it-card">
+                  <ItemIcon k={it.key} />
                   <span>{it.name}</span>
-                  <small>{it.note || " "}</small>
+                  <small>{it.note || " "}{it.need ? " · 꼭 필요" : ""}</small>
                   <div className="m-stepper">
                     <button type="button" aria-label={`${it.name} 줄이기`} disabled={v <= it.min} onClick={() => set({ [it.key]: v - 1 } as Partial<CafeCfg>)}>−</button>
                     <output>{v}</output>
@@ -181,7 +191,8 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
         )}
         <div className="m-tray-go">
           <button type="button" className="m-btn m-btn-outline" onClick={() => document.querySelector(".m-checks")?.scrollIntoView({ behavior: "smooth", block: "start" })}>오픈 전 점검 보러가기</button>
-          <button type="button" className="m-btn" disabled={seats === 0} onClick={onNext}>시뮬레이션 하러 가기</button>
+          {missing.length > 0 && <p className="m-warn it-need">꼭 필요한 물건을 아직 안 놓았어요: {missing.join(", ")} <button type="button" className="it-needbtn" onClick={() => set({ groups: Math.max(1, lay.groups), pos: Math.max(1, lay.pos) })}>한 번에 놓기</button></p>}
+          <button type="button" className="m-btn" disabled={seats === 0 || missing.length > 0} onClick={onNext}>시뮬레이션 하러 가기</button>
         </div>
       </div>
 

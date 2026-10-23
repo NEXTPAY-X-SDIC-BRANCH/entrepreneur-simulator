@@ -2,7 +2,7 @@
 // 가게(평면)가 화면 전체, 위에 지표 줄, 왼쪽에 현금 그래프와 이달 계획, 오른쪽에 날짜별 영수증, 아래에 재생 막대,
 // 운영 계획 → 이달의 사건 → (하루씩 재생) → 정산 → 6개월 성적표는 팝업으로 뜬다.
 // 계산은 apparel.ts playMonth (달 단위, 서버 없음). 날짜별 값은 그달 결과를 이 구 옷가게의 요일별 매출 비중(상권분석서비스)으로 나눈 것이다.
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import {
   BUY_MODES, CATS, MARKET, ONLINE, mixAvg, PAPER_SELL, DEFAULT_PLAN, KOSIS, OLD_AGE, PLAN_TEXT, apparelOpeningCost, eventOf, invOf, invTotal, mixOf,
   playMonth, startState, stateAfter, stockValue,
@@ -20,6 +20,9 @@ import { apTries } from "./ApInsight";
 import Scorecard, { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { CashChart, IconCal, IconCash, IconStar, Metric } from "./SimulateEngine";
 import "./simulate-engine.css";
+import CostBar from "./CostBar";
+import { isDepLine } from "./shopItems";
+import ChannelCards from "./ChannelCards";
 
 const TURNS = 6;
 // easy 모드: 방향을 고른 뒤 버튼으로 바꾸는 세 가지
@@ -191,7 +194,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
   const cur = done.at(-1);
   const m = monthSeq[Math.min(idx, TURNS - 1)];
   const ev = eventOf(m, seed + idx);
-  const dep = open.lines.filter((l) => ["interior", "seat", "sign"].includes(l.key)).reduce((a, l) => a + l.amount, 0) / 60; // 5년 감가상각
+  const dep = open.lines.filter((l) => isDepLine(l.key)).reduce((a, l) => a + l.amount, 0) / 60; // 5년 감가상각
   // 현금흐름표·영수증 (원). 엔진 현금 = 월초 + 매출 − 옷 산 돈 − 위탁 정산 − 비용 − 생활비 − 이자
   const cfMonths: CfMonth[] = months.map((c, i) => {
     const s0 = i ? months[i - 1].cash : start.cash, K = 1e4;
@@ -281,6 +284,8 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
   const cashNow = view === null || view === "settle" || view === "report" ? curDay?.cash ?? state.cash : state.cash;
   const people = curDay && view === null ? Math.round(curDay.tx / 2) : 0; // 가게 안 손님 점: 하루 결제 건수의 절반 (그림용)
   const receiptDays = done.flatMap((x, mi) => (mi === done.length - 1 ? x.days.slice(0, dayIdx + 1) : x.days).map((d) => ({ ...d, mi })));
+  const receiptEnd = useRef<HTMLDivElement>(null);
+  useEffect(() => { receiptEnd.current?.scrollIntoView({ block: "end" }); }, [receiptDays.length, receipt]); // 새 날짜가 찍히면 영수증 끝으로
   const sc = months.length ? score(months) : null;
 
   return (
@@ -355,6 +360,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                 </section>
               );
             })}
+            <div ref={receiptEnd} />
           </div>
         </aside>
       )}
@@ -533,19 +539,22 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                     </div>
                     <Kpis items={[
                       { label: "매출", value: man(w(c.revenue)) },
-                      { label: consign ? "도매상에 정산한 돈" : "옷을 사는 데 쓴 돈", value: man(w(consign ? c.settle : c.purchase)) },
-                      { label: consign ? "위탁 재고" : "남은 재고 (원가)", value: man(w(consign ? c.consigned : c.stockEnd)) },
+                      { label: "나간 돈", value: man(w(c.revenue - c.op)) },
+                      { label: "영업이익", value: signed(c.op), tone: tone(c.op) },
                       { label: "월말 현금", value: man(w(c.cash)), main: true },
                     ]} />
+                    <p className="sx-note">{consign ? `도매상에 정산한 돈 ${man(w(c.settle))} · 위탁 재고 ${man(w(c.consigned))}` : `옷을 사는 데 쓴 돈 ${man(w(c.purchase))} · 남은 재고(원가) ${man(w(c.stockEnd))}`}</p>
                     {c.closed && <p className="se-err">현금이 두 달 연속 바닥이라 가게를 닫게 됐어요.</p>}
                     <Insight tries={apTries(profile, cfg, cur.s0, c, cur.ev, cur.opt)} last={c.closed || done.length >= TURNS}
                       onApply={(patch) => { if (mode === "easy") setTweak(patch); else setPlan({ ...c.plan, ...patch }); next(); }} />
+                    <CostBar items={[
+                      ["옷 원가", c.cogs], ["인건비", c.staffPay], ["월세", c.rent], ["기타", c.other], ["홍보·온라인", c.marketing + c.eventCost + c.onlineCost], ["재고 손실", c.writeOff],
+                    ]} revenue={c.revenue} op={c.op} fmt={(x) => man(Math.round(x))} />
                     <CashFlow months={cfMonths} kind="retail" shop="옷가게" compact />
-                    <details className="sx-more"><summary>정산표·품목별 재고 자세히 보기</summary>
-                    <div className="sx-settle">
-                      <section className="sx-sec">
-                        <h2>정산표</h2>
-                        <table className="sx-table"><tbody>
+                    <details className="sx-more"><summary>정산표와 매장·온라인·품목별 자세히 보기</summary>
+                      <section className="st-card">
+                        <header className="st-h"><span className="st-ico" aria-hidden>₩</span><div><h2>정산표</h2><small>이번 달 매출에서 비용을 하나씩 뺀 계산이에요</small></div></header>
+                        <table className="sx-table st-table"><tbody>
                           <tr><th>매출</th><td>{man(w(c.revenue))}</td><td>결제 약 {Math.round(c.tx).toLocaleString("ko-KR")}건, 한 건 {c.ticket.toLocaleString("ko-KR")}원<Assume id="sizeEffect" /></td></tr>
                           {c.mdRev + c.clearRev > 0 && <tr className="sub"><th>그중 세일 매출</th><td>{man(w(c.mdRev + c.clearRev))}</td><td>{c.plan.markdownAge}달 지난 옷 {Math.round(c.plan.markdown * 100)}% 세일{c.clearRev > 0 ? " + 정리 세일" : ""}<Assume id="markdownSell" /></td></tr>}
                           <tr><th>매출원가</th><td>−{man(w(c.cogs))}</td><td>판 옷의 원가 (원가율 {Math.round(KOSIS.cogs * 100)}% × {consign ? `위탁 ${BUY_MODES.consign.cost}` : c.costAvg.toFixed(2)}{c.plan.discount ? `, ${Math.round(c.plan.discount * 100)}% 할인` : ""})</td></tr>
@@ -562,19 +571,32 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                           <tr className="sum"><th>세전이익</th><td>{signed(pre)}</td><td>부가세·소득세는 아직 계산하지 않아요</td></tr>
                         </tbody></table>
                       </section>
-                      <section className="sx-sec">
-                        <h2>이익과 현금이 다른 이유</h2>
+                      <section className="st-card">
+                        <header className="st-h"><span className="st-ico is-ch" aria-hidden>⇄</span><div><h2>이익과 현금이 다른 이유</h2><small>옷은 사 둔 만큼 현금이 먼저 나가요</small></div></header>
                         {consign
                           ? <p className="sx-note">위탁이라 옷을 미리 사지 않았어요. 팔린 옷값 <b>{man(w(c.settle))}</b>만 도매상에 정산해서 이익과 현금이 거의 같아요.
                               대신 원가가 {Math.round((BUY_MODES.consign.cost - 1) * 100)}% 비싸 한 벌에 남는 돈이 적어요.{c.returned > 0 ? ` 석 달 안 팔린 ${man(w(c.returned))}어치는 돌려보냈어요.` : ""} 사장 생활비 {man(w(c.draw))}도 현금에서 빠져요.</p>
                           : <p className="sx-note">이번 달 옷을 사는 데 <b>{man(w(c.purchase))}</b>을 썼지만{c.ordered ? " (석 달치 선발주)" : ""}, 팔린 만큼의 원가 <b>{man(w(c.cogs))}</b>만 비용이 돼요.
                               나머지는 선반 위 재고({man(w(c.stockEnd))})로 남아 현금이 묶여 있어요. 사장 생활비 {man(w(c.draw))}도 현금에서 빠져요.</p>}
-                        <h2>품목별 재고</h2>
-                        <CatTable c={c} />
-                        <h2>이번 달 사건</h2>
-                        <ul className="sx-evs"><li><b>{c.event}</b><span>고른 대응: {c.choice}</span></li></ul>
                       </section>
-                    </div>
+                      {(() => {
+                        const cr = c.cogs / Math.max(1, c.revenue), store = c.revenue - c.onlineRev, storeTx = Math.max(0, c.tx - c.onlineOrders);
+                        return (
+                          <section className="st-card">
+                            <header className="st-h"><span className="st-ico is-ch" aria-hidden>⇄</span><div><h2>매장·온라인, 어디서 남았나</h2><small>패션 구매의 52%가 온라인이에요 (S105). 온라인은 수수료·택배비가 빠지고, 월세·알바비는 매장 몫으로 봐요</small></div></header>
+                            <ChannelCards fmt={(x) => man(Math.round(x))} perOne={1e4} rows={[
+                              { key: "visit", label: "매장", orders: storeTx, rev: store, costs: [["옷 원가", store * cr]] },
+                              { key: "delivery", label: c.plan.online ? `온라인 · ${ONLINE[c.plan.online].label}` : "온라인", orders: c.onlineOrders, rev: c.onlineRev, costs: [["옷 원가", c.onlineRev * cr], ["수수료·택배·광고", c.onlineCost]] },
+                            ]} />
+                            {!c.plan.online && <p className="sx-note">온라인 판매를 안 했어요. 운영 계획에서 스마트스토어나 패션 플랫폼을 켜면 같은 재고로 온라인에서도 팔아요.</p>}
+                          </section>
+                        );
+                      })()}
+                      <section className="st-card">
+                        <header className="st-h"><span className="st-ico" aria-hidden>▦</span><div><h2>품목별 재고</h2><small>무엇이 팔리고 무엇이 남았나</small></div></header>
+                        <CatTable c={c} />
+                        <div className="st-ev"><b>이번 달 사건</b><ul className="sx-evs"><li><b>{c.event}</b><span>고른 대응: {c.choice}</span></li></ul></div>
+                      </section>
                     </details>
                   </div>
                   <footer className="sx-foot">
@@ -598,6 +620,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                   <section className="sx-sec"><h2>남은 현금</h2>
                     <CashChart start={start.cash * 1e4} labels={monthSeq} months={done.map((x) => ({ days: x.days.map((d) => ({ cash: d.cash * 1e4 })) }))} />
                   </section>
+                  <details className="sx-more sc-more rp-more"><summary>돈의 흐름 · 현금흐름표 · 달마다 기록 자세히 보기</summary>
                   <CashFlow months={cfMonths} kind="retail" shop="옷가게" />
                   <section className="sx-sec">
                     {(() => {
@@ -620,6 +643,7 @@ export default function ApparelSim({ profile, cfg, onBack }: { profile: Profile;
                       ))}</tbody>
                     </table>
                   </section>
+                  </details>
                 </div>
                 <footer className="sx-foot">
                   <button type="button" className="se-btn" onClick={restart}>처음부터 다시</button>

@@ -229,7 +229,7 @@ export default function Builder({ profile, store, setStore, levers, setLevers, o
             <span id="py">가게 크기</span>
             <button type="button" aria-label="1평 줄이기" disabled={store.pyeong <= 12} onClick={() => resize(store.pyeong - 1)}>−</button>
             <output aria-labelledby="py">{store.pyeong}평</output>
-            <button type="button" aria-label="1평 늘리기" disabled={store.pyeong >= 40} onClick={() => resize(store.pyeong + 1)}>+</button>
+            <button type="button" aria-label="1평 늘리기" disabled={store.pyeong >= 80} onClick={() => resize(store.pyeong + 1)}>+</button>
           </div>
           <div className="m-seg" role="group" aria-label="마감 수준">
             {(Object.keys(GRADES) as Grade[]).map((g) => (

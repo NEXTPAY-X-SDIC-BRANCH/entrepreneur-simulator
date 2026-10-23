@@ -64,10 +64,12 @@ export function FrontFade({ z, children }: { z: number; children: React.ReactNod
 }
 
 // Glass front along z, from x0 to x1, with the door gap (door.x = gap centre). Thin frame so it barely hides the room.
-export function Storefront({ x0, x1, z, door, frame = "#4f555c", mat = true }: { x0: number; x1: number; z: number; door: { x: number; w: number }; frame?: string; mat?: boolean }) {
+// more: 두 번째·세 번째 출입문 (그 자리도 유리벽을 비우고 문을 단다)
+export function Storefront({ x0, x1, z, door, more = [], frame = "#4f555c", mat = true }: { x0: number; x1: number; z: number; door: { x: number; w: number }; more?: { x: number; w: number }[]; frame?: string; mat?: boolean }) {
   const H = WALL_H;
-  const dl = Math.max(x0, door.x - door.w / 2), dr = Math.min(x1, door.x + door.w / 2);
-  const segs = ([[x0, dl], [dr, x1]] as [number, number][]).filter(([a, b]) => b - a > 0.05);
+  const gaps = [door, ...more].map((d) => [Math.max(x0, d.x - d.w / 2), Math.min(x1, d.x + d.w / 2)] as [number, number]).sort((a, b) => a[0] - b[0]);
+  const cuts = [x0, ...gaps.flat(), x1];
+  const segs = Array.from({ length: gaps.length + 1 }, (_, i) => [cuts[i * 2], cuts[i * 2 + 1]] as [number, number]).filter(([a, b]) => b - a > 0.05);
   return (
     <group>
       {segs.map(([a, b]) => {
@@ -82,14 +84,18 @@ export function Storefront({ x0, x1, z, door, frame = "#4f555c", mat = true }: {
         );
       })}
       {/* door: header and transom over the gap, a leaf standing open to the street (inside stays clear), a mat */}
-      <Box p={[(dl + dr) / 2, 2.12, z]} s={[dr - dl, 0.07, 0.09]} color={frame} />
-      <Box p={[(dl + dr) / 2, (2.15 + H) / 2, z]} s={[dr - dl, H - 2.2, 0.02]} color={C.glass} opacity={0.16} />
-      <group position={[dr - 0.02, 0, z + 0.04]} rotation={[0, 1.2, 0]}>
-        <Box p={[-(dr - dl) * 0.45, 1.06, 0]} s={[(dr - dl) * 0.9, 2.04, 0.02]} color={C.glass} opacity={0.22} />
-        <Box p={[-(dr - dl) * 0.9, 1.06, 0]} s={[0.04, 2.04, 0.05]} color={frame} />
-        <Box p={[-(dr - dl) * 0.75, 1.0, 0.04]} s={[0.025, 0.5, 0.025]} color={C.steel} metal={0.6} />
-      </group>
-      {mat && <Box p={[(dl + dr) / 2, 0.006, z - 0.45]} s={[dr - dl, 0.012, 0.7]} color="#4a4f55" />}
+      {gaps.map(([dl, dr]) => (
+        <group key={dl}>
+          <Box p={[(dl + dr) / 2, 2.12, z]} s={[dr - dl, 0.07, 0.09]} color={frame} />
+          <Box p={[(dl + dr) / 2, (2.15 + H) / 2, z]} s={[dr - dl, H - 2.2, 0.02]} color={C.glass} opacity={0.16} />
+          <group position={[dr - 0.02, 0, z + 0.04]} rotation={[0, 1.2, 0]}>
+            <Box p={[-(dr - dl) * 0.45, 1.06, 0]} s={[(dr - dl) * 0.9, 2.04, 0.02]} color={C.glass} opacity={0.22} />
+            <Box p={[-(dr - dl) * 0.9, 1.06, 0]} s={[0.04, 2.04, 0.05]} color={frame} />
+            <Box p={[-(dr - dl) * 0.75, 1.0, 0.04]} s={[0.025, 0.5, 0.025]} color={C.steel} metal={0.6} />
+          </group>
+          {mat && <Box p={[(dl + dr) / 2, 0.006, z - 0.45]} s={[dr - dl, 0.012, 0.7]} color="#4a4f55" />}
+        </group>
+      ))}
     </group>
   );
 }

@@ -26,7 +26,7 @@ def test_easy_bbq_is_deterministic_and_complete():
     assert 0 <= plan["staff_per_shift"] <= 4 and plan["meat_price"] == 19000
     assert a["run"]["seed"] == E.EASY_SEED
     # 여는 비용은 화면(openingCost)과 같은 줄, 원 단위로 엔진에 넘어간다
-    assert set(a["run"]["invest"]) == {"deposit", "interior", "equip", "seat", "deco", "sign", "stock"}
+    assert set(a["run"]["invest"]) == {"deposit", "interior", "equip", "seat", "deco", "door", "sign", "stock"}
     assert sum(a["run"]["invest"].values()) == pytest.approx(a["opening_total"] * 1e4)
     # 화면에 보여 줄 값마다 출처 구분이 있다
     assert all(x["src"] in ("공공 통계", "업계 자료", "가정", "입력") for x in a["shown"])

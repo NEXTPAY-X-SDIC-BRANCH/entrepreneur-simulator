@@ -27,10 +27,12 @@ def o_shares() -> dict:   # lab:cost — 수선 소모품 기본 마케팅 줄�
 
 HOURS_KO = {"short": "짧게", "standard": "기본", "long": "길게"}
 STAFF_KO = {"lean": "빠듯하게", "standard": "기본", "generous": "넉넉하게"}
-DECISION_KEYS = ("price_change_pct", "hours", "staff_policy", "marketing_krw", "dessert", "delivery", "open_hour", "close_hour", "menu")
+DECISION_KEYS = ("price_change_pct", "hours", "staff_policy", "marketing_krw", "dessert", "delivery", "open_hour", "close_hour", "menu", "staff_max")
 # hard 모드 메뉴·판촉 (보내지 않으면 이 값 = 효과 없음)
 MENU_DEFAULT = {"bean": "standard", "seasonal": False, "dessert_price_pct": 0.0, "takeout_disc": 0.0, "loyalty": False,
-                "delivery_share": None, "free_dlvy_krw": 0}
+                "delivery_share": None, "free_dlvy_krw": 0, "min_order_krw": 12000}
+# 배달 최소주문금액 (가정): 12,000원 기준, 2배로 올리면 주문 ×0.71·한 건 ×1.23
+MIN_ORDER_BASE, MIN_ORDER_ORDERS_EXP, MIN_ORDER_BASKET_EXP = 12000, 0.5, 0.3
 # waterfall: factors are switched from the reference month to this month one at a time, in this order
 STEPS = (("season", "계절"), ("ingredient", "원두·우유 시세"), ("delivery", "배달"), ("reputation", "별점과 단골"), ("price", "가격"), ("hours", "영업시간"),
          ("staff", "직원 운영"), ("marketing", "마케팅"), ("dessert", "디저트"), ("menu", "메뉴·판촉"), ("rival", "경쟁 카페"),
@@ -136,7 +138,10 @@ def _day_rows(ctx: dict, f: dict, day_orders: float) -> list[dict]:
     capped at the peak crew (staff_peak, 사장님 included). Lean staffs by workload only: no extra person to cover a
     rush, so it saves wages and loses customers when an hour outruns its people."""
     core = ctx["core"]
-    return m._schedule(ctx["cfg"], day_orders, core["crew"], hours=_hrs(f),
+    crew = core["crew"]
+    if f.get("staff_max"):   # 사장님이 숫자로 정한 바쁜 시간 최대 인원 (사장님 포함)
+        crew = {**crew, "peak": int(f["staff_max"])}
+    return m._schedule(ctx["cfg"], day_orders, crew, hours=_hrs(f),
                        util=s("staff_utilization")[f["staff"]], cover=s("staff_cover")[f["staff"]])
 
 
@@ -269,8 +274,13 @@ def evaluate(ctx: dict, f: dict) -> dict:
         # 배달 비중을 조사 값보다 키우면 덜 늘고(지수 0.6), 무료배달을 부담하면 주문이 는다 (가정)
         deliv = served * sh0 / (1 - sh0) * (sh / sh0) ** s("delivery_share_exp") * f.get("delivery_mult", 1.0)
         deliv *= 1 + s("free_dlvy_lift_per_1000") * mn["free_dlvy_krw"] / 1000
+        mo = max(5000, mn.get("min_order_krw", MIN_ORDER_BASE)) / MIN_ORDER_BASE
+        deliv *= mo ** -MIN_ORDER_ORDERS_EXP
+        basket = mo ** MIN_ORDER_BASKET_EXP
         served = served - deliv * s("delivery_cannibal") + deliv
-    revenue = served * ticket
+    else:
+        basket = 1.0
+    revenue = served * ticket + deliv * ticket * (basket - 1)   # 배달 한 건이 커진 몫
     dessert_rev = revenue * ds_rev
     drink_food = (v("opex", "food_cost_share") - ds * s("dessert_food_cost_share")) / (1 - ds)
     drink_food *= f.get("ingredient", 1.0)   # 원두·우유 시세 (2024년 대비, 달별)
@@ -317,6 +327,9 @@ def evaluate(ctx: dict, f: dict) -> dict:
         "op_before_depreciation_krw": op_before, "depreciation_krw": ctx["dep"], "op_krw": op_before - ctx["dep"],
         "paid_hours": paid_h, "binding": binding, "peak_util": peak, "mult": mult, "marketing_lift": lift,
         "delivery_orders": round(deliv),
+        # 매장·포장·배달 주문 수 (배달은 따로, 매장 손님 중 테이크아웃 비율만큼 포장)
+        "channels": {"dine": round((served - deliv) * (1 - to_sh)), "takeout": round((served - deliv) * to_sh),
+                     "delivery": round(deliv)},
     }
 
 
@@ -357,7 +370,8 @@ def baseline_factors(decisions: dict) -> dict:
             "hours": decisions["hours"], "staff": decisions["staff_policy"], "marketing_krw": decisions["marketing_krw"],
             "dessert": decisions["dessert"], "rival": False, "viral": 1.0, "breakdown": False, "rent_mult": 1.0, "scn": {},
             "delivery": decisions.get("delivery", False), "delivery_mult": 1.0,
-            "hours_t": _dec_hours(decisions), "menu": {**MENU_DEFAULT, **(decisions.get("menu") or {})}}
+            "hours_t": _dec_hours(decisions), "menu": {**MENU_DEFAULT, **(decisions.get("menu") or {})},
+            "staff_max": decisions.get("staff_max")}
 
 
 def _dec_hours(d: dict):
@@ -445,6 +459,7 @@ def public_start(run: dict) -> dict:
             "months_total": run["months_total"], "start": run["start"], "loan": run["loan"],
             "baseline": run["baseline"], "decisions": run["state"]["decisions"], "options": options(),
             "status": "open", "assumptions": assumptions(),
+            "crew_peak": _context(run["cfg"])["core"]["crew"]["peak"],   # 바쁜 시간 권장 인원 (사장님 포함)
             **({"rent_card": run["rent_card"]} if run.get("rent_card") else {})}  # lab:finance
 
 
@@ -501,6 +516,9 @@ def apply_decisions(prev: dict, body: dict) -> dict:
         raise ValueError("unknown hours or staff_policy")
     d["dessert"] = bool(d["dessert"])
     d["delivery"] = bool(d.get("delivery", False))
+    if d.get("staff_max") is not None:
+        lo, hi = v("capacity", "staff_peak_range")
+        d["staff_max"] = int(_clamp(int(d["staff_max"]), lo, hi))
     if d.get("open_hour") is not None or d.get("close_hour") is not None:
         o, c = int(d.get("open_hour") or s("hours")[d["hours"]][0]), int(d.get("close_hour") or s("hours")[d["hours"]][1])
         lo, hi = s("custom_hours_range")
@@ -514,6 +532,7 @@ def apply_decisions(prev: dict, body: dict) -> dict:
     mn["takeout_disc"] = _clamp(float(mn["takeout_disc"]), 0, 0.3)
     mn["delivery_share"] = None if mn["delivery_share"] is None else _clamp(float(mn["delivery_share"]), 0.05, 0.6)
     mn["free_dlvy_krw"] = int(_clamp(int(mn["free_dlvy_krw"]), 0, 3000))
+    mn["min_order_krw"] = int(round(_clamp(float(mn.get("min_order_krw") or MIN_ORDER_BASE), 0, 30000) / 1000) * 1000)
     d["menu"] = mn
     return d
 
@@ -545,7 +564,7 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
          "rival": st["rival"], "viral": viral, "breakdown": "breakdown" in keys, "rent_mult": st["rent_mult"],
          "scn": scn, "ingredient": s("ingredient_index")[cal], "delivery": dec.get("delivery", False),
          "delivery_mult": delivery_area_mult(run["cfg"]["district"]) * s("delivery_month_index")[cal],
-         "hours_t": _dec_hours(dec), "menu": dec["menu"]}
+         "hours_t": _dec_hours(dec), "menu": dec["menu"], "staff_max": dec.get("staff_max")}
     e = evaluate(ctx, f)
 
     # cash: OP + depreciation (non-cash) - loan interest and principal + VAT refund
@@ -605,6 +624,7 @@ def play_month(run: dict, body: dict | None = None) -> tuple[dict, dict]:
                 "loan_payment_krw": interest + principal},
         "kpi_grades": {"revenue_krw": "L", "op_krw": "L", "cash_krw": "L", "customers": "L", "walkaways": "L",
                        "rating": "가정", "regulars": "가정", "loan_payment_krw": "가정"},
+        "channels": e["channels"],
         "pnl": {"revenue_krw": e["revenue_krw"], "dessert_revenue_krw": e["dessert_revenue_krw"],
                 "lines": e["cost_lines"], "op_before_depreciation_krw": e["op_before_depreciation_krw"],
                 "depreciation_krw": e["depreciation_krw"], "op_krw": e["op_krw"],

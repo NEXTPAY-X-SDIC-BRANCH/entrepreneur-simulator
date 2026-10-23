@@ -4,7 +4,10 @@ import { BUY_MODES, DEFAULT_PLAN, KOSIS, STAFF_PAY, apparelOpeningCost, expected
 import { Mark } from "./Checks";
 import Assume from "./Assume";
 import LayoutPicker from "./LayoutPicker";
-import ShopRoom3D from "./ShopRoom3D";
+import ItemTray from "./ItemTray";
+import { missingItems, withNeeded } from "./shopItems";
+import { useEffect, useState } from "react";
+import ShopRoom3D, { shopPlan, type ShopEdit } from "./ShopRoom3D";
 import { ASSUME } from "./assumptions";
 import { GRADES, OWNER_DRAW, STATUS_LABEL, guStat, man, type Grade, type Profile } from "./model";
 
@@ -42,6 +45,14 @@ export function FloorPlan({ pyeong, people = 0 }: { pyeong: number; people?: num
 
 export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile: Profile; cfg: ApparelCfg; setCfg: (c: ApparelCfg) => void; onNext: () => void }) {
   const set = (p: Partial<ApparelCfg>) => setCfg({ ...cfg, ...p });
+  const kind = "apparel";
+  // 고깃집처럼 빈 가게(주방·벽만)에서 시작해 물건을 골라 채운다
+  useEffect(() => { if (!cfg.layout) set({ layout: { blank: true } }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const lay = cfg.layout ?? { blank: true };
+  const missing = missingItems(kind, cfg.pyeong, lay);
+  // 3D에서 물건을 누르고 바닥을 누르면 그 자리로 옮긴다 (고깃집 가게 꾸미기처럼)
+  const [sel, setSel] = useState<string | null>(null);
+  const edit: ShopEdit = { sel, pick: setSel, move: (id, x, z) => { set({ layout: { ...lay, moves: { ...(lay.moves ?? {}), [id]: [Math.round(x * 10) / 10, Math.round(z * 10) / 10] } } }); setSel(null); } };
   const st = guStat(profile.gu);
   const open = apparelOpeningCost(cfg, profile.gu, profile.keyMoney ?? 0);
   const left = profile.capital + cfg.loan - open.total;
@@ -59,16 +70,25 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
     { title: "첫 달 (손님이 아직 적을 때)", assume: "새 가게 인지도 0.6 (고깃집 엔진과 같은 가정)", ok: firstMonth >= 0, line: `새 가게는 알려지기 전이라 손님이 60%쯤이에요. 첫 달은 ${firstMonth >= 0 ? "+" : "−"}${man(Math.abs(firstMonth))}이에요.` },
     { title: "버틸 돈", ok: left >= fixed * 3, line: `남는 현금 ${man(Math.max(0, left))}은 한 달 고정 지출(${man(fixed)})의 ${(Math.max(0, left) / fixed).toFixed(1)}개월치예요. 이 시뮬레이터는 3개월치를 기준으로 봐요.`, assume: "버틸 돈 기준 3개월치" },
   ];
+  // 추천 배치: 자리만큼 채우되, 여는 돈을 내고도 석 달 고정비가 남도록 행거를 줄인다 (최소 2개)
+  const recommendLayout = () => {
+    const l0 = { shape: lay.shape, door: lay.door, pos: lay.pos, doors: lay.doors };
+    let n = shopPlan(kind, cfg.pyeong, l0).racks.length;
+    const leftWith = (k: number) => profile.capital + cfg.loan - apparelOpeningCost({ ...cfg, layout: { ...l0, racks: k } }, profile.gu, profile.keyMoney ?? 0).total;
+    while (n > 2 && leftWith(n) < fixed * 3) n--;
+    set({ layout: { ...l0, racks: n } });
+  };
   return (
     <main className="m-build">
       <div className="m-stage">
-        <div className="m-canvas"><ShopRoom3D kind="apparel" pyeong={cfg.pyeong} layout={cfg.layout} height="fill" flow /></div>
+        <div className="m-canvas"><ShopRoom3D kind={kind} pyeong={cfg.pyeong} layout={lay} height="fill" flow edit={edit} />
+          <p className="m-msg it-place" role="status">{sel ? "놓을 바닥을 누르세요. 같은 물건을 다시 누르면 그만둬요." : "3D에서 테이블·계산대·행거 같은 물건을 누르고, 놓을 바닥을 누르면 옮겨져요."}</p></div>
         <div className="m-room">
           <div className="m-stepper">
             <span id="ap-py">가게 크기</span>
             <button type="button" aria-label="1평 줄이기" disabled={cfg.pyeong <= 7} onClick={() => set({ pyeong: cfg.pyeong - 1 })}>−</button>
             <output aria-labelledby="ap-py">{cfg.pyeong}평</output>
-            <button type="button" aria-label="1평 늘리기" disabled={cfg.pyeong >= 30} onClick={() => set({ pyeong: cfg.pyeong + 1 })}>+</button>
+            <button type="button" aria-label="1평 늘리기" disabled={cfg.pyeong >= 80} onClick={() => set({ pyeong: cfg.pyeong + 1 })}>+</button>
           </div>
           <div className="m-seg" role="group" aria-label="마감 수준">
             {(Object.keys(GRADES) as Grade[]).map((g) => (
@@ -76,24 +96,13 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
             ))}
           </div>
           <div className="m-stepper">
-            <span id="ap-stock">첫 재고</span>
-            <button type="button" aria-label="첫 재고 줄이기" disabled={cfg.stockMonths <= 1} onClick={() => set({ stockMonths: cfg.stockMonths - 0.5 })}>−</button>
-            <output aria-labelledby="ap-stock">{cfg.stockMonths}개월치</output>
-            <button type="button" aria-label="첫 재고 늘리기" disabled={cfg.stockMonths >= 3} onClick={() => set({ stockMonths: cfg.stockMonths + 0.5 })}>+</button>
-          </div>
-          <div className="m-stepper">
-            <span id="ap-staff">알바</span>
+            <span id="ap-staff">직원 수</span>
             <button type="button" aria-label="알바 1명 줄이기" disabled={cfg.staff <= 0} onClick={() => set({ staff: cfg.staff - 1 })}>−</button>
             <output aria-labelledby="ap-staff">{cfg.staff}명</output>
             <button type="button" aria-label="알바 1명 늘리기" disabled={cfg.staff >= 2} onClick={() => set({ staff: cfg.staff + 1 })}>+</button>
           </div>
-          <div className="m-seg" role="group" aria-label="매입 방식">
-            {(Object.keys(BUY_MODES) as BuyMode[]).map((b) => (
-              <button type="button" key={b} aria-pressed={cfg.buyMode === b} onClick={() => set({ buyMode: b })}>{BUY_MODES[b].label}</button>
-            ))}
-          </div>
-          <LayoutPicker kind="apparel" pyeong={cfg.pyeong} layout={cfg.layout ?? {}} set={(l) => set({ layout: l })} />
-          <p>{BUY_MODES[cfg.buyMode].desc}.<Assume id="buyMode" /> 첫 재고는 팔 옷을 미리 들여놓는 양이에요. 많을수록 사이즈가 덜 빠지지만{cfg.buyMode === "consign" ? " 원가가 비싼 옷이 선반에 쌓여요." : " 현금이 선반에 묶여요."}</p>
+          <LayoutPicker kind={kind} pyeong={cfg.pyeong} layout={lay} set={(l) => set({ layout: l })} />
+          <button type="button" className="m-btn m-btn-quiet m-recbtn" onClick={recommendLayout}>추천 배치</button>
         </div>
         <div className={`m-cash ${left < 0 ? "is-short" : ""}`}>
           <p><span>{left < 0 ? "모자란 현금" : "현금"}</span><strong>{man(Math.abs(left))}</strong></p>
@@ -104,6 +113,18 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
             <output aria-labelledby="ap-loan">{man(cfg.loan)}</output>
             <button type="button" aria-label={`대출 ${LOAN_STEP}만원 늘리기`} disabled={cfg.loan >= 20000} onClick={() => set({ loan: cfg.loan + LOAN_STEP })}>+</button>
           </div>
+          <div className="m-seg" role="group" aria-label="매입 방식">
+            {(Object.keys(BUY_MODES) as BuyMode[]).map((b) => (
+              <button type="button" key={b} aria-pressed={cfg.buyMode === b} onClick={() => set({ buyMode: b })}>{BUY_MODES[b].label}</button>
+            ))}
+          </div>
+          <div className="m-stepper">
+            <span id="ap-stock">첫 재고</span>
+            <button type="button" aria-label="첫 재고 줄이기" disabled={cfg.stockMonths <= 1} onClick={() => set({ stockMonths: cfg.stockMonths - 0.5 })}>−</button>
+            <output aria-labelledby="ap-stock">{cfg.stockMonths}개월치</output>
+            <button type="button" aria-label="첫 재고 늘리기" disabled={cfg.stockMonths >= 3} onClick={() => set({ stockMonths: cfg.stockMonths + 0.5 })}>+</button>
+          </div>
+          <small className="ap-buynote">{BUY_MODES[cfg.buyMode].desc}.<Assume id="buyMode" /> 첫 재고는 팔 옷을 미리 들여놓는 양이에요. 많을수록 사이즈가 덜 빠지지만{cfg.buyMode === "consign" ? " 원가가 비싼 옷이 선반에 쌓여요." : " 현금이 선반에 묶여요."}</small>
           {left < 0 && <p className="m-warn">이대로는 가게를 열 수 없어요. 평수·마감·첫 재고를 줄이거나 대출을 받으세요.</p>}
         </div>
       </div>
@@ -112,9 +133,11 @@ export default function ApparelBuild({ profile, cfg, setCfg, onNext }: { profile
         <dl className="m-spent">
           {open.lines.map((l) => <div key={l.key}><dt>{l.label}{(l.basis.includes("가정") || `open_${l.key}` in ASSUME) && <Assume id={`open_${l.key}` in ASSUME ? `open_${l.key}` : undefined} what={`open_${l.key}` in ASSUME ? undefined : `${l.label}: ${l.basis}`} />}</dt><dd>{man(l.amount)}</dd></div>)}
         </dl>
+        <ItemTray kind={kind} pyeong={cfg.pyeong} layout={lay} set={(l) => set({ layout: l })} />
         <div className="m-tray-go">
+          {missing.length > 0 && <p className="m-warn it-need">꼭 필요한 물건을 아직 안 놓았어요: {missing.join(", ")} <button type="button" className="it-needbtn" onClick={() => set({ layout: withNeeded(kind, cfg.pyeong, lay) })}>한 번에 놓기</button></p>}
           <button type="button" className="m-btn m-btn-outline" onClick={() => document.querySelector(".m-checks")?.scrollIntoView({ behavior: "smooth", block: "start" })}>오픈 전 점검 보러가기</button>
-          <button type="button" className="m-btn" disabled={left < 0} onClick={onNext}>시뮬레이션 하러 가기</button>
+          <button type="button" className="m-btn" disabled={left < 0 || missing.length > 0} onClick={onNext}>시뮬레이션 하러 가기</button>
         </div>
       </div>
 

@@ -258,7 +258,16 @@ export const CATALOG: CatalogItem[] = [
 export const ITEM = Object.fromEntries(CATALOG.map((c) => [c.id, c])) as Record<string, CatalogItem>;
 
 export type Placed = { uid: number; id: string; x: number; z: number; rot: 0 | 1 }; // x,z = centre in metres; rot 1 = quarter turn
-export type Store = { pyeong: number; grade: Grade; items: Placed[]; loan: number }; // loan in 만원
+// door: 앞벽 출입문 자리, shape: 가게 모양 (가로로 긴 / 정사각 / 세로로 긴). 비어 있으면 오른쪽 문, 가로로 긴 가게
+// doors: 출입문 수 (1~3)
+// lab:merge 고깃집 화면은 lab:layout(RoomShape)으로 모양·문·창문을 정하고 문 앞 통로도 거기서 본다. 아래 door·shape·doors 와 도우미는 upstream 것을 남겨 둔다
+export type Store = { pyeong: number; grade: Grade; items: Placed[]; loan: number; door?: "left" | "center" | "right"; doors?: number }; // loan in 만원 (lab:merge shape 은 lab:layout RoomShape)
+export const DOOR_PRICE = 150; // 출입문 한 개 (유리문·문틀·도어클로저, 가정)
+// 더 다는 출입문 자리: 첫 문의 반대쪽, 그다음 가운데 (가운데 문이면 왼쪽·오른쪽)
+export const moreDoorXs = (w: number, door: Store["door"] | undefined, n: number) => (door === "center" ? [-w / 2 + 1.2, w / 2 - 1.2] : [-doorX(w, door), 0]).slice(0, Math.min(3, Math.max(1, n)) - 1);
+export type Lay = { door?: Store["door"]; shape?: "wide" | "square" | "deep" };
+// 문 가운데 x. 오른쪽 문은 오른쪽 벽에서 1.2m 안쪽 (예전과 같은 자리)
+export const doorX = (w: number, door?: Store["door"]) => (door === "center" ? 0 : door === "left" ? -w / 2 + 1.2 : w / 2 - 1.2);
 
 export const CELL = 0.5;
 export function roomSize(pyeong: number): { w: number; d: number } {
@@ -356,6 +365,23 @@ export const ecosRates = () => ECOS?.latest ?? null;
 export const ymKo = (ym: string) => `${ym.slice(0, 4)}년 ${+ym.slice(4, 6)}월`;
 export const cashLeft = (profile: Profile, store: Store) => profile.capital + store.loan - openingCost(store, profile.gu, profile.keyMoney ?? 0).total;
 export type CostLine = { key: string; label: string; amount: number; basis: string };
+// 인테리어 공사를 공정별로 나눈 줄 (합은 원래 인테리어 공사비와 같다). 나누는 비율은 소규모 상가 인테리어 견적의 흔한 구성 (가정)
+const INTERIOR_SPLIT: [string, string, number][] = [
+  ["interior_demo", "철거·설비 기초", 0.1],
+  ["interior_elec", "전기·조명", 0.2],
+  ["interior_floor", "바닥", 0.18],
+  ["interior_wall", "벽·도배·도장", 0.2],
+  ["interior_ceil", "천장", 0.1],
+  ["interior", "목공·마감·창호", 0.22],
+];
+export function interiorLines(total: number, basis: string): CostLine[] {
+  let left = total;
+  return INTERIOR_SPLIT.map(([key, label, r], i) => {
+    const amount = i === INTERIOR_SPLIT.length - 1 ? left : Math.round(total * r);
+    left -= amount;
+    return { key, label, amount, basis: i === INTERIOR_SPLIT.length - 1 ? `${basis}. 공정별 나눔(철거 10·전기 20·바닥 18·벽 20·천장 10·목공 22%)은 가정` : `인테리어 공사의 ${Math.round(r * 100)}% (가정)` };
+  });
+}
 export function openingCost(store: Store, gu: string, keyMoney = 0): { lines: CostLine[]; total: number } {
   const st = guStat(gu);
   const s = storeStats(store);
@@ -364,10 +390,11 @@ export function openingCost(store: Store, gu: string, keyMoney = 0): { lines: Co
   const lines: CostLine[] = [
     ...(keyMoney > 0 ? [{ key: "keymoney", label: "권리금", amount: keyMoney, basis: "직접 넣은 값 (가게 자리에 붙는 웃돈, 나갈 때 돌려받지 못해요)" }] : []),
     { key: "deposit", label: "보증금", amount: st.rent * store.pyeong * DEPOSIT_MONTHS, basis: `월세 ${DEPOSIT_MONTHS}개월분 (서울시 실태조사: 보증금은 월세의 11~15개월)` },
-    { key: "interior", label: "인테리어 공사", amount: GRADES[store.grade].perPyeong * store.pyeong, basis: `${store.pyeong}평, 평당 ${GRADES[store.grade].perPyeong}만원 (${GRADES[store.grade].label}, 외식업체 경영실태조사 개인 가게). ${ftcNote("bbq")}` },
+    ...interiorLines(GRADES[store.grade].perPyeong * store.pyeong, `${store.pyeong}평, 평당 ${GRADES[store.grade].perPyeong}만원 (${GRADES[store.grade].label}, 외식업체 경영실태조사 개인 가게). ${ftcNote("bbq")}`),
     { key: "equip", label: "주방과 설비", amount: equip, basis: "주방, 냉장고, 계산대 등" },
     { key: "seat", label: "테이블과 의자", amount: seatCost, basis: `테이블 ${s.tables}개, ${s.seats}석` },
     { key: "deco", label: "꾸밈", amount: s.furnish - seatCost - equip, basis: "화분, 조명, 대기 의자" },
+    { key: "door", label: "출입문", amount: DOOR_PRICE * (store.doors ?? 1), basis: `${store.doors ?? 1}개 × ${DOOR_PRICE}만원 (유리문·문틀·도어클로저, 가정)` },
     { key: "sign", label: "간판", amount: SIGN, basis: "전면 간판 1개" },
     { key: "stock", label: "첫 재료와 소모품", amount: FIRST_STOCK, basis: "고기, 주류, 반찬 재료" },
   ];
