@@ -7,7 +7,8 @@ import { setShopCtx } from "../../mock/chatContext";
 import { shopPlan, type ShopKind, type ShopLayout } from "../../mock/ShopRoom3D";
 
 // layout: 치킨·분식 3D의 가게 모양과 출입문 (화면용, 엔진에는 보내지 않는다)
-export type IndustryCfg = { industry: LabIndustry; pyeong?: number; tables?: number; staff?: number; grade: Grade; delivery: boolean; layout?: ShopLayout };
+// extra_loan_man: 모자란 돈 말고 더 빌리는 운전자금 (만원). 없으면 엔진이 석 달 치 고정비만큼 정한다 (lab:merge)
+export type IndustryCfg = { industry: LabIndustry; pyeong?: number; tables?: number; staff?: number; grade: Grade; delivery: boolean; layout?: ShopLayout; extra_loan_man?: number };
 export type Line = { key: string; item_ko: string; krw: number; grade: string; note_ko?: string };
 export type Preview = {
   industry: LabIndustry; name_ko: string;

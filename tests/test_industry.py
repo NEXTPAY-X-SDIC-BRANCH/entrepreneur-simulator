@@ -208,3 +208,14 @@ def test_month_retry_returns_same_month_and_token():
     a = client.post("/lab/industry/season/month", json={"state_token": s["state_token"], "month_index": 0}).json()
     b = client.post("/lab/industry/season/month", json={"state_token": a["state_token"], "month_index": 0}).json()
     assert a["kpi"] == b["kpi"] and a["state_token"] == b["state_token"]
+
+
+def test_season_uses_chosen_loan_rate_and_extra_loan():
+    # lab:merge 가게 꾸미기에서 고른 금리와 운전자금이 새 업종 시즌에 들어간다 (고깃집·카페와 같게). 안 보내면 예전 그대로
+    base = {"industry": "hansik", "gu": "마포구", "seed": 3, "own_capital_krw": 50_000_000}
+    a = client.post("/lab/industry/season", json=base).json()
+    b = client.post("/lab/industry/season", json={**base, "loan_rate": 0.031, "extra_loan_krw": 0}).json()
+    assert a["loan"]["rate"] != 0.031 and b["loan"]["rate"] == 0.031 and b["loan"]["rate_source"] == "가게 꾸미기에서 고른 금리"
+    assert b["loan"]["extra_krw"] == 0 and b["loan"]["principal_krw"] == a["capex"]["loan_needed_krw"]
+    assert b["loan"]["monthly_payment_krw"] < a["loan"]["monthly_payment_krw"]   # 운전자금을 안 빌리고 금리도 낮으니 덜 갚는다
+    assert client.post("/lab/industry/season", json={**base, "loan_rate": 0.5}).status_code == 422
