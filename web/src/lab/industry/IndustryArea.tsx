@@ -1,4 +1,4 @@
-// lab:industry 2단계 동네 분석 (새 업종). 고깃집·카페 화면(Analysis.tsx)과 같은 두 칸: 왼쪽 서울 지도, 오른쪽 이 구(동)의 숫자와 드는 돈.
+// lab:industry 2단계 동네 분석 (새 업종). 고깃집·카페 화면(Analysis.tsx)과 같은 두 칸: 왼쪽 서울 지도, 오른쪽 '동네 / 드는 돈 / 모자란 돈' 세 칸.
 // 지도와 구 숫자는 guStat(model.ts)이 industry_gu.json에서, 동네 숫자는 industry_<id>_dong.json에서 읽는다.
 // 자리 잡힌 달 매출과 여는 비용은 엔진(/lab/industry/preview)이 계산한다. 이 업종에 없는 지표(성장률, 동네 유형 이름 짓기, 상권 추천)는 보이지 않는다.
 import { useMemo, useState } from "react";
@@ -15,6 +15,9 @@ const RUNWAY = 3; // 가정: 자리 잡기 전 석 달 치 고정비
 export default function IndustryArea({ profile, setProfile, gus, onNext, cfg: cfgIn, setCfg }: { profile: Profile; setProfile: (p: Profile) => void; gus: Gu[]; onNext: () => void; cfg?: IndustryCfg | null; setCfg?: (c: IndustryCfg) => void }) {
   const ind = profile.industry as LabIndustry;
   const [metric, setMetric] = useState<Metric>("demand");
+  // lab:merge 수빈 10/23: 고깃집·카페 동네 분석처럼 '동네 / 드는 돈 / 모자란 돈' 세 칸으로 나눠 본다 (한 줄로 길게 나오던 것)
+  const [tab, setTab0] = useState<"place" | "budget" | "fund">("place");
+  const setTab = (k: "place" | "budget" | "fund") => { setTab0(k); document.getElementById("ia-title")?.closest(".ia-card")?.scrollIntoView({ block: "start", behavior: "smooth" }); };
   const cfg: IndustryCfg = useMemo(() => (cfgIn && cfgIn.industry === ind ? cfgIn : { industry: ind, grade: "basic", delivery: true }), [cfgIn, ind]);
   const setC = (x: Partial<IndustryCfg>) => setCfg?.({ ...cfg, ...x, tables: undefined });
   const pv = usePreview(profile, cfg);
@@ -55,6 +58,12 @@ export default function IndustryArea({ profile, setProfile, gus, onNext, cfg: cf
       </section>
 
       <section className="ia-card" aria-labelledby="ia-title">
+        <div className="a-tabs" role="tablist" aria-label="분석 내용">
+          {([["place", "동네"], ["budget", "드는 돈"], ["fund", "모자란 돈"]] as const).map(([k, l]) => (
+            <button type="button" role="tab" key={k} aria-selected={tab === k} onClick={() => setTab(k)}>{l}</button>
+          ))}
+        </div>
+        {tab === "place" && (<>
         <span className="ia-eyebrow">2단계 동네 분석, {t.shop}</span>
         <div className="ia-head">
           <h1 id="ia-title">{profile.gu}</h1>
@@ -86,7 +95,20 @@ export default function IndustryArea({ profile, setProfile, gus, onNext, cfg: cf
           {p && <div><dt>객단가<small>경영실태조사 2025 {t.shop} 1인 평균 (전국)</small></dt><dd>{p.demand.ticket_krw.toLocaleString("ko-KR")}원</dd></div>}
           {p && <div><dt>홀 / 배달 / 포장<small>매출 비중 (경영실태조사 2025, 전국)</small></dt><dd>{pct(p.demand.channels.hall)} / {pct(p.demand.channels.delivery)} / {pct(p.demand.channels.takeout)}</dd></div>}
         </dl>
+        <details className="m-srcnote"><summary>숫자의 출처와 한계</summary>
+          <p className="m-src">
+            자리 잡힌 달 매출은 {p?.demand.note_ko ?? "외식업체 경영실태조사 업종 중앙값 × 서울 배율 × 구 지수"}로 낸 엔진 추정이에요. 구 지수와 가게 수 흐름, 폐업률은 서울시 상권분석서비스 2025년 {t.base} 값이고,
+            카드 매출이라 배달 앱 결제가 많은 업종은 실제보다 낮게 잡혀요. 그래서 금액이 아니라 구 사이 비교에만 써요. 가게 수는 소상공인 상가정보 2026년 6월 기준이에요.
+            월세는 한국부동산원 소규모 상가 1층 임대료에서 보증금 환산분을 뺀 현금 월세예요.{ind === "hansik" ? " 한식 백반집은 상권분석서비스에 따로 코드가 없어 한식음식점 전체(고깃집 포함) 값을 써요." : ""}
+          </p>
+        </details>
+        <p className="ia-note">{T().shop}의 성장률(2024년 대비 매출)과 동네 유형 이름은 자료가 없어 보여 드리지 않아요.</p>
+        <div className="ia-go">
+          <button type="button" className="m-btn" onClick={() => setTab("budget")}>여는 데 드는 돈 보기</button>
+        </div>
+        </>)}
 
+        {tab === "budget" && (
         <section className="ia-sec" aria-labelledby="ia-cost">
           <h2 id="ia-cost">{p ? `${p.input.pyeong}평 ${josa(t.shop, "을를")} 열려면 ${wman(need)}쯤 필요해요` : "여는 데 드는 돈"}</h2>
           {/* 평수와 마감을 여기서 바로 바꿔 드는 돈을 견줘 본다 (고깃집·카페 동네 분석의 '드는 돈'과 같은 칸) */}
@@ -118,26 +140,22 @@ export default function IndustryArea({ profile, setProfile, gus, onNext, cfg: cf
             </table>
           )}
           {p && <p className={gap > 0 ? "ia-note ia-warn" : "ia-note"}>{gap > 0 ? `가진 돈보다 ${wman(gap)}이 모자라요. 시뮬레이션에서는 모자란 만큼을 대출(연 ${(LOAN_RATE * 100).toFixed(2)}%, 한국은행 은행 중소기업 대출금리)로 계산해요.` : `가진 돈으로 열 수 있고 ${wman(-gap)}이 남아요.`}</p>}
+          <div className="ia-go">
+            <button type="button" className="m-btn" onClick={() => setTab("fund")}>{gap > 0 ? "모자란 돈 구할 방법 보기" : "남는 돈 확인하기"}</button>
+          </div>
         </section>
+        )}
 
-        {p && ( // lab:merge 수빈 10/23: 고깃집·카페처럼 '모자란 돈' (정책자금, 은행 대출 상품, 지원사업, 월세 카드 할부)
+        {tab === "fund" && ( // lab:merge 수빈 10/23: 고깃집·카페처럼 '모자란 돈' (정책자금, 은행 대출 상품, 지원사업, 월세 카드 할부)
           <section className="ia-sec ia-funds" aria-labelledby="ia-fund">
-            <h2 id="ia-fund">{gap > 0 ? `모자란 ${wman(gap)}을 구하는 길` : "돈을 구하는 길"}</h2>
-            <FundsPanel gap={Math.round(gap / 1e4)} young={profile.age === "20대" || profile.age === "30대"} gu={profile.gu} rentMan={st.rent * p.input.pyeong} />
+            <h2 id="ia-fund">{!p ? "돈을 구하는 길" : gap > 0 ? `가진 돈으로는 ${wman(gap)}이 모자라요` : `가진 돈으로 열 수 있고 ${wman(-gap)}이 남아요`}</h2>
+            {p && <FundsPanel gap={Math.round(gap / 1e4)} young={profile.age === "20대" || profile.age === "30대"} gu={profile.gu} rentMan={st.rent * p.input.pyeong} />}
+            <div className="ia-go">
+              <button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button>
+            </div>
           </section>
         )}
 
-        <details className="m-srcnote"><summary>숫자의 출처와 한계</summary>
-          <p className="m-src">
-            자리 잡힌 달 매출은 {p?.demand.note_ko ?? "외식업체 경영실태조사 업종 중앙값 × 서울 배율 × 구 지수"}로 낸 엔진 추정이에요. 구 지수와 가게 수 흐름, 폐업률은 서울시 상권분석서비스 2025년 {t.base} 값이고,
-            카드 매출이라 배달 앱 결제가 많은 업종은 실제보다 낮게 잡혀요. 그래서 금액이 아니라 구 사이 비교에만 써요. 가게 수는 소상공인 상가정보 2026년 6월 기준이에요.
-            월세는 한국부동산원 소규모 상가 1층 임대료에서 보증금 환산분을 뺀 현금 월세예요.{ind === "hansik" ? " 한식 백반집은 상권분석서비스에 따로 코드가 없어 한식음식점 전체(고깃집 포함) 값을 써요." : ""}
-          </p>
-        </details>
-        <div className="ia-go">
-          <button type="button" className="m-btn" onClick={onNext}>가게 꾸미러 가기</button>
-        </div>
-        <p className="ia-note">{T().shop}의 성장률(2024년 대비 매출)과 동네 유형 이름은 자료가 없어 보여 드리지 않아요.</p>
       </section>
     </main>
   );

@@ -65,3 +65,4 @@
 .ia-setup .m-stepper { min-inline-size: 220px; }
 .ia-fund { margin-block-start: 28px; padding-block-start: 22px; border-block-start: 1px solid #e3e8f1; }
 .ia-fund .m-finding h1 { font-size: 22px; }
+.ia-card > .a-tabs { margin-bottom: 16px; }
