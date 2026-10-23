@@ -716,3 +716,4 @@ html:has(.m-app) { background: #fff; }
   .m-top nav ol { flex-wrap: nowrap; }
   .m-top nav button { padding: 6px 9px; font-size: 15px; white-space: nowrap; }
 }
+.m-top .m-chatbtn + .m-acct, .m-top .m-chatbtn + .m-acct-wrap { margin-inline-start: 6px; } /* 로그인 버튼을 질문 버튼과 띄운다 */
