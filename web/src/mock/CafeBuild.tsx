@@ -14,8 +14,8 @@ import { STATUS_LABEL, guStat, man, type Profile } from "./model";
 // lab:layout: 문·창문 tab (가로:세로, 출입문, 창문), 손님 동선 from the engine's plan
 import { setView } from "./Scene3D";
 import { FlowCard, ShapePanel } from "../lab/layout/ShapePanel";
-import { cafeFlow, cafeRatioOk, shapeFromRoom, type CafeRoom } from "../lab/layout/cafeFlow";
-import { CAFE_DOOR_MARGIN, CAFE_SHAPE, type RoomShape } from "../lab/layout/shape";
+import { cafeDoorsFit, cafeFlow, cafeRatioOk, shapeFromRoom, type CafeItem, type CafeRoom } from "../lab/layout/cafeFlow";
+import { CAFE_DOOR_MARGIN, CAFE_SHAPE, doorCount, type RoomShape } from "../lab/layout/shape";
 
 type Layout = ReturnType<typeof cafeLayoutOf>;
 type Item = { key: keyof Layout; name: string; note: string; min: number; max: number; need?: boolean };
@@ -92,6 +92,15 @@ export default function CafeBuild({ profile, cfg: cfgIn, setCfg: setCfgOut, onNe
     if (p.route || route) parts.push(`손님 동선 ${p.route}m→${route}m`);
     const over = dd.space.overflow.length ? ` 공간이 모자라요: ${dd.space.overflow.map((o) => `${o.type} ${o.count}개`).join(", ")}.` : "";
     setNote(`${p.what} ${parts.join(", ")}.${tables < s.tables ? ` 테이블 ${s.tables - tables}개는 자리가 없어 가게 밖(빨간색)에 있어요.` : ""}${over}`);
+  }, [pv.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  // lab:merge 출입문 수: 엔진 배치가 문 앞을 막아 다 못 달면 달 수 있는 만큼으로 줄인다 (그림·여는 비용·엔진이 같은 수)
+  useEffect(() => {
+    const dd = pv.data;
+    if (!dd || doorCount(shape) < 2) return;
+    const n = cafeDoorsFit(dd.room as CafeRoom, dd.layout as CafeItem[], shape);
+    if (n >= doorCount(shape)) return;
+    setCfgOut({ ...cfg, shape: { ...shape, doors: n } });
+    setNote(`문 앞 1.2m를 비울 자리가 모자라 출입문은 ${n}개까지 달 수 있어요. 테이블을 줄이면 더 달 수 있어요.`);
   }, [pv.data]); // eslint-disable-line react-hooks/exhaustive-deps
   const onShape = (next: RoomShape, what: string) => {
     const dd = pv.data;

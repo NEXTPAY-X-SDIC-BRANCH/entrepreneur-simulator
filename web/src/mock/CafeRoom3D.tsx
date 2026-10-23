@@ -12,7 +12,7 @@ import { hash } from "../store3d/Figures";
 import { FitControls, Pendant, People, StoreLights, ViewBar, gfxDpr, gfxFrameloop, gfxShadows, useGfx, type Person } from "./Scene3D";
 // lab:layout: walls/door/windows from the room shape; the engine plan is in the door frame and turns with room.frame
 import { FlowArrows } from "../lab/layout/Arrows3D";
-import { FRAME_ROT, realDims, shapeFromRoom, toReal, type CafeFlow } from "../lab/layout/cafeFlow";
+import { FRAME_ROT, cafeDoorOk, realDims, shapeFromRoom, toReal, type CafeFlow, type CafeItem, type CafeRoom } from "../lab/layout/cafeFlow";
 import { Hide, Shell } from "../lab/layout/Shell3D";
 import { CAFE_DOOR_MARGIN, doorPoint, type RoomShape, type Wall } from "../lab/layout/shape";
 
@@ -271,7 +271,8 @@ export default function CafeRoom3D({ room, layout: layout0, roster = [], occupan
   const turn = FRAME_ROT[wall];
   const { w: Wr, d: Dr } = realDims(room);
   // walls follow the plan the engine solved (door wall, position, ratio); only the windows come from the prop
-  const shp = shapeFromRoom(room, shape?.windows);
+  const shp: RoomShape = { ...shapeFromRoom(room, shape?.windows), doors: shape?.doors }; // lab:merge 출입문 수는 화면 값
+  const doorOk = cafeDoorOk(room as CafeRoom, layout0 as CafeItem[]); // lab:merge 더 다는 출입문은 문 앞이 빈 자리에만
   const portal = useRef<HTMLDivElement>(null); // tags (출입문, 동선 번호) render into the canvas box, not a detached root
   // 엔진 좌표 -> 장면 좌표
   const sx = (x: number) => x - W / 2;
@@ -391,7 +392,7 @@ export default function CafeRoom3D({ room, layout: layout0, roster = [], occupan
           <Floor W={Wr} D={Dr} />
 
           {/* lab:layout: 벽·출입문·창문 (Shell3D), 문 밖 화분 두 개 */}
-          <Shell w={Wr} d={Dr} shape={shp} margin={CAFE_DOOR_MARGIN} color={ROOM.wall} wainscot={ROOM.wainscot} storefrontMat doorW={room.door.w} />
+          <Shell w={Wr} d={Dr} shape={shp} margin={CAFE_DOOR_MARGIN} color={ROOM.wall} wainscot={ROOM.wainscot} storefrontMat doorW={room.door.w} doorOk={doorOk} />
           {[-1, 1].map((k) => (
             <group key={k} position={[dp.x - dp.nx * 0.35 + tx * k * (room.door.w / 2 + 0.35), 0, dp.z - dp.nz * 0.35 + tz * k * (room.door.w / 2 + 0.35)]}>
               <Cy p={[0, 0.2, 0]} r={0.17} r2={0.14} h={0.4} color="#b9836a" />

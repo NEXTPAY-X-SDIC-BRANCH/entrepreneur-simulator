@@ -356,6 +356,9 @@ def _capex(cfg: dict, solved: dict) -> dict:
     if solved["seats_bar"]:
         line("바 테이블 (길이 m)", round(solved["seats_bar"] * v("layout", "bar_pitch"), 2), P["bar_counter_per_m"]["value"],
              P["bar_counter_per_m"]["grade"], P["bar_counter_per_m"]["source"], dep="furniture")
+    extra_doors = max(0, min(3, int(cfg.get("doors") or 1)) - 1)   # lab:merge 첫 문은 인테리어에 들어 있다고 보고 더 단 문만
+    if extra_doors:
+        line("출입문 추가", extra_doors, 1_500_000, "가정", "유리문·문틀·도어클로저 1개 150만원 (가정, 화면 DOOR_PRICE와 같음)", dep="interior")
     vat_base = sum(x["subtotal_krw"] for x in lines if x["_vat"])
     line("부가세 (환급 전 선지급)", 1, vat_base * P["vat_rate"]["value"], P["vat_rate"]["grade"], P["vat_rate"]["source"], False)
     dep = meta["deposit_per_pyeong_krw"]

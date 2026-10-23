@@ -5,7 +5,7 @@
 // Tables and seats stay plain items, so storeStats → engine inputs (tables, seats) pick up every change.
 import { ITEM, fits, footprint, snap, storeStats, type Placed, type Store } from "../../mock/model";
 import { AISLE_OK, field, lenWhere, makeGrid, narrowLen, nearestWalk, overlaps, polyLen, reachRect, rectOf, simplify, trace, trimPath, type Field, type Grid, type Pt, type Rect } from "./flow";
-import { BBQ_DOOR_MARGIN, BBQ_SHAPE, DOOR_W, WALL_KO, doorPoint, type RoomShape } from "./shape";
+import { BBQ_DOOR_MARGIN, BBQ_SHAPE, DOOR_W, WALL_KO, doorAlongs, doorCount, doorPoint, wallPoint, type RoomShape } from "./shape";
 
 // want: the table counts asked for before a re-layout dropped some (a4/a2 = what that re-layout placed). While the
 // store still has exactly a4/a2 tables, the next re-layout asks for n4/n2 again, so stepping the ratio or the door
@@ -14,7 +14,8 @@ export type LabStore = Store & { shape?: RoomShape; want?: { n4: number; n2: num
 export const shapeOf = (s: Store): RoomShape => (s as LabStore).shape ?? BBQ_SHAPE;
 // a store nobody has shaped yet keeps the old rules (model.fits, no door clearance), so its numbers do not move
 export const isShaped = (s: Store) => (s as LabStore).shape !== undefined;
-export const withShape = (s: Store, shape: RoomShape): Store => ({ ...s, shape }) as LabStore;
+// doors 도 같이 둔다: model.openingCost 의 출입문 줄(문 하나 150만원)이 이 값을 읽는다
+export const withShape = (s: Store, shape: RoomShape): Store => ({ ...s, shape, doors: doorCount(shape) }) as LabStore;
 
 // model.roomSize generalised: same 0.5 m rounding, ratio 1.45 gives the old room exactly
 const GRID = 0.5;
@@ -29,14 +30,24 @@ export const MIN_SIDE = 5;
 export const ratioOk = (pyeong: number, ratio: number) => { const { w, d } = bbqDims(pyeong, ratio); return w >= MIN_SIDE && d >= MIN_SIDE; };
 
 // ---- door ----------------------------------------------------------------------------------------------------
+// 문 앞 비워 둘 곳: 문 폭 + 양옆 20cm, 안쪽 1.2m (가정)
+function doorZone(p: { x: number; z: number; nx: number; nz: number }): Rect {
+  const side = p.nx === 0; // door on the front or back wall: the gap runs along x
+  const half = DOOR_W / 2 + 0.2, deep = 1.2;
+  const a: Pt = [p.x - (side ? half : 0), p.z - (side ? 0 : half)], b: Pt = [p.x + (side ? half : 0) + p.nx * deep, p.z + (side ? 0 : half) + p.nz * deep];
+  return { x0: Math.min(a[0], b[0]), z0: Math.min(a[1], b[1]), x1: Math.max(a[0], b[0]), z1: Math.max(a[1], b[1]) };
+}
 export function doorInfo(s: Store) {
   const { w, d } = roomDims(s);
   const p = doorPoint(shapeOf(s), w, d, BBQ_DOOR_MARGIN);
-  const side = p.nx === 0; // door on the front or back wall: the gap runs along x
-  const half = DOOR_W / 2 + 0.2, deep = 1.2; // 문 앞 비워 둘 곳: 문 폭 + 양옆 20cm, 안쪽 1.2m (가정)
-  const a: Pt = [p.x - (side ? half : 0), p.z - (side ? 0 : half)], b: Pt = [p.x + (side ? half : 0) + p.nx * deep, p.z + (side ? 0 : half) + p.nz * deep];
-  const zone: Rect = { x0: Math.min(a[0], b[0]), z0: Math.min(a[1], b[1]), x1: Math.max(a[0], b[0]), z1: Math.max(a[1], b[1]) };
-  return { ...p, w, d, zone, step: [p.x + p.nx * 0.35, p.z + p.nz * 0.35] as Pt };
+  return { ...p, w, d, zone: doorZone(p), step: [p.x + p.nx * 0.35, p.z + p.nz * 0.35] as Pt };
+}
+// lab:merge 더 단 출입문(2~3번째) 앞도 비워 둔다. 손님 동선은 첫 문 기준 그대로
+export function extraDoorZones(s: Store): Rect[] {
+  const shape = shapeOf(s);
+  if (doorCount(shape) < 2) return [];
+  const { w, d } = roomDims(s);
+  return doorAlongs(shape, w, d, BBQ_DOOR_MARGIN).slice(1).map((a) => doorZone(wallPoint(shape.door.wall, a, w, d)));
 }
 
 // ---- kitchen ---------------------------------------------------------------------------------------------------
@@ -45,9 +56,9 @@ const KW = ITEM.kitchen.w, KD = ITEM.kitchen.d;
 export const kitchenFlip = (k: { x: number; z: number }): [number, number] => [k.x > 1e-6 ? -1 : 1, k.z > 1e-6 ? -1 : 1];
 export function kitchenSpotFor(s: Store): { x: number; z: number } {
   const { w, d } = roomDims(s), door = doorInfo(s);
-  const zone = { x0: door.zone.x0 - 0.3, z0: door.zone.z0 - 0.3, x1: door.zone.x1 + 0.3, z1: door.zone.z1 + 0.3 };
+  const zones = [door.zone, ...extraDoorZones(s)].map((z) => ({ x0: z.x0 - 0.3, z0: z.z0 - 0.3, x1: z.x1 + 0.3, z1: z.z1 + 0.3 }));
   const cands = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sz]) => ({ x: sx * (w / 2 - KW / 2), z: sz * (d / 2 - KD / 2) }));
-  const ok = cands.filter((c) => !overlaps(rectOf(c.x, c.z, KW, KD), zone));
+  const ok = cands.filter((c) => !zones.some((zone) => overlaps(rectOf(c.x, c.z, KW, KD), zone)));
   const score = (c: { x: number; z: number }) => (c.z > 0 ? 100 : 0) - Math.hypot(c.x - door.x, c.z - door.z);
   return (ok.length ? ok : cands).sort((a, b) => score(a) - score(b))[0];
 }
@@ -70,7 +81,7 @@ export function fitsIn(s: Store, cand: Cand, ignore?: number): boolean {
   const { w, d } = roomDims(s);
   const r = itemRect(cand);
   if (r.x0 < -w / 2 - 1e-6 || r.x1 > w / 2 + 1e-6 || r.z0 < -d / 2 - 1e-6 || r.z1 > d / 2 + 1e-6) return false;
-  if (cand.id !== "kitchen" && overlaps(r, doorInfo(s).zone)) return false;
+  if (cand.id !== "kitchen" && [doorInfo(s).zone, ...extraDoorZones(s)].some((z) => overlaps(r, z))) return false;
   return s.items.every((o) => o.uid === ignore || !overlaps(itemRect(o), r));
 }
 // lattice of item centres (edges on the 0.5 m grid like model.snap) ordered by distance to a point

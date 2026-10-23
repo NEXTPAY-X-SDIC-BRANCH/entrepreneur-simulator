@@ -7,7 +7,10 @@ export type Wall = "front" | "back" | "left" | "right";
 export const WALLS: Wall[] = ["front", "back", "left", "right"];
 export const WALL_KO: Record<Wall, string> = { front: "앞", back: "뒤", left: "왼쪽", right: "오른쪽" };
 export const WALL_SIDE: Record<Wall, string> = { front: "앞쪽", back: "뒤쪽", left: "왼쪽", right: "오른쪽" };
-export type RoomShape = { ratio: number; door: { wall: Wall; pos: number }; windows: Wall[] }; // ratio = 가로 ÷ 세로
+// doors: 출입문 수 1~3 (lab:merge 수빈 10/23의 출입문 개수). 더 단 문은 첫 문과 같은 벽에 선다 (doorAlongs)
+export type RoomShape = { ratio: number; door: { wall: Wall; pos: number }; windows: Wall[]; doors?: number }; // ratio = 가로 ÷ 세로
+export const doorCount = (s: RoomShape) => Math.min(3, Math.max(1, Math.round(s.doors ?? 1)));
+export const DOOR_PRICE_MAN = 150; // 문 하나: 유리문·문틀·도어클로저 (수빈 model.ts DOOR_PRICE, 가정)
 
 // Defaults reproduce the rooms the app drew before this lane: 고깃집 1.45 (model.roomSize), 카페 1.6 (research/cafe
 // params layout.aspect), door at the right end of the glass front.
@@ -42,6 +45,21 @@ export function wallPoint(wall: Wall, along: number, w: number, d: number): { x:
   if (wall === "left") return { x: -w / 2, z: d / 2 - along, nx: 1, nz: 0 };
   return { x: w / 2, z: d / 2 - along, nx: -1, nz: 0 };
 }
+// 문 중심들(벽 시작 모서리에서 m): 첫 문, 그다음 더 단 문. 수빈 규칙처럼 첫 문에서 먼 쪽 끝부터, 그다음 가운데.
+// 문끼리 0.6m는 띄우고, ok(그 자리를 비울 수 있나)가 아니라고 하면 그 후보는 건너뛴다. 자리가 없으면 덜 단다
+export function doorAlongs(shape: RoomShape, w: number, d: number, margin: number, dw = DOOR_W, ok: (along: number) => boolean = () => true): number[] {
+  const len = wallLen(shape.door.wall, w, d), m = Math.min(margin, len / 2), main = doorAlong(shape, w, d, margin);
+  const out = [main];
+  const pref = [m, len - m, len / 2].sort((a, b) => Math.abs(b - main) - Math.abs(a - main));
+  // 정한 자리가 막혔으면 벽을 따라 0.25m씩 훑어 첫 문에서 먼 빈자리를 찾는다 (카페는 엔진 배치가 문 앞을 막을 수 있다)
+  const sweep = Array.from({ length: Math.max(0, Math.floor((len - 2 * m) / 0.25)) + 1 }, (_, i) => m + i * 0.25).sort((a, b) => Math.abs(b - main) - Math.abs(a - main));
+  const cands = [...pref, ...sweep];
+  for (const c of cands) {
+    if (out.length >= doorCount(shape)) break;
+    if (out.every((o) => Math.abs(o - c) >= dw + 0.6) && ok(c)) out.push(c);
+  }
+  return out;
+}
 export function doorPoint(shape: RoomShape, w: number, d: number, margin: number) {
   return wallPoint(shape.door.wall, doorAlong(shape, w, d, margin), w, d);
 }
@@ -60,14 +78,15 @@ export const doorWhere = (shape: RoomShape, w: number, d: number, margin: number
 // windows along a wall (not the front, which is a glass storefront when it has a window): 1.4 m panes, sill 0.9 m,
 // head 2.1 m, spaced evenly, skipping any that would cut into the door gap
 export const WIN = { w: 1.4, sill: 0.9, head: 2.1 };
-export function windowSpans(len: number, door: [number, number] | null): [number, number][] {
+export function windowSpans(len: number, door: [number, number] | [number, number][] | null): [number, number][] {
+  const doors: [number, number][] = !door ? [] : typeof door[0] === "number" ? [door as [number, number]] : (door as [number, number][]);
   const n = Math.max(1, Math.floor((len - 0.8) / 2.6));
   const step = len / n;
   const out: [number, number][] = [];
   for (let i = 0; i < n; i++) {
     const c = step * (i + 0.5), a = c - WIN.w / 2, b = c + WIN.w / 2;
     if (a < 0.35 || b > len - 0.35) continue;
-    if (door && b > door[0] - 0.25 && a < door[1] + 0.25) continue;
+    if (doors.some((g) => b > g[0] - 0.25 && a < g[1] + 0.25)) continue;
     out.push([a, b]);
   }
   return out;

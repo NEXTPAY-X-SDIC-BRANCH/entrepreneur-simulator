@@ -463,7 +463,7 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
   return (
     <div className="sx-root" style={{ top }}>
       <div className="sx-canvas">
-        {pv ? <CafeRoom3D moves={cfg.moves} room={pv.room} layout={pv.layout} roster={view === null ? pv.staff.roster : []} occupancy={occupancy} height="fill" /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
+        {pv ? <CafeRoom3D moves={cfg.moves} shape={cfg.shape} room={pv.room} layout={pv.layout} roster={view === null ? pv.staff.roster : []} occupancy={occupancy} height="fill" /> : <p className="m-loading">엔진을 부르는 중이에요</p>}
       </div>
 
       <header className="sx-hud">
