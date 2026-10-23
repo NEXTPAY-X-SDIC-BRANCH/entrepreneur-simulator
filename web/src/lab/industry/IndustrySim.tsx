@@ -13,6 +13,7 @@ import ScoreCard from "../score/ScoreCard"; // lab:score 6개월 성적표 (카�
 import RecordAttempt from "../modes/RecordAttempt"; // lab:modes 하드 모드 판 기록 (다시 해보기 비교)
 import { genericSummary } from "../modes/summary";
 import type { GenericRun } from "../modes/api";
+import CostBar from "../../mock/CostBar";
 import "../../mock/simulate-engine.css";
 import "../../mock/cafe-sim.css";
 import "./industry.css";
@@ -297,11 +298,16 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
             <>
               <div className="sx-scroll">
                 <h1>{cur.calendar_month}월 정산</h1>
+                {/* 다른 업종 정산과 같은 순서: 흑자/적자 상자 → 매출·나간 돈·영업이익·월말 현금 → 매출 100원 막대 → 자세히 보기 */}
+                <div className={`sc-hero ${Math.round(cur.kpi.op_krw / 1e4) >= 0 ? "" : "is-bad"}`}>
+                  <h2>{Math.round(cur.kpi.op_krw / 1e4) === 0 ? "본전" : cur.kpi.op_krw > 0 ? "흑자" : "적자"} {sgn(cur.kpi.op_krw)}</h2>
+                  <p>못 받은 손님 {cur.kpi.walkaways.toLocaleString("ko-KR")}인분 ({Math.round(cur.kpi.walkaway_share * 100)}%)</p>
+                </div>
                 <Kpis items={[
-                  { label: "영업이익", value: sgn(cur.kpi.op_krw), tone: tone(cur.kpi.op_krw), main: true },
                   { label: "매출", value: wman(cur.kpi.revenue_krw) },
-                  { label: "월말 현금", value: wman(cur.kpi.cash_krw) },
-                  { label: "못 받은 손님", value: `${cur.kpi.walkaways.toLocaleString("ko-KR")}인분 (${Math.round(cur.kpi.walkaway_share * 100)}%)` },
+                  { label: "나간 돈", value: wman(cur.kpi.revenue_krw - cur.kpi.op_krw) },
+                  { label: "영업이익", value: sgn(cur.kpi.op_krw), tone: tone(cur.kpi.op_krw) },
+                  { label: "월말 현금", value: wman(cur.kpi.cash_krw), main: true },
                 ]} />
                 <p className="sx-note">{cur.owner_note_ko}</p>
                 <p className="sx-note"><b>{cur.event.title}:</b> {cur.event.choice_label}{cur.event.downside ? ` (${cur.event.downside})` : ""}</p>
@@ -310,17 +316,25 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
                     <ul>{cur.random_events.map((e) => <li key={e.key}><b>{e.label_ko}</b><span>{e.effect_ko}</span></li>)}</ul>
                   </section>
                 )}
+                {(() => {
+                  const xs = cur.pnl.lines.filter((l) => l.krw > 0).sort((a, b) => b.krw - a.krw);
+                  const top: [string, number][] = xs.slice(0, 5).map((l) => [l.item_ko.replace(/\s*\(.*\)$/, ""), l.krw]);
+                  const rest = xs.slice(5).reduce((a, l) => a + l.krw, 0);
+                  return <CostBar items={rest > 0 ? [...top, ["기타", rest]] : top} revenue={cur.pnl.revenue_krw} op={cur.pnl.op_krw} fmt={(x) => wman(x)} />;
+                })()}
+                <details className="sx-more">
+                <summary>손익표와 현금 자세히 보기</summary>
                 <div className="sx-split">
-                  <section className="sx-sec"><h2>손익</h2>
-                    <table className="sx-table"><tbody>
+                  <section className="st-card"><header className="st-h"><span className="st-ico" aria-hidden>₩</span><div><h2>손익</h2><small>이번 달 매출에서 비용을 하나씩 뺀 계산이에요</small></div></header>
+                    <table className="sx-table st-table"><tbody>
                       <tr><th>매출</th><td>{wman(cur.pnl.revenue_krw)}</td></tr>
                       {cur.pnl.lines.filter((l) => l.krw !== 0).map((l) => <tr key={l.key}><th>{l.item_ko}</th><td>{minus(l.krw)}</td></tr>)}
                       <tr className="sum"><th>영업이익</th><td className={tone(cur.pnl.op_krw)}>{sgn(cur.pnl.op_krw)}</td></tr>
                     </tbody></table>
                     <small>사장님 몫은 비용에 넣지 않았어요. 같은 업종 사장님은 평균 월 {wman(cur.kpi.owner_pay_ref_krw)}을 가져가요 (경영실태조사 2025).<Q>영업이익이 이 값보다 적으면 사장님 월급만큼도 못 버는 거예요.</Q></small>
                   </section>
-                  <section className="sx-sec"><h2>현금</h2>
-                    <table className="sx-table"><tbody>
+                  <section className="st-card"><header className="st-h"><span className="st-ico is-ch" aria-hidden>⇄</span><div><h2>현금</h2><small>영업이익에서 대출 이자·원금을 빼고 감가상각을 되돌린 값이에요</small></div></header>
+                    <table className="sx-table st-table"><tbody>
                       <tr><th>월초 현금</th><td>{wman(cur.cash.start_krw)}</td></tr>
                       <tr><th>영업이익</th><td>{sgn(cur.cash.op_krw)}</td></tr>
                       <tr><th>감가상각 되돌림</th><td>+{wman(cur.cash.depreciation_addback_krw)}</td></tr>
@@ -331,6 +345,7 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack }: { profile: 
                     <small>좌석은 하루 {cur.drivers.seat_units_day}명, 일손은 하루 {cur.drivers.crew_units_day}인분까지 받았어요.</small>
                   </section>
                 </div>
+                </details>
                 {cur.closure.closed && <p className="se-err">가게를 닫았어요. {cur.closure.reason_ko}</p>}
               </div>
               <footer className="sx-foot">

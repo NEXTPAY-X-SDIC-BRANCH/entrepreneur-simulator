@@ -706,3 +706,5 @@ html:has(.m-app) { background: #fff; }
 .m-checks > .m-aside + .m-aside { margin-block-start: 12px; }
 .m-checks > .m-aside.is-empty { border: 1px dashed #b8c6ee; background: #f7f9ff; color: var(--ink2); }
 .m-checks > .m-src { margin-block-start: 14px; }
+/* 가게 꾸미기: 아래 안내 말풍선이 왼쪽 판(가게 크기·배치·추천 배치)을 가리지 않게 판 오른쪽에서 시작 */
+@media (min-width: 900px) { .m-stage > .m-msg { inset-inline-start: 372px; max-inline-size: max(240px, calc(100% - 388px - 320px)); } }
