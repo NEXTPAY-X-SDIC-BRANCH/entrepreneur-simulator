@@ -50,7 +50,10 @@ export function wallPoint(wall: Wall, along: number, w: number, d: number): { x:
 export function doorAlongs(shape: RoomShape, w: number, d: number, margin: number, dw = DOOR_W, ok: (along: number) => boolean = () => true): number[] {
   const len = wallLen(shape.door.wall, w, d), m = Math.min(margin, len / 2), main = doorAlong(shape, w, d, margin);
   const out = [main];
-  const cands = [m, len - m, len / 2].sort((a, b) => Math.abs(b - main) - Math.abs(a - main));
+  const pref = [m, len - m, len / 2].sort((a, b) => Math.abs(b - main) - Math.abs(a - main));
+  // 정한 자리가 막혔으면 벽을 따라 0.25m씩 훑어 첫 문에서 먼 빈자리를 찾는다 (카페는 엔진 배치가 문 앞을 막을 수 있다)
+  const sweep = Array.from({ length: Math.max(0, Math.floor((len - 2 * m) / 0.25)) + 1 }, (_, i) => m + i * 0.25).sort((a, b) => Math.abs(b - main) - Math.abs(a - main));
+  const cands = [...pref, ...sweep];
   for (const c of cands) {
     if (out.length >= doorCount(shape)) break;
     if (out.every((o) => Math.abs(o - c) >= dw + 0.6) && ok(c)) out.push(c);

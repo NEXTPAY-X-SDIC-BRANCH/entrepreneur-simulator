@@ -12,9 +12,9 @@ import { hash } from "../store3d/Figures";
 import { FitControls, Pendant, People, StoreLights, ViewBar, gfxDpr, gfxFrameloop, gfxShadows, useGfx, type Person } from "./Scene3D";
 // lab:layout: walls/door/windows from the room shape; the engine plan is in the door frame and turns with room.frame
 import { FlowArrows } from "../lab/layout/Arrows3D";
-import { FRAME_ROT, realDims, shapeFromRoom, toReal, type CafeFlow } from "../lab/layout/cafeFlow";
+import { FRAME_ROT, cafeDoorOk, realDims, shapeFromRoom, toReal, type CafeFlow, type CafeItem, type CafeRoom } from "../lab/layout/cafeFlow";
 import { Hide, Shell } from "../lab/layout/Shell3D";
-import { CAFE_DOOR_MARGIN, doorPoint, wallPoint, type RoomShape, type Wall } from "../lab/layout/shape";
+import { CAFE_DOOR_MARGIN, doorPoint, type RoomShape, type Wall } from "../lab/layout/shape";
 
 export type LayoutItem = { id: string; type: string; x: number; z: number; rot_deg: number; fits: boolean; w: number; d: number; unassigned?: boolean };
 export type RosterItem = { id: string; role: string; label_ko: string; x: number; z: number; fits: boolean };
@@ -272,15 +272,7 @@ export default function CafeRoom3D({ room, layout: layout0, roster = [], occupan
   const { w: Wr, d: Dr } = realDims(room);
   // walls follow the plan the engine solved (door wall, position, ratio); only the windows come from the prop
   const shp: RoomShape = { ...shapeFromRoom(room, shape?.windows), doors: shape?.doors }; // lab:merge 출입문 수는 화면 값
-  // lab:merge 더 다는 출입문 자리: 엔진 배치의 물건(카운터 포함)이 문 앞 1.2m 안에 있으면 그 자리는 건너뛴다 (엔진은 첫 문만 알고 배치한다)
-  const doorOk = (along: number) => {
-    const p = wallPoint(wall, along, Wr, Dr), cx = p.x + p.nx * 0.6, cz = p.z + p.nz * 0.6;
-    return !layout0.some((it) => {
-      if (!it.fits) return false;
-      const [x, z] = toReal(wall, it.x - W / 2, D / 2 - it.z);
-      return Math.abs(x - cx) < 0.6 + 0.2 + Math.max(it.w, it.d) / 2 && Math.abs(z - cz) < 0.6 + Math.max(it.w, it.d) / 2;
-    });
-  };
+  const doorOk = cafeDoorOk(room as CafeRoom, layout0 as CafeItem[]); // lab:merge 더 다는 출입문은 문 앞이 빈 자리에만
   const portal = useRef<HTMLDivElement>(null); // tags (출입문, 동선 번호) render into the canvas box, not a detached root
   // 엔진 좌표 -> 장면 좌표
   const sx = (x: number) => x - W / 2;

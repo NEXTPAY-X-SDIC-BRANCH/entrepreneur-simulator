@@ -3,7 +3,7 @@
 // 입구 → 주문 (POS front) → 픽업 (end of the front counter) → 가장 먼 자리; route out: 자리 → 출구.
 // Also how the real room relates to the door frame (rotation for the 3D group) and the shape the engine echoes back.
 import { field, lenWhere, makeGrid, narrowLen, nearestWalk, polyLen, reachRect, simplify, trace, trimPath, AISLE_OK, type Pt, type Rect } from "./flow";
-import { CAFE_SHAPE, type RoomShape, type Wall } from "./shape";
+import { CAFE_DOOR_MARGIN, CAFE_SHAPE, doorAlongs, doorCount, wallPoint, type RoomShape, type Wall } from "./shape";
 
 export type CafeRoom = {
   width_m: number; depth_m: number; door: { x: number; w: number; wall?: Wall; pos?: number | null };
@@ -96,6 +96,25 @@ export function cafeFlow(room: CafeRoom, layout: CafeItem[]): CafeFlow {
 }
 
 // the engine request fields for a shape (absent = the old default room)
+// lab:merge 더 다는 출입문 자리를 비울 수 있나: 엔진 배치의 물건(카운터 포함)이 문 앞(문 폭 + 양옆 20cm, 안쪽 1.2m)에 걸치면 안 된다.
+// 엔진은 첫 문만 알고 배치하므로, 카페는 이 검사를 통과한 자리에만 문을 더 단다
+export function cafeDoorOk(room: CafeRoom, layout: CafeItem[]): (along: number) => boolean {
+  const { w: Wr, d: Dr } = realDims(room), wall = room.frame?.wall ?? "front", W = room.width_m, D = room.depth_m, half = room.door.w / 2 + 0.2;
+  return (along) => {
+    const p = wallPoint(wall, along, Wr, Dr), side = p.nx === 0;
+    return !layout.some((it) => {
+      if (!it.fits) return false;
+      const [x, z] = toReal(wall, it.x - W / 2, D / 2 - it.z), r = Math.max(it.w, it.d) / 2;
+      const ua = side ? x - p.x : z - p.z, ui = side ? (z - p.z) * p.nz : (x - p.x) * p.nx; // 벽을 따라 / 안쪽으로
+      return Math.abs(ua) < half + r && ui > -r && ui < 1.2 + r;
+    });
+  };
+}
+// 이 배치에 실제로 달 수 있는 출입문 수 (화면 숫자와 엔진 '출입문 추가' 값이 그림과 같도록)
+export function cafeDoorsFit(room: CafeRoom, layout: CafeItem[], shape: RoomShape): number {
+  const { w, d } = realDims(room);
+  return doorAlongs({ ...shapeFromRoom(room), doors: doorCount(shape) }, w, d, CAFE_DOOR_MARGIN, room.door.w, cafeDoorOk(room, layout)).length;
+}
 export const cafeShapeBody = (shape?: RoomShape) => (shape ? { aspect: Math.round(shape.ratio * 1000) / 1000, door_wall: shape.door.wall, door_pos: shape.door.pos, windows: shape.windows,
   ...((shape.doors ?? 1) > 1 ? { doors: shape.doors } : {}) } : {}); // lab:merge 출입문 수는 2개부터만 보낸다 (예전 입력과 같은 결과)
 export const CAFE_MIN_SIDE = 4.0;
