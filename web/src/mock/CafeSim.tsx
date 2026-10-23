@@ -9,7 +9,7 @@ import CafeRoom3D from "./CafeRoom3D";
 import { ENGINE, type Preview } from "./useCafePreview";
 import { guStat, man, type Profile } from "./model";
 import Assume from "./Assume";
-import { type Mode } from "./ModeSwitch";
+import { ModeTag, type Mode } from "./ModeSwitch";
 import QuickPicks, { type Pick as QPick } from "./QuickPicks";
 import Insight, { type Try } from "./Insight";
 import CashFlow, { type CfMonth } from "./CashFlow";
@@ -602,7 +602,7 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
             {view === "plan" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{nextMonth}월 운영 계획</h1>
+                  <h1>{nextMonth}월 운영 계획<ModeTag mode={mode} /></h1>
                   <div className="sx-split">
                     <section className="sx-left" aria-label="지난달 결과와 추천">
                       <h2>{cur ? `${cur.calendar_month}월 결과와 추천` : "처음 여는 달이에요"}</h2>
@@ -726,7 +726,7 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
             {view === "settle" && cur && (
               <>
                 <div className="sx-scroll">
-                  <h1>{cur.calendar_month}월 정산</h1>
+                  <h1>{cur.calendar_month}월 정산<ModeTag mode={mode} /></h1>
                   {(() => {
                     const op = cur.kpi.op_krw, opM = Math.round(op / 1e4), walk = cur.kpi.walkaway_share;
                     const why = opM >= 0 ? (walk >= 0.08 ? "더 받을 수 있었는데 바쁜 시간에 손님이 돌아갔어요" : "손님과 비용이 잘 맞았어요")
@@ -855,7 +855,7 @@ export default function CafeSim({ profile, cfg, onBack, onArea }: { profile: Pro
                 <div className="sx-scroll">
                   {scoreSummary && <ScoreCard summary={scoreSummary} />}{/* lab:score */}
                   {scoreSummary && <RecordAttempt summary={scoreSummary} extra={{ capital_man: profile.capital }} />}{/* lab:modes */}
-                  <h1>{months.length}개월 결과</h1>
+                  <h1>{months.length}개월 결과<ModeTag mode={mode} /></h1>
                   {!report ? <p>계산 중이에요.</p> : (
                     <>
                       <p className="sx-note">{report.survived ? `${TOTAL}개월을 버텼어요. ` : <b>가게를 닫게 됐어요. </b>}{report.summary_ko}</p>

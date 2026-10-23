@@ -35,7 +35,7 @@
 .cst-panel.is-compact .cst-legend > div { line-height: 1.35; }
 
 /* 시뮬레이션 화면 오른쪽: 이달 손익 패널 + 그 아래 현금 흐름 영수증 */
-.sx-receipt.cst-right { flex-direction: column; gap: 8px; }
+.sx-receipt.cst-right { flex-direction: column; gap: 16px; }
 .sx-receipt.cst-right > .sx-paper { min-height: 120px; }
 .cst-live { flex: none; max-height: 62%; overflow: auto; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 0 0 1px rgba(25, 31, 40, 0.06), 0 4px 16px rgba(20, 35, 58, 0.16); }

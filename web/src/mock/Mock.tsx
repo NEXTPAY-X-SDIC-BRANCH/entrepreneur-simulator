@@ -178,7 +178,7 @@ export default function Mock() {
       )}
       {!loginOpen && ready && ind === "bbq" && step === "sim" && (
         <Suspense fallback={<p className="m-loading">가게 문을 여는 중이에요</p>}>
-          <Simulate profile={profile} store={store} levers={levers} setLevers={setLevers} onBack={() => go("build")} />
+          <Simulate profile={profile} store={store} levers={levers} setLevers={setLevers} onBack={() => go("build")} mode={mode ?? "hard"} />
         </Suspense>
       )}
 

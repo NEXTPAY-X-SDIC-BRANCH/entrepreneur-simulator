@@ -123,3 +123,24 @@
 .m-app .lm-cashnote { display: block; margin-block-start: 8px; line-height: 1.6; }
 .lm-tbl tr.is-derived { background: none; }
 .m-app .lm-autotag { display: inline-block; margin-inline-start: 8px; padding: 0 6px; border-radius: 6px; background: var(--soft); color: var(--pencil); font-size: 12px; }
+
+/* 이지 모드 첫 화면: 항목마다 한 줄씩 가로로 길게 (왼쪽 이름, 오른쪽 고르는 칸) */
+.lm-easy { inline-size: min(100%, 960px); }
+.lm-form { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.lm-form > fieldset, .lm-form > .lm-field { display: grid; grid-template-columns: 160px minmax(0, 1fr); column-gap: 20px; row-gap: 6px; align-items: center;
+  margin: 0; padding: 16px 20px; border: 1px solid #e3e8f1; border-radius: 16px; background: var(--bg); box-shadow: 0 1px 6px rgba(25, 31, 40, 0.04); }
+.lm-form > fieldset > legend { float: left; inline-size: 160px; margin: 0; padding: 0; }
+.lm-form > fieldset > .lm-inds { display: flex; flex-wrap: wrap; gap: 4px; }
+.lm-form > .lm-field > span:first-child, .lm-form > .lm-field > label:first-child { grid-column: 1; grid-row: 1; margin: 0; align-self: center; }
+.lm-form > .lm-field:has(.lm-money) > label:first-child { grid-row: 1 / span 3; }
+.lm-form > .lm-field > :not(:first-child) { grid-column: 2; }
+.lm-form > .lm-field .lm-money input { inline-size: 12em; }
+.lm-form > .lm-field > small { margin: 0; }
+.lm-form > .lm-field .m-presets { margin: 0; }
+.lm-form > .lm-field .m-stepper { inline-size: 100%; }
+@media (max-width: 640px) {
+  .lm-form > fieldset, .lm-form > .lm-field { grid-template-columns: 1fr; }
+  .lm-form > fieldset > legend { float: none; margin-block-end: 8px; }
+  .lm-form > .lm-field > span:first-child, .lm-form > .lm-field > label:first-child { grid-row: auto; margin-block-end: 4px; }
+  .lm-form > .lm-field > :not(:first-child) { grid-column: 1; }
+}

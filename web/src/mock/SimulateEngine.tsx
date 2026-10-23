@@ -28,6 +28,7 @@ import { sbizDelivery } from "./quickfood";
 import { BBQ_REF, bbqBand } from "./priceCompare";
 import CashFlow, { type CfMonth } from "./CashFlow";
 import CostBar from "./CostBar";
+import { ModeTag } from "./ModeSwitch";
 import { isDepLine } from "./shopItems";
 import { GRADES as SCORE_GRADES, scoreOf, type ScoreMonth } from "./Scorecard";
 import { LOAN_RATE, OWNER_DRAW, guStat, man, openingCost, storeStats, type Levers, type Profile, type Store } from "./model";
@@ -447,8 +448,8 @@ function DecisionCard({ d, alts, busy, onTry }: { d: Decision; alts: Record<stri
 }
 
 // ---------------------------------------------------------------- 화면
-export default function SimulateEngine({ profile, store, levers, onBack }: {
-  profile: Profile; store: Store; levers: Levers; setLevers: (l: Levers) => void; onBack: () => void;
+export default function SimulateEngine({ profile, store, levers, onBack, mode = "hard" }: {
+  profile: Profile; store: Store; levers: Levers; setLevers: (l: Levers) => void; onBack: () => void; mode?: "easy" | "hard"; // 첫 화면에서 고른 모드 (제목 옆 표시)
 }) {
   const st = guStat(profile.gu);
   const stats = storeStats(store);
@@ -900,7 +901,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
             {view === "plan" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{planMonth}월 운영 계획</h1>
+                  <h1>{planMonth}월 운영 계획<ModeTag mode={mode} /></h1>
                   <div className="sx-split">
                     <section className="sx-left" aria-label="지난달과 추천">
                       <h2>{lastPlanMonth ? `${lastPlanMonth}월 결과와 추천` : "처음 여는 달이에요"}</h2>
@@ -1010,7 +1011,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
               return (
                 <>
                   <div className="sx-scroll">
-                    <h1>{r.month}월 정산</h1>
+                    <h1>{r.month}월 정산<ModeTag mode={mode} /></h1>
                     {(() => {
                       const k = r.kpis, op0 = won(k.op);
                       const sc = scoreOf(scoreMonths(done), cashAtStart.current[0] ?? startCash, Math.min(cashAtStart.current[0] ?? startCash, ...done.flatMap((m) => m.days.map((d) => d.cash))),
@@ -1098,7 +1099,7 @@ export default function SimulateEngine({ profile, store, levers, onBack }: {
                 <div className="sx-scroll">
                   {scoreSummary && <ScoreCard summary={scoreSummary} />}{/* lab:score */}
                   {scoreSummary && <RecordAttempt summary={scoreSummary} extra={{ capital_man: profile.capital, staff: Math.min(4, levers.staff), price: levers.price, tables: stats.tables, pyeong: store.pyeong, grade: store.grade }} />}{/* lab:modes */}
-                  <h1>{done.length}개월 결과</h1>
+                  <h1>{done.length}개월 결과<ModeTag mode={mode} /></h1>
                   {!ledger ? <p>계산 중이에요.</p> : (
                     <>
                       <Kpis items={[

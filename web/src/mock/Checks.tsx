@@ -33,7 +33,7 @@ export default function Checks({ profile, store, levers }: { profile: Profile; s
       <h1>{headline}</h1>
       <p className="m-sub">{profile.gu}, {store.pyeong}평, {stats.seats}석, 직원 {levers.staff}명 기준이에요. 여는 데 {man(sunk)}과 보증금이 들어요. 가게나 직원 수를 바꾸면 바로 다시 계산해요.</p>
       {stats.seats > 0 && <SettledStack stack={bbqSettled(profile, store, levers)} note="헤드라인의 금액은 아래 비용을 모두 뺀 값이에요." />}{/* lab:cost */}
-      {stats.seats === 0 && <p className="m-aside">테이블을 놓거나 위쪽의 '추천 배치'를 누르면 다섯 가지 질문의 답이 나와요.</p>}
+      {stats.seats === 0 && <p className="m-aside is-empty">테이블을 놓거나 위쪽의 '추천 배치'를 누르면 다섯 가지 질문의 답이 나와요.</p>}
       {stats.seats > 0 && <ul className="m-checklist">
         {list.map((c) => (
           <li key={c.key}>

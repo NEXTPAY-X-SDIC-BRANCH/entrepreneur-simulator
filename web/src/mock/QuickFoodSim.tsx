@@ -11,7 +11,7 @@ import {
 } from "./quickfood";
 import ShopRoom3D, { shopPlan } from "./ShopRoom3D";
 import QuickPicks, { type Pick as QPick } from "./QuickPicks";
-import ModeSwitch from "./ModeSwitch";
+import ModeSwitch, { ModeTag } from "./ModeSwitch";
 import CashFlow, { type CfMonth } from "./CashFlow";
 import Insight from "./Insight";
 import { qfTries } from "./QfInsight";
@@ -502,7 +502,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
               return (
                 <>
                   <div className="sx-scroll">
-                    <h1>{c.month}월 정산</h1>
+                    <h1>{c.month}월 정산<ModeTag mode={mode} /></h1>
                     <div className={`sc-hero ${w(c.op) >= 0 ? "" : "is-bad"}`}>
                       <h2>{w(c.op) === 0 ? "본전" : c.op > 0 ? "흑자" : "적자"} {signed(c.op)}</h2>
                       <p>{why}.{sc ? ` 지금까지 ${sc.total}점 · ${SCORE_GRADES.find((g) => sc.total >= g.min)!.label}` : ""}</p>
@@ -556,7 +556,7 @@ export default function QuickFoodSim({ profile, cfg, onBack }: { profile: Profil
             {view === "report" && (
               <>
                 <div className="sx-scroll">
-                  <h1>{done.length}개월 결과</h1>
+                  <h1>{done.length}개월 결과<ModeTag mode={mode} /></h1>
                   <Scorecard
                     months={scoreMonths(months)} startCash={start.cash * 1e4} lowestCash={lowest() * 1e4}
                     endCash={(months.at(-1)?.cash ?? start.cash) * 1e4} monthlyCashOut={monthlyOut(months) * 1e4} gu={profile.gu} mode={mode} kind="food" shop={name} seed={seed}

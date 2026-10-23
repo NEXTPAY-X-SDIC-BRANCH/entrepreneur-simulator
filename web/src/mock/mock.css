@@ -700,3 +700,9 @@ html:has(.m-app) { background: #fff; }
 
 .m-msg.it-place { inset-block-end: 16px; }
 .it-place2 { display: block; margin-block-start: 6px; font-size: 12.5px; color: var(--ink2); }
+
+/* 열기 전 점검: 안내 상자끼리 붙지 않게 사이를 띄우고, 빈 가게 안내는 점선 상자로 구분 */
+.m-checks > .m-aside { margin-block-start: 14px; }
+.m-checks > .m-aside + .m-aside { margin-block-start: 12px; }
+.m-checks > .m-aside.is-empty { border: 1px dashed #b8c6ee; background: #f7f9ff; color: var(--ink2); }
+.m-checks > .m-src { margin-block-start: 14px; }

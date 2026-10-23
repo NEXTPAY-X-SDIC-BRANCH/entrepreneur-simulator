@@ -26,3 +26,8 @@ export default function ModeSwitch({ mode, set, locked }: { mode: Mode; set: (m:
     </span>
   );
 }
+
+// 제목 옆에 지금 모드를 작은 파란 글씨로 (운영 계획·정산·결과 화면)
+export function ModeTag({ mode }: { mode: Mode }) {
+  return <span className="sx-modetag">{mode === "hard" ? "hard 모드" : "easy 모드"}</span>;
+}
