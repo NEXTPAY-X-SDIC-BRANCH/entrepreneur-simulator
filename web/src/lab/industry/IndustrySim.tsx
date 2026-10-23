@@ -14,6 +14,7 @@ import { LAB_TXT, type LabIndustry } from "./industries";
 import ScoreCard from "../score/ScoreCard"; // lab:score 6개월 성적표 (카페·고깃집 결과 화면과 같은 카드)
 import RecordAttempt from "../modes/RecordAttempt"; // lab:modes 하드 모드 판 기록 (다시 해보기 비교)
 import { genericSummary } from "../modes/summary";
+import { cafeFinance } from "../finance/finance"; // lab:merge 고른 대출 금리
 import type { GenericRun } from "../modes/api";
 import CostBar from "../../mock/CostBar";
 import "../../mock/simulate-engine.css";
@@ -134,7 +135,9 @@ export default function IndustrySim({ profile, cfg: cfgIn, onBack, mode = "hard"
     if (!p) return;
     setBusy(true); setErr("");
     const seed = Math.floor(Math.random() * 1_000_000); // 판마다 무작위 사건(경쟁 가게, 고장)이 달라진다. 같은 판 안에서는 엔진이 시드로 고정
-    const body = { ...engineBody(profile, { ...cfg, pyeong: p.input.pyeong, tables: p.input.tables, staff: p.input.staff }), seed, start_month: startMonth };
+    const rate = cafeFinance().loan_rate; // lab:merge 가게 꾸미기에서 고른 은행·정책자금 금리 (안 골랐으면 엔진 기본)
+    const body = { ...engineBody(profile, { ...cfg, pyeong: p.input.pyeong, tables: p.input.tables, staff: p.input.staff }), seed, start_month: startMonth,
+      ...(cfg.extra_loan_man != null ? { extra_loan_krw: cfg.extra_loan_man * 1e4 } : {}), ...(rate ? { loan_rate: rate } : {}) };
     post<Start>("/season", body).then((s) => {
       setStart(s); setToken(s.state_token); setMonths([]); setReport(null); setChoice(s.next_event.default);
       setPlan({ price_change_pct: 0, hours: "standard", staff: s.decisions.staff, marketing_krw: 0, delivery: s.decisions.delivery });

@@ -95,6 +95,8 @@ def start(body: dict) -> dict:
     if not 1 <= start_month <= 12:
         raise ValueError("start_month 1..12")
     rate, rate_src = P.loan_rate()
+    if body.get("loan_rate"):   # lab:merge 학습자가 고른 금리 (고깃집·카페처럼)
+        rate, rate_src = float(body["loan_rate"]), "가게 꾸미기에서 고른 금리"
     fixed = ctx["rent_krw"] + cfg["staff"] * ctx["pay"]
     gap = max(0, cx["total_krw"] - cfg["own_capital_krw"])
     extra = body.get("extra_loan_krw")
